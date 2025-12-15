@@ -14,16 +14,24 @@ public partial class ControlPanelForm : Form
     private readonly ApplicationSettingsManager _appSettings;
     private readonly QuestionRepository _questionRepository;
     private readonly HotkeyHandler _hotkeyHandler;
+    private readonly ScreenUpdateService _screenService;
     private string _currentAnswer = string.Empty;
+
+    // Screen forms
+    private HostScreenForm? _hostScreen;
+    private GuestScreenForm? _guestScreen;
+    private TVScreenForm? _tvScreen;
 
     public ControlPanelForm(
         GameService gameService,
         ApplicationSettingsManager appSettings,
-        QuestionRepository questionRepository)
+        QuestionRepository questionRepository,
+        ScreenUpdateService screenService)
     {
         _gameService = gameService;
         _appSettings = appSettings;
         _questionRepository = questionRepository;
+        _screenService = screenService;
 // Initialize hotkey handler
         _hotkeyHandler = new HotkeyHandler(
             onF1: () => btnA.PerformClick(),
@@ -152,8 +160,10 @@ public partial class ControlPanelForm : Form
             // Mark question as used
             await _questionRepository.MarkQuestionAsUsedAsync(question.Id);
 
+            // Broadcast question to all screens
+            _screenService.UpdateQuestion(question);
+
             // TODO: Play question cue sound
-            // TODO: Update other screens
         }
         catch (Exception ex)
         {
@@ -264,7 +274,9 @@ public partial class ControlPanelForm : Form
                 break;
         }
 
-        // TODO: Update other screens with selected answer
+        // Broadcast answer selection to all screens
+        _screenService.SelectAnswer(answer);
+
         // TODO: Play final answer sound
     }
 
@@ -292,8 +304,10 @@ public partial class ControlPanelForm : Form
             // Advance to next level
             _gameService.ChangeLevel(_gameService.State.CurrentLevel + 1);
 
+            // Broadcast correct answer to all screens
+            _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true);
+
             // TODO: Play correct answer sound
-            // TODO: Update screens
         }
         else
         {
@@ -314,6 +328,9 @@ public partial class ControlPanelForm : Form
                 case "C": txtC.BackColor = Color.LimeGreen; break;
                 case "D": txtD.BackColor = Color.LimeGreen; break;
             }
+
+            // Broadcast wrong answer to all screens
+            _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false);
 
             // TODO: Play wrong answer sound
             // TODO: Show game over
@@ -361,7 +378,17 @@ public partial class ControlPanelForm : Form
 
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // TODO: Show host screen
+        if (_hostScreen == null || _hostScreen.IsDisposed)
+        {
+            _hostScreen = new HostScreenForm();
+            _screenService.RegisterScreen(_hostScreen);
+            _hostScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_hostScreen);
+            _hostScreen.Show();
+        }
+        else
+        {
+            _hostScreen.BringToFront();
+        }
     }
 #region Hotkey Handling
 
@@ -395,12 +422,32 @@ public partial class ControlPanelForm : Form
     
     private void GuestScreenToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // TODO: Show guest screen
+        if (_guestScreen == null || _guestScreen.IsDisposed)
+        {
+            _guestScreen = new GuestScreenForm();
+            _screenService.RegisterScreen(_guestScreen);
+            _guestScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_guestScreen);
+            _guestScreen.Show();
+        }
+        else
+        {
+            _guestScreen.BringToFront();
+        }
     }
 
     private void TVScreenToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // TODO: Show TV screen
+        if (_tvScreen == null || _tvScreen.IsDisposed)
+        {
+            _tvScreen = new TVScreenForm();
+            _screenService.RegisterScreen(_tvScreen);
+            _tvScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_tvScreen);
+            _tvScreen.Show();
+        }
+        else
+        {
+            _tvScreen.BringToFront();
+        }
     }
 
     private void CloseToolStripMenuItem_Click(object? sender, EventArgs e)

@@ -2,6 +2,7 @@ using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Forms;
+using MillionaireGame.Services;
 
 namespace MillionaireGame;
 
@@ -67,9 +68,10 @@ internal static class Program
         // Initialize services
         var gameService = new GameService();
         var questionRepository = new QuestionRepository(dbContext.GetFullConnectionString());
+        var screenService = new ScreenUpdateService();
 
         // Create and run main control panel
-        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository);
+        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository, screenService);
         Application.Run(controlPanel);
     }
 }

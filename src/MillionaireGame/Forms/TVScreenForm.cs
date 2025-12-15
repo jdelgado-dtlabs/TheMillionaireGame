@@ -1,0 +1,282 @@
+using MillionaireGame.Core.Models;
+using MillionaireGame.Services;
+
+namespace MillionaireGame.Forms;
+
+/// <summary>
+/// TV screen - public display screen for audience viewing
+/// </summary>
+public partial class TVScreenForm : Form, IGameScreen
+{
+    private Question? _currentQuestion;
+    private System.Windows.Forms.Timer? _flashTimer;
+    private int _flashStep = 0;
+    private bool _flashState = false;
+
+    public TVScreenForm()
+    {
+        InitializeComponent();
+        FormBorderStyle = FormBorderStyle.None;
+        WindowState = FormWindowState.Maximized;
+        
+        // Initialize flash timer for answer reveals
+        _flashTimer = new System.Windows.Forms.Timer();
+        _flashTimer.Interval = 500; // Flash every 500ms
+        _flashTimer.Tick += FlashTimer_Tick;
+    }
+
+    #region IGameScreen Implementation
+
+    public void UpdateQuestion(Question question)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => UpdateQuestion(question)));
+            return;
+        }
+
+        _currentQuestion = question;
+        
+        lblQuestion.Text = question.QuestionText;
+        lblAnswerA.Text = question.AnswerA;
+        lblAnswerB.Text = question.AnswerB;
+        lblAnswerC.Text = question.AnswerC;
+        lblAnswerD.Text = question.AnswerD;
+
+        ResetAnswerColors();
+        StopFlashing();
+    }
+
+    public void SelectAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => SelectAnswer(answer)));
+            return;
+        }
+
+        ResetAnswerColors();
+
+        switch (answer)
+        {
+            case "A":
+                pnlAnswerA.BackColor = Color.Yellow;
+                lblAnswerA.ForeColor = Color.Black;
+                break;
+            case "B":
+                pnlAnswerB.BackColor = Color.Yellow;
+                lblAnswerB.ForeColor = Color.Black;
+                break;
+            case "C":
+                pnlAnswerC.BackColor = Color.Yellow;
+                lblAnswerC.ForeColor = Color.Black;
+                break;
+            case "D":
+                pnlAnswerD.BackColor = Color.Yellow;
+                lblAnswerD.ForeColor = Color.Black;
+                break;
+        }
+    }
+
+    public void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
+            return;
+        }
+
+        // Start flashing animation
+        _flashStep = 0;
+        _flashTimer?.Start();
+    }
+
+    public void UpdateMoney(string current, string correct, string wrong, string drop, string questionsLeft)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => UpdateMoney(current, correct, wrong, drop, questionsLeft)));
+            return;
+        }
+
+        lblAmount.Text = current;
+    }
+
+    public void ActivateLifeline(Lifeline lifeline)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ActivateLifeline(lifeline)));
+            return;
+        }
+
+        // Show ATA results if Ask the Audience was used
+        if (lifeline.Type == LifelineType.AskTheAudience && _currentQuestion != null)
+        {
+            pnlATA.Visible = true;
+            lblATA_A.Text = $"A: {_currentQuestion.ATAPercentageA ?? 0}%";
+            lblATA_B.Text = $"B: {_currentQuestion.ATAPercentageB ?? 0}%";
+            lblATA_C.Text = $"C: {_currentQuestion.ATAPercentageC ?? 0}%";
+            lblATA_D.Text = $"D: {_currentQuestion.ATAPercentageD ?? 0}%";
+        }
+    }
+
+    public void ResetScreen()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ResetScreen));
+            return;
+        }
+
+        lblQuestion.Text = string.Empty;
+        lblAnswerA.Text = string.Empty;
+        lblAnswerB.Text = string.Empty;
+        lblAnswerC.Text = string.Empty;
+        lblAnswerD.Text = string.Empty;
+        lblAmount.Text = string.Empty;
+        pnlATA.Visible = false;
+        ResetAnswerColors();
+        StopFlashing();
+    }
+
+    #endregion
+
+    #region Flash Animation
+
+    private void FlashTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_currentQuestion == null)
+        {
+            StopFlashing();
+            return;
+        }
+
+        _flashState = !_flashState;
+        _flashStep++;
+
+        // Flash 6 times (3 cycles), then stop and show final result
+        if (_flashStep > 6)
+        {
+            StopFlashing();
+            ShowFinalAnswer();
+            return;
+        }
+
+        // Animate the selected answer
+        var selectedAnswer = GetSelectedAnswer();
+        var correctAnswer = _currentQuestion.CorrectAnswer;
+        
+        if (_flashState)
+        {
+            // Flash on
+            if (selectedAnswer == correctAnswer)
+            {
+                HighlightAnswer(selectedAnswer, Color.LimeGreen, Color.Black);
+            }
+            else
+            {
+                HighlightAnswer(selectedAnswer, Color.Red, Color.White);
+            }
+        }
+        else
+        {
+            // Flash off - return to yellow
+            HighlightAnswer(selectedAnswer, Color.Yellow, Color.Black);
+        }
+    }
+
+    private void StopFlashing()
+    {
+        _flashTimer?.Stop();
+        _flashStep = 0;
+        _flashState = false;
+    }
+
+    private void ShowFinalAnswer()
+    {
+        if (_currentQuestion == null) return;
+
+        var selectedAnswer = GetSelectedAnswer();
+        var correctAnswer = _currentQuestion.CorrectAnswer;
+
+        ResetAnswerColors();
+
+        if (selectedAnswer == correctAnswer)
+        {
+            HighlightAnswer(selectedAnswer, Color.LimeGreen, Color.Black);
+        }
+        else
+        {
+            HighlightAnswer(selectedAnswer, Color.Red, Color.White);
+            HighlightAnswer(correctAnswer, Color.LimeGreen, Color.Black);
+        }
+    }
+
+    private string GetSelectedAnswer()
+    {
+        if (pnlAnswerA.BackColor == Color.Yellow || pnlAnswerA.BackColor == Color.Red || pnlAnswerA.BackColor == Color.LimeGreen)
+            return "A";
+        if (pnlAnswerB.BackColor == Color.Yellow || pnlAnswerB.BackColor == Color.Red || pnlAnswerB.BackColor == Color.LimeGreen)
+            return "B";
+        if (pnlAnswerC.BackColor == Color.Yellow || pnlAnswerC.BackColor == Color.Red || pnlAnswerC.BackColor == Color.LimeGreen)
+            return "C";
+        if (pnlAnswerD.BackColor == Color.Yellow || pnlAnswerD.BackColor == Color.Red || pnlAnswerD.BackColor == Color.LimeGreen)
+            return "D";
+        return "";
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private void ResetAnswerColors()
+    {
+        var defaultColor = Color.FromArgb(0, 0, 80);
+        
+        pnlAnswerA.BackColor = defaultColor;
+        pnlAnswerB.BackColor = defaultColor;
+        pnlAnswerC.BackColor = defaultColor;
+        pnlAnswerD.BackColor = defaultColor;
+
+        lblAnswerA.ForeColor = Color.White;
+        lblAnswerB.ForeColor = Color.White;
+        lblAnswerC.ForeColor = Color.White;
+        lblAnswerD.ForeColor = Color.White;
+    }
+
+    private void HighlightAnswer(string answer, Color backgroundColor, Color textColor)
+    {
+        switch (answer)
+        {
+            case "A":
+                pnlAnswerA.BackColor = backgroundColor;
+                lblAnswerA.ForeColor = textColor;
+                break;
+            case "B":
+                pnlAnswerB.BackColor = backgroundColor;
+                lblAnswerB.ForeColor = textColor;
+                break;
+            case "C":
+                pnlAnswerC.BackColor = backgroundColor;
+                lblAnswerC.ForeColor = textColor;
+                break;
+            case "D":
+                pnlAnswerD.BackColor = backgroundColor;
+                lblAnswerD.ForeColor = textColor;
+                break;
+        }
+    }
+
+    #endregion
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _flashTimer?.Dispose();
+            components?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
