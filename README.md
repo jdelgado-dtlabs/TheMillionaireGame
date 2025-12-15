@@ -3,6 +3,18 @@
 # The Millionaire Game
 Welcome to The Millionaire Game! A self-written application based on the popular TV-show 'Who Wants to be a Millionaire'.
 
+## 🔥 C# Version Now Available!
+
+A modern **C# version** is now under development in the `master-csharp` branch! This version brings:
+- ✨ Modern .NET 8.0 with latest C# features
+- 🚀 Better performance and architecture
+- 🔧 Improved maintainability
+- 💯 100% compatible with existing databases and settings
+
+**[View C# Version →](src/)** | **[Migration Guide →](MIGRATION_GUIDE.md)** | **[Switch Branch →](#switching-to-c-version)**
+
+The original VB.NET version remains fully supported on the `master` branch.
+
 ## Introduction
 This project began in the summer of 2017 for a YouTube series/project.
 Because we wanted the series/game to be a lot easier to control and play, the idea came to write a application around it to take care of the questions, music and graphics. With the exception of the music and sound, everything else was self designed (which was looking a bit poor and simple)
@@ -97,6 +109,29 @@ Like the name of the lifeline already suggest, ask the present host to give his/
 The new demo video is coming soon on my channel:
 
 [![The Millionaire Game Demo 2024](https://img.youtube.com/vi/jj5qvg3xTR0/0.jpg)](https://youtu.be/jj5qvg3xTR0)
+
+## Switching to C# Version
+
+To try the modern C# version:
+
+```bash
+# Switch to the C# branch
+git checkout master-csharp
+
+# Navigate to the src folder
+cd src
+
+# Build and run
+dotnet restore
+dotnet build
+dotnet run --project MillionaireGame
+```
+
+**Requirements for C# version:**
+- .NET 8.0 SDK ([Download](https://dotnet.microsoft.com/download/dotnet/8.0))
+- SQL Server Express or LocalDB (same as VB version)
+
+See **[src/README.md](src/README.md)** for detailed C# version documentation.
 
 ## Screenshots
 Screenshots below are from version 1.1!
