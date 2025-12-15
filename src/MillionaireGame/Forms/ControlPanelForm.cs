@@ -15,6 +15,7 @@ public partial class ControlPanelForm : Form
     private readonly QuestionRepository _questionRepository;
     private readonly HotkeyHandler _hotkeyHandler;
     private readonly ScreenUpdateService _screenService;
+    private readonly SoundService _soundService;
     private string _currentAnswer = string.Empty;
 
     // Screen forms
@@ -26,12 +27,17 @@ public partial class ControlPanelForm : Form
         GameService gameService,
         ApplicationSettingsManager appSettings,
         QuestionRepository questionRepository,
-        ScreenUpdateService screenService)
+        ScreenUpdateService screenService,
+        SoundService soundService)
     {
         _gameService = gameService;
         _appSettings = appSettings;
         _questionRepository = questionRepository;
         _screenService = screenService;
+        _soundService = soundService;
+        
+        // Load sounds from settings
+        _soundService.LoadSoundsFromSettings(_appSettings.Settings);
 // Initialize hotkey handler
         _hotkeyHandler = new HotkeyHandler(
             onF1: () => btnA.PerformClick(),
@@ -168,7 +174,8 @@ public partial class ControlPanelForm : Form
             // Broadcast question to all screens
             _screenService.UpdateQuestion(question);
 
-            // TODO: Play question cue sound
+            // Play question cue sound
+            _soundService.PlaySound(SoundEffect.QuestionCue);
         }
         catch (Exception ex)
         {
@@ -202,7 +209,8 @@ public partial class ControlPanelForm : Form
 
     private void btnLightsDown_Click(object? sender, EventArgs e)
     {
-        // TODO: Play lights down sound effect
+        // Play lights down sound effect
+        _soundService.PlaySound(SoundEffect.LightsDown);
         // TODO: Dim screens
     }
 
@@ -225,8 +233,9 @@ public partial class ControlPanelForm : Form
     private void btnWalk_Click(object? sender, EventArgs e)
     {
         _gameService.State.WalkAway = true;
-        // TODO: Play walk away sound
-        // TODO: Show total winnings
+        _soundService.PlaySound(SoundEffect.WalkAway);
+        MessageBox.Show($"Total winnings: {_gameService.State.CurrentValue}", 
+            "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void btnActivateRiskMode_Click(object? sender, EventArgs e)
@@ -236,6 +245,11 @@ public partial class ControlPanelForm : Form
             : Core.Models.GameMode.Normal;
 
         _gameService.ChangeMode(newMode);
+        
+        if (newMode == Core.Models.GameMode.Risk)
+        {
+            _soundService.PlaySound(SoundEffect.RiskMode);
+        }
     }
 
     private void btnResetGame_Click(object? sender, EventArgs e)
@@ -268,6 +282,9 @@ public partial class ControlPanelForm : Form
         _gameService.UseLifeline(Core.Models.LifelineType.FiftyFifty);
         btn5050.Enabled = false;
         btn5050.BackColor = Color.Gray;
+
+        // Play lifeline sound
+        _soundService.PlaySound(SoundEffect.Lifeline5050);
 
         // Remove two wrong answers
         if (string.IsNullOrEmpty(lblAnswer.Text)) return;
@@ -310,6 +327,9 @@ public partial class ControlPanelForm : Form
         btnPhoneFriend.Enabled = false;
         btnPhoneFriend.BackColor = Color.Gray;
 
+        // Play lifeline sound
+        _soundService.PlaySound(SoundEffect.LifelinePhone);
+
         // Show a simple dialog for phone a friend
         var friendAnswer = MessageBox.Show(
             $"Your friend suggests answer: {lblAnswer.Text}\n\nThey are fairly confident about this.",
@@ -333,6 +353,9 @@ public partial class ControlPanelForm : Form
         _gameService.UseLifeline(Core.Models.LifelineType.AskTheAudience);
         btnAskAudience.Enabled = false;
         btnAskAudience.BackColor = Color.Gray;
+
+        // Play lifeline sound
+        _soundService.PlaySound(SoundEffect.LifelineATA);
 
         // Broadcast to screens to show ATA results
         _screenService.ActivateLifeline(lifeline);
@@ -362,6 +385,9 @@ public partial class ControlPanelForm : Form
             _gameService.UseLifeline(Core.Models.LifelineType.SwitchQuestion);
             btnSwitch.Enabled = false;
             btnSwitch.BackColor = Color.Gray;
+
+            // Play lifeline sound
+            _soundService.PlaySound(SoundEffect.LifelineSwitch);
 
             // Load a new question
             await LoadNewQuestion();
@@ -399,7 +425,8 @@ public partial class ControlPanelForm : Form
         // Broadcast answer selection to all screens
         _screenService.SelectAnswer(answer);
 
-        // TODO: Play final answer sound
+        // Play final answer sound
+        _soundService.PlaySound(SoundEffect.FinalAnswer);
     }
 
     private void ResetAnswerColors()
@@ -429,7 +456,8 @@ public partial class ControlPanelForm : Form
             // Broadcast correct answer to all screens
             _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true);
 
-            // TODO: Play correct answer sound
+            // Play correct answer sound
+            _soundService.PlaySound(SoundEffect.CorrectAnswer);
         }
         else
         {
@@ -454,7 +482,8 @@ public partial class ControlPanelForm : Form
             // Broadcast wrong answer to all screens
             _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false);
 
-            // TODO: Play wrong answer sound
+            // Play wrong answer sound
+            _soundService.PlaySound(SoundEffect.WrongAnswer);
             // TODO: Show game over
         }
     }

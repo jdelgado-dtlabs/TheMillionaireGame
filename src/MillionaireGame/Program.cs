@@ -69,9 +69,10 @@ internal static class Program
         var gameService = new GameService();
         var questionRepository = new QuestionRepository(dbContext.GetFullConnectionString());
         var screenService = new ScreenUpdateService();
+        var soundService = new SoundService();
 
         // Create and run main control panel
-        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository, screenService);
+        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository, screenService, soundService);
         Application.Run(controlPanel);
     }
 }
