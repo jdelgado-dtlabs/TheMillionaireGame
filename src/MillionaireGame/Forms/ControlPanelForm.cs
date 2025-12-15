@@ -128,6 +128,11 @@ public partial class ControlPanelForm : Form
 
     private async void btnNewQuestion_Click(object? sender, EventArgs e)
     {
+        await LoadNewQuestion();
+    }
+
+    private async Task LoadNewQuestion()
+    {
         try
         {
             var question = await _questionRepository.GetRandomQuestionAsync(
@@ -248,6 +253,123 @@ public partial class ControlPanelForm : Form
         }
     }
 
+    private void btn5050_Click(object? sender, EventArgs e)
+    {
+        // Check if lifeline is available
+        var lifeline = _gameService.State.GetLifeline(Core.Models.LifelineType.FiftyFifty);
+        if (lifeline == null || lifeline.IsUsed)
+        {
+            MessageBox.Show("50:50 lifeline has already been used!", "Lifeline Used", 
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        // Use the lifeline
+        _gameService.UseLifeline(Core.Models.LifelineType.FiftyFifty);
+        btn5050.Enabled = false;
+        btn5050.BackColor = Color.Gray;
+
+        // Remove two wrong answers
+        if (string.IsNullOrEmpty(lblAnswer.Text)) return;
+
+        var wrongAnswers = new List<string> { "A", "B", "C", "D" };
+        wrongAnswers.Remove(lblAnswer.Text);
+
+        // Randomly select 2 wrong answers to remove
+        var random = new Random();
+        for (int i = 0; i < 2; i++)
+        {
+            var indexToRemove = random.Next(wrongAnswers.Count);
+            var answerToRemove = wrongAnswers[indexToRemove];
+            wrongAnswers.RemoveAt(indexToRemove);
+
+            // Clear the answer text
+            switch (answerToRemove)
+            {
+                case "A": txtA.Text = ""; break;
+                case "B": txtB.Text = ""; break;
+                case "C": txtC.Text = ""; break;
+                case "D": txtD.Text = ""; break;
+            }
+        }
+
+        _screenService.ActivateLifeline(lifeline);
+    }
+
+    private void btnPhoneFriend_Click(object? sender, EventArgs e)
+    {
+        var lifeline = _gameService.State.GetLifeline(Core.Models.LifelineType.PlusOne);
+        if (lifeline == null || lifeline.IsUsed)
+        {
+            MessageBox.Show("Phone a Friend lifeline has already been used!", "Lifeline Used",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        _gameService.UseLifeline(Core.Models.LifelineType.PlusOne);
+        btnPhoneFriend.Enabled = false;
+        btnPhoneFriend.BackColor = Color.Gray;
+
+        // Show a simple dialog for phone a friend
+        var friendAnswer = MessageBox.Show(
+            $"Your friend suggests answer: {lblAnswer.Text}\n\nThey are fairly confident about this.",
+            "Phone a Friend",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
+
+        _screenService.ActivateLifeline(lifeline);
+    }
+
+    private void btnAskAudience_Click(object? sender, EventArgs e)
+    {
+        var lifeline = _gameService.State.GetLifeline(Core.Models.LifelineType.AskTheAudience);
+        if (lifeline == null || lifeline.IsUsed)
+        {
+            MessageBox.Show("Ask the Audience lifeline has already been used!", "Lifeline Used",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        _gameService.UseLifeline(Core.Models.LifelineType.AskTheAudience);
+        btnAskAudience.Enabled = false;
+        btnAskAudience.BackColor = Color.Gray;
+
+        // Broadcast to screens to show ATA results
+        _screenService.ActivateLifeline(lifeline);
+
+        MessageBox.Show("Ask the Audience results are now displayed on the screens.",
+            "Ask the Audience", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private async void btnSwitch_Click(object? sender, EventArgs e)
+    {
+        var lifeline = _gameService.State.GetLifeline(Core.Models.LifelineType.SwitchQuestion);
+        if (lifeline == null || lifeline.IsUsed)
+        {
+            MessageBox.Show("Switch Question lifeline has already been used!", "Lifeline Used",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var result = MessageBox.Show(
+            "Are you sure you want to switch to a new question?",
+            "Switch Question",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+
+        if (result == DialogResult.Yes)
+        {
+            _gameService.UseLifeline(Core.Models.LifelineType.SwitchQuestion);
+            btnSwitch.Enabled = false;
+            btnSwitch.BackColor = Color.Gray;
+
+            // Load a new question
+            await LoadNewQuestion();
+
+            _screenService.ActivateLifeline(lifeline);
+        }
+    }
+
     #endregion
 
     #region Helper Methods
@@ -360,6 +482,17 @@ public partial class ControlPanelForm : Form
         ResetAnswerColors();
         _currentAnswer = string.Empty;
         nmrLevel.Value = 0;
+
+        // Reset lifeline buttons
+        _gameService.State.ResetLifelines();
+        btn5050.Enabled = true;
+        btn5050.BackColor = Color.Orange;
+        btnPhoneFriend.Enabled = true;
+        btnPhoneFriend.BackColor = Color.Orange;
+        btnAskAudience.Enabled = true;
+        btnAskAudience.BackColor = Color.Orange;
+        btnSwitch.Enabled = true;
+        btnSwitch.BackColor = Color.Orange;
     }
 
     #endregion

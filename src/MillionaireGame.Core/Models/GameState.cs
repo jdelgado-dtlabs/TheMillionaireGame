@@ -22,6 +22,36 @@ public class GameState
     public string QuestionsLeft { get; set; } = "0";
 
     public int TotalLifelines { get; set; } = 0;
+    
+    // Lifeline management
+    private readonly Dictionary<LifelineType, Lifeline> _lifelines = new();
+
+    public GameState()
+    {
+        // Initialize default lifelines
+        _lifelines[LifelineType.FiftyFifty] = new Lifeline { Type = LifelineType.FiftyFifty };
+        _lifelines[LifelineType.PlusOne] = new Lifeline { Type = LifelineType.PlusOne };
+        _lifelines[LifelineType.AskTheAudience] = new Lifeline { Type = LifelineType.AskTheAudience };
+        _lifelines[LifelineType.SwitchQuestion] = new Lifeline { Type = LifelineType.SwitchQuestion };
+    }
+
+    public Lifeline? GetLifeline(LifelineType type)
+    {
+        return _lifelines.TryGetValue(type, out var lifeline) ? lifeline : null;
+    }
+
+    public IReadOnlyDictionary<LifelineType, Lifeline> GetAllLifelines()
+    {
+        return _lifelines;
+    }
+
+    public void ResetLifelines()
+    {
+        foreach (var lifeline in _lifelines.Values)
+        {
+            lifeline.IsUsed = false;
+        }
+    }
 }
 
 /// <summary>

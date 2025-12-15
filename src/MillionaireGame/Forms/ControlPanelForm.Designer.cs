@@ -290,6 +290,39 @@ namespace MillionaireGame.Forms
             chkCorrectAnswer.Size = new Size(200, 24);
             chkCorrectAnswer.Text = "Show Correct Answer";
             
+            // Lifeline buttons
+            btn5050 = new Button();
+            btn5050.Location = new Point(770, 80);
+            btn5050.Size = new Size(120, 40);
+            btn5050.Text = "50:50";
+            btn5050.Font = new Font("Arial", 12F, FontStyle.Bold);
+            btn5050.BackColor = Color.Orange;
+            btn5050.Click += btn5050_Click;
+
+            btnPhoneFriend = new Button();
+            btnPhoneFriend.Location = new Point(770, 130);
+            btnPhoneFriend.Size = new Size(120, 40);
+            btnPhoneFriend.Text = "Phone Friend";
+            btnPhoneFriend.Font = new Font("Arial", 10F, FontStyle.Bold);
+            btnPhoneFriend.BackColor = Color.Orange;
+            btnPhoneFriend.Click += btnPhoneFriend_Click;
+
+            btnAskAudience = new Button();
+            btnAskAudience.Location = new Point(770, 180);
+            btnAskAudience.Size = new Size(120, 40);
+            btnAskAudience.Text = "Ask Audience";
+            btnAskAudience.Font = new Font("Arial", 10F, FontStyle.Bold);
+            btnAskAudience.BackColor = Color.Orange;
+            btnAskAudience.Click += btnAskAudience_Click;
+
+            btnSwitch = new Button();
+            btnSwitch.Location = new Point(770, 230);
+            btnSwitch.Size = new Size(120, 40);
+            btnSwitch.Text = "Switch Q";
+            btnSwitch.Font = new Font("Arial", 10F, FontStyle.Bold);
+            btnSwitch.BackColor = Color.Orange;
+            btnSwitch.Click += btnSwitch_Click;
+            
             // Menu strip
             databaseMenuItem.Text = "Database";
             databaseMenuItem.Click += DatabaseToolStripMenuItem_Click;
@@ -356,6 +389,10 @@ namespace MillionaireGame.Forms
             Controls.Add(txtID);
             Controls.Add(chkShowQuestion);
             Controls.Add(chkCorrectAnswer);
+            Controls.Add(btn5050);
+            Controls.Add(btnPhoneFriend);
+            Controls.Add(btnAskAudience);
+            Controls.Add(btnSwitch);
             
             MainMenuStrip = menuStrip;
             Name = "ControlPanelForm";
@@ -396,5 +433,9 @@ namespace MillionaireGame.Forms
         private NumericUpDown nmrLevel;
         private CheckBox chkShowQuestion;
         private CheckBox chkCorrectAnswer;
+        private Button btn5050;
+        private Button btnPhoneFriend;
+        private Button btnAskAudience;
+        private Button btnSwitch;
     }
 }
