@@ -1,0 +1,115 @@
+using System.Xml.Serialization;
+
+namespace MillionaireGame.Core.Settings;
+
+/// <summary>
+/// SQL Server connection settings
+/// </summary>
+[XmlRoot("SQLInfo")]
+public class SqlConnectionSettings
+{
+    public bool UseRemoteServer { get; set; }
+    public bool UseLocalDB { get; set; }
+    public string LocalInstance { get; set; } = "SQLEXPRESS";
+    public string RemoteServer { get; set; } = string.Empty;
+    public int RemotePort { get; set; } = 1433;
+    public string RemoteDatabase { get; set; } = string.Empty;
+    public string RemoteLogin { get; set; } = string.Empty;
+    public string RemotePassword { get; set; } = string.Empty;
+    public bool HideAtStart { get; set; }
+
+    /// <summary>
+    /// Gets the connection string based on current settings
+    /// </summary>
+    public string GetConnectionString()
+    {
+        if (UseRemoteServer)
+        {
+            return $"Server={RemoteServer},{RemotePort};User Id={RemoteLogin};Password={RemotePassword};";
+        }
+        else if (UseLocalDB)
+        {
+            return "Server=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;";
+        }
+        else
+        {
+            return "Server=localhost\\SQLEXPRESS;Trusted_Connection=true;";
+        }
+    }
+}
+
+/// <summary>
+/// Manager for SQL settings persistence
+/// </summary>
+public class SqlSettingsManager
+{
+    private const string FileName = "sql.xml";
+    private readonly string _filePath;
+
+    public SqlConnectionSettings Settings { get; private set; }
+
+    public SqlSettingsManager(string? basePath = null)
+    {
+        _filePath = Path.Combine(basePath ?? AppDomain.CurrentDomain.BaseDirectory, FileName);
+        Settings = new SqlConnectionSettings();
+    }
+
+    public void LoadSettings()
+    {
+        if (!File.Exists(_filePath))
+        {
+            SaveDefaultSettings();
+            return;
+        }
+
+        try
+        {
+            var serializer = new XmlSerializer(typeof(SqlConnectionSettings));
+            using var reader = new StreamReader(_filePath);
+            var loadedSettings = (SqlConnectionSettings?)serializer.Deserialize(reader);
+            if (loadedSettings != null)
+            {
+                Settings = loadedSettings;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error and use default settings
+            Console.WriteLine($"Error loading SQL settings: {ex.Message}");
+            SaveDefaultSettings();
+        }
+    }
+
+    public void SaveSettings()
+    {
+        try
+        {
+            var serializer = new XmlSerializer(typeof(SqlConnectionSettings));
+            using var writer = new StreamWriter(_filePath);
+            serializer.Serialize(writer, Settings);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving SQL settings: {ex.Message}");
+            throw;
+        }
+    }
+
+    private void SaveDefaultSettings()
+    {
+        Settings = new SqlConnectionSettings
+        {
+            UseRemoteServer = false,
+            UseLocalDB = false,
+            LocalInstance = "SQLEXPRESS",
+            RemoteServer = string.Empty,
+            RemotePort = 1433,
+            RemoteDatabase = string.Empty,
+            RemoteLogin = string.Empty,
+            RemotePassword = string.Empty,
+            HideAtStart = false
+        };
+
+        SaveSettings();
+    }
+}
