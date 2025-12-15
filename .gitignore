@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+#VSCode settings folder
+.vscode/
+.history/
+*.code-workspace
