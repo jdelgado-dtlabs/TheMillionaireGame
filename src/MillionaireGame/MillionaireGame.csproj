@@ -6,8 +6,6 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <AssemblyName>MillionaireGame</AssemblyName>
     <RootNamespace>MillionaireGame</RootNamespace>
     <Version>2.0.0</Version>

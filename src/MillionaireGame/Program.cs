@@ -1,6 +1,7 @@
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Forms;
 
 namespace MillionaireGame;
 
@@ -32,7 +33,25 @@ internal static class Program
             // Check if database exists, create if not
             if (!dbContext.DatabaseExistsAsync().Result)
             {
-                dbContext.CreateDatabaseAsync().Wait();
+                var result = MessageBox.Show(
+                    "Database not found. Would you like to create it?",
+                    "Database Setup",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    dbContext.CreateDatabaseAsync().Wait();
+                    MessageBox.Show(
+                        "Database created successfully!",
+                        "Success",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                else
+                {
+                    return;
+                }
             }
         }
         catch (Exception ex)
@@ -45,19 +64,12 @@ internal static class Program
             return;
         }
 
-        // Initialize game service
+        // Initialize services
         var gameService = new GameService();
+        var questionRepository = new QuestionRepository(dbContext.GetFullConnectionString());
 
-        // TODO: Show main form when it's created
-        // Application.Run(new MainForm(gameService, appSettings, sqlSettings));
-        
-        MessageBox.Show(
-            "The Millionaire Game - C# Migration\n\n" +
-            "This is the modern C# version of The Millionaire Game.\n" +
-            "The migration is currently in progress.\n\n" +
-            "Database initialized successfully!",
-            "The Millionaire Game",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        // Create and run main control panel
+        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository);
+        Application.Run(controlPanel);
     }
 }
