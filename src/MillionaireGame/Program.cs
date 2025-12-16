@@ -72,7 +72,7 @@ internal static class Program
         var soundService = new SoundService();
 
         // Create and run main control panel
-        var controlPanel = new ControlPanelForm(gameService, appSettings, questionRepository, screenService, soundService);
+        var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
         Application.Run(controlPanel);
     }
 }

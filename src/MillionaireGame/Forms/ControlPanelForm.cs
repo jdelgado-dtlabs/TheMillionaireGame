@@ -12,6 +12,7 @@ public partial class ControlPanelForm : Form
 {
     private readonly GameService _gameService;
     private readonly ApplicationSettingsManager _appSettings;
+    private readonly SqlSettingsManager _sqlSettings;
     private readonly QuestionRepository _questionRepository;
     private readonly HotkeyHandler _hotkeyHandler;
     private readonly ScreenUpdateService _screenService;
@@ -26,12 +27,14 @@ public partial class ControlPanelForm : Form
     public ControlPanelForm(
         GameService gameService,
         ApplicationSettingsManager appSettings,
+        SqlSettingsManager sqlSettings,
         QuestionRepository questionRepository,
         ScreenUpdateService screenService,
         SoundService soundService)
     {
         _gameService = gameService;
         _appSettings = appSettings;
+        _sqlSettings = sqlSettings;
         _questionRepository = questionRepository;
         _screenService = screenService;
         _soundService = soundService;
@@ -530,7 +533,16 @@ public partial class ControlPanelForm : Form
 
     private void DatabaseToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // TODO: Open database settings
+        using var dbDialog = new Options.DatabaseSettingsDialog(_sqlSettings.Settings);
+        if (dbDialog.ShowDialog() == DialogResult.OK)
+        {
+            // Database settings changed - might need to reconnect
+            MessageBox.Show(
+                "Database settings saved. Please restart the application to apply changes.",
+                "Database Settings",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
     }
 
     private void QuestionsEditorToolStripMenuItem_Click(object? sender, EventArgs e)
