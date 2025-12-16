@@ -86,6 +86,7 @@ namespace MillionaireGame.Forms
             var databaseMenuItem = new ToolStripMenuItem("Database");
             var gameMenuItem = new ToolStripMenuItem("Game");
             var viewMenuItem = new ToolStripMenuItem("View");
+            var helpMenuItem = new ToolStripMenuItem("Help");
             
             // Initialize components
             SuspendLayout();
@@ -352,9 +353,14 @@ namespace MillionaireGame.Forms
             databaseMenuItem.DropDownItems.Add(new ToolStripSeparator());
             databaseMenuItem.DropDownItems.Add(closeItem);
             
+            var aboutItem = new ToolStripMenuItem("About");
+            aboutItem.Click += AboutToolStripMenuItem_Click;
+            helpMenuItem.DropDownItems.Add(aboutItem);
+            
             menuStrip.Items.Add(databaseMenuItem);
             menuStrip.Items.Add(gameMenuItem);
             menuStrip.Items.Add(viewMenuItem);
+            menuStrip.Items.Add(helpMenuItem);
             
             // ControlPanelForm
             AutoScaleDimensions = new SizeF(8F, 20F);

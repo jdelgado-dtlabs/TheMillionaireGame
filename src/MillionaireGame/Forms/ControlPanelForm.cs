@@ -639,6 +639,12 @@ public partial class ControlPanelForm : Form
         Close();
     }
 
+    private void AboutToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        using var aboutDialog = new About.AboutDialog();
+        aboutDialog.ShowDialog(this);
+    }
+
     #endregion
 
     private void nmrLevel_ValueChanged(object? sender, EventArgs e)
