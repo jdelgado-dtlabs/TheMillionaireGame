@@ -331,6 +331,10 @@ namespace MillionaireGame.Forms
             questionsEditorItem.Click += QuestionsEditorToolStripMenuItem_Click;
             gameMenuItem.DropDownItems.Add(questionsEditorItem);
             
+            var optionsItem = new ToolStripMenuItem("Options");
+            optionsItem.Click += OptionsToolStripMenuItem_Click;
+            gameMenuItem.DropDownItems.Add(optionsItem);
+            
             var hostScreenItem = new ToolStripMenuItem("Host Screen");
             hostScreenItem.Click += HostScreenToolStripMenuItem_Click;
             viewMenuItem.DropDownItems.Add(hostScreenItem);

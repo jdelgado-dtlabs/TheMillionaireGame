@@ -538,6 +538,16 @@ public partial class ControlPanelForm : Form
         // TODO: Open questions editor
     }
 
+    private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings);
+        if (optionsDialog.ShowDialog() == DialogResult.OK)
+        {
+            // Reload sounds after settings change
+            _soundService.LoadSoundsFromSettings(_appSettings.Settings);
+        }
+    }
+
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)
     {
         if (_hostScreen == null || _hostScreen.IsDisposed)
