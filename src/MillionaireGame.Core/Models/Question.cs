@@ -24,6 +24,33 @@ public class Question
     public int? ATAPercentageB { get; set; }
     public int? ATAPercentageC { get; set; }
     public int? ATAPercentageD { get; set; }
+
+    // Compatibility properties for numbered answer format (Answer1-4)
+    // TODO: Migrate database to use Answer1-4 column names to support random answer ordering
+    // This will prevent players from memorizing answer positions
+    public string Answer1
+    {
+        get => AnswerA;
+        set => AnswerA = value;
+    }
+
+    public string Answer2
+    {
+        get => AnswerB;
+        set => AnswerB = value;
+    }
+
+    public string Answer3
+    {
+        get => AnswerC;
+        set => AnswerC = value;
+    }
+
+    public string Answer4
+    {
+        get => AnswerD;
+        set => AnswerD = value;
+    }
 }
 
 /// <summary>

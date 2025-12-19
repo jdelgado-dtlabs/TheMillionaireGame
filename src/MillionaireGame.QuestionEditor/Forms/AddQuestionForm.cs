@@ -1,0 +1,136 @@
+using MillionaireGame.Core.Database;
+using MillionaireGame.Core.Models;
+
+namespace MillionaireGame.QuestionEditor.Forms;
+
+/// <summary>
+/// Form for adding new regular questions
+/// </summary>
+public partial class AddQuestionForm : Form
+{
+    private readonly string _connectionString;
+    private readonly QuestionRepository _repository;
+
+    public AddQuestionForm(string connectionString)
+    {
+        InitializeComponent();
+        _connectionString = connectionString;
+        _repository = new QuestionRepository(_connectionString);
+    }
+
+    private void AddQuestionForm_Load(object sender, EventArgs e)
+    {
+        // Populate level dropdown
+        for (int i = 1; i <= 15; i++)
+        {
+            cmbLevel.Items.Add(i);
+        }
+        cmbLevel.SelectedIndex = 0;
+
+        // Populate difficulty dropdown
+        cmbDifficultyType.Items.AddRange(new object[] { "Easy", "Medium", "Hard" });
+        cmbDifficultyType.SelectedIndex = 0;
+    }
+
+    private async void btnSave_Click(object sender, EventArgs e)
+    {
+        if (!ValidateInput())
+            return;
+
+        try
+        {
+            var question = new Question
+            {
+                QuestionText = txtQuestion.Text.Trim(),
+                AnswerA = txtWrong1.Text.Trim(),
+                AnswerB = txtWrong2.Text.Trim(),
+                AnswerC = txtCorrectAnswer.Text.Trim(),  // Correct answer as C
+                AnswerD = txtWrong3.Text.Trim(),
+                CorrectAnswer = "C",  // Always C for simplicity
+                Level = (int)cmbLevel.SelectedItem,
+                DifficultyType = DifficultyType.Specific,
+                Used = false
+            };
+
+            await _repository.AddQuestionAsync(question);
+            
+            MessageBox.Show("Question added successfully!", "Success",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error adding question: {ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private bool ValidateInput()
+    {
+        if (string.IsNullOrWhiteSpace(txtQuestion.Text))
+        {
+            MessageBox.Show("Please enter a question.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtQuestion.Focus();
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtCorrectAnswer.Text))
+        {
+            MessageBox.Show("Please enter the correct answer.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtCorrectAnswer.Focus();
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtWrong1.Text))
+        {
+            MessageBox.Show("Please enter wrong answer 1.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtWrong1.Focus();
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtWrong2.Text))
+        {
+            MessageBox.Show("Please enter wrong answer 2.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtWrong2.Focus();
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(txtWrong3.Text))
+        {
+            MessageBox.Show("Please enter wrong answer 3.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtWrong3.Focus();
+            return false;
+        }
+
+        if (cmbLevel.SelectedItem == null)
+        {
+            MessageBox.Show("Please select a level.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            cmbLevel.Focus();
+            return false;
+        }
+
+        if (cmbDifficultyType.SelectedItem == null)
+        {
+            MessageBox.Show("Please select a difficulty type.", "Validation Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            cmbDifficultyType.Focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void btnCancel_Click(object sender, EventArgs e)
+    {
+        DialogResult = DialogResult.Cancel;
+        Close();
+    }
+}

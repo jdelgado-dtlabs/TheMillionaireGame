@@ -1,3 +1,5 @@
+using MillionaireGame.QuestionEditor.Forms;
+
 namespace MillionaireGame.QuestionEditor;
 
 internal static class Program
@@ -13,13 +15,7 @@ internal static class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        // TODO: Create and show Question Editor form when implemented
-        MessageBox.Show(
-            "Question Editor\n\n" +
-            "This component is currently being migrated from VB.NET to C#.\n" +
-            "Please use the main game application for now.",
-            "Question Editor - Coming Soon",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        // Launch Question Editor
+        Application.Run(new QuestionEditorMainForm());
     }
 }

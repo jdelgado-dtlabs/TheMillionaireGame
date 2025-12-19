@@ -1,0 +1,28 @@
+- Always reuse the active terminal for commands.
+- Do not create new terminal instances unless the current one is busy.
+- Combine sequential commands (e.g., `cd path; dotnet build`) into one line.
+- When switching between projects, change directories using `cd path` before executing project-specific commands.
+- For .NET projects, use `dotnet build`, `dotnet run`, and `dotnet test` as needed.
+- Prioritize efficiency and context-awareness in terminal usage.
+- Ensure commands are relevant to the current project and task.
+- Maintain a clean and organized terminal environment.
+- Avoid unnecessary context switching between different project directories.
+- Focus on completing tasks in the current project before moving to another.
+- Use clear and concise commands to minimize terminal clutter.
+- Leverage terminal features like tabs or panes only when absolutely necessary for multitasking.
+- Keep track of the current working directory to avoid confusion.
+- Adapt terminal usage based on the complexity of the tasks at hand.
+- use terminal history to quickly access frequently used commands within the current project.
+- When working on multiple related projects, ensure that terminal commands reflect the correct project context.
+- Regularly clean up terminal sessions to remove outdated or irrelevant command history.
+- Utilize terminal shortcuts to enhance productivity without losing focus on the current project.
+- Document any complex terminal commands or sequences for future reference within the project context.
+- Always verify the current directory before executing commands to prevent errors.
+- When pausing work on a project, leave a note of the last executed commands for easy resumption.
+- For collaborative projects, ensure terminal commands are standardized for team consistency.
+- When automating tasks, script terminal commands to maintain consistency and reduce manual errors.
+- Continuously evaluate terminal usage patterns to identify areas for improvement in efficiency and context management.
+- Stay updated with terminal best practices and integrate them into daily workflows.
+- Balance terminal efficiency with clarity to ensure that commands remain understandable for future reference.
+---
+

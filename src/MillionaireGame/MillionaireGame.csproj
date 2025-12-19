@@ -16,10 +16,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MillionaireGame.Core\MillionaireGame.Core.csproj" />
+    <ProjectReference Include="..\MillionaireGame.QuestionEditor\MillionaireGame.QuestionEditor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy sound files to output directory -->
+    <None Include="lib\sounds\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -2,20 +2,12 @@ namespace MillionaireGame.Forms
 {
     partial class ControlPanelForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                // Unsubscribe from events
                 _gameService.LevelChanged -= OnLevelChanged;
                 _gameService.ModeChanged -= OnModeChanged;
                 _gameService.LifelineUsed -= OnLifelineUsed;
@@ -30,13 +22,9 @@ namespace MillionaireGame.Forms
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            // Main question controls
+            // Question display
             txtQuestion = new TextBox();
             txtA = new TextBox();
             txtB = new TextBox();
@@ -44,14 +32,30 @@ namespace MillionaireGame.Forms
             txtD = new TextBox();
             txtExplain = new TextBox();
             
-            // Labels
+            // Answer selection buttons
+            btnA = new Button();
+            btnB = new Button();
+            btnC = new Button();
+            btnD = new Button();
+            
+            // Broadcast flow buttons
+            btnHostIntro = new Button();
+            btnPickPlayer = new Button();
+            btnExplainGame = new Button();
+            btnLightsDown = new Button();
+            btnNewQuestion = new Button();
+            btnReveal = new Button();
+            btnWalk = new Button();
+            btnThanksForPlaying = new Button();
+            btnResetGame = new Button();
+            btnClosing = new Button();
+            btnStopAudio = new Button();
+            
+            // Money tree controls
+            nmrLevel = new NumericUpDown();
+            lblLevelLabel = new Label();
             lblAnswer = new Label();
-            Label lblCorrectLabel = new Label();
-            Label lblCurrentLabel = new Label();
-            Label lblWrongLabel = new Label();
-            Label lblDropLabel = new Label();
-            Label lblQLeftLabel = new Label();
-            Label lblLevelLabel = new Label();
+            lblCorrectAnswerLabel = new Label();
             
             // Money display
             txtCorrect = new TextBox();
@@ -60,362 +64,705 @@ namespace MillionaireGame.Forms
             txtDrop = new TextBox();
             txtQLeft = new TextBox();
             txtID = new TextBox();
-            
-            // Buttons
-            btnNewQuestion = new Button();
-            btnA = new Button();
-            btnB = new Button();
-            btnC = new Button();
-            btnD = new Button();
-            btnLightsDown = new Button();
-            btnReveal = new Button();
-            btnWalk = new Button();
-            btnActivateRiskMode = new Button();
-            btnResetGame = new Button();
-            btnToHotSeat = new Button();
-            
-            // Numeric control
-            nmrLevel = new NumericUpDown();
-            
-            // Checkboxes
-            chkShowQuestion = new CheckBox();
-            chkCorrectAnswer = new CheckBox();
-            
-            // Menu
-            var menuStrip = new MenuStrip();
-            var databaseMenuItem = new ToolStripMenuItem("Database");
-            var gameMenuItem = new ToolStripMenuItem("Game");
-            var viewMenuItem = new ToolStripMenuItem("View");
-            var helpMenuItem = new ToolStripMenuItem("Help");
-            
-            // Initialize components
-            SuspendLayout();
-            
-            // txtQuestion
-            txtQuestion.Location = new Point(12, 40);
-            txtQuestion.Multiline = true;
-            txtQuestion.Name = "txtQuestion";
-            txtQuestion.Size = new Size(500, 60);
-            txtQuestion.ReadOnly = true;
-            txtQuestion.ScrollBars = ScrollBars.Vertical;
-            
-            // Answer boxes
-            txtA.Location = new Point(12, 110);
-            txtA.Name = "txtA";
-            txtA.Size = new Size(240, 25);
-            txtA.ReadOnly = true;
-            txtA.BackColor = Color.Silver;
-            
-            txtB.Location = new Point(272, 110);
-            txtB.Name = "txtB";
-            txtB.Size = new Size(240, 25);
-            txtB.ReadOnly = true;
-            txtB.BackColor = Color.Silver;
-            
-            txtC.Location = new Point(12, 145);
-            txtC.Name = "txtC";
-            txtC.Size = new Size(240, 25);
-            txtC.ReadOnly = true;
-            txtC.BackColor = Color.Silver;
-            
-            txtD.Location = new Point(272, 145);
-            txtD.Name = "txtD";
-            txtD.Size = new Size(240, 25);
-            txtD.ReadOnly = true;
-            txtD.BackColor = Color.Silver;
-            
-            // Answer buttons
-            btnA.Location = new Point(12, 180);
-            btnA.Name = "btnA";
-            btnA.Size = new Size(115, 35);
-            btnA.Text = "A";
-            btnA.UseVisualStyleBackColor = true;
-            btnA.Click += btnA_Click;
-            
-            btnB.Location = new Point(137, 180);
-            btnB.Name = "btnB";
-            btnB.Size = new Size(115, 35);
-            btnB.Text = "B";
-            btnB.UseVisualStyleBackColor = true;
-            btnB.Click += btnB_Click;
-            
-            btnC.Location = new Point(272, 180);
-            btnC.Name = "btnC";
-            btnC.Size = new Size(115, 35);
-            btnC.Text = "C";
-            btnC.UseVisualStyleBackColor = true;
-            btnC.Click += btnC_Click;
-            
-            btnD.Location = new Point(397, 180);
-            btnD.Name = "btnD";
-            btnD.Size = new Size(115, 35);
-            btnD.Text = "D";
-            btnD.UseVisualStyleBackColor = true;
-            btnD.Click += btnD_Click;
-            
-            // Control buttons
-            btnNewQuestion.Location = new Point(12, 230);
-            btnNewQuestion.Name = "btnNewQuestion";
-            btnNewQuestion.Size = new Size(120, 40);
-            btnNewQuestion.Text = "New Question (F5)";
-            btnNewQuestion.UseVisualStyleBackColor = true;
-            btnNewQuestion.Click += btnNewQuestion_Click;
-            
-            btnLightsDown.Location = new Point(142, 230);
-            btnLightsDown.Name = "btnLightsDown";
-            btnLightsDown.Size = new Size(120, 40);
-            btnLightsDown.Text = "Lights Down (F7)";
-            btnLightsDown.UseVisualStyleBackColor = true;
-            btnLightsDown.Click += btnLightsDown_Click;
-            
-            btnReveal.Location = new Point(272, 230);
-            btnReveal.Name = "btnReveal";
-            btnReveal.Size = new Size(120, 40);
-            btnReveal.Text = "Reveal (F6)";
-            btnReveal.UseVisualStyleBackColor = true;
-            btnReveal.Click += btnReveal_Click;
-            
-            btnWalk.Location = new Point(402, 230);
-            btnWalk.Name = "btnWalk";
-            btnWalk.Size = new Size(110, 40);
-            btnWalk.Text = "Walk Away";
-            btnWalk.UseVisualStyleBackColor = true;
-            btnWalk.Click += btnWalk_Click;
-            
-            // Level control
-            lblLevelLabel.Location = new Point(540, 40);
-            lblLevelLabel.Name = "lblLevelLabel";
-            lblLevelLabel.Size = new Size(100, 23);
-            lblLevelLabel.Text = "Current Level:";
-            lblLevelLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            nmrLevel.Location = new Point(650, 40);
-            nmrLevel.Name = "nmrLevel";
-            nmrLevel.Size = new Size(80, 25);
-            nmrLevel.Maximum = 15;
-            nmrLevel.Minimum = 0;
-            nmrLevel.Value = 0;
-            nmrLevel.ValueChanged += nmrLevel_ValueChanged;
-            
-            // Money display
-            lblCorrectLabel.Location = new Point(540, 80);
-            lblCorrectLabel.Size = new Size(100, 23);
-            lblCorrectLabel.Text = "If Correct:";
-            lblCorrectLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            txtCorrect.Location = new Point(650, 80);
-            txtCorrect.Size = new Size(100, 25);
-            txtCorrect.ReadOnly = true;
-            
-            lblCurrentLabel.Location = new Point(540, 110);
-            lblCurrentLabel.Size = new Size(100, 23);
-            lblCurrentLabel.Text = "Current:";
-            lblCurrentLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            txtCurrent.Location = new Point(650, 110);
-            txtCurrent.Size = new Size(100, 25);
-            txtCurrent.ReadOnly = true;
-            
-            lblWrongLabel.Location = new Point(540, 140);
-            lblWrongLabel.Size = new Size(100, 23);
-            lblWrongLabel.Text = "If Wrong:";
-            lblWrongLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            txtWrong.Location = new Point(650, 140);
-            txtWrong.Size = new Size(100, 25);
-            txtWrong.ReadOnly = true;
-            
-            lblDropLabel.Location = new Point(540, 170);
-            lblDropLabel.Size = new Size(100, 23);
-            lblDropLabel.Text = "If Drop:";
-            lblDropLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            txtDrop.Location = new Point(650, 170);
-            txtDrop.Size = new Size(100, 25);
-            txtDrop.ReadOnly = true;
-            
-            lblQLeftLabel.Location = new Point(540, 200);
-            lblQLeftLabel.Size = new Size(100, 23);
-            lblQLeftLabel.Text = "Questions Left:";
-            lblQLeftLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            txtQLeft.Location = new Point(650, 200);
-            txtQLeft.Size = new Size(100, 25);
-            txtQLeft.ReadOnly = true;
-            
-            // Correct answer display
             lblCorrectLabel = new Label();
-            lblCorrectLabel.Location = new Point(540, 230);
-            lblCorrectLabel.Size = new Size(100, 23);
-            lblCorrectLabel.Text = "Correct Answer:";
-            lblCorrectLabel.TextAlign = ContentAlignment.MiddleRight;
-            
-            lblAnswer.Location = new Point(650, 230);
-            lblAnswer.Size = new Size(50, 30);
-            lblAnswer.Text = "";
-            lblAnswer.Font = new Font(lblAnswer.Font.FontFamily, 16, FontStyle.Bold);
-            lblAnswer.ForeColor = Color.Green;
-            
-            // Explanation box
-            txtExplain.Location = new Point(12, 280);
-            txtExplain.Multiline = true;
-            txtExplain.Name = "txtExplain";
-            txtExplain.Size = new Size(500, 60);
-            txtExplain.ScrollBars = ScrollBars.Vertical;
-            txtExplain.ReadOnly = true;
-            
-            // Game controls
-            btnActivateRiskMode.Location = new Point(540, 280);
-            btnActivateRiskMode.Size = new Size(150, 35);
-            btnActivateRiskMode.Text = "RISK MODE OFF";
-            btnActivateRiskMode.BackColor = Color.Orange;
-            btnActivateRiskMode.Click += btnActivateRiskMode_Click;
-            
-            btnResetGame.Location = new Point(540, 320);
-            btnResetGame.Size = new Size(150, 35);
-            btnResetGame.Text = "Reset Game";
-            btnResetGame.Click += btnResetGame_Click;
-            
-            txtID.Location = new Point(700, 320);
-            txtID.Size = new Size(50, 25);
-            txtID.ReadOnly = true;
-            txtID.Visible = false;
-            
-            // Checkboxes
-            chkShowQuestion.Location = new Point(12, 350);
-            chkShowQuestion.Size = new Size(200, 24);
-            chkShowQuestion.Text = "Show Question on Screens";
-            chkShowQuestion.Checked = true;
-            
-            chkCorrectAnswer.Location = new Point(220, 350);
-            chkCorrectAnswer.Size = new Size(200, 24);
-            chkCorrectAnswer.Text = "Show Correct Answer";
+            lblCurrentLabel = new Label();
+            lblWrongLabel = new Label();
+            lblDropLabel = new Label();
+            lblQLeftLabel = new Label();
             
             // Lifeline buttons
             btn5050 = new Button();
-            btn5050.Location = new Point(770, 80);
-            btn5050.Size = new Size(120, 40);
-            btn5050.Text = "50:50";
-            btn5050.Font = new Font("Arial", 12F, FontStyle.Bold);
-            btn5050.BackColor = Color.Orange;
-            btn5050.Click += btn5050_Click;
-
             btnPhoneFriend = new Button();
-            btnPhoneFriend.Location = new Point(770, 130);
-            btnPhoneFriend.Size = new Size(120, 40);
-            btnPhoneFriend.Text = "Phone Friend";
-            btnPhoneFriend.Font = new Font("Arial", 10F, FontStyle.Bold);
-            btnPhoneFriend.BackColor = Color.Orange;
-            btnPhoneFriend.Click += btnPhoneFriend_Click;
-
             btnAskAudience = new Button();
-            btnAskAudience.Location = new Point(770, 180);
-            btnAskAudience.Size = new Size(120, 40);
-            btnAskAudience.Text = "Ask Audience";
-            btnAskAudience.Font = new Font("Arial", 10F, FontStyle.Bold);
-            btnAskAudience.BackColor = Color.Orange;
-            btnAskAudience.Click += btnAskAudience_Click;
-
             btnSwitch = new Button();
-            btnSwitch.Location = new Point(770, 230);
+            
+            // Other controls
+            chkShowQuestion = new CheckBox();
+            chkCorrectAnswer = new CheckBox();
+            btnActivateRiskMode = new Button();
+            
+            // Menu
+            menuStrip = new MenuStrip();
+            databaseToolStripMenuItem = new ToolStripMenuItem();
+            gameToolStripMenuItem = new ToolStripMenuItem();
+            viewToolStripMenuItem = new ToolStripMenuItem();
+            helpToolStripMenuItem = new ToolStripMenuItem();
+            
+            ((System.ComponentModel.ISupportInitialize)nmrLevel).BeginInit();
+            menuStrip.SuspendLayout();
+            SuspendLayout();
+            
+            // 
+            // menuStrip
+            // 
+            menuStrip.ImageScalingSize = new Size(20, 20);
+            menuStrip.Items.AddRange(new ToolStripItem[] {
+                databaseToolStripMenuItem,
+                gameToolStripMenuItem,
+                viewToolStripMenuItem,
+                helpToolStripMenuItem});
+            menuStrip.Location = new Point(0, 0);
+            menuStrip.Name = "menuStrip";
+            menuStrip.Size = new Size(1000, 28);
+            menuStrip.TabIndex = 0;
+            
+            // 
+            // databaseToolStripMenuItem
+            // 
+            databaseToolStripMenuItem.Name = "databaseToolStripMenuItem";
+            databaseToolStripMenuItem.Size = new Size(84, 24);
+            databaseToolStripMenuItem.Text = "Database";
+            databaseToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Database Settings", null, DatabaseToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Close", null, CloseToolStripMenuItem_Click)
+            });
+            
+            // 
+            // gameToolStripMenuItem
+            // 
+            gameToolStripMenuItem.Name = "gameToolStripMenuItem";
+            gameToolStripMenuItem.Size = new Size(62, 24);
+            gameToolStripMenuItem.Text = "Game";
+            gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Questions Editor", null, QuestionsEditorToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Options", null, OptionsToolStripMenuItem_Click)
+            });
+            
+            // 
+            // viewToolStripMenuItem
+            // 
+            viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            viewToolStripMenuItem.Size = new Size(55, 24);
+            viewToolStripMenuItem.Text = "View";
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Host Screen", null, HostScreenToolStripMenuItem_Click),
+                new ToolStripMenuItem("Guest Screen", null, GuestScreenToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("TV Screen", null, TVScreenToolStripMenuItem_Click)
+            });
+            
+            // 
+            // helpToolStripMenuItem
+            // 
+            helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+            helpToolStripMenuItem.Size = new Size(55, 24);
+            helpToolStripMenuItem.Text = "Help";
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("About", null, AboutToolStripMenuItem_Click)
+            });
+            
+            // 
+            // txtQuestion
+            // 
+            txtQuestion.BackColor = SystemColors.Info;
+            txtQuestion.Location = new Point(12, 40);
+            txtQuestion.Multiline = true;
+            txtQuestion.Name = "txtQuestion";
+            txtQuestion.ReadOnly = true;
+            txtQuestion.ScrollBars = ScrollBars.Vertical;
+            txtQuestion.Size = new Size(550, 80);
+            txtQuestion.TabStop = false;
+            txtQuestion.TabIndex = 0;
+            
+            // 
+            // txtA
+            // 
+            txtA.BackColor = Color.Silver;
+            txtA.Location = new Point(77, 131);
+            txtA.Name = "txtA";
+            txtA.ReadOnly = true;
+            txtA.Size = new Size(200, 27);
+            txtA.TabStop = false;
+            txtA.TabIndex = 1;
+            
+            // 
+            // txtB
+            // 
+            txtB.BackColor = Color.Silver;
+            txtB.Location = new Point(297, 131);
+            txtB.Name = "txtB";
+            txtB.ReadOnly = true;
+            txtB.Size = new Size(200, 27);
+            txtB.TabStop = false;
+            txtB.TabIndex = 2;
+            
+            // 
+            // txtC
+            // 
+            txtC.BackColor = Color.Silver;
+            txtC.Location = new Point(77, 191);
+            txtC.Name = "txtC";
+            txtC.ReadOnly = true;
+            txtC.Size = new Size(200, 27);
+            txtC.TabStop = false;
+            txtC.TabIndex = 3;
+            
+            // 
+            // txtD
+            // 
+            txtD.BackColor = Color.Silver;
+            txtD.Location = new Point(297, 191);
+            txtD.Name = "txtD";
+            txtD.ReadOnly = true;
+            txtD.Size = new Size(200, 27);
+            txtD.TabStop = false;
+            txtD.TabIndex = 4;
+            
+            // 
+            // txtExplain
+            // 
+            txtExplain.BackColor = SystemColors.Info;
+            txtExplain.Location = new Point(12, 430);
+            txtExplain.Multiline = true;
+            txtExplain.Name = "txtExplain";
+            txtExplain.ReadOnly = true;
+            txtExplain.ScrollBars = ScrollBars.Vertical;
+            txtExplain.Size = new Size(550, 70);
+            txtExplain.TabIndex = 5;
+            
+            // 
+            // btnA
+            // 
+            btnA.BackColor = Color.DarkOrange;
+            btnA.FlatStyle = FlatStyle.Flat;
+            btnA.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnA.Location = new Point(12, 120);
+            btnA.Name = "btnA";
+            btnA.Size = new Size(60, 48);
+            btnA.TabIndex = 6;
+            btnA.Text = "A";
+            btnA.UseVisualStyleBackColor = false;
+            btnA.Click += btnA_Click;
+            
+            // 
+            // btnB
+            // 
+            btnB.BackColor = Color.DarkOrange;
+            btnB.FlatStyle = FlatStyle.Flat;
+            btnB.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnB.Location = new Point(502, 120);
+            btnB.Name = "btnB";
+            btnB.Size = new Size(60, 48);
+            btnB.TabIndex = 7;
+            btnB.Text = "B";
+            btnB.UseVisualStyleBackColor = false;
+            btnB.Click += btnB_Click;
+            
+            // 
+            // btnC
+            // 
+            btnC.BackColor = Color.DarkOrange;
+            btnC.FlatStyle = FlatStyle.Flat;
+            btnC.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnC.Location = new Point(12, 180);
+            btnC.Name = "btnC";
+            btnC.Size = new Size(60, 48);
+            btnC.TabIndex = 8;
+            btnC.Text = "C";
+            btnC.UseVisualStyleBackColor = false;
+            btnC.Click += btnC_Click;
+            
+            // 
+            // btnD
+            // 
+            btnD.BackColor = Color.DarkOrange;
+            btnD.FlatStyle = FlatStyle.Flat;
+            btnD.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnD.Location = new Point(502, 180);
+            btnD.Name = "btnD";
+            btnD.Size = new Size(60, 48);
+            btnD.TabIndex = 9;
+            btnD.Text = "D";
+            btnD.UseVisualStyleBackColor = false;
+            btnD.Click += btnD_Click;
+            
+            // 
+            // btnHostIntro
+            // 
+            btnHostIntro.BackColor = Color.Blue;
+            btnHostIntro.FlatStyle = FlatStyle.Flat;
+            btnHostIntro.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnHostIntro.ForeColor = Color.White;
+            btnHostIntro.Location = new Point(580, 40);
+            btnHostIntro.Name = "btnHostIntro";
+            btnHostIntro.Size = new Size(120, 45);
+            btnHostIntro.TabIndex = 10;
+            btnHostIntro.Text = "1. Host Intro";
+            btnHostIntro.UseVisualStyleBackColor = false;
+            btnHostIntro.Click += btnHostIntro_Click;
+            
+            // 
+            // btnPickPlayer
+            // 
+            btnPickPlayer.BackColor = Color.Blue;
+            btnPickPlayer.FlatStyle = FlatStyle.Flat;
+            btnPickPlayer.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnPickPlayer.ForeColor = Color.White;
+            btnPickPlayer.Location = new Point(710, 40);
+            btnPickPlayer.Name = "btnPickPlayer";
+            btnPickPlayer.Size = new Size(120, 45);
+            btnPickPlayer.TabIndex = 11;
+            btnPickPlayer.Text = "2. Pick Player";
+            btnPickPlayer.UseVisualStyleBackColor = false;
+            btnPickPlayer.Click += btnPickPlayer_Click;
+            
+            // 
+            // btnExplainGame
+            // 
+            btnExplainGame.BackColor = Color.Blue;
+            btnExplainGame.FlatStyle = FlatStyle.Flat;
+            btnExplainGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnExplainGame.ForeColor = Color.White;
+            btnExplainGame.Location = new Point(840, 40);
+            btnExplainGame.Name = "btnExplainGame";
+            btnExplainGame.Size = new Size(120, 45);
+            btnExplainGame.TabIndex = 12;
+            btnExplainGame.Text = "3. Explain Game";
+            btnExplainGame.UseVisualStyleBackColor = false;
+            btnExplainGame.Click += btnExplainGame_Click;
+            
+            // 
+            // btnLightsDown
+            // 
+            btnLightsDown.BackColor = Color.MediumTurquoise;
+            btnLightsDown.FlatStyle = FlatStyle.Flat;
+            btnLightsDown.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnLightsDown.Location = new Point(580, 90);
+            btnLightsDown.Name = "btnLightsDown";
+            btnLightsDown.Size = new Size(120, 45);
+            btnLightsDown.TabIndex = 13;
+            btnLightsDown.Text = "4. Lights Down (F7)";
+            btnLightsDown.UseVisualStyleBackColor = false;
+            btnLightsDown.Click += btnLightsDown_Click;
+            
+            // 
+            // btnNewQuestion
+            // 
+            btnNewQuestion.BackColor = Color.Teal;
+            btnNewQuestion.FlatStyle = FlatStyle.Flat;
+            btnNewQuestion.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnNewQuestion.ForeColor = Color.White;
+            btnNewQuestion.Location = new Point(710, 90);
+            btnNewQuestion.Name = "btnNewQuestion";
+            btnNewQuestion.Size = new Size(120, 45);
+            btnNewQuestion.TabIndex = 14;
+            btnNewQuestion.Text = "5. Question (F5)";
+            btnNewQuestion.UseVisualStyleBackColor = false;
+            btnNewQuestion.Click += btnNewQuestion_Click;
+            
+            // 
+            // btnReveal
+            // 
+            btnReveal.BackColor = Color.Turquoise;
+            btnReveal.FlatStyle = FlatStyle.Flat;
+            btnReveal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnReveal.Location = new Point(840, 90);
+            btnReveal.Name = "btnReveal";
+            btnReveal.Size = new Size(120, 45);
+            btnReveal.TabIndex = 15;
+            btnReveal.Text = "7. Reveal (F6)";
+            btnReveal.UseVisualStyleBackColor = false;
+            btnReveal.Click += btnReveal_Click;
+            
+            // 
+            // btnWalk
+            // 
+            btnWalk.BackColor = Color.FromArgb(255, 128, 0);
+            btnWalk.FlatStyle = FlatStyle.Flat;
+            btnWalk.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnWalk.Location = new Point(580, 140);
+            btnWalk.Name = "btnWalk";
+            btnWalk.Size = new Size(120, 45);
+            btnWalk.TabIndex = 16;
+            btnWalk.Text = "Walk Away (End)";
+            btnWalk.UseVisualStyleBackColor = false;
+            btnWalk.Click += btnWalk_Click;
+            
+            // 
+            // btnThanksForPlaying
+            // 
+            btnThanksForPlaying.BackColor = Color.Blue;
+            btnThanksForPlaying.FlatStyle = FlatStyle.Flat;
+            btnThanksForPlaying.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnThanksForPlaying.ForeColor = Color.White;
+            btnThanksForPlaying.Location = new Point(710, 140);
+            btnThanksForPlaying.Name = "btnThanksForPlaying";
+            btnThanksForPlaying.Size = new Size(120, 45);
+            btnThanksForPlaying.TabIndex = 17;
+            btnThanksForPlaying.Text = "8. Thanks!";
+            btnThanksForPlaying.UseVisualStyleBackColor = false;
+            btnThanksForPlaying.Click += btnThanksForPlaying_Click;
+            
+            // 
+            // btnResetGame
+            // 
+            btnResetGame.BackColor = Color.Red;
+            btnResetGame.FlatStyle = FlatStyle.Flat;
+            btnResetGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnResetGame.ForeColor = Color.White;
+            btnResetGame.Location = new Point(840, 140);
+            btnResetGame.Name = "btnResetGame";
+            btnResetGame.Size = new Size(120, 45);
+            btnResetGame.TabIndex = 18;
+            btnResetGame.Text = "9. Reset (Del)";
+            btnResetGame.UseVisualStyleBackColor = false;
+            btnResetGame.Click += btnResetGame_Click;
+            
+            // 
+            // btnClosing
+            // 
+            btnClosing.BackColor = Color.Blue;
+            btnClosing.FlatStyle = FlatStyle.Flat;
+            btnClosing.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnClosing.ForeColor = Color.White;
+            btnClosing.Location = new Point(580, 190);
+            btnClosing.Name = "btnClosing";
+            btnClosing.Size = new Size(120, 45);
+            btnClosing.TabIndex = 19;
+            btnClosing.Text = "10. Closing";
+            btnClosing.UseVisualStyleBackColor = false;
+            btnClosing.Click += btnClosing_Click;
+            
+            // 
+            // btnStopAudio
+            // 
+            btnStopAudio.BackColor = Color.DarkRed;
+            btnStopAudio.FlatStyle = FlatStyle.Flat;
+            btnStopAudio.ForeColor = Color.White;
+            btnStopAudio.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnStopAudio.Location = new Point(710, 190);
+            btnStopAudio.Name = "btnStopAudio";
+            btnStopAudio.Size = new Size(250, 45);
+            btnStopAudio.TabIndex = 20;
+            btnStopAudio.Text = "⏹ STOP ALL AUDIO";
+            btnStopAudio.UseVisualStyleBackColor = false;
+            btnStopAudio.Click += btnStopAudio_Click;
+            
+            // 
+            // nmrLevel
+            // 
+            nmrLevel.Font = new Font("Segoe UI", 11F);
+            nmrLevel.Location = new Point(120, 245);
+            nmrLevel.Maximum = new decimal(new int[] { 14, 0, 0, 0 });
+            nmrLevel.Name = "nmrLevel";
+            nmrLevel.Size = new Size(65, 32);
+            nmrLevel.TabIndex = 21;
+            nmrLevel.ValueChanged += nmrLevel_ValueChanged;
+            
+            // 
+            // lblLevelLabel
+            // 
+            lblLevelLabel.AutoSize = true;
+            lblLevelLabel.Location = new Point(12, 250);
+            lblLevelLabel.Name = "lblLevelLabel";
+            lblLevelLabel.Size = new Size(110, 20);
+            lblLevelLabel.TabIndex = 22;
+            lblLevelLabel.Text = "Question #:";
+            
+            // 
+            // lblCorrectAnswerLabel
+            // 
+            lblCorrectAnswerLabel.AutoSize = true;
+            lblCorrectAnswerLabel.Location = new Point(195, 250);
+            lblCorrectAnswerLabel.Name = "lblCorrectAnswerLabel";
+            lblCorrectAnswerLabel.Size = new Size(122, 20);
+            lblCorrectAnswerLabel.TabIndex = 23;
+            lblCorrectAnswerLabel.Text = "Correct Answer:";
+            
+            // 
+            // lblAnswer
+            // 
+            lblAnswer.AutoSize = true;
+            lblAnswer.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            lblAnswer.ForeColor = Color.Green;
+            lblAnswer.Location = new Point(325, 242);
+            lblAnswer.Name = "lblAnswer";
+            lblAnswer.Size = new Size(30, 37);
+            lblAnswer.TabIndex = 24;
+            lblAnswer.Text = "";
+            
+            // 
+            // txtCorrect
+            // 
+            txtCorrect.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            txtCorrect.Location = new Point(120, 290);
+            txtCorrect.Name = "txtCorrect";
+            txtCorrect.ReadOnly = true;
+            txtCorrect.Size = new Size(100, 27);
+            txtCorrect.TabIndex = 25;
+            txtCorrect.TextAlign = HorizontalAlignment.Right;
+            
+            // 
+            // txtCurrent
+            // 
+            txtCurrent.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            txtCurrent.Location = new Point(120, 323);
+            txtCurrent.Name = "txtCurrent";
+            txtCurrent.ReadOnly = true;
+            txtCurrent.Size = new Size(100, 27);
+            txtCurrent.TabIndex = 26;
+            txtCurrent.TextAlign = HorizontalAlignment.Right;
+            
+            // 
+            // txtWrong
+            // 
+            txtWrong.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            txtWrong.Location = new Point(120, 356);
+            txtWrong.Name = "txtWrong";
+            txtWrong.ReadOnly = true;
+            txtWrong.Size = new Size(100, 27);
+            txtWrong.TabIndex = 27;
+            txtWrong.TextAlign = HorizontalAlignment.Right;
+            
+            // 
+            // txtDrop
+            // 
+            txtDrop.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            txtDrop.Location = new Point(295, 290);
+            txtDrop.Name = "txtDrop";
+            txtDrop.ReadOnly = true;
+            txtDrop.Size = new Size(100, 27);
+            txtDrop.TabIndex = 28;
+            txtDrop.TextAlign = HorizontalAlignment.Right;
+            
+            // 
+            // txtQLeft
+            // 
+            txtQLeft.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            txtQLeft.Location = new Point(295, 323);
+            txtQLeft.Name = "txtQLeft";
+            txtQLeft.ReadOnly = true;
+            txtQLeft.Size = new Size(100, 27);
+            txtQLeft.TabIndex = 29;
+            txtQLeft.TextAlign = HorizontalAlignment.Right;
+            
+            // 
+            // txtID
+            // 
+            txtID.Location = new Point(840, 326);
+            txtID.Name = "txtID";
+            txtID.ReadOnly = true;
+            txtID.Size = new Size(60, 27);
+            txtID.TabIndex = 30;
+            txtID.Visible = false;
+            
+            // 
+            // lblCorrectLabel
+            // 
+            lblCorrectLabel.AutoSize = true;
+            lblCorrectLabel.Location = new Point(12, 293);
+            lblCorrectLabel.Name = "lblCorrectLabel";
+            lblCorrectLabel.Size = new Size(76, 20);
+            lblCorrectLabel.TabIndex = 31;
+            lblCorrectLabel.Text = "If Correct:";
+            
+            // 
+            // lblCurrentLabel
+            // 
+            lblCurrentLabel.AutoSize = true;
+            lblCurrentLabel.Location = new Point(12, 326);
+            lblCurrentLabel.Name = "lblCurrentLabel";
+            lblCurrentLabel.Size = new Size(64, 20);
+            lblCurrentLabel.TabIndex = 32;
+            lblCurrentLabel.Text = "Current:";
+            
+            // 
+            // lblWrongLabel
+            // 
+            lblWrongLabel.AutoSize = true;
+            lblWrongLabel.Location = new Point(12, 359);
+            lblWrongLabel.Name = "lblWrongLabel";
+            lblWrongLabel.Size = new Size(72, 20);
+            lblWrongLabel.TabIndex = 33;
+            lblWrongLabel.Text = "If Wrong:";
+            
+            // 
+            // lblDropLabel
+            // 
+            lblDropLabel.AutoSize = true;
+            lblDropLabel.Location = new Point(227, 293);
+            lblDropLabel.Name = "lblDropLabel";
+            lblDropLabel.Size = new Size(60, 20);
+            lblDropLabel.TabIndex = 34;
+            lblDropLabel.Text = "If Drop:";
+            
+            // 
+            // lblQLeftLabel
+            // 
+            lblQLeftLabel.AutoSize = true;
+            lblQLeftLabel.Location = new Point(227, 326);
+            lblQLeftLabel.Name = "lblQLeftLabel";
+            lblQLeftLabel.Size = new Size(111, 20);
+            lblQLeftLabel.TabIndex = 35;
+            lblQLeftLabel.Text = "Questions Left:";
+            
+            // 
+            // btn5050
+            // 
+            btn5050.BackColor = Color.DarkOrange;
+            btn5050.FlatStyle = FlatStyle.Flat;
+            btn5050.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btn5050.Location = new Point(580, 245);
+            btn5050.Name = "btn5050";
+            btn5050.Size = new Size(120, 40);
+            btn5050.TabIndex = 36;
+            btn5050.Text = "";
+            btn5050.UseVisualStyleBackColor = false;
+            btn5050.Click += btn5050_Click;
+            
+            // 
+            // btnPhoneFriend
+            // 
+            btnPhoneFriend.BackColor = Color.DarkOrange;
+            btnPhoneFriend.FlatStyle = FlatStyle.Flat;
+            btnPhoneFriend.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnPhoneFriend.Location = new Point(580, 290);
+            btnPhoneFriend.Name = "btnPhoneFriend";
+            btnPhoneFriend.Size = new Size(120, 40);
+            btnPhoneFriend.TabIndex = 37;
+            btnPhoneFriend.Text = "";
+            btnPhoneFriend.UseVisualStyleBackColor = false;
+            btnPhoneFriend.Click += btnPhoneFriend_Click;
+            
+            // 
+            // btnAskAudience
+            // 
+            btnAskAudience.BackColor = Color.DarkOrange;
+            btnAskAudience.FlatStyle = FlatStyle.Flat;
+            btnAskAudience.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAskAudience.Location = new Point(580, 335);
+            btnAskAudience.Name = "btnAskAudience";
+            btnAskAudience.Size = new Size(120, 40);
+            btnAskAudience.TabIndex = 38;
+            btnAskAudience.Text = "";
+            btnAskAudience.UseVisualStyleBackColor = false;
+            btnAskAudience.Click += btnAskAudience_Click;
+            
+            // 
+            // btnSwitch
+            // 
+            btnSwitch.BackColor = Color.DarkOrange;
+            btnSwitch.FlatStyle = FlatStyle.Flat;
+            btnSwitch.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnSwitch.Location = new Point(580, 380);
+            btnSwitch.Name = "btnSwitch";
             btnSwitch.Size = new Size(120, 40);
-            btnSwitch.Text = "Switch Q";
-            btnSwitch.Font = new Font("Arial", 10F, FontStyle.Bold);
-            btnSwitch.BackColor = Color.Orange;
+            btnSwitch.TabIndex = 39;
+            btnSwitch.Text = "";
+            btnSwitch.UseVisualStyleBackColor = false;
             btnSwitch.Click += btnSwitch_Click;
             
-            // Menu strip
-            databaseMenuItem.Text = "Database";
-            databaseMenuItem.Click += DatabaseToolStripMenuItem_Click;
+            // 
+            // chkShowQuestion
+            // 
+            chkShowQuestion.AutoSize = true;
+            chkShowQuestion.Checked = true;
+            chkShowQuestion.CheckState = CheckState.Checked;
+            chkShowQuestion.Location = new Point(580, 435);
+            chkShowQuestion.Name = "chkShowQuestion";
+            chkShowQuestion.Size = new Size(190, 24);
+            chkShowQuestion.TabIndex = 40;
+            chkShowQuestion.Text = "Show Question on TV";
+            chkShowQuestion.UseVisualStyleBackColor = true;
             
-            var questionsEditorItem = new ToolStripMenuItem("Questions Editor");
-            questionsEditorItem.Click += QuestionsEditorToolStripMenuItem_Click;
-            gameMenuItem.DropDownItems.Add(questionsEditorItem);
+            // 
+            // chkCorrectAnswer
+            // 
+            chkCorrectAnswer.AutoSize = true;
+            chkCorrectAnswer.Location = new Point(580, 465);
+            chkCorrectAnswer.Name = "chkCorrectAnswer";
+            chkCorrectAnswer.Size = new Size(183, 24);
+            chkCorrectAnswer.TabIndex = 41;
+            chkCorrectAnswer.Text = "Show Correct Answer";
+            chkCorrectAnswer.UseVisualStyleBackColor = true;
             
-            var optionsItem = new ToolStripMenuItem("Options");
-            optionsItem.Click += OptionsToolStripMenuItem_Click;
-            gameMenuItem.DropDownItems.Add(optionsItem);
+            // 
+            // btnActivateRiskMode
+            // 
+            btnActivateRiskMode.BackColor = Color.Orange;
+            btnActivateRiskMode.FlatStyle = FlatStyle.Flat;
+            btnActivateRiskMode.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnActivateRiskMode.Location = new Point(710, 245);
+            btnActivateRiskMode.Name = "btnActivateRiskMode";
+            btnActivateRiskMode.Size = new Size(100, 175);
+            btnActivateRiskMode.TabIndex = 42;
+            btnActivateRiskMode.Text = "RISK MODE OFF";
+            btnActivateRiskMode.UseVisualStyleBackColor = false;
+            btnActivateRiskMode.Click += btnActivateRiskMode_Click;
+
             
-            var hostScreenItem = new ToolStripMenuItem("Host Screen");
-            hostScreenItem.Click += HostScreenToolStripMenuItem_Click;
-            viewMenuItem.DropDownItems.Add(hostScreenItem);
-            
-            var guestScreenItem = new ToolStripMenuItem("Guest Screen");
-            guestScreenItem.Click += GuestScreenToolStripMenuItem_Click;
-            viewMenuItem.DropDownItems.Add(guestScreenItem);
-            
-            var tvScreenItem = new ToolStripMenuItem("TV Screen");
-            tvScreenItem.Click += TVScreenToolStripMenuItem_Click;
-            viewMenuItem.DropDownItems.Add(tvScreenItem);
-            
-            var closeItem = new ToolStripMenuItem("Close");
-            closeItem.Click += CloseToolStripMenuItem_Click;
-            databaseMenuItem.DropDownItems.Add(new ToolStripSeparator());
-            databaseMenuItem.DropDownItems.Add(closeItem);
-            
-            var aboutItem = new ToolStripMenuItem("About");
-            aboutItem.Click += AboutToolStripMenuItem_Click;
-            helpMenuItem.DropDownItems.Add(aboutItem);
-            
-            menuStrip.Items.Add(databaseMenuItem);
-            menuStrip.Items.Add(gameMenuItem);
-            menuStrip.Items.Add(viewMenuItem);
-            menuStrip.Items.Add(helpMenuItem);
-            
+            // 
             // ControlPanelForm
+            // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 400);
-            Controls.Add(menuStrip);
-            Controls.Add(txtQuestion);
-            Controls.Add(txtA);
-            Controls.Add(txtB);
-            Controls.Add(txtC);
-            Controls.Add(txtD);
-            Controls.Add(btnA);
-            Controls.Add(btnB);
-            Controls.Add(btnC);
-            Controls.Add(btnD);
-            Controls.Add(btnNewQuestion);
-            Controls.Add(btnLightsDown);
-            Controls.Add(btnReveal);
-            Controls.Add(btnWalk);
+            ClientSize = new Size(980, 530);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+            Controls.Add(btnActivateRiskMode);
+            Controls.Add(chkCorrectAnswer);
+            Controls.Add(chkShowQuestion);
+            Controls.Add(btnSwitch);
+            Controls.Add(btnAskAudience);
+            Controls.Add(btnPhoneFriend);
+            Controls.Add(btn5050);
+            Controls.Add(lblQLeftLabel);
+            Controls.Add(lblDropLabel);
+            Controls.Add(lblWrongLabel);
+            Controls.Add(lblCurrentLabel);
+            Controls.Add(lblCorrectLabel);
+            Controls.Add(txtID);
+            Controls.Add(txtQLeft);
+            Controls.Add(txtDrop);
+            Controls.Add(txtWrong);
+            Controls.Add(txtCurrent);
+            Controls.Add(txtCorrect);
+            Controls.Add(lblAnswer);
+            Controls.Add(lblCorrectAnswerLabel);
             Controls.Add(lblLevelLabel);
             Controls.Add(nmrLevel);
-            Controls.Add(lblCorrectLabel);
-            Controls.Add(txtCorrect);
-            Controls.Add(lblCurrentLabel);
-            Controls.Add(txtCurrent);
-            Controls.Add(lblWrongLabel);
-            Controls.Add(txtWrong);
-            Controls.Add(lblDropLabel);
-            Controls.Add(txtDrop);
-            Controls.Add(lblQLeftLabel);
-            Controls.Add(txtQLeft);
-            Controls.Add(lblAnswer);
-            Controls.Add(txtExplain);
-            Controls.Add(btnActivateRiskMode);
+            Controls.Add(btnStopAudio);
+            Controls.Add(btnClosing);
             Controls.Add(btnResetGame);
-            Controls.Add(txtID);
-            Controls.Add(chkShowQuestion);
-            Controls.Add(chkCorrectAnswer);
-            Controls.Add(btn5050);
-            Controls.Add(btnPhoneFriend);
-            Controls.Add(btnAskAudience);
-            Controls.Add(btnSwitch);
-            
+            Controls.Add(btnThanksForPlaying);
+            Controls.Add(btnWalk);
+            Controls.Add(btnReveal);
+            Controls.Add(btnNewQuestion);
+            Controls.Add(btnLightsDown);
+            Controls.Add(btnExplainGame);
+            Controls.Add(btnPickPlayer);
+            Controls.Add(btnHostIntro);
+            Controls.Add(btnD);
+            Controls.Add(btnC);
+            Controls.Add(btnB);
+            Controls.Add(btnA);
+            Controls.Add(txtExplain);
+            Controls.Add(txtD);
+            Controls.Add(txtC);
+            Controls.Add(txtB);
+            Controls.Add(txtA);
+            Controls.Add(txtQuestion);
+            Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
             Name = "ControlPanelForm";
             Text = "The Millionaire Game - Control Panel";
             Load += ControlPanelForm_Load;
-            
             ((System.ComponentModel.ISupportInitialize)nmrLevel).EndInit();
+            menuStrip.ResumeLayout(false);
+            menuStrip.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
+        private MenuStrip menuStrip;
+        private ToolStripMenuItem databaseToolStripMenuItem;
+        private ToolStripMenuItem gameToolStripMenuItem;
+        private ToolStripMenuItem viewToolStripMenuItem;
+        private ToolStripMenuItem helpToolStripMenuItem;
         private TextBox txtQuestion;
         private TextBox txtA;
         private TextBox txtB;
@@ -429,23 +776,35 @@ namespace MillionaireGame.Forms
         private TextBox txtQLeft;
         private TextBox txtID;
         private Label lblAnswer;
+        private Label lblLevelLabel;
+        private Label lblCorrectAnswerLabel;
+        private Label lblCorrectLabel;
+        private Label lblCurrentLabel;
+        private Label lblWrongLabel;
+        private Label lblDropLabel;
+        private Label lblQLeftLabel;
+        private Button btnHostIntro;
+        private Button btnPickPlayer;
+        private Button btnExplainGame;
+        private Button btnLightsDown;
         private Button btnNewQuestion;
+        private Button btnReveal;
+        private Button btnWalk;
+        private Button btnThanksForPlaying;
+        private Button btnResetGame;
+        private Button btnClosing;
+        private Button btnStopAudio;
         private Button btnA;
         private Button btnB;
         private Button btnC;
         private Button btnD;
-        private Button btnLightsDown;
-        private Button btnReveal;
-        private Button btnWalk;
         private Button btnActivateRiskMode;
-        private Button btnResetGame;
-        private Button btnToHotSeat;
-        private NumericUpDown nmrLevel;
-        private CheckBox chkShowQuestion;
-        private CheckBox chkCorrectAnswer;
         private Button btn5050;
         private Button btnPhoneFriend;
         private Button btnAskAudience;
         private Button btnSwitch;
+        private NumericUpDown nmrLevel;
+        private CheckBox chkShowQuestion;
+        private CheckBox chkCorrectAnswer;
     }
 }

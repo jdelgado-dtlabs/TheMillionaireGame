@@ -8,13 +8,15 @@ namespace MillionaireGame.Core.Database;
 /// </summary>
 public class GameDatabaseContext : IDisposable
 {
-    private readonly string _connectionString;
+    private readonly string _connectionStringWithoutDb;
+    private readonly string _connectionStringWithDb;
     private SqlConnection? _connection;
     private const string DatabaseName = "dbMillionaire";
 
-    public GameDatabaseContext(string connectionString)
+    public GameDatabaseContext(string connectionStringWithoutDb)
     {
-        _connectionString = connectionString;
+        _connectionStringWithoutDb = connectionStringWithoutDb;
+        _connectionStringWithDb = connectionStringWithoutDb + $";Database={DatabaseName}";
     }
 
     /// <summary>
@@ -25,7 +27,7 @@ public class GameDatabaseContext : IDisposable
         if (_connection?.State == System.Data.ConnectionState.Open)
             return;
 
-        _connection = new SqlConnection(_connectionString);
+        _connection = new SqlConnection(_connectionStringWithDb);
         await _connection.OpenAsync();
     }
 
@@ -47,7 +49,7 @@ public class GameDatabaseContext : IDisposable
     {
         try
         {
-            using var connection = new SqlConnection(_connectionString);
+            using var connection = new SqlConnection(_connectionStringWithoutDb);
             await connection.OpenAsync();
 
             var query = $"SELECT COUNT(*) FROM sys.databases WHERE name = '{DatabaseName}'";
@@ -67,7 +69,7 @@ public class GameDatabaseContext : IDisposable
     /// </summary>
     public async Task CreateDatabaseAsync()
     {
-        using var connection = new SqlConnection(_connectionString);
+        using var connection = new SqlConnection(_connectionStringWithoutDb);
         await connection.OpenAsync();
 
         // Create database
@@ -83,7 +85,7 @@ public class GameDatabaseContext : IDisposable
         }
 
         // Switch to the new database
-        var useDbConnection = new SqlConnection(_connectionString + $";Database={DatabaseName}");
+        var useDbConnection = new SqlConnection(_connectionStringWithDb);
         await useDbConnection.OpenAsync();
 
         // Create questions table
@@ -147,7 +149,7 @@ public class GameDatabaseContext : IDisposable
     /// </summary>
     public string GetFullConnectionString()
     {
-        return _connectionString + $";Database={DatabaseName}";
+        return _connectionStringWithDb;
     }
 
     public void Dispose()

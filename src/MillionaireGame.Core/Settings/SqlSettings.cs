@@ -19,7 +19,7 @@ public class SqlConnectionSettings
     public bool HideAtStart { get; set; }
 
     /// <summary>
-    /// Gets the connection string based on current settings
+    /// Gets the connection string based on current settings (without database name)
     /// </summary>
     public string GetConnectionString()
     {
@@ -33,7 +33,27 @@ public class SqlConnectionSettings
         }
         else
         {
-            return "Server=localhost\\SQLEXPRESS;Trusted_Connection=true;";
+            return $"Server=localhost\\{LocalInstance};Trusted_Connection=true;";
+        }
+    }
+
+    /// <summary>
+    /// Gets the full connection string including the database name
+    /// </summary>
+    /// <param name="databaseName">Name of the database to connect to</param>
+    public string GetConnectionString(string databaseName)
+    {
+        if (UseRemoteServer)
+        {
+            return $"Server={RemoteServer},{RemotePort};Database={databaseName};User Id={RemoteLogin};Password={RemotePassword};";
+        }
+        else if (UseLocalDB)
+        {
+            return $"Server=(LocalDB)\\MSSQLLocalDB;Database={databaseName};Integrated Security=true;";
+        }
+        else
+        {
+            return $"Server=localhost\\{LocalInstance};Database={databaseName};Trusted_Connection=true;";
         }
     }
 }

@@ -15,9 +15,11 @@ This C# version is currently under active development. See [MIGRATION.md](MIGRAT
 - ✅ Settings management
 - ✅ Database layer
 - ✅ Game logic services
-- 🚧 UI forms (in progress)
-- ⏳ Sound engine (pending)
-- ⏳ Lifeline implementations (pending)
+- ✅ UI forms (Control Panel complete)
+- ✅ Sound engine (Question-specific audio system complete)
+- ✅ Audio transitions with 500ms timing
+- 🚧 Lifeline implementations (50:50, PAF, ATA working; STQ pending)
+- 🚧 Broadcast screens (in progress)
 
 ## 🆕 What's New in the C# Version?
 

@@ -37,6 +37,16 @@ public class QuestionRepository
         else
         {
             var levelRange = GetLevelRangeForLevel(level);
+            // Convert LevelRange enum to database format (Lvl1, Lvl2, etc.)
+            var levelRangeStr = levelRange switch
+            {
+                LevelRange.Level1 => "Lvl1",
+                LevelRange.Level2 => "Lvl2",
+                LevelRange.Level3 => "Lvl3",
+                LevelRange.Level4 => "Lvl4",
+                _ => "Lvl1"
+            };
+            
             query = @"
                 SELECT TOP 1 * FROM questions 
                 WHERE LevelRange = @LevelRange 
@@ -47,7 +57,8 @@ public class QuestionRepository
 
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Level", level);
-        command.Parameters.AddWithValue("@LevelRange", GetLevelRangeForLevel(level).ToString());
+        command.Parameters.AddWithValue("@LevelRange", difficultyType == DifficultyType.Range ? 
+            GetLevelRangeString(level) : (object)DBNull.Value);
 
         using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
@@ -105,9 +116,9 @@ public class QuestionRepository
 
         var query = @"
             INSERT INTO questions 
-            (Question, A, B, C, D, CorrectAnswer, Difficulty_Type, Level, LevelRange, Note, Explanation, ATA_A, ATA_B, ATA_C, ATA_D)
+            (Question, A, B, C, D, CorrectAnswer, Difficulty_Type, Level, LevelRange, Note, ATA_A, ATA_B, ATA_C, ATA_D)
             VALUES 
-            (@Question, @A, @B, @C, @D, @CorrectAnswer, @DifficultyType, @Level, @LevelRange, @Note, @Explanation, @ATA_A, @ATA_B, @ATA_C, @ATA_D);
+            (@Question, @A, @B, @C, @D, @CorrectAnswer, @DifficultyType, @Level, @LevelRange, @Note, @ATA_A, @ATA_B, @ATA_C, @ATA_D);
             SELECT CAST(SCOPE_IDENTITY() as int)";
 
         using var command = new SqlCommand(query, connection);
@@ -120,8 +131,7 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
         command.Parameters.AddWithValue("@LevelRange", question.LevelRange?.ToString() ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Note", question.Note ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Explanation", question.Explanation ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_A", question.ATAPercentageA ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_B", question.ATAPercentageB ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_C", question.ATAPercentageC ?? (object)DBNull.Value);
@@ -151,7 +161,6 @@ public class QuestionRepository
                 Level = @Level,
                 LevelRange = @LevelRange,
                 Note = @Note,
-                Explanation = @Explanation,
                 ATA_A = @ATA_A,
                 ATA_B = @ATA_B,
                 ATA_C = @ATA_C,
@@ -169,8 +178,7 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
         command.Parameters.AddWithValue("@LevelRange", question.LevelRange?.ToString() ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Note", question.Note ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@Explanation", question.Explanation ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_A", question.ATAPercentageA ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_B", question.ATAPercentageB ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@ATA_C", question.ATAPercentageC ?? (object)DBNull.Value);
@@ -208,8 +216,58 @@ public class QuestionRepository
         await command.ExecuteNonQueryAsync();
     }
 
+    /// <summary>
+    /// Gets count of questions by level and used status for diagnostics
+    /// </summary>
+    public async Task<(int total, int unused)> GetQuestionCountAsync(int level)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        var query = @"
+            SELECT 
+                COUNT(*) as Total,
+                SUM(CASE WHEN Used = 0 THEN 1 ELSE 0 END) as Unused
+            FROM questions 
+            WHERE Level = @Level";
+        
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Level", level);
+
+        using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            var total = reader.GetInt32(0);
+            var unused = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+            return (total, unused);
+        }
+
+        return (0, 0);
+    }
+
     private Question MapQuestion(SqlDataReader reader)
     {
+        // Parse difficulty type safely
+        var difficultyTypeStr = reader.GetString(reader.GetOrdinal("Difficulty_Type"));
+        var difficultyType = difficultyTypeStr.Equals("Specific", StringComparison.OrdinalIgnoreCase) 
+            ? DifficultyType.Specific 
+            : DifficultyType.Range;
+
+        // Parse level range safely (handle both "Lvl1" and "Level1" formats)
+        LevelRange? levelRange = null;
+        if (!reader.IsDBNull(reader.GetOrdinal("LevelRange")))
+        {
+            var levelRangeStr = reader.GetString(reader.GetOrdinal("LevelRange"));
+            levelRange = levelRangeStr.ToLower() switch
+            {
+                "lvl1" or "level1" => LevelRange.Level1,
+                "lvl2" or "level2" => LevelRange.Level2,
+                "lvl3" or "level3" => LevelRange.Level3,
+                "lvl4" or "level4" => LevelRange.Level4,
+                _ => null
+            };
+        }
+
         return new Question
         {
             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -219,18 +277,14 @@ public class QuestionRepository
             AnswerC = reader.GetString(reader.GetOrdinal("C")),
             AnswerD = reader.GetString(reader.GetOrdinal("D")),
             CorrectAnswer = reader.GetString(reader.GetOrdinal("CorrectAnswer")),
-            DifficultyType = Enum.Parse<DifficultyType>(reader.GetString(reader.GetOrdinal("Difficulty_Type"))),
+            DifficultyType = difficultyType,
             Level = reader.GetInt32(reader.GetOrdinal("Level")),
-            LevelRange = reader.IsDBNull(reader.GetOrdinal("LevelRange")) 
-                ? null 
-                : Enum.Parse<LevelRange>(reader.GetString(reader.GetOrdinal("LevelRange"))),
-            Note = reader.IsDBNull(reader.GetOrdinal("Note")) 
+            LevelRange = levelRange,
+            Note = string.Empty,
+            Used = reader.GetBoolean(reader.GetOrdinal("Used")),
+            Explanation = reader.IsDBNull(reader.GetOrdinal("Note")) 
                 ? string.Empty 
                 : reader.GetString(reader.GetOrdinal("Note")),
-            Used = reader.GetBoolean(reader.GetOrdinal("Used")),
-            Explanation = reader.IsDBNull(reader.GetOrdinal("Explanation")) 
-                ? string.Empty 
-                : reader.GetString(reader.GetOrdinal("Explanation")),
             ATAPercentageA = reader.IsDBNull(reader.GetOrdinal("ATA_A")) 
                 ? null 
                 : reader.GetInt32(reader.GetOrdinal("ATA_A")),
@@ -255,6 +309,18 @@ public class QuestionRepository
             >= 11 and <= 14 => LevelRange.Level3,
             15 => LevelRange.Level4,
             _ => LevelRange.Level1
+        };
+    }
+
+    private string GetLevelRangeString(int level)
+    {
+        return level switch
+        {
+            >= 1 and <= 5 => "Lvl1",
+            >= 6 and <= 10 => "Lvl2",
+            >= 11 and <= 14 => "Lvl3",
+            15 => "Lvl4",
+            _ => "Lvl1"
         };
     }
 }

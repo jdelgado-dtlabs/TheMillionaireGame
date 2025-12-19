@@ -3,17 +3,40 @@ using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
+using System.Runtime.InteropServices;
 
 namespace MillionaireGame;
 
 internal static class Program
 {
+    [DllImport("kernel32.dll")]
+    private static extern bool AllocConsole();
+
+    [DllImport("kernel32.dll")]
+    private static extern bool FreeConsole();
+
+    public static bool DebugMode { get; private set; }
+
     /// <summary>
     ///  The main entry point for the application.
     /// </summary>
     [STAThread]
-    static void Main()
+    static async Task Main(string[] args)
     {
+        // Check for debug mode argument
+        DebugMode = args.Contains("--debug") || args.Contains("-d");
+        
+        if (DebugMode)
+        {
+            // Allocate console window for debug output
+            AllocConsole();
+            Console.WriteLine("===========================================");
+            Console.WriteLine("  THE MILLIONAIRE GAME - DEBUG MODE");
+            Console.WriteLine("===========================================");
+            Console.WriteLine($"Application starting at {DateTime.Now}");
+            Console.WriteLine();
+        }
+
         // Initialize application
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.EnableVisualStyles();
@@ -23,8 +46,57 @@ internal static class Program
         var sqlSettings = new SqlSettingsManager();
         sqlSettings.LoadSettings();
 
-        var appSettings = new ApplicationSettingsManager();
-        appSettings.LoadSettings();
+        if (DebugMode)
+        {
+            Console.WriteLine("Loading SQL settings...");
+            Console.WriteLine($"Connection string configured: {!string.IsNullOrEmpty(sqlSettings.Settings.GetConnectionString())}");
+            Console.WriteLine();
+        }
+
+        // Perform settings migration if needed
+        var migrationService = new SettingsMigrationService(
+            new ApplicationSettingsRepository(sqlSettings.Settings.GetConnectionString()));
+
+        if (await migrationService.MigrationNeededAsync())
+        {
+            if (DebugMode)
+            {
+                Console.WriteLine("=== SETTINGS MIGRATION ===");
+                Console.WriteLine("Migrating settings from XML to database...");
+            }
+
+            var migrationResult = await migrationService.MigrateAsync();
+            
+            if (DebugMode)
+            {
+                Console.WriteLine(migrationResult.ToString());
+                Console.WriteLine();
+            }
+
+            if (!migrationResult.Success)
+            {
+                MessageBox.Show(
+                    $"Warning: Settings migration encountered an issue:\n{migrationResult.ErrorMessage}\n\nUsing default settings.",
+                    "Migration Warning",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+        else if (DebugMode)
+        {
+            Console.WriteLine("Settings already in database, skipping migration.");
+            Console.WriteLine();
+        }
+
+        // Load application settings from database
+        var appSettings = new ApplicationSettingsManager(null, sqlSettings.Settings.GetConnectionString());
+        await appSettings.LoadSettingsAsync();
+
+        if (DebugMode)
+        {
+            Console.WriteLine("Application settings loaded from database.");
+            Console.WriteLine();
+        }
 
         // Initialize database
         var dbContext = new GameDatabaseContext(sqlSettings.Settings.GetConnectionString());
@@ -67,7 +139,7 @@ internal static class Program
 
         // Initialize services
         var gameService = new GameService();
-        var questionRepository = new QuestionRepository(dbContext.GetFullConnectionString());
+        var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
         var screenService = new ScreenUpdateService();
         var soundService = new SoundService();
 
