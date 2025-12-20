@@ -20,17 +20,14 @@ namespace MillionaireGame.Forms.Options
             tabControl = new TabControl();
             tabGeneral = new TabPage();
             grpScreens = new GroupBox();
-            chkFullScreenTVScreen = new CheckBox();
             chkFullScreenGuestScreen = new CheckBox();
             chkFullScreenHostScreen = new CheckBox();
-            chkAutoShowTVScreen = new CheckBox();
             chkAutoShowGuestScreen = new CheckBox();
             chkAutoShowHostScreen = new CheckBox();
-            grpGameplay = new GroupBox();
-            chkHideAnswersOnNewQuestion = new CheckBox();
-            chkAutoHideQuestionAtWalkAway = new CheckBox();
-            chkAutoShowTotalWinnings = new CheckBox();
-            chkShowAnswerOnlyAtFinal = new CheckBox();
+            tabBroadcast = new TabPage();
+            grpBroadcast = new GroupBox();
+            chkFullScreenTVScreen = new CheckBox();
+            chkAutoShowTVScreen = new CheckBox();
             tabLifelines = new TabPage();
             grpLifeline4 = new GroupBox();
             cmbLifeline4Availability = new ComboBox();
@@ -51,42 +48,21 @@ namespace MillionaireGame.Forms.Options
             numTotalLifelines = new NumericUpDown();
             lblTotalLifelines = new Label();
             tabSounds = new TabPage();
-            grpGameSounds = new GroupBox();
-            btnBrowseWalkAway = new Button();
-            txtSoundWalkAway = new TextBox();
-            lblSoundWalkAway = new Label();
-            btnBrowseCorrectAnswer = new Button();
-            txtSoundCorrectAnswer = new TextBox();
-            lblSoundCorrectAnswer = new Label();
-            btnBrowseWrongAnswer = new Button();
-            txtSoundWrongAnswer = new TextBox();
-            lblSoundWrongAnswer = new Label();
-            btnBrowseFinalAnswer = new Button();
-            txtSoundFinalAnswer = new TextBox();
-            lblSoundFinalAnswer = new Label();
-            btnBrowseQuestionCue = new Button();
-            txtSoundQuestionCue = new TextBox();
-            lblSoundQuestionCue = new Label();
-            grpLifelineSounds = new GroupBox();
-            btnBrowseSwitch = new Button();
-            txtSoundSwitch = new TextBox();
-            lblSoundSwitch = new Label();
-            btnBrowseATA = new Button();
-            txtSoundATA = new TextBox();
-            lblSoundATA = new Label();
-            btnBrowsePhone = new Button();
-            txtSoundPhone = new TextBox();
-            lblSoundPhone = new Label();
-            btnBrowse5050 = new Button();
-            txtSound5050 = new TextBox();
-            lblSound5050 = new Label();
+            grpSoundPack = new GroupBox();
+            lstSoundPackInfo = new ListBox();
+            btnExportExample = new Button();
+            btnRemovePack = new Button();
+            btnImportPack = new Button();
+            cmbSoundPack = new ComboBox();
+            lblSoundPack = new Label();
             btnOK = new Button();
             btnCancel = new Button();
             btnApply = new Button();
             tabControl.SuspendLayout();
             tabGeneral.SuspendLayout();
             grpScreens.SuspendLayout();
-            grpGameplay.SuspendLayout();
+            tabBroadcast.SuspendLayout();
+            grpBroadcast.SuspendLayout();
             tabLifelines.SuspendLayout();
             grpLifeline4.SuspendLayout();
             grpLifeline3.SuspendLayout();
@@ -94,14 +70,14 @@ namespace MillionaireGame.Forms.Options
             grpLifeline1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
-            grpGameSounds.SuspendLayout();
-            grpLifelineSounds.SuspendLayout();
+            grpSoundPack.SuspendLayout();
             SuspendLayout();
             // 
             // tabControl
             // 
             tabControl.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             tabControl.Controls.Add(tabGeneral);
+            tabControl.Controls.Add(tabBroadcast);
             tabControl.Controls.Add(tabLifelines);
             tabControl.Controls.Add(tabSounds);
             tabControl.Location = new Point(12, 12);
@@ -113,48 +89,34 @@ namespace MillionaireGame.Forms.Options
             // tabGeneral
             // 
             tabGeneral.Controls.Add(grpScreens);
-            tabGeneral.Controls.Add(grpGameplay);
             tabGeneral.Location = new Point(4, 24);
             tabGeneral.Name = "tabGeneral";
             tabGeneral.Padding = new Padding(3);
             tabGeneral.Size = new Size(652, 459);
             tabGeneral.TabIndex = 0;
-            tabGeneral.Text = "General";
+            tabGeneral.Text = "Screens";
             tabGeneral.UseVisualStyleBackColor = true;
             // 
             // grpScreens
             // 
-            grpScreens.Controls.Add(chkFullScreenTVScreen);
             grpScreens.Controls.Add(chkFullScreenGuestScreen);
             grpScreens.Controls.Add(chkFullScreenHostScreen);
-            grpScreens.Controls.Add(chkAutoShowTVScreen);
             grpScreens.Controls.Add(chkAutoShowGuestScreen);
             grpScreens.Controls.Add(chkAutoShowHostScreen);
             grpScreens.Location = new Point(16, 16);
             grpScreens.Name = "grpScreens";
-            grpScreens.Size = new Size(300, 200);
+            grpScreens.Size = new Size(300, 150);
             grpScreens.TabIndex = 0;
             grpScreens.TabStop = false;
-            grpScreens.Text = "Screen Settings";
-            // 
-            // chkFullScreenTVScreen
-            // 
-            chkFullScreenTVScreen.AutoSize = true;
-            chkFullScreenTVScreen.Location = new Point(20, 160);
-            chkFullScreenTVScreen.Name = "chkFullScreenTVScreen";
-            chkFullScreenTVScreen.Size = new Size(147, 19);
-            chkFullScreenTVScreen.TabIndex = 5;
-            chkFullScreenTVScreen.Text = "Full Screen TV Screen";
-            chkFullScreenTVScreen.UseVisualStyleBackColor = true;
-            chkFullScreenTVScreen.CheckedChanged += Control_Changed;
+            grpScreens.Text = "Host and Guest Screens";
             // 
             // chkFullScreenGuestScreen
             // 
             chkFullScreenGuestScreen.AutoSize = true;
-            chkFullScreenGuestScreen.Location = new Point(20, 130);
+            chkFullScreenGuestScreen.Location = new Point(20, 100);
             chkFullScreenGuestScreen.Name = "chkFullScreenGuestScreen";
             chkFullScreenGuestScreen.Size = new Size(170, 19);
-            chkFullScreenGuestScreen.TabIndex = 4;
+            chkFullScreenGuestScreen.TabIndex = 3;
             chkFullScreenGuestScreen.Text = "Full Screen Guest Screen";
             chkFullScreenGuestScreen.UseVisualStyleBackColor = true;
             chkFullScreenGuestScreen.CheckedChanged += Control_Changed;
@@ -162,24 +124,13 @@ namespace MillionaireGame.Forms.Options
             // chkFullScreenHostScreen
             // 
             chkFullScreenHostScreen.AutoSize = true;
-            chkFullScreenHostScreen.Location = new Point(20, 100);
+            chkFullScreenHostScreen.Location = new Point(20, 70);
             chkFullScreenHostScreen.Name = "chkFullScreenHostScreen";
             chkFullScreenHostScreen.Size = new Size(163, 19);
-            chkFullScreenHostScreen.TabIndex = 3;
+            chkFullScreenHostScreen.TabIndex = 2;
             chkFullScreenHostScreen.Text = "Full Screen Host Screen";
             chkFullScreenHostScreen.UseVisualStyleBackColor = true;
             chkFullScreenHostScreen.CheckedChanged += Control_Changed;
-            // 
-            // chkAutoShowTVScreen
-            // 
-            chkAutoShowTVScreen.AutoSize = true;
-            chkAutoShowTVScreen.Location = new Point(20, 70);
-            chkAutoShowTVScreen.Name = "chkAutoShowTVScreen";
-            chkAutoShowTVScreen.Size = new Size(142, 19);
-            chkAutoShowTVScreen.TabIndex = 2;
-            chkAutoShowTVScreen.Text = "Auto Show TV Screen";
-            chkAutoShowTVScreen.UseVisualStyleBackColor = true;
-            chkAutoShowTVScreen.CheckedChanged += Control_Changed;
             // 
             // chkAutoShowGuestScreen
             // 
@@ -203,62 +154,49 @@ namespace MillionaireGame.Forms.Options
             chkAutoShowHostScreen.UseVisualStyleBackColor = true;
             chkAutoShowHostScreen.CheckedChanged += Control_Changed;
             // 
-            // grpGameplay
+            // tabBroadcast
             // 
-            grpGameplay.Controls.Add(chkHideAnswersOnNewQuestion);
-            grpGameplay.Controls.Add(chkAutoHideQuestionAtWalkAway);
-            grpGameplay.Controls.Add(chkAutoShowTotalWinnings);
-            grpGameplay.Controls.Add(chkShowAnswerOnlyAtFinal);
-            grpGameplay.Location = new Point(336, 16);
-            grpGameplay.Name = "grpGameplay";
-            grpGameplay.Size = new Size(300, 200);
-            grpGameplay.TabIndex = 1;
-            grpGameplay.TabStop = false;
-            grpGameplay.Text = "Gameplay Settings";
+            tabBroadcast.Controls.Add(grpBroadcast);
+            tabBroadcast.Location = new Point(4, 24);
+            tabBroadcast.Name = "tabBroadcast";
+            tabBroadcast.Padding = new Padding(3);
+            tabBroadcast.Size = new Size(652, 459);
+            tabBroadcast.TabIndex = 1;
+            tabBroadcast.Text = "Broadcast";
+            tabBroadcast.UseVisualStyleBackColor = true;
             // 
-            // chkHideAnswersOnNewQuestion
+            // grpBroadcast
             // 
-            chkHideAnswersOnNewQuestion.AutoSize = true;
-            chkHideAnswersOnNewQuestion.Location = new Point(20, 100);
-            chkHideAnswersOnNewQuestion.Name = "chkHideAnswersOnNewQuestion";
-            chkHideAnswersOnNewQuestion.Size = new Size(201, 19);
-            chkHideAnswersOnNewQuestion.TabIndex = 3;
-            chkHideAnswersOnNewQuestion.Text = "Hide Answers on New Question";
-            chkHideAnswersOnNewQuestion.UseVisualStyleBackColor = true;
-            chkHideAnswersOnNewQuestion.CheckedChanged += Control_Changed;
+            grpBroadcast.Controls.Add(chkFullScreenTVScreen);
+            grpBroadcast.Controls.Add(chkAutoShowTVScreen);
+            grpBroadcast.Location = new Point(16, 16);
+            grpBroadcast.Name = "grpBroadcast";
+            grpBroadcast.Size = new Size(300, 100);
+            grpBroadcast.TabIndex = 0;
+            grpBroadcast.TabStop = false;
+            grpBroadcast.Text = "TV Screen (Broadcast)";
             // 
-            // chkAutoHideQuestionAtWalkAway
+            // chkFullScreenTVScreen
             // 
-            chkAutoHideQuestionAtWalkAway.AutoSize = true;
-            chkAutoHideQuestionAtWalkAway.Location = new Point(20, 70);
-            chkAutoHideQuestionAtWalkAway.Name = "chkAutoHideQuestionAtWalkAway";
-            chkAutoHideQuestionAtWalkAway.Size = new Size(213, 19);
-            chkAutoHideQuestionAtWalkAway.TabIndex = 2;
-            chkAutoHideQuestionAtWalkAway.Text = "Auto Hide Question at Walk Away";
-            chkAutoHideQuestionAtWalkAway.UseVisualStyleBackColor = true;
-            chkAutoHideQuestionAtWalkAway.CheckedChanged += Control_Changed;
+            chkFullScreenTVScreen.AutoSize = true;
+            chkFullScreenTVScreen.Location = new Point(20, 50);
+            chkFullScreenTVScreen.Name = "chkFullScreenTVScreen";
+            chkFullScreenTVScreen.Size = new Size(147, 19);
+            chkFullScreenTVScreen.TabIndex = 1;
+            chkFullScreenTVScreen.Text = "Full Screen TV Screen";
+            chkFullScreenTVScreen.UseVisualStyleBackColor = true;
+            chkFullScreenTVScreen.CheckedChanged += Control_Changed;
             // 
-            // chkAutoShowTotalWinnings
+            // chkAutoShowTVScreen
             // 
-            chkAutoShowTotalWinnings.AutoSize = true;
-            chkAutoShowTotalWinnings.Location = new Point(20, 45);
-            chkAutoShowTotalWinnings.Name = "chkAutoShowTotalWinnings";
-            chkAutoShowTotalWinnings.Size = new Size(172, 19);
-            chkAutoShowTotalWinnings.TabIndex = 1;
-            chkAutoShowTotalWinnings.Text = "Auto Show Total Winnings";
-            chkAutoShowTotalWinnings.UseVisualStyleBackColor = true;
-            chkAutoShowTotalWinnings.CheckedChanged += Control_Changed;
-            // 
-            // chkShowAnswerOnlyAtFinal
-            // 
-            chkShowAnswerOnlyAtFinal.AutoSize = true;
-            chkShowAnswerOnlyAtFinal.Location = new Point(20, 20);
-            chkShowAnswerOnlyAtFinal.Name = "chkShowAnswerOnlyAtFinal";
-            chkShowAnswerOnlyAtFinal.Size = new Size(168, 19);
-            chkShowAnswerOnlyAtFinal.TabIndex = 0;
-            chkShowAnswerOnlyAtFinal.Text = "Show Answer Only at Final";
-            chkShowAnswerOnlyAtFinal.UseVisualStyleBackColor = true;
-            chkShowAnswerOnlyAtFinal.CheckedChanged += Control_Changed;
+            chkAutoShowTVScreen.AutoSize = true;
+            chkAutoShowTVScreen.Location = new Point(20, 25);
+            chkAutoShowTVScreen.Name = "chkAutoShowTVScreen";
+            chkAutoShowTVScreen.Size = new Size(142, 19);
+            chkAutoShowTVScreen.TabIndex = 0;
+            chkAutoShowTVScreen.Text = "Auto Show TV Screen";
+            chkAutoShowTVScreen.UseVisualStyleBackColor = true;
+            chkAutoShowTVScreen.CheckedChanged += Control_Changed;
             // 
             // tabLifelines
             // 
@@ -475,8 +413,7 @@ namespace MillionaireGame.Forms.Options
             // tabSounds
             // 
             tabSounds.AutoScroll = true;
-            tabSounds.Controls.Add(grpGameSounds);
-            tabSounds.Controls.Add(grpLifelineSounds);
+            tabSounds.Controls.Add(grpSoundPack);
             tabSounds.Location = new Point(4, 24);
             tabSounds.Name = "tabSounds";
             tabSounds.Padding = new Padding(3);
@@ -485,304 +422,72 @@ namespace MillionaireGame.Forms.Options
             tabSounds.Text = "Sounds";
             tabSounds.UseVisualStyleBackColor = true;
             // 
-            // grpGameSounds
+            // grpSoundPack
             // 
-            grpGameSounds.Controls.Add(btnBrowseWalkAway);
-            grpGameSounds.Controls.Add(txtSoundWalkAway);
-            grpGameSounds.Controls.Add(lblSoundWalkAway);
-            grpGameSounds.Controls.Add(btnBrowseCorrectAnswer);
-            grpGameSounds.Controls.Add(txtSoundCorrectAnswer);
-            grpGameSounds.Controls.Add(lblSoundCorrectAnswer);
-            grpGameSounds.Controls.Add(btnBrowseWrongAnswer);
-            grpGameSounds.Controls.Add(txtSoundWrongAnswer);
-            grpGameSounds.Controls.Add(lblSoundWrongAnswer);
-            grpGameSounds.Controls.Add(btnBrowseFinalAnswer);
-            grpGameSounds.Controls.Add(txtSoundFinalAnswer);
-            grpGameSounds.Controls.Add(lblSoundFinalAnswer);
-            grpGameSounds.Controls.Add(btnBrowseQuestionCue);
-            grpGameSounds.Controls.Add(txtSoundQuestionCue);
-            grpGameSounds.Controls.Add(lblSoundQuestionCue);
-            grpGameSounds.Location = new Point(16, 16);
-            grpGameSounds.Name = "grpGameSounds";
-            grpGameSounds.Size = new Size(620, 200);
-            grpGameSounds.TabIndex = 0;
-            grpGameSounds.TabStop = false;
-            grpGameSounds.Text = "Game Sounds";
+            grpSoundPack.Controls.Add(lstSoundPackInfo);
+            grpSoundPack.Controls.Add(btnExportExample);
+            grpSoundPack.Controls.Add(btnRemovePack);
+            grpSoundPack.Controls.Add(btnImportPack);
+            grpSoundPack.Controls.Add(cmbSoundPack);
+            grpSoundPack.Location = new Point(16, 16);
+            grpSoundPack.Name = "grpSoundPack";
+            grpSoundPack.Size = new Size(620, 420);
+            grpSoundPack.TabIndex = 0;
+            grpSoundPack.TabStop = false;
+            grpSoundPack.Text = "Sound Pack";
             // 
-            // btnBrowseWalkAway
+            // cmbSoundPack
             // 
-            btnBrowseWalkAway.Location = new Point(570, 158);
-            btnBrowseWalkAway.Name = "btnBrowseWalkAway";
-            btnBrowseWalkAway.Size = new Size(32, 23);
-            btnBrowseWalkAway.TabIndex = 14;
-            btnBrowseWalkAway.Tag = "txtSoundWalkAway";
-            btnBrowseWalkAway.Text = "...";
-            btnBrowseWalkAway.UseVisualStyleBackColor = true;
-            btnBrowseWalkAway.Click += btnBrowseSoundFile_Click;
+            cmbSoundPack.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSoundPack.FormattingEnabled = true;
+            cmbSoundPack.Location = new Point(90, 25);
+            cmbSoundPack.Name = "cmbSoundPack";
+            cmbSoundPack.Size = new Size(200, 23);
+            cmbSoundPack.TabIndex = 0;
+            cmbSoundPack.SelectedIndexChanged += cmbSoundPack_SelectedIndexChanged;
             // 
-            // txtSoundWalkAway
             // 
-            txtSoundWalkAway.Location = new Point(130, 158);
-            txtSoundWalkAway.Name = "txtSoundWalkAway";
-            txtSoundWalkAway.Size = new Size(434, 23);
-            txtSoundWalkAway.TabIndex = 13;
-            txtSoundWalkAway.TextChanged += Control_Changed;
             // 
-            // lblSoundWalkAway
+            // btnImportPack
             // 
-            lblSoundWalkAway.AutoSize = true;
-            lblSoundWalkAway.Location = new Point(20, 161);
-            lblSoundWalkAway.Name = "lblSoundWalkAway";
-            lblSoundWalkAway.Size = new Size(67, 15);
-            lblSoundWalkAway.TabIndex = 12;
-            lblSoundWalkAway.Text = "Walk Away:";
+            btnImportPack.Location = new Point(300, 24);
+            btnImportPack.Name = "btnImportPack";
+            btnImportPack.Size = new Size(90, 25);
+            btnImportPack.TabIndex = 2;
+            btnImportPack.Text = "Import...";
+            btnImportPack.UseVisualStyleBackColor = true;
+            btnImportPack.Click += btnImportPack_Click;
             // 
-            // btnBrowseCorrectAnswer
+            // btnRemovePack
             // 
-            btnBrowseCorrectAnswer.Location = new Point(570, 123);
-            btnBrowseCorrectAnswer.Name = "btnBrowseCorrectAnswer";
-            btnBrowseCorrectAnswer.Size = new Size(32, 23);
-            btnBrowseCorrectAnswer.TabIndex = 11;
-            btnBrowseCorrectAnswer.Tag = "txtSoundCorrectAnswer";
-            btnBrowseCorrectAnswer.Text = "...";
-            btnBrowseCorrectAnswer.UseVisualStyleBackColor = true;
-            btnBrowseCorrectAnswer.Click += btnBrowseSoundFile_Click;
+            btnRemovePack.Location = new Point(400, 24);
+            btnRemovePack.Name = "btnRemovePack";
+            btnRemovePack.Size = new Size(90, 25);
+            btnRemovePack.TabIndex = 3;
+            btnRemovePack.Text = "Remove";
+            btnRemovePack.UseVisualStyleBackColor = true;
+            btnRemovePack.Click += btnRemovePack_Click;
             // 
-            // txtSoundCorrectAnswer
+            // btnExportExample
             // 
-            txtSoundCorrectAnswer.Location = new Point(130, 123);
-            txtSoundCorrectAnswer.Name = "txtSoundCorrectAnswer";
-            txtSoundCorrectAnswer.Size = new Size(434, 23);
-            txtSoundCorrectAnswer.TabIndex = 10;
-            txtSoundCorrectAnswer.TextChanged += Control_Changed;
+            btnExportExample.Location = new Point(500, 24);
+            btnExportExample.Name = "btnExportExample";
+            btnExportExample.Size = new Size(110, 25);
+            btnExportExample.TabIndex = 4;
+            btnExportExample.Text = "Export Example";
+            btnExportExample.UseVisualStyleBackColor = true;
+            btnExportExample.Click += btnExportExample_Click;
             // 
-            // lblSoundCorrectAnswer
+            // lstSoundPackInfo
             // 
-            lblSoundCorrectAnswer.AutoSize = true;
-            lblSoundCorrectAnswer.Location = new Point(20, 126);
-            lblSoundCorrectAnswer.Name = "lblSoundCorrectAnswer";
-            lblSoundCorrectAnswer.Size = new Size(93, 15);
-            lblSoundCorrectAnswer.TabIndex = 9;
-            lblSoundCorrectAnswer.Text = "Correct Answer:";
-            // 
-            // btnBrowseWrongAnswer
-            // 
-            btnBrowseWrongAnswer.Location = new Point(570, 88);
-            btnBrowseWrongAnswer.Name = "btnBrowseWrongAnswer";
-            btnBrowseWrongAnswer.Size = new Size(32, 23);
-            btnBrowseWrongAnswer.TabIndex = 8;
-            btnBrowseWrongAnswer.Tag = "txtSoundWrongAnswer";
-            btnBrowseWrongAnswer.Text = "...";
-            btnBrowseWrongAnswer.UseVisualStyleBackColor = true;
-            btnBrowseWrongAnswer.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundWrongAnswer
-            // 
-            txtSoundWrongAnswer.Location = new Point(130, 88);
-            txtSoundWrongAnswer.Name = "txtSoundWrongAnswer";
-            txtSoundWrongAnswer.Size = new Size(434, 23);
-            txtSoundWrongAnswer.TabIndex = 7;
-            txtSoundWrongAnswer.TextChanged += Control_Changed;
-            // 
-            // lblSoundWrongAnswer
-            // 
-            lblSoundWrongAnswer.AutoSize = true;
-            lblSoundWrongAnswer.Location = new Point(20, 91);
-            lblSoundWrongAnswer.Name = "lblSoundWrongAnswer";
-            lblSoundWrongAnswer.Size = new Size(88, 15);
-            lblSoundWrongAnswer.TabIndex = 6;
-            lblSoundWrongAnswer.Text = "Wrong Answer:";
-            // 
-            // btnBrowseFinalAnswer
-            // 
-            btnBrowseFinalAnswer.Location = new Point(570, 53);
-            btnBrowseFinalAnswer.Name = "btnBrowseFinalAnswer";
-            btnBrowseFinalAnswer.Size = new Size(32, 23);
-            btnBrowseFinalAnswer.TabIndex = 5;
-            btnBrowseFinalAnswer.Tag = "txtSoundFinalAnswer";
-            btnBrowseFinalAnswer.Text = "...";
-            btnBrowseFinalAnswer.UseVisualStyleBackColor = true;
-            btnBrowseFinalAnswer.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundFinalAnswer
-            // 
-            txtSoundFinalAnswer.Location = new Point(130, 53);
-            txtSoundFinalAnswer.Name = "txtSoundFinalAnswer";
-            txtSoundFinalAnswer.Size = new Size(434, 23);
-            txtSoundFinalAnswer.TabIndex = 4;
-            txtSoundFinalAnswer.TextChanged += Control_Changed;
-            // 
-            // lblSoundFinalAnswer
-            // 
-            lblSoundFinalAnswer.AutoSize = true;
-            lblSoundFinalAnswer.Location = new Point(20, 56);
-            lblSoundFinalAnswer.Name = "lblSoundFinalAnswer";
-            lblSoundFinalAnswer.Size = new Size(75, 15);
-            lblSoundFinalAnswer.TabIndex = 3;
-            lblSoundFinalAnswer.Text = "Final Answer:";
-            // 
-            // btnBrowseQuestionCue
-            // 
-            btnBrowseQuestionCue.Location = new Point(570, 23);
-            btnBrowseQuestionCue.Name = "btnBrowseQuestionCue";
-            btnBrowseQuestionCue.Size = new Size(32, 23);
-            btnBrowseQuestionCue.TabIndex = 2;
-            btnBrowseQuestionCue.Tag = "txtSoundQuestionCue";
-            btnBrowseQuestionCue.Text = "...";
-            btnBrowseQuestionCue.UseVisualStyleBackColor = true;
-            btnBrowseQuestionCue.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundQuestionCue
-            // 
-            txtSoundQuestionCue.Location = new Point(130, 23);
-            txtSoundQuestionCue.Name = "txtSoundQuestionCue";
-            txtSoundQuestionCue.Size = new Size(434, 23);
-            txtSoundQuestionCue.TabIndex = 1;
-            txtSoundQuestionCue.TextChanged += Control_Changed;
-            // 
-            // lblSoundQuestionCue
-            // 
-            lblSoundQuestionCue.AutoSize = true;
-            lblSoundQuestionCue.Location = new Point(20, 26);
-            lblSoundQuestionCue.Name = "lblSoundQuestionCue";
-            lblSoundQuestionCue.Size = new Size(82, 15);
-            lblSoundQuestionCue.TabIndex = 0;
-            lblSoundQuestionCue.Text = "Question Cue:";
-            // 
-            // grpLifelineSounds
-            // 
-            grpLifelineSounds.Controls.Add(btnBrowseSwitch);
-            grpLifelineSounds.Controls.Add(txtSoundSwitch);
-            grpLifelineSounds.Controls.Add(lblSoundSwitch);
-            grpLifelineSounds.Controls.Add(btnBrowseATA);
-            grpLifelineSounds.Controls.Add(txtSoundATA);
-            grpLifelineSounds.Controls.Add(lblSoundATA);
-            grpLifelineSounds.Controls.Add(btnBrowsePhone);
-            grpLifelineSounds.Controls.Add(txtSoundPhone);
-            grpLifelineSounds.Controls.Add(lblSoundPhone);
-            grpLifelineSounds.Controls.Add(btnBrowse5050);
-            grpLifelineSounds.Controls.Add(txtSound5050);
-            grpLifelineSounds.Controls.Add(lblSound5050);
-            grpLifelineSounds.Location = new Point(16, 230);
-            grpLifelineSounds.Name = "grpLifelineSounds";
-            grpLifelineSounds.Size = new Size(620, 165);
-            grpLifelineSounds.TabIndex = 1;
-            grpLifelineSounds.TabStop = false;
-            grpLifelineSounds.Text = "Lifeline Sounds";
-            // 
-            // btnBrowseSwitch
-            // 
-            btnBrowseSwitch.Location = new Point(570, 123);
-            btnBrowseSwitch.Name = "btnBrowseSwitch";
-            btnBrowseSwitch.Size = new Size(32, 23);
-            btnBrowseSwitch.TabIndex = 11;
-            btnBrowseSwitch.Tag = "txtSoundSwitch";
-            btnBrowseSwitch.Text = "...";
-            btnBrowseSwitch.UseVisualStyleBackColor = true;
-            btnBrowseSwitch.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundSwitch
-            // 
-            txtSoundSwitch.Location = new Point(130, 123);
-            txtSoundSwitch.Name = "txtSoundSwitch";
-            txtSoundSwitch.Size = new Size(434, 23);
-            txtSoundSwitch.TabIndex = 10;
-            txtSoundSwitch.TextChanged += Control_Changed;
-            // 
-            // lblSoundSwitch
-            // 
-            lblSoundSwitch.AutoSize = true;
-            lblSoundSwitch.Location = new Point(20, 126);
-            lblSoundSwitch.Name = "lblSoundSwitch";
-            lblSoundSwitch.Size = new Size(108, 15);
-            lblSoundSwitch.TabIndex = 9;
-            lblSoundSwitch.Text = "Switch Question:";
-            // 
-            // btnBrowseATA
-            // 
-            btnBrowseATA.Location = new Point(570, 88);
-            btnBrowseATA.Name = "btnBrowseATA";
-            btnBrowseATA.Size = new Size(32, 23);
-            btnBrowseATA.TabIndex = 8;
-            btnBrowseATA.Tag = "txtSoundATA";
-            btnBrowseATA.Text = "...";
-            btnBrowseATA.UseVisualStyleBackColor = true;
-            btnBrowseATA.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundATA
-            // 
-            txtSoundATA.Location = new Point(130, 88);
-            txtSoundATA.Name = "txtSoundATA";
-            txtSoundATA.Size = new Size(434, 23);
-            txtSoundATA.TabIndex = 7;
-            txtSoundATA.TextChanged += Control_Changed;
-            // 
-            // lblSoundATA
-            // 
-            lblSoundATA.AutoSize = true;
-            lblSoundATA.Location = new Point(20, 91);
-            lblSoundATA.Name = "lblSoundATA";
-            lblSoundATA.Size = new Size(105, 15);
-            lblSoundATA.TabIndex = 6;
-            lblSoundATA.Text = "Ask the Audience:";
-            // 
-            // btnBrowsePhone
-            // 
-            btnBrowsePhone.Location = new Point(570, 53);
-            btnBrowsePhone.Name = "btnBrowsePhone";
-            btnBrowsePhone.Size = new Size(32, 23);
-            btnBrowsePhone.TabIndex = 5;
-            btnBrowsePhone.Tag = "txtSoundPhone";
-            btnBrowsePhone.Text = "...";
-            btnBrowsePhone.UseVisualStyleBackColor = true;
-            btnBrowsePhone.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSoundPhone
-            // 
-            txtSoundPhone.Location = new Point(130, 53);
-            txtSoundPhone.Name = "txtSoundPhone";
-            txtSoundPhone.Size = new Size(434, 23);
-            txtSoundPhone.TabIndex = 4;
-            txtSoundPhone.TextChanged += Control_Changed;
-            // 
-            // lblSoundPhone
-            // 
-            lblSoundPhone.AutoSize = true;
-            lblSoundPhone.Location = new Point(20, 56);
-            lblSoundPhone.Name = "lblSoundPhone";
-            lblSoundPhone.Size = new Size(96, 15);
-            lblSoundPhone.TabIndex = 3;
-            lblSoundPhone.Text = "Phone a Friend:";
-            // 
-            // btnBrowse5050
-            // 
-            btnBrowse5050.Location = new Point(570, 23);
-            btnBrowse5050.Name = "btnBrowse5050";
-            btnBrowse5050.Size = new Size(32, 23);
-            btnBrowse5050.TabIndex = 2;
-            btnBrowse5050.Tag = "txtSound5050";
-            btnBrowse5050.Text = "...";
-            btnBrowse5050.UseVisualStyleBackColor = true;
-            btnBrowse5050.Click += btnBrowseSoundFile_Click;
-            // 
-            // txtSound5050
-            // 
-            txtSound5050.Location = new Point(130, 23);
-            txtSound5050.Name = "txtSound5050";
-            txtSound5050.Size = new Size(434, 23);
-            txtSound5050.TabIndex = 1;
-            txtSound5050.TextChanged += Control_Changed;
-            // 
-            // lblSound5050
-            // 
-            lblSound5050.AutoSize = true;
-            lblSound5050.Location = new Point(20, 26);
-            lblSound5050.Name = "lblSound5050";
-            lblSound5050.Size = new Size(39, 15);
-            lblSound5050.TabIndex = 0;
-            lblSound5050.Text = "50:50:";
-            // 
-            // btnOK
+            lstSoundPackInfo.FormattingEnabled = true;
+            lstSoundPackInfo.IntegralHeight = false;
+            lstSoundPackInfo.Location = new Point(16, 60);
+            lstSoundPackInfo.Name = "lstSoundPackInfo";
+            lstSoundPackInfo.SelectionMode = SelectionMode.None;
+            lstSoundPackInfo.Size = new Size(588, 345);
+            lstSoundPackInfo.TabIndex = 5;
+            // // btnOK
             // 
             btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnOK.Location = new Point(416, 515);
@@ -796,7 +501,6 @@ namespace MillionaireGame.Forms.Options
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.DialogResult = DialogResult.Cancel;
             btnCancel.Location = new Point(502, 515);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(80, 30);
@@ -838,8 +542,9 @@ namespace MillionaireGame.Forms.Options
             tabGeneral.ResumeLayout(false);
             grpScreens.ResumeLayout(false);
             grpScreens.PerformLayout();
-            grpGameplay.ResumeLayout(false);
-            grpGameplay.PerformLayout();
+            tabBroadcast.ResumeLayout(false);
+            grpBroadcast.ResumeLayout(false);
+            grpBroadcast.PerformLayout();
             tabLifelines.ResumeLayout(false);
             tabLifelines.PerformLayout();
             grpLifeline4.ResumeLayout(false);
@@ -852,10 +557,7 @@ namespace MillionaireGame.Forms.Options
             grpLifeline1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).EndInit();
             tabSounds.ResumeLayout(false);
-            grpGameSounds.ResumeLayout(false);
-            grpGameSounds.PerformLayout();
-            grpLifelineSounds.ResumeLayout(false);
-            grpLifelineSounds.PerformLayout();
+            grpSoundPack.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -863,23 +565,20 @@ namespace MillionaireGame.Forms.Options
 
         private TabControl tabControl;
         private TabPage tabGeneral;
+        private TabPage tabBroadcast;
         private TabPage tabLifelines;
         private TabPage tabSounds;
         private Button btnOK;
         private Button btnCancel;
         private Button btnApply;
         private GroupBox grpScreens;
+        private GroupBox grpBroadcast;
         private CheckBox chkAutoShowHostScreen;
         private CheckBox chkAutoShowGuestScreen;
         private CheckBox chkAutoShowTVScreen;
         private CheckBox chkFullScreenHostScreen;
         private CheckBox chkFullScreenGuestScreen;
         private CheckBox chkFullScreenTVScreen;
-        private GroupBox grpGameplay;
-        private CheckBox chkShowAnswerOnlyAtFinal;
-        private CheckBox chkAutoShowTotalWinnings;
-        private CheckBox chkAutoHideQuestionAtWalkAway;
-        private CheckBox chkHideAnswersOnNewQuestion;
         private Label lblTotalLifelines;
         private NumericUpDown numTotalLifelines;
         private GroupBox grpLifeline1;
@@ -898,34 +597,15 @@ namespace MillionaireGame.Forms.Options
         private ComboBox cmbLifeline4Type;
         private Label lblLifeline4;
         private ComboBox cmbLifeline4Availability;
-        private GroupBox grpGameSounds;
-        private Label lblSoundQuestionCue;
-        private TextBox txtSoundQuestionCue;
-        private Button btnBrowseQuestionCue;
-        private GroupBox grpLifelineSounds;
-        private Button btnBrowseFinalAnswer;
-        private TextBox txtSoundFinalAnswer;
-        private Label lblSoundFinalAnswer;
-        private Button btnBrowseWrongAnswer;
-        private TextBox txtSoundWrongAnswer;
-        private Label lblSoundWrongAnswer;
-        private Button btnBrowseCorrectAnswer;
-        private TextBox txtSoundCorrectAnswer;
-        private Label lblSoundCorrectAnswer;
-        private Button btnBrowseWalkAway;
-        private TextBox txtSoundWalkAway;
-        private Label lblSoundWalkAway;
-        private Button btnBrowse5050;
-        private TextBox txtSound5050;
-        private Label lblSound5050;
-        private Button btnBrowsePhone;
-        private TextBox txtSoundPhone;
-        private Label lblSoundPhone;
-        private Button btnBrowseATA;
-        private TextBox txtSoundATA;
-        private Label lblSoundATA;
-        private Button btnBrowseSwitch;
-        private TextBox txtSoundSwitch;
-        private Label lblSoundSwitch;
+        private GroupBox grpSoundPack;
+        private Label lblSoundPack;
+        private ComboBox cmbSoundPack;
+        private Button btnImportPack;
+        private Button btnRemovePack;
+        private Button btnExportExample;
+        private ListBox lstSoundPackInfo;
     }
 }
+
+
+

@@ -12,9 +12,10 @@ namespace MillionaireGame.Forms;
 /// </summary>
 public enum LifelineMode
 {
-    Inactive,  // Before Explain Game (default orange)
-    Demo,      // During Explain Game (yellow)
-    Active     // After Lights Down (green, then grey when used)
+    Inactive,  // Before Explain Game (grey, disabled)
+    Demo,      // During Explain Game (yellow, clickable for demo)
+    Standby,   // After Lights Down but before all answers revealed (orange, not clickable)
+    Active     // After all 4 answers revealed (green, clickable, then grey when used)
 }
 
 /// <summary>
@@ -88,11 +89,11 @@ public partial class ControlPanelForm : Form
     private System.Windows.Forms.Timer? _closingTimer;
     private bool _closingInProgress = false;
     
-    // Auto-reset cancellation from Thanks for Playing
-    private System.Threading.CancellationTokenSource? _autoResetCancellation;
-    
     // Track if at least one round has been completed
     private bool _firstRoundCompleted = false;
+    
+    // Track if bed music should be restarted after lifeline use (for Q1-5)
+    private bool _shouldRestartBedMusic = false;
 
     // Screen forms
     private HostScreenForm? _hostScreen;
@@ -114,9 +115,9 @@ public partial class ControlPanelForm : Form
         _screenService = screenService;
         _soundService = soundService;
         
-        // Load sounds from settings
-        _soundService.LoadSoundsFromSettings(_appSettings.Settings);
-// Initialize hotkey handler
+        // Sounds are already loaded in Program.cs during initialization
+        
+        // Initialize hotkey handler
         _hotkeyHandler = new HotkeyHandler(
             onF1: () => btnA.PerformClick(),
             onF2: () => btnB.PerformClick(),
@@ -311,6 +312,9 @@ public partial class ControlPanelForm : Form
                     _screenService.ShowCorrectAnswerToHost(lblAnswer.Text);
                 }
                 
+                // Activate lifelines (green, clickable) now that all answers are revealed
+                SetLifelineMode(LifelineMode.Active);
+                
                 // Enable Walk Away button once all answers are revealed (green)
                 btnWalk.Enabled = true;
                 btnWalk.BackColor = Color.LimeGreen;
@@ -479,6 +483,10 @@ public partial class ControlPanelForm : Form
 
     private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
+        // Disable Lights Down immediately to prevent double-clicks
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
         // Disable Explain Game immediately (grey)
         btnExplainGame.Enabled = false;
         btnExplainGame.BackColor = Color.Gray;
@@ -523,23 +531,23 @@ public partial class ControlPanelForm : Form
             }
         }
         
-        // Disable Lights Down and make grey
-        btnLightsDown.Enabled = false;
-        btnLightsDown.BackColor = Color.Gray;
-        
         // Enable Question button (green) for all questions after lights down
         btnNewQuestion.Enabled = true;
         btnNewQuestion.BackColor = Color.LimeGreen;
         btnNewQuestion.ForeColor = Color.Black;
         
-        // Enter active mode - lifelines turn green
-        SetLifelineMode(LifelineMode.Active);
+        // Set lifelines to standby mode (orange, not clickable until all answers revealed)
+        SetLifelineMode(LifelineMode.Standby);
         
         // TODO: Dim screens
     }
 
     private void btnReveal_Click(object? sender, EventArgs e)
     {
+        // Disable Reveal button immediately to prevent double-clicks
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
         if (string.IsNullOrEmpty(_currentAnswer))
         {
             MessageBox.Show(
@@ -565,10 +573,22 @@ public partial class ControlPanelForm : Form
         // Use current question level to determine which quit sound to play
         var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
         var quitSound = questionNumber <= 10 ? SoundEffect.QuitSmall : SoundEffect.QuitLarge;
+        var quitSoundId = "quit_sound";
         
-        _soundService.PlaySound(quitSound);
-        MessageBox.Show($"Total winnings: {_gameService.State.CurrentValue}", 
-            "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        _soundService.PlaySound(quitSound, quitSoundId, loop: false);
+        
+        // Give sound time to register before checking status
+        await Task.Delay(100);
+        
+        // Only show message box in debug mode (non-blocking)
+        if (Program.DebugMode)
+        {
+            var winnings = _gameService.State.CurrentValue;
+#pragma warning disable CS4014
+            Task.Run(() => MessageBox.Show($"Total winnings: {winnings}", 
+                "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information));
+#pragma warning restore CS4014
+        }
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)
@@ -580,22 +600,22 @@ public partial class ControlPanelForm : Form
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
         
-        // Disable Reset (grey) - round is over
-        btnResetGame.Enabled = false;
-        btnResetGame.BackColor = Color.Gray;
+        // Keep Reset button enabled (green) so new player can start
+        btnResetGame.Enabled = true;
+        btnResetGame.BackColor = Color.LimeGreen;
+        btnResetGame.ForeColor = Color.Black;
         
         // Disable lifelines immediately - round is over
         SetLifelineMode(LifelineMode.Inactive);
-        
-        // Enable Thanks for Playing (green)
-        btnThanksForPlaying.Enabled = true;
-        btnThanksForPlaying.BackColor = Color.LimeGreen;
-        btnThanksForPlaying.ForeColor = Color.Black;
         
         // Enable Closing (green)
         btnClosing.Enabled = true;
         btnClosing.BackColor = Color.LimeGreen;
         btnClosing.ForeColor = Color.Black;
+        
+        // Wait for quit sound to finish, then auto-trigger Thanks for Playing
+        await _soundService.WaitForSoundAsync(quitSoundId);
+        btnThanksForPlaying_Click(null, EventArgs.Empty);
     }
 
     private void btnActivateRiskMode_Click(object? sender, EventArgs e)
@@ -675,24 +695,24 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    private void btn5050_Click(object? sender, EventArgs e)
+    private void btnLifeline1_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(1, btn5050);
+        HandleLifelineClick(1, btnLifeline1);
     }
 
-    private void btnPhoneFriend_Click(object? sender, EventArgs e)
+    private void btnLifeline2_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(2, btnPhoneFriend);
+        HandleLifelineClick(2, btnLifeline2);
     }
 
-    private void btnAskAudience_Click(object? sender, EventArgs e)
+    private void btnLifeline3_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(3, btnAskAudience);
+        HandleLifelineClick(3, btnLifeline3);
     }
 
-    private async void btnSwitch_Click(object? sender, EventArgs e)
+    private async void btnLifeline4_Click(object? sender, EventArgs e)
     {
-        await HandleLifelineClickAsync(4, btnSwitch);
+        await HandleLifelineClickAsync(4, btnLifeline4);
     }
 
     private Core.Models.LifelineType GetLifelineTypeFromSettings(int lifelineNumber)
@@ -757,20 +777,50 @@ public partial class ControlPanelForm : Form
         }
         
         // Button 1 - always visible if TotalLifelines >= 1
-        btn5050.Text = label1;
-        btn5050.Visible = totalLifelines >= 1;
+        btnLifeline1.Text = label1;
+        btnLifeline1.Visible = totalLifelines >= 1;
         
         // Button 2
-        btnPhoneFriend.Text = label2;
-        btnPhoneFriend.Visible = totalLifelines >= 2;
+        btnLifeline2.Text = label2;
+        btnLifeline2.Visible = totalLifelines >= 2;
         
         // Button 3
-        btnAskAudience.Text = label3;
-        btnAskAudience.Visible = totalLifelines >= 3;
+        btnLifeline3.Text = label3;
+        btnLifeline3.Visible = totalLifelines >= 3;
         
         // Button 4
-        btnSwitch.Text = label4;
-        btnSwitch.Visible = totalLifelines >= 4;
+        btnLifeline4.Text = label4;
+        btnLifeline4.Visible = totalLifelines >= 4;
+    }
+
+    /// <summary>
+    /// Helper method to play a lifeline sound while stopping all other background audio.
+    /// Stops all sounds first, waits 500ms, then plays the lifeline sound to ensure clean audio.
+    /// </summary>
+    private async Task PlayLifelineSoundAsync(SoundEffect soundEffect, string? identifier = null, bool loop = false)
+    {
+        // For Q1-5, track that bed music should be restarted after answer is revealed
+        var questionNumber = (int)nmrLevel.Value + 1;
+        if (questionNumber >= 1 && questionNumber <= 5)
+        {
+            _shouldRestartBedMusic = true;
+        }
+        
+        // Stop all background sounds first
+        _soundService.StopAllSounds();
+        
+        // Wait 500ms for clean audio transition
+        await Task.Delay(500);
+        
+        // Play the lifeline sound
+        if (identifier != null)
+        {
+            _soundService.PlaySound(soundEffect, identifier, loop);
+        }
+        else
+        {
+            _soundService.PlaySound(soundEffect);
+        }
     }
 
     private void HandleLifelineClick(int lifelineNumber, Button button)
@@ -901,14 +951,14 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    private void ExecuteFiftyFifty(Core.Models.Lifeline lifeline, Button button)
+    private async void ExecuteFiftyFifty(Core.Models.Lifeline lifeline, Button button)
     {
         _gameService.UseLifeline(lifeline.Type);
         button.Enabled = false;
         button.BackColor = Color.Gray;
 
-        // Play lifeline sound
-        _soundService.PlaySound(SoundEffect.Lifeline5050);
+        // Play lifeline sound (stops background audio, waits 500ms, then plays)
+        await PlayLifelineSoundAsync(SoundEffect.Lifeline5050);
 
         // Remove two wrong answers
         if (string.IsNullOrEmpty(lblAnswer.Text)) return;
@@ -937,14 +987,14 @@ public partial class ControlPanelForm : Form
         _screenService.ActivateLifeline(lifeline);
     }
 
-    private void ExecutePhoneFriend(Core.Models.Lifeline lifeline, Button button)
+    private async void ExecutePhoneFriend(Core.Models.Lifeline lifeline, Button button)
     {
         // Stage 1: Start intro/calling sequence
         _pafStage = PAFStage.CallingIntro;
         button.BackColor = Color.Blue;
         
-        // Play intro sound on loop with identifier for later stopping
-        _soundService.PlaySound(SoundEffect.LifelinePAFStart, "paf_intro", loop: true);
+        // Play intro sound on loop (stops background audio, waits 500ms, then plays)
+        await PlayLifelineSoundAsync(SoundEffect.LifelinePAFStart, "paf_intro", loop: true);
         
         _screenService.ActivateLifeline(lifeline);
     }
@@ -1039,10 +1089,10 @@ public partial class ControlPanelForm : Form
     {
         return _pafLifelineNumber switch
         {
-            1 => btn5050,
-            2 => btnPhoneFriend,
-            3 => btnAskAudience,
-            4 => btnSwitch,
+            1 => btnLifeline1,
+            2 => btnLifeline2,
+            3 => btnLifeline3,
+            4 => btnLifeline4,
             _ => null
         };
     }
@@ -1066,14 +1116,14 @@ public partial class ControlPanelForm : Form
         _screenService.ActivateLifeline(lifeline);
     }
 
-    private void ExecuteAskAudience(Core.Models.Lifeline lifeline, Button button)
+    private async void ExecuteAskAudience(Core.Models.Lifeline lifeline, Button button)
     {
         // Stage 1: Start intro/explanation (2 minutes)
         _ataStage = ATAStage.Intro;
         button.BackColor = Color.Blue;
         
-        // Play intro sound
-        _soundService.PlaySound(SoundEffect.LifelineATAStart, "ata_intro");
+        // Play intro sound (stops background audio, waits 500ms, then plays)
+        await PlayLifelineSoundAsync(SoundEffect.LifelineATAStart, "ata_intro");
         
         // Start 2-minute timer
         _ataSecondsRemaining = 120;
@@ -1205,10 +1255,10 @@ public partial class ControlPanelForm : Form
     {
         return _ataLifelineNumber switch
         {
-            1 => btn5050,
-            2 => btnPhoneFriend,
-            3 => btnAskAudience,
-            4 => btnSwitch,
+            1 => btnLifeline1,
+            2 => btnLifeline2,
+            3 => btnLifeline3,
+            4 => btnLifeline4,
             _ => null
         };
     }
@@ -1243,8 +1293,8 @@ public partial class ControlPanelForm : Form
             button.Enabled = false;
             button.BackColor = Color.Gray;
 
-            // Play lifeline sound
-            _soundService.PlaySound(SoundEffect.LifelineSwitch);
+            // Play lifeline sound (stops background audio, waits 500ms, then plays)
+            await PlayLifelineSoundAsync(SoundEffect.LifelineSwitch);
 
             // Load a new question
             await LoadNewQuestion();
@@ -1306,8 +1356,12 @@ public partial class ControlPanelForm : Form
         // Use current question level to determine which walk away sound to play
         var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
         var walkAwaySound = questionNumber <= 10 ? SoundEffect.WalkAwaySmall : SoundEffect.WalkAwayLarge;
+        var walkAwaySoundId = "walkaway_sound";
         
-        _soundService.PlaySound(walkAwaySound, loop: false);
+        _soundService.PlaySound(walkAwaySound, walkAwaySoundId, loop: false);
+        
+        // Give sound time to register before checking status
+        await Task.Delay(100);
         
         // Determine winnings based on game outcome
         string winnings = _gameOutcome switch
@@ -1318,8 +1372,14 @@ public partial class ControlPanelForm : Form
             _ => _gameService.State.CurrentValue                   // Fallback to current value
         };
         
-        MessageBox.Show($"Total Winnings: {winnings}\n\nThanks for playing!", 
-            "Game Over", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        // Only show message box in debug mode (non-blocking)
+        if (Program.DebugMode)
+        {
+#pragma warning disable CS4014
+            Task.Run(() => MessageBox.Show($"Total Winnings: {winnings}\n\nThanks for playing!", 
+                "Game Over", MessageBoxButtons.OK, MessageBoxIcon.Information));
+#pragma warning restore CS4014
+        }
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)
@@ -1340,51 +1400,31 @@ public partial class ControlPanelForm : Form
         btnClosing.BackColor = Color.LimeGreen;
         btnClosing.ForeColor = Color.Black;
         
-        // Store the auto-reset task so we can cancel it if Closing is clicked
-        _autoResetCancellation = new System.Threading.CancellationTokenSource();
-        var cancellationToken = _autoResetCancellation.Token;
+        // Wait for walk away sound to finish, then enable Pick Player immediately
+        await _soundService.WaitForSoundAsync(walkAwaySoundId);
         
-        // Wait for walk away sound to finish (approximately 5 seconds) + additional 5 seconds
-        try
-        {
-            await Task.Delay(10000, cancellationToken);
+        // Automatically reset for next player
+        _soundService.StopAllSounds();
         
-            // Automatically reset for next player
-            _soundService.StopAllSounds();
+        // Reset PAF state
+        _pafTimer?.Stop();
+        _pafTimer?.Dispose();
+        _pafTimer = null;
+        _pafStage = PAFStage.NotStarted;
+        _pafLifelineNumber = 0;
+        _pafSecondsRemaining = 30;
         
-            // Reset PAF state
-            _pafTimer?.Stop();
-            _pafTimer?.Dispose();
-            _pafTimer = null;
-            _pafStage = PAFStage.NotStarted;
-            _pafLifelineNumber = 0;
-            _pafSecondsRemaining = 30;
+        // Reset ATA state
+        _ataTimer?.Stop();
+        _ataTimer?.Dispose();
+        _ataTimer = null;
+        _ataStage = ATAStage.NotStarted;
+        _ataLifelineNumber = 0;
+        _ataSecondsRemaining = 120;
         
-            // Reset ATA state
-            _ataTimer?.Stop();
-            _ataTimer?.Dispose();
-            _ataTimer = null;
-            _ataStage = ATAStage.NotStarted;
-            _ataLifelineNumber = 0;
-            _ataSecondsRemaining = 120;
-        
-            _gameService.ResetGame();
-            _firstRoundCompleted = true; // Mark that at least one round has been completed
-            ResetAllControls();
-        }
-        catch (TaskCanceledException)
-        {
-            // Auto-reset was cancelled because Closing was clicked
-            if (Program.DebugMode)
-            {
-                Console.WriteLine("[Thanks for Playing] Auto-reset cancelled - Closing was clicked");
-            }
-        }
-        finally
-        {
-            _autoResetCancellation?.Dispose();
-            _autoResetCancellation = null;
-        }
+        _gameService.ResetGame();
+        _firstRoundCompleted = true; // Mark that at least one round has been completed
+        ResetAllControls();
     }
 
     private async void btnClosing_Click(object? sender, EventArgs e)
@@ -1395,10 +1435,9 @@ public partial class ControlPanelForm : Form
             _closingInProgress = true;
             btnClosing.BackColor = Color.Red;
             
-            // Cancel any pending auto-reset from Thanks for Playing
-            _autoResetCancellation?.Cancel();
-            _autoResetCancellation?.Dispose();
-            _autoResetCancellation = null;
+            // Reset question level and clear all questions/lifelines
+            nmrLevel.Value = 0;
+            ResetAllControls();
             
             // Disable Reset button to prevent interference (grey)
             btnResetGame.Enabled = false;
@@ -1562,6 +1601,29 @@ public partial class ControlPanelForm : Form
         // Disable Walk Away once an answer is selected (grey)
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
+        
+        // Return ONLY active (enabled) lifelines to standby mode (orange, not clickable)
+        // Used/disabled lifelines are left alone
+        if (btnLifeline1.Visible && btnLifeline1.Enabled)
+        {
+            btnLifeline1.BackColor = Color.Orange;
+            btnLifeline1.Enabled = false;
+        }
+        if (btnLifeline2.Visible && btnLifeline2.Enabled)
+        {
+            btnLifeline2.BackColor = Color.Orange;
+            btnLifeline2.Enabled = false;
+        }
+        if (btnLifeline3.Visible && btnLifeline3.Enabled)
+        {
+            btnLifeline3.BackColor = Color.Orange;
+            btnLifeline3.Enabled = false;
+        }
+        if (btnLifeline4.Visible && btnLifeline4.Enabled)
+        {
+            btnLifeline4.BackColor = Color.Orange;
+            btnLifeline4.Enabled = false;
+        }
 
         // Broadcast answer selection to all screens
         _screenService.SelectAnswer(answer);
@@ -1853,6 +1915,15 @@ public partial class ControlPanelForm : Form
             // Play question-specific correct answer sound using captured question number
             PlayCorrectSound(currentQuestionNumber);
             
+            // For Q1-5, restart bed music after correct answer if it was stopped by a lifeline
+            if (currentQuestionNumber >= 1 && currentQuestionNumber <= 5 && _shouldRestartBedMusic)
+            {
+                // Wait for correct answer sound to play a bit, then restart bed music
+                await Task.Delay(2000);
+                PlayQuestionBed();
+                _shouldRestartBedMusic = false; // Reset flag
+            }
+            
             // Auto-show winnings after 2 seconds
             await Task.Delay(2000);
             if (!chkShowWinnings.Checked)
@@ -1922,6 +1993,7 @@ public partial class ControlPanelForm : Form
             var currentQuestionNumber = (int)nmrLevel.Value + 1;
             
             _gameOutcome = GameOutcome.Wrong; // Track that player answered incorrectly
+            _shouldRestartBedMusic = false; // Don't restart bed music on wrong answer
             
             // Wrong answer
             switch (_currentAnswer)
@@ -2021,25 +2093,25 @@ public partial class ControlPanelForm : Form
         
         // Explicitly disable and grey out all lifeline buttons when round is over
         // Only apply to visible buttons
-        if (btn5050.Visible)
+        if (btnLifeline1.Visible)
         {
-            btn5050.Enabled = false;
-            btn5050.BackColor = Color.Gray;
+            btnLifeline1.Enabled = false;
+            btnLifeline1.BackColor = Color.Gray;
         }
-        if (btnPhoneFriend.Visible)
+        if (btnLifeline2.Visible)
         {
-            btnPhoneFriend.Enabled = false;
-            btnPhoneFriend.BackColor = Color.Gray;
+            btnLifeline2.Enabled = false;
+            btnLifeline2.BackColor = Color.Gray;
         }
-        if (btnAskAudience.Visible)
+        if (btnLifeline3.Visible)
         {
-            btnAskAudience.Enabled = false;
-            btnAskAudience.BackColor = Color.Gray;
+            btnLifeline3.Enabled = false;
+            btnLifeline3.BackColor = Color.Gray;
         }
-        if (btnSwitch.Visible)
+        if (btnLifeline4.Visible)
         {
-            btnSwitch.Enabled = false;
-            btnSwitch.BackColor = Color.Gray;
+            btnLifeline4.Enabled = false;
+            btnLifeline4.BackColor = Color.Gray;
         }
         
         // Reset closing state
@@ -2111,50 +2183,78 @@ public partial class ControlPanelForm : Form
             case LifelineMode.Inactive:
                 // Grey - default state (disabled, not clickable)
                 // Only apply to visible buttons
-                if (btn5050.Visible)
-                    SetLifelineButtonColor(btn5050, Color.Gray, false);
-                if (btnPhoneFriend.Visible)
-                    SetLifelineButtonColor(btnPhoneFriend, Color.Gray, false);
-                if (btnAskAudience.Visible)
-                    SetLifelineButtonColor(btnAskAudience, Color.Gray, false);
-                if (btnSwitch.Visible)
-                    SetLifelineButtonColor(btnSwitch, Color.Gray, false);
+                if (btnLifeline1.Visible)
+                    SetLifelineButtonColor(btnLifeline1, Color.Gray, false);
+                if (btnLifeline2.Visible)
+                    SetLifelineButtonColor(btnLifeline2, Color.Gray, false);
+                if (btnLifeline3.Visible)
+                    SetLifelineButtonColor(btnLifeline3, Color.Gray, false);
+                if (btnLifeline4.Visible)
+                    SetLifelineButtonColor(btnLifeline4, Color.Gray, false);
                 break;
                 
             case LifelineMode.Demo:
                 // Yellow - demo mode
                 // Only apply to visible buttons
-                if (btn5050.Visible)
-                    SetLifelineButtonColor(btn5050, Color.Yellow, true);
-                if (btnPhoneFriend.Visible)
-                    SetLifelineButtonColor(btnPhoneFriend, Color.Yellow, true);
-                if (btnAskAudience.Visible)
-                    SetLifelineButtonColor(btnAskAudience, Color.Yellow, true);
-                if (btnSwitch.Visible)
-                    SetLifelineButtonColor(btnSwitch, Color.Yellow, true);
+                if (btnLifeline1.Visible)
+                    SetLifelineButtonColor(btnLifeline1, Color.Yellow, true);
+                if (btnLifeline2.Visible)
+                    SetLifelineButtonColor(btnLifeline2, Color.Yellow, true);
+                if (btnLifeline3.Visible)
+                    SetLifelineButtonColor(btnLifeline3, Color.Yellow, true);
+                if (btnLifeline4.Visible)
+                    SetLifelineButtonColor(btnLifeline4, Color.Yellow, true);
+                break;
+                
+            case LifelineMode.Standby:
+                // Orange - standby mode (not clickable until all answers revealed)
+                // Only apply to visible buttons (used buttons are left alone)
+                if (btnLifeline1.Visible)
+                {
+                    btnLifeline1.BackColor = Color.Orange;
+                    btnLifeline1.Enabled = false;
+                }
+                if (btnLifeline2.Visible)
+                {
+                    btnLifeline2.BackColor = Color.Orange;
+                    btnLifeline2.Enabled = false;
+                }
+                if (btnLifeline3.Visible)
+                {
+                    btnLifeline3.BackColor = Color.Orange;
+                    btnLifeline3.Enabled = false;
+                }
+                if (btnLifeline4.Visible)
+                {
+                    btnLifeline4.BackColor = Color.Orange;
+                    btnLifeline4.Enabled = false;
+                }
                 break;
                 
             case LifelineMode.Active:
-                // Green - active mode (check if already used based on configured types)
-                // Only apply to visible buttons
-                var type1 = GetLifelineTypeFromSettings(1);
-                var type2 = GetLifelineTypeFromSettings(2);
-                var type3 = GetLifelineTypeFromSettings(3);
-                var type4 = GetLifelineTypeFromSettings(4);
-                
-                var lifeline1 = _gameService.State.GetLifeline(type1);
-                var lifeline2 = _gameService.State.GetLifeline(type2);
-                var lifeline3 = _gameService.State.GetLifeline(type3);
-                var lifeline4 = _gameService.State.GetLifeline(type4);
-                
-                if (btn5050.Visible)
-                    SetLifelineButtonColor(btn5050, lifeline1?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline1?.IsUsed != true);
-                if (btnPhoneFriend.Visible)
-                    SetLifelineButtonColor(btnPhoneFriend, lifeline2?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline2?.IsUsed != true);
-                if (btnAskAudience.Visible)
-                    SetLifelineButtonColor(btnAskAudience, lifeline3?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline3?.IsUsed != true);
-                if (btnSwitch.Visible)
-                    SetLifelineButtonColor(btnSwitch, lifeline4?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline4?.IsUsed != true);
+                // Green - active mode (clickable)
+                // Only apply to visible buttons that are in standby (orange)
+                // Grey/disabled buttons (used lifelines) are left alone
+                if (btnLifeline1.Visible && btnLifeline1.BackColor == Color.Orange)
+                {
+                    btnLifeline1.BackColor = Color.LimeGreen;
+                    btnLifeline1.Enabled = true;
+                }
+                if (btnLifeline2.Visible && btnLifeline2.BackColor == Color.Orange)
+                {
+                    btnLifeline2.BackColor = Color.LimeGreen;
+                    btnLifeline2.Enabled = true;
+                }
+                if (btnLifeline3.Visible && btnLifeline3.BackColor == Color.Orange)
+                {
+                    btnLifeline3.BackColor = Color.LimeGreen;
+                    btnLifeline3.Enabled = true;
+                }
+                if (btnLifeline4.Visible && btnLifeline4.BackColor == Color.Orange)
+                {
+                    btnLifeline4.BackColor = Color.LimeGreen;
+                    btnLifeline4.Enabled = true;
+                }
                 break;
         }
     }
@@ -2196,6 +2296,12 @@ public partial class ControlPanelForm : Form
         {
             // Reload sounds after settings change
             _soundService.LoadSoundsFromSettings(_appSettings.Settings);
+            
+            // Reinitialize lifeline buttons to reflect new settings (visibility, labels)
+            InitializeLifelineButtons();
+            
+            // Reapply current lifeline mode to update colors
+            SetLifelineMode(_lifelineMode);
         }
     }
 
