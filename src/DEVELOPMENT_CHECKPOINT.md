@@ -462,9 +462,10 @@
 - System.Data.SqlClient 4.8.6 (database)
 
 ### Useful Links
-- Repository: https://github.com/Macronair/TheMillionaireGame
-- C# Branch: master-csharp
-- Original Project: master branch (VB.NET)
+- **C# Repository** (Current): https://github.com/jdelgado-dtlabs/TheMillionaireGame
+  - Branch: master-csharp
+- **Original VB.NET Repository**: https://github.com/Macronair/TheMillionaireGame
+  - Branch: master (VB.NET version)
 
 ---
 
