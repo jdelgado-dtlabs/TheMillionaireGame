@@ -731,6 +731,17 @@ public partial class ControlPanelForm : Form
 
     private void UpdateLifelineButtonLabels()
     {
+        InitializeLifelineButtons();
+    }
+
+    /// <summary>
+    /// Initializes lifeline buttons based on settings: sets visibility, labels, and default state
+    /// </summary>
+    private void InitializeLifelineButtons()
+    {
+        int totalLifelines = _appSettings.Settings.TotalLifelines;
+        
+        // Get labels for all 4 buttons
         var label1 = GetLifelineDisplayName(1);
         var label2 = GetLifelineDisplayName(2);
         var label3 = GetLifelineDisplayName(3);
@@ -738,17 +749,28 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Lifelines] Setting button labels:");
-            Console.WriteLine($"  Button 1: {label1} (Type: {_appSettings.Settings.Lifeline1})");
-            Console.WriteLine($"  Button 2: {label2} (Type: {_appSettings.Settings.Lifeline2})");
-            Console.WriteLine($"  Button 3: {label3} (Type: {_appSettings.Settings.Lifeline3})");
-            Console.WriteLine($"  Button 4: {label4} (Type: {_appSettings.Settings.Lifeline4})");
+            Console.WriteLine($"[Lifelines] Initializing {totalLifelines} lifeline button(s):");
+            Console.WriteLine($"  Button 1: {label1} (Type: {_appSettings.Settings.Lifeline1}) - Visible: {totalLifelines >= 1}");
+            Console.WriteLine($"  Button 2: {label2} (Type: {_appSettings.Settings.Lifeline2}) - Visible: {totalLifelines >= 2}");
+            Console.WriteLine($"  Button 3: {label3} (Type: {_appSettings.Settings.Lifeline3}) - Visible: {totalLifelines >= 3}");
+            Console.WriteLine($"  Button 4: {label4} (Type: {_appSettings.Settings.Lifeline4}) - Visible: {totalLifelines >= 4}");
         }
         
+        // Button 1 - always visible if TotalLifelines >= 1
         btn5050.Text = label1;
+        btn5050.Visible = totalLifelines >= 1;
+        
+        // Button 2
         btnPhoneFriend.Text = label2;
+        btnPhoneFriend.Visible = totalLifelines >= 2;
+        
+        // Button 3
         btnAskAudience.Text = label3;
+        btnAskAudience.Visible = totalLifelines >= 3;
+        
+        // Button 4
         btnSwitch.Text = label4;
+        btnSwitch.Visible = totalLifelines >= 4;
     }
 
     private void HandleLifelineClick(int lifelineNumber, Button button)
@@ -1994,15 +2016,31 @@ public partial class ControlPanelForm : Form
         _lifelineMode = LifelineMode.Inactive;
         SetLifelineMode(LifelineMode.Inactive);
         
+        // Reinitialize lifeline buttons (visibility, labels, default state)
+        InitializeLifelineButtons();
+        
         // Explicitly disable and grey out all lifeline buttons when round is over
-        btn5050.Enabled = false;
-        btn5050.BackColor = Color.Gray;
-        btnPhoneFriend.Enabled = false;
-        btnPhoneFriend.BackColor = Color.Gray;
-        btnAskAudience.Enabled = false;
-        btnAskAudience.BackColor = Color.Gray;
-        btnSwitch.Enabled = false;
-        btnSwitch.BackColor = Color.Gray;
+        // Only apply to visible buttons
+        if (btn5050.Visible)
+        {
+            btn5050.Enabled = false;
+            btn5050.BackColor = Color.Gray;
+        }
+        if (btnPhoneFriend.Visible)
+        {
+            btnPhoneFriend.Enabled = false;
+            btnPhoneFriend.BackColor = Color.Gray;
+        }
+        if (btnAskAudience.Visible)
+        {
+            btnAskAudience.Enabled = false;
+            btnAskAudience.BackColor = Color.Gray;
+        }
+        if (btnSwitch.Visible)
+        {
+            btnSwitch.Enabled = false;
+            btnSwitch.BackColor = Color.Gray;
+        }
         
         // Reset closing state
         if (_closingTimer != null)
@@ -2072,22 +2110,33 @@ public partial class ControlPanelForm : Form
         {
             case LifelineMode.Inactive:
                 // Grey - default state (disabled, not clickable)
-                SetLifelineButtonColor(btn5050, Color.Gray, false);
-                SetLifelineButtonColor(btnPhoneFriend, Color.Gray, false);
-                SetLifelineButtonColor(btnAskAudience, Color.Gray, false);
-                SetLifelineButtonColor(btnSwitch, Color.Gray, false);
+                // Only apply to visible buttons
+                if (btn5050.Visible)
+                    SetLifelineButtonColor(btn5050, Color.Gray, false);
+                if (btnPhoneFriend.Visible)
+                    SetLifelineButtonColor(btnPhoneFriend, Color.Gray, false);
+                if (btnAskAudience.Visible)
+                    SetLifelineButtonColor(btnAskAudience, Color.Gray, false);
+                if (btnSwitch.Visible)
+                    SetLifelineButtonColor(btnSwitch, Color.Gray, false);
                 break;
                 
             case LifelineMode.Demo:
                 // Yellow - demo mode
-                SetLifelineButtonColor(btn5050, Color.Yellow, true);
-                SetLifelineButtonColor(btnPhoneFriend, Color.Yellow, true);
-                SetLifelineButtonColor(btnAskAudience, Color.Yellow, true);
-                SetLifelineButtonColor(btnSwitch, Color.Yellow, true);
+                // Only apply to visible buttons
+                if (btn5050.Visible)
+                    SetLifelineButtonColor(btn5050, Color.Yellow, true);
+                if (btnPhoneFriend.Visible)
+                    SetLifelineButtonColor(btnPhoneFriend, Color.Yellow, true);
+                if (btnAskAudience.Visible)
+                    SetLifelineButtonColor(btnAskAudience, Color.Yellow, true);
+                if (btnSwitch.Visible)
+                    SetLifelineButtonColor(btnSwitch, Color.Yellow, true);
                 break;
                 
             case LifelineMode.Active:
                 // Green - active mode (check if already used based on configured types)
+                // Only apply to visible buttons
                 var type1 = GetLifelineTypeFromSettings(1);
                 var type2 = GetLifelineTypeFromSettings(2);
                 var type3 = GetLifelineTypeFromSettings(3);
@@ -2098,10 +2147,14 @@ public partial class ControlPanelForm : Form
                 var lifeline3 = _gameService.State.GetLifeline(type3);
                 var lifeline4 = _gameService.State.GetLifeline(type4);
                 
-                SetLifelineButtonColor(btn5050, lifeline1?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline1?.IsUsed != true);
-                SetLifelineButtonColor(btnPhoneFriend, lifeline2?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline2?.IsUsed != true);
-                SetLifelineButtonColor(btnAskAudience, lifeline3?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline3?.IsUsed != true);
-                SetLifelineButtonColor(btnSwitch, lifeline4?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline4?.IsUsed != true);
+                if (btn5050.Visible)
+                    SetLifelineButtonColor(btn5050, lifeline1?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline1?.IsUsed != true);
+                if (btnPhoneFriend.Visible)
+                    SetLifelineButtonColor(btnPhoneFriend, lifeline2?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline2?.IsUsed != true);
+                if (btnAskAudience.Visible)
+                    SetLifelineButtonColor(btnAskAudience, lifeline3?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline3?.IsUsed != true);
+                if (btnSwitch.Visible)
+                    SetLifelineButtonColor(btnSwitch, lifeline4?.IsUsed == true ? Color.Gray : Color.LimeGreen, lifeline4?.IsUsed != true);
                 break;
         }
     }
