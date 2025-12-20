@@ -9,10 +9,10 @@
     <AssemblyName>MillionaireGame</AssemblyName>
     <RootNamespace>MillionaireGame</RootNamespace>
     <Version>0.2.2512.0</Version>
-    <Authors>Macronair</Authors>
+    <Authors>jdelgado-dtlabs</Authors>
     <Product>The Millionaire Game - C# Edition</Product>
     <Description>A self-written application based on the popular TV-show 'Who Wants to be a Millionaire' - Modern C# version</Description>
-    <Copyright>Copyright © 2025 Macronair</Copyright>
+    <Copyright>Copyright © 2025 jdelgado-dtlabs. Based on original work by Macronair.</Copyright>
     <AssemblyVersion>0.2.2512.0</AssemblyVersion>
     <FileVersion>0.2.2512.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
