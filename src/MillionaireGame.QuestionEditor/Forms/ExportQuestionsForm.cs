@@ -1,3 +1,5 @@
+using MillionaireGame.Core.Helpers;
+
 namespace MillionaireGame.QuestionEditor.Forms;
 
 /// <summary>
@@ -10,6 +12,7 @@ public partial class ExportQuestionsForm : Form
     public ExportQuestionsForm(string connectionString)
     {
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         _connectionString = connectionString;
     }
 

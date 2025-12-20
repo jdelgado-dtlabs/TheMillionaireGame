@@ -173,18 +173,18 @@ public class GameService
     {
         if (riskMode)
         {
-            return level > 10 ? "$32,000" : "$0";
+            return level >= 10 ? "$32,000" : "$0";
         }
-        return level > 10 ? "$32,000" : level > 5 ? "$1,000" : "$0";
+        return level >= 10 ? "$32,000" : level >= 5 ? "$1,000" : "$0";
     }
 
     private string GetDropValue(int level, bool riskMode)
     {
         if (riskMode)
         {
-            return level > 10 ? "$32,000" : "$0";
+            return level >= 10 ? "$32,000" : "$0";
         }
-        return level > 10 ? "$32,000" : level > 5 ? "$1,000" : "$0";
+        return level >= 10 ? "$32,000" : level >= 5 ? "$1,000" : "$0";
     }
 }
 

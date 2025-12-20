@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.Forms.Options;
 
@@ -12,6 +13,7 @@ public partial class DatabaseSettingsDialog : Form
         _sqlSettings = sqlSettings ?? throw new ArgumentNullException(nameof(sqlSettings));
         _settingsManager = new SqlSettingsManager();
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         LoadSettings();
     }
 

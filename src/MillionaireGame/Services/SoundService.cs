@@ -288,8 +288,12 @@ public class SoundService : IDisposable
         // Broadcast flow sounds
         RegisterSound(SoundEffect.HostEntrance, settings.SoundHostStart);
         RegisterSound(SoundEffect.ExplainGame, settings.SoundExplainRules);
+        RegisterSound(SoundEffect.QuitSmall, settings.SoundQuitSmall);
+        RegisterSound(SoundEffect.QuitLarge, settings.SoundQuitLarge);
         RegisterSound(SoundEffect.WalkAwaySmall, settings.SoundWalkAway1);
-        RegisterSound(SoundEffect.CloseTheme, settings.SoundHostEnd);
+        RegisterSound(SoundEffect.WalkAwayLarge, settings.SoundWalkAway2);
+        RegisterSound(SoundEffect.CloseTheme, settings.SoundCloseFinal);
+        RegisterSound(SoundEffect.CloseUnderscore, settings.SoundCloseStart);
         
         // Register common game sounds
         RegisterSound(SoundEffect.LightsDown, settings.SoundQ1to5LightsDown);
@@ -352,8 +356,12 @@ public enum SoundEffect
     BackgroundMusic,
     HostEntrance,
     ExplainGame,
+    QuitSmall,
+    QuitLarge,
     WalkAwaySmall,
+    WalkAwayLarge,
     CloseTheme,
+    CloseUnderscore,
     LifelinePing1,
     LifelinePing2,
     LifelinePing3,

@@ -78,6 +78,61 @@ public class ScreenUpdateService
     }
 
     /// <summary>
+    /// Show a specific answer option on all screens (for progressive reveal)
+    /// </summary>
+    public void ShowAnswer(string answer)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowAnswer(answer);
+        }
+    }
+
+    /// <summary>
+    /// Show the correct answer to the host screen only
+    /// </summary>
+    public void ShowCorrectAnswerToHost(string correctAnswer)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowCorrectAnswerToHost(correctAnswer);
+        }
+    }
+
+    /// <summary>
+    /// Show or hide the question on all screens
+    /// </summary>
+    public void ShowQuestion(bool show)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowQuestion(show);
+        }
+    }
+
+    /// <summary>
+    /// Show the current winnings on all screens
+    /// </summary>
+    public void ShowWinnings(GameState state)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowWinnings(state);
+        }
+    }
+
+    /// <summary>
+    /// Hide the winnings on all screens
+    /// </summary>
+    public void HideWinnings()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.HideWinnings();
+        }
+    }
+
+    /// <summary>
     /// Update money displays on all screens
     /// </summary>
     public void UpdateMoney(string current, string correct, string wrong, string drop, string questionsLeft)
@@ -127,6 +182,11 @@ public interface IGameScreen
     void UpdateQuestion(Question question);
     void SelectAnswer(string answer);
     void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect);
+    void ShowAnswer(string answer);
+    void ShowCorrectAnswerToHost(string correctAnswer);
+    void ShowQuestion(bool show);
+    void ShowWinnings(GameState state);
+    void HideWinnings();
     void UpdateMoney(string current, string correct, string wrong, string drop, string questionsLeft);
     void ActivateLifeline(Lifeline lifeline);
     void ResetScreen();

@@ -3,6 +3,7 @@ using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.Forms;
 
@@ -39,6 +40,17 @@ public enum ATAStage
 }
 
 /// <summary>
+/// Game outcome states for determining final winnings
+/// </summary>
+public enum GameOutcome
+{
+    InProgress,     // Game is still ongoing
+    Win,            // Player won Q15
+    Drop,           // Player walked away
+    Wrong           // Player answered incorrectly
+}
+
+/// <summary>
 /// Main control panel for managing the game
 /// </summary>
 public partial class ControlPanelForm : Form
@@ -53,6 +65,13 @@ public partial class ControlPanelForm : Form
     private string _currentAnswer = string.Empty;
     private LifelineMode _lifelineMode = LifelineMode.Inactive;
     
+    // Question reveal state tracking
+    private int _answerRevealStep = 0; // 0 = not started, 1 = question shown, 2-5 = answers A-D shown
+    private Question? _currentQuestion = null; // Store current question for progressive reveal
+    
+    // Game outcome tracking
+    private GameOutcome _gameOutcome = GameOutcome.InProgress;
+    
     // PAF lifeline state tracking
     private PAFStage _pafStage = PAFStage.NotStarted;
     private int _pafLifelineNumber = 0; // Which button slot is PAF
@@ -64,6 +83,16 @@ public partial class ControlPanelForm : Form
     private int _ataLifelineNumber = 0; // Which button slot is ATA
     private System.Windows.Forms.Timer? _ataTimer;
     private int _ataSecondsRemaining = 120; // Start with 2 min for intro
+    
+    // Closing sequence state tracking
+    private System.Windows.Forms.Timer? _closingTimer;
+    private bool _closingInProgress = false;
+    
+    // Auto-reset cancellation from Thanks for Playing
+    private System.Threading.CancellationTokenSource? _autoResetCancellation;
+    
+    // Track if at least one round has been completed
+    private bool _firstRoundCompleted = false;
 
     // Screen forms
     private HostScreenForm? _hostScreen;
@@ -104,6 +133,7 @@ public partial class ControlPanelForm : Form
         );
 
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         KeyPreview = true; // Enable key event capture
         SetupEventHandlers();
     }
@@ -184,11 +214,113 @@ public partial class ControlPanelForm : Form
 
     #endregion
 
+    #region Checkbox Event Handlers
+
+    private void chkShowQuestion_CheckedChanged(object? sender, EventArgs e)
+    {
+        if (chkShowQuestion.Checked && chkShowWinnings.Checked)
+        {
+            // Uncheck winnings when question is checked
+            chkShowWinnings.CheckedChanged -= chkShowWinnings_CheckedChanged;
+            chkShowWinnings.Checked = false;
+            chkShowWinnings.CheckedChanged += chkShowWinnings_CheckedChanged;
+        }
+        
+        // Show or hide question on screens
+        _screenService.ShowQuestion(chkShowQuestion.Checked);
+    }
+
+    private void chkShowWinnings_CheckedChanged(object? sender, EventArgs e)
+    {
+        if (chkShowWinnings.Checked && chkShowQuestion.Checked)
+        {
+            // Uncheck question when winnings is checked
+            chkShowQuestion.CheckedChanged -= chkShowQuestion_CheckedChanged;
+            chkShowQuestion.Checked = false;
+            chkShowQuestion.CheckedChanged += chkShowQuestion_CheckedChanged;
+        }
+        
+        // Show or hide winnings on screens
+        if (chkShowWinnings.Checked)
+        {
+            _screenService.ShowWinnings(_gameService.State);
+        }
+        else
+        {
+            _screenService.HideWinnings();
+        }
+    }
+
+    #endregion
+
     #region Button Click Handlers
 
     private async void btnNewQuestion_Click(object? sender, EventArgs e)
     {
-        await LoadNewQuestion();
+        if (_answerRevealStep == 0)
+        {
+            // First click: Load question but don't show answers yet
+            await LoadNewQuestion();
+            _answerRevealStep = 1; // Question shown, no answers
+            
+            // Enable checkbox and keep Question button enabled for answer reveals
+            chkShowQuestion.Checked = true;
+            btnNewQuestion.Enabled = true;
+            btnNewQuestion.BackColor = Color.LimeGreen;
+            btnNewQuestion.Text = "Question";
+        }
+        else if (_answerRevealStep >= 1 && _answerRevealStep <= 4)
+        {
+            // Subsequent clicks: Reveal answers one by one
+            RevealNextAnswer();
+        }
+    }
+
+    private void RevealNextAnswer()
+    {
+        if (_currentQuestion == null) return;
+
+        switch (_answerRevealStep)
+        {
+            case 1: // Reveal answer A
+                txtA.Text = _currentQuestion.AnswerA;
+                _screenService.ShowAnswer("A");
+                _answerRevealStep = 2;
+                break;
+            case 2: // Reveal answer B
+                txtB.Text = _currentQuestion.AnswerB;
+                _screenService.ShowAnswer("B");
+                _answerRevealStep = 3;
+                break;
+            case 3: // Reveal answer C
+                txtC.Text = _currentQuestion.AnswerC;
+                _screenService.ShowAnswer("C");
+                _answerRevealStep = 4;
+                break;
+            case 4: // Reveal answer D
+                txtD.Text = _currentQuestion.AnswerD;
+                _screenService.ShowAnswer("D");
+                _answerRevealStep = 5; // All answers revealed
+                
+                // Show correct answer after all answers are revealed
+                lblAnswer.Visible = true;
+                
+                // If checkbox is checked, show correct answer to host screen
+                if (chkCorrectAnswer.Checked)
+                {
+                    _screenService.ShowCorrectAnswerToHost(lblAnswer.Text);
+                }
+                
+                // Enable Walk Away button once all answers are revealed (green)
+                btnWalk.Enabled = true;
+                btnWalk.BackColor = Color.LimeGreen;
+                btnWalk.ForeColor = Color.Black;
+                
+                // Disable Question button after all answers shown
+                btnNewQuestion.Enabled = false;
+                btnNewQuestion.BackColor = Color.Gray;
+                break;
+        }
     }
 
     private async Task LoadNewQuestion()
@@ -250,19 +382,34 @@ public partial class ControlPanelForm : Form
                 Console.WriteLine($"[Question] Loaded question ID {question.Id}: {question.QuestionText.Substring(0, Math.Min(50, question.QuestionText.Length))}...");
             }
 
-            // Update UI with question
+            // Store question for progressive reveal
+            _currentQuestion = question;
+
+            // Update UI with question only - answers will be revealed progressively
             txtQuestion.Text = question.QuestionText;
-            txtA.Text = question.AnswerA;
-            txtB.Text = question.AnswerB;
-            txtC.Text = question.AnswerC;
-            txtD.Text = question.AnswerD;
+            txtA.Clear(); // Will be revealed on first answer click
+            txtB.Clear(); // Will be revealed on second answer click
+            txtC.Clear(); // Will be revealed on third answer click
+            txtD.Clear(); // Will be revealed on fourth answer click
             lblAnswer.Text = question.CorrectAnswer;
+            lblAnswer.Visible = false; // Hide until all answers revealed
             txtExplain.Text = question.Explanation;
             txtID.Text = question.Id.ToString();
 
             // Reset answer selection
             ResetAnswerColors();
             _currentAnswer = string.Empty;
+            _answerRevealStep = 0; // Reset for new question
+            
+            // Enable answer buttons now that a question is loaded and set to orange
+            btnA.Enabled = true;
+            btnA.BackColor = Color.DarkOrange;
+            btnB.Enabled = true;
+            btnB.BackColor = Color.DarkOrange;
+            btnC.Enabled = true;
+            btnC.BackColor = Color.DarkOrange;
+            btnD.Enabled = true;
+            btnD.BackColor = Color.DarkOrange;
 
             // Mark question as used
             await _questionRepository.MarkQuestionAsUsedAsync(question.Id);
@@ -270,9 +417,35 @@ public partial class ControlPanelForm : Form
             // Broadcast question to all screens
             _screenService.UpdateQuestion(question);
 
-            // Stop lights down sound if it's still playing, then play question-specific bed music
-            _soundService.StopSound("lights_down");
-            PlayQuestionBed();
+            // Get question number for audio logic
+            var questionNumber = (int)nmrLevel.Value + 1;
+            
+            // Question button remains enabled for progressive reveal
+            // Will be disabled after all 4 answers are shown
+            
+            // Enable Walk Away (yellow) after Q2 is presented
+            if (questionNumber >= 2)
+            {
+                btnWalk.Enabled = true;
+                btnWalk.BackColor = Color.Yellow;
+                btnWalk.ForeColor = Color.Black;
+            }
+            
+            // Enable Closing (green) from Q6 onwards to allow ending show mid-game
+            if (questionNumber >= 6)
+            {
+                btnClosing.Enabled = true;
+                btnClosing.BackColor = Color.LimeGreen;
+                btnClosing.ForeColor = Color.Black;
+            }
+            
+            // For Q1-5: Don't stop lights down or restart bed music (continuous quick round)
+            // For Q6+: Stop lights down, then play question-specific bed music
+            if (questionNumber >= 6)
+            {
+                _soundService.StopSound("lights_down");
+                PlayQuestionBed();
+            }
         }
         catch (Exception ex)
         {
@@ -304,13 +477,60 @@ public partial class ControlPanelForm : Form
         SelectAnswer("D");
     }
 
-    private void btnLightsDown_Click(object? sender, EventArgs e)
+    private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
+        // Disable Explain Game immediately (grey)
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
         // Stop any playing sounds first
         _soundService.StopAllSounds();
         
         // Play question-specific lights down sound
         PlayLightsDownSound();
+        
+        var questionNumber = (int)nmrLevel.Value + 1;
+        
+        // For Q1-5, enable Reset button on first lights down and play bed music after delay
+        if (questionNumber >= 1 && questionNumber <= 5)
+        {
+            // Enable Reset button (red) on first lights down
+            btnResetGame.Enabled = true;
+            btnResetGame.BackColor = Color.Red;
+            
+            // Disable risk mode button after first lights down
+            btnActivateRiskMode.Enabled = false;
+            
+            // Wait for lights down sound to finish before starting bed music
+            await Task.Delay(4000);
+            PlayQuestionBed();
+            
+            // Emulate first Question button click: load question and prepare for progressive reveal
+            // This ensures consistent state management between Q1-5 and Q6+
+            await LoadNewQuestion();
+            _answerRevealStep = 1; // Question shown, ready to reveal answers
+            chkShowQuestion.Checked = true;
+        }
+        else
+        {
+            // For Q6+, reset answer reveal state so Question button works properly
+            _answerRevealStep = 0;
+            
+            // Disable Show Winnings checkbox for Q6+ (show question instead)
+            if (chkShowWinnings.Checked)
+            {
+                chkShowWinnings.Checked = false;
+            }
+        }
+        
+        // Disable Lights Down and make grey
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        // Enable Question button (green) for all questions after lights down
+        btnNewQuestion.Enabled = true;
+        btnNewQuestion.BackColor = Color.LimeGreen;
+        btnNewQuestion.ForeColor = Color.Black;
         
         // Enter active mode - lifelines turn green
         SetLifelineMode(LifelineMode.Active);
@@ -334,30 +554,95 @@ public partial class ControlPanelForm : Form
         RevealAnswer(isCorrect);
     }
 
-    private void btnWalk_Click(object? sender, EventArgs e)
+    private async void btnWalk_Click(object? sender, EventArgs e)
     {
         _gameService.State.WalkAway = true;
-        _soundService.PlaySound(SoundEffect.WalkAway);
+        _gameOutcome = GameOutcome.Drop; // Track that player walked away
+        
+        // Stop all sounds before playing quit sound
+        _soundService.StopAllSounds();
+        
+        // Use current question level to determine which quit sound to play
+        var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
+        var quitSound = questionNumber <= 10 ? SoundEffect.QuitSmall : SoundEffect.QuitLarge;
+        
+        _soundService.PlaySound(quitSound);
         MessageBox.Show($"Total winnings: {_gameService.State.CurrentValue}", 
             "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        
+        // Show winnings on screens
+        if (!chkShowWinnings.Checked)
+        {
+            chkShowWinnings.Checked = true;
+        }
+        
+        // Disable Walk Away (grey)
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
+        
+        // Disable Reset (grey) - round is over
+        btnResetGame.Enabled = false;
+        btnResetGame.BackColor = Color.Gray;
+        
+        // Disable lifelines immediately - round is over
+        SetLifelineMode(LifelineMode.Inactive);
+        
+        // Enable Thanks for Playing (green)
+        btnThanksForPlaying.Enabled = true;
+        btnThanksForPlaying.BackColor = Color.LimeGreen;
+        btnThanksForPlaying.ForeColor = Color.Black;
+        
+        // Enable Closing (green)
+        btnClosing.Enabled = true;
+        btnClosing.BackColor = Color.LimeGreen;
+        btnClosing.ForeColor = Color.Black;
     }
 
     private void btnActivateRiskMode_Click(object? sender, EventArgs e)
     {
+        // Risk mode can only be activated at the start of the game
+        if (_gameService.State.CurrentLevel > 0)
+        {
+            MessageBox.Show(
+                "Risk Mode can only be activated at the beginning of the game, before the first question.",
+                "Risk Mode",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+        
         var newMode = _gameService.State.Mode == Core.Models.GameMode.Normal
             ? Core.Models.GameMode.Risk
             : Core.Models.GameMode.Normal;
 
         _gameService.ChangeMode(newMode);
         
+        // Update button appearance based on mode
         if (newMode == Core.Models.GameMode.Risk)
         {
-            _soundService.PlaySound(SoundEffect.RiskMode);
+            btnActivateRiskMode.BackColor = Color.Red;
+            btnActivateRiskMode.Text = "RISK MODE: ON";
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Risk Mode] Activated - No safety net at Q5/Q10, uses alternate sounds");
+            }
+        }
+        else
+        {
+            btnActivateRiskMode.BackColor = Color.Yellow;
+            btnActivateRiskMode.Text = "Activate Risk Mode";
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Risk Mode] Deactivated - Normal mode restored");
+            }
         }
     }
 
     private void btnResetGame_Click(object? sender, EventArgs e)
     {
+        // Show confirmation dialog (Reset only active during game play)
         var result = MessageBox.Show(
             "Are you sure you want to reset the game?",
             "Reset Game",
@@ -385,6 +670,7 @@ public partial class ControlPanelForm : Form
             _ataSecondsRemaining = 120;
             
             _gameService.ResetGame();
+            _firstRoundCompleted = true; // Mark that at least one round has been completed
             ResetAllControls();
         }
     }
@@ -945,8 +1231,20 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    private void btnHostIntro_Click(object? sender, EventArgs e)
+    private async void btnHostIntro_Click(object? sender, EventArgs e)
     {
+        // Reset all questions to unused for new game
+        await _questionRepository.ResetAllQuestionsAsync();
+        
+        // Disable Host Intro until closing
+        btnHostIntro.Enabled = false;
+        btnHostIntro.BackColor = Color.Gray;
+        
+        // Enable Pick Player (green)
+        btnPickPlayer.Enabled = true;
+        btnPickPlayer.BackColor = Color.LimeGreen;
+        btnPickPlayer.ForeColor = Color.Black;
+        
         // Play host entrance audio once
         _soundService.PlaySound(SoundEffect.HostEntrance, loop: false);
     }
@@ -956,6 +1254,20 @@ public partial class ControlPanelForm : Form
         // TODO: Open FFF Server dialog to pick contestant
         MessageBox.Show("FFF Server functionality will be implemented later.", 
             "Pick Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        
+        // After picking player, disable Pick Player
+        btnPickPlayer.Enabled = false;
+        btnPickPlayer.BackColor = Color.Gray;
+        
+        // Enable Explain Game (green)
+        btnExplainGame.Enabled = true;
+        btnExplainGame.BackColor = Color.LimeGreen;
+        btnExplainGame.ForeColor = Color.Black;
+        
+        // Enable Lights Down (green)
+        btnLightsDown.Enabled = true;
+        btnLightsDown.BackColor = Color.LimeGreen;
+        btnLightsDown.ForeColor = Color.Black;
     }
 
     private void btnExplainGame_Click(object? sender, EventArgs e)
@@ -967,23 +1279,219 @@ public partial class ControlPanelForm : Form
         SetLifelineMode(LifelineMode.Demo);
     }
 
-    private void btnThanksForPlaying_Click(object? sender, EventArgs e)
+    private async void btnThanksForPlaying_Click(object? sender, EventArgs e)
     {
-        // Play walk away small audio once
-        _soundService.PlaySound(SoundEffect.WalkAwaySmall, loop: false);
+        // Use current question level to determine which walk away sound to play
+        var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
+        var walkAwaySound = questionNumber <= 10 ? SoundEffect.WalkAwaySmall : SoundEffect.WalkAwayLarge;
         
-        MessageBox.Show($"Total Winnings: {_gameService.State.CurrentValue}\n\nThanks for playing!", 
+        _soundService.PlaySound(walkAwaySound, loop: false);
+        
+        // Determine winnings based on game outcome
+        string winnings = _gameOutcome switch
+        {
+            GameOutcome.Win => _gameService.State.CorrectValue,   // Won Q15 - show the million
+            GameOutcome.Drop => _gameService.State.DropValue,      // Walked away - show drop value
+            GameOutcome.Wrong => _gameService.State.WrongValue,    // Answered wrong - show wrong value (0 or last milestone)
+            _ => _gameService.State.CurrentValue                   // Fallback to current value
+        };
+        
+        MessageBox.Show($"Total Winnings: {winnings}\n\nThanks for playing!", 
             "Game Over", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        
+        // Show winnings on screens
+        if (!chkShowWinnings.Checked)
+        {
+            chkShowWinnings.Checked = true;
+        }
+        
+        // Disable Thanks for Playing (grey)
+        btnThanksForPlaying.Enabled = false;
+        btnThanksForPlaying.BackColor = Color.Gray;
+        
+        // Disable Reset (grey) - round is over
+        btnResetGame.Enabled = false;
+        btnResetGame.BackColor = Color.Gray;
+        
+        // Enable Closing (green)
+        btnClosing.Enabled = true;
+        btnClosing.BackColor = Color.LimeGreen;
+        btnClosing.ForeColor = Color.Black;
+        
+        // Store the auto-reset task so we can cancel it if Closing is clicked
+        _autoResetCancellation = new System.Threading.CancellationTokenSource();
+        var cancellationToken = _autoResetCancellation.Token;
+        
+        // Wait for walk away sound to finish (approximately 5 seconds) + additional 5 seconds
+        try
+        {
+            await Task.Delay(10000, cancellationToken);
+        
+            // Automatically reset for next player
+            _soundService.StopAllSounds();
+        
+            // Reset PAF state
+            _pafTimer?.Stop();
+            _pafTimer?.Dispose();
+            _pafTimer = null;
+            _pafStage = PAFStage.NotStarted;
+            _pafLifelineNumber = 0;
+            _pafSecondsRemaining = 30;
+        
+            // Reset ATA state
+            _ataTimer?.Stop();
+            _ataTimer?.Dispose();
+            _ataTimer = null;
+            _ataStage = ATAStage.NotStarted;
+            _ataLifelineNumber = 0;
+            _ataSecondsRemaining = 120;
+        
+            _gameService.ResetGame();
+            _firstRoundCompleted = true; // Mark that at least one round has been completed
+            ResetAllControls();
+        }
+        catch (TaskCanceledException)
+        {
+            // Auto-reset was cancelled because Closing was clicked
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Thanks for Playing] Auto-reset cancelled - Closing was clicked");
+            }
+        }
+        finally
+        {
+            _autoResetCancellation?.Dispose();
+            _autoResetCancellation = null;
+        }
     }
 
-    private void btnClosing_Click(object? sender, EventArgs e)
+    private async void btnClosing_Click(object? sender, EventArgs e)
     {
-        // Play closing theme audio once
+        if (!_closingInProgress)
+        {
+            // First click - start closing sequence
+            _closingInProgress = true;
+            btnClosing.BackColor = Color.Red;
+            
+            // Cancel any pending auto-reset from Thanks for Playing
+            _autoResetCancellation?.Cancel();
+            _autoResetCancellation?.Dispose();
+            _autoResetCancellation = null;
+            
+            // Disable Reset button to prevent interference (grey)
+            btnResetGame.Enabled = false;
+            btnResetGame.BackColor = Color.Gray;
+            
+            // Stop all sounds before starting closing sequence
+            _soundService.StopAllSounds();
+            
+            // If round is active (Reset button enabled), play game over sound first
+            if (btnResetGame.Enabled)
+            {
+                _soundService.PlaySoundFile(_appSettings.Settings.SoundGameOver, "game_over", loop: false);
+                
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine("[Closing] Round in play - playing game_over.mp3 (5 seconds)");
+                }
+                
+                // Wait for game over sound to finish (approximately 5 seconds)
+                await Task.Delay(5000);
+            }
+            
+            // Play closing underscore with identifier
+            _soundService.PlaySoundFile(_appSettings.Settings.SoundCloseStart, "close_underscore", loop: false);
+            
+            // Start 150 second timer
+            _closingTimer = new System.Windows.Forms.Timer();
+            _closingTimer.Interval = 150000; // 150 seconds
+            _closingTimer.Tick += (s, args) => CompleteClosing();
+            _closingTimer.Start();
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Closing] Started closing sequence - 150 second timer");
+            }
+        }
+        else
+        {
+            // Second click - expire timer immediately
+            if (_closingTimer != null)
+            {
+                _closingTimer.Stop();
+                _closingTimer.Dispose();
+                _closingTimer = null;
+            }
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Closing] Timer expired early by user");
+            }
+            
+            CompleteClosing();
+        }
+    }
+    
+    private async void CompleteClosing()
+    {
+        // Stop and dispose timer if still running
+        if (_closingTimer != null)
+        {
+            _closingTimer.Stop();
+            _closingTimer.Dispose();
+            _closingTimer = null;
+        }
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Closing] Completing closing sequence");
+        }
+        
+        // Play closing theme
         _soundService.PlaySound(SoundEffect.CloseTheme, loop: false);
         
-        // Reset game after closing
-        _gameService.ResetGame();
-        ResetAllControls();
+        // Wait 500ms then stop close_underscore if still playing
+        await Task.Delay(500);
+        _soundService.StopSound("close_underscore");
+        
+        // Enable Host Intro (green) for next show
+        btnHostIntro.Enabled = true;
+        btnHostIntro.BackColor = Color.LimeGreen;
+        btnHostIntro.ForeColor = Color.Black;
+        
+        // Disable all other broadcast buttons (grey)
+        btnPickPlayer.Enabled = false;
+        btnPickPlayer.BackColor = Color.Gray;
+        
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        btnNewQuestion.Enabled = false;
+        btnNewQuestion.BackColor = Color.Gray;
+        
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
+        
+        btnThanksForPlaying.Enabled = false;
+        btnThanksForPlaying.BackColor = Color.Gray;
+        
+        btnClosing.Enabled = false;
+        btnClosing.BackColor = Color.Gray;
+        
+        btnResetGame.Enabled = false;
+        btnResetGame.BackColor = Color.Gray;
+        
+        btnActivateRiskMode.Enabled = true;
+        btnActivateRiskMode.BackColor = Color.Yellow;
+        btnActivateRiskMode.Text = "Activate Risk Mode";
+        
+        // Keep btnStopAudio enabled
     }
 
     private void btnStopAudio_Click(object? sender, EventArgs e)
@@ -1017,6 +1525,21 @@ public partial class ControlPanelForm : Form
                 txtD.BackColor = Color.Yellow;
                 break;
         }
+        
+        // Disable all answer buttons to lock in the answer (final answer)
+        btnA.Enabled = false;
+        btnB.Enabled = false;
+        btnC.Enabled = false;
+        btnD.Enabled = false;
+        
+        // Enable Reveal button (green)
+        btnReveal.Enabled = true;
+        btnReveal.BackColor = Color.LimeGreen;
+        btnReveal.ForeColor = Color.Black;
+        
+        // Disable Walk Away once an answer is selected (grey)
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
 
         // Broadcast answer selection to all screens
         _screenService.SelectAnswer(answer);
@@ -1153,12 +1676,12 @@ public partial class ControlPanelForm : Form
             2 => _appSettings.Settings.SoundQ1to4Correct,
             3 => _appSettings.Settings.SoundQ1to4Correct,
             4 => _appSettings.Settings.SoundQ1to4Correct,
-            5 => isRiskMode ? _appSettings.Settings.SoundQ5CorrectRisk : _appSettings.Settings.SoundQ5Correct,
+            5 => isRiskMode ? _appSettings.Settings.SoundQ5Correct2 : _appSettings.Settings.SoundQ5Correct,
             6 => _appSettings.Settings.SoundQ6Correct,
             7 => _appSettings.Settings.SoundQ7Correct,
             8 => _appSettings.Settings.SoundQ8Correct,
             9 => _appSettings.Settings.SoundQ9Correct,
-            10 => isRiskMode ? _appSettings.Settings.SoundQ10CorrectRisk : _appSettings.Settings.SoundQ10Correct,
+            10 => isRiskMode ? _appSettings.Settings.SoundQ10Correct2 : _appSettings.Settings.SoundQ10Correct,
             11 => _appSettings.Settings.SoundQ11Correct,
             12 => _appSettings.Settings.SoundQ12Correct,
             13 => _appSettings.Settings.SoundQ13Correct,
@@ -1292,8 +1815,11 @@ public partial class ControlPanelForm : Form
             // Capture current question number BEFORE advancing level
             var currentQuestionNumber = (int)nmrLevel.Value + 1;
 
-            // Advance to next level
-            _gameService.ChangeLevel(_gameService.State.CurrentLevel + 1);
+            // Advance to next level (but not beyond question 15)
+            if (_gameService.State.CurrentLevel < 14)
+            {
+                _gameService.ChangeLevel(_gameService.State.CurrentLevel + 1);
+            }
 
             // Broadcast correct answer to all screens
             _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true);
@@ -1304,11 +1830,76 @@ public partial class ControlPanelForm : Form
             
             // Play question-specific correct answer sound using captured question number
             PlayCorrectSound(currentQuestionNumber);
+            
+            // Auto-show winnings after 2 seconds
+            await Task.Delay(2000);
+            if (!chkShowWinnings.Checked)
+            {
+                chkShowWinnings.Checked = true;
+            }
+            
+            // Disable Reveal button (grey)
+            btnReveal.Enabled = false;
+            btnReveal.BackColor = Color.Gray;
+            
+            // If Q5 was just answered correctly, stop the bed music and enable Lights Down for Q6
+            if (currentQuestionNumber == 5)
+            {
+                await Task.Delay(1000);
+                _soundService.StopSound("bed_music");
+                
+                // Enable Lights Down (green) for Q6
+                btnLightsDown.Enabled = true;
+                btnLightsDown.BackColor = Color.LimeGreen;
+                btnLightsDown.ForeColor = Color.Black;
+            }
+            // For Q1-Q4, re-enable Question button (green) for next question
+            else if (currentQuestionNumber >= 1 && currentQuestionNumber <= 4)
+            {
+                _answerRevealStep = 0; // Reset for next question
+                btnNewQuestion.Enabled = true;
+                btnNewQuestion.BackColor = Color.LimeGreen;
+                btnNewQuestion.ForeColor = Color.Black;
+                
+                // Disable Walk Away for Q1-Q4 (grey) - only available after milestones
+                btnWalk.Enabled = false;
+                btnWalk.BackColor = Color.Gray;
+            }
+            // For Q6-Q14, enable Lights Down (green)
+            else if (currentQuestionNumber >= 6 && currentQuestionNumber <= 14)
+            {
+                _answerRevealStep = 0; // Reset for next question
+                btnLightsDown.Enabled = true;
+                btnLightsDown.BackColor = Color.LimeGreen;
+                btnLightsDown.ForeColor = Color.Black;
+                
+                // Disable Walk Away until next question is fully revealed (grey)
+                btnWalk.Enabled = false;
+                btnWalk.BackColor = Color.Gray;
+            }
+            // For Q15, enable Thanks for Playing (green)
+            else if (currentQuestionNumber == 15)
+            {
+                _gameOutcome = GameOutcome.Win; // Player won the game!
+                btnThanksForPlaying.Enabled = true;
+                btnThanksForPlaying.BackColor = Color.LimeGreen;
+                btnThanksForPlaying.ForeColor = Color.Black;
+                
+                // Disable Walk Away (grey)
+                btnWalk.Enabled = false;
+                btnWalk.BackColor = Color.Gray;
+                
+                // Disable Lights Down (grey)
+                btnLightsDown.Enabled = false;
+                btnLightsDown.BackColor = Color.Gray;
+            }
         }
         else
         {
             // Capture current question number for lose sound
             var currentQuestionNumber = (int)nmrLevel.Value + 1;
+            
+            _gameOutcome = GameOutcome.Wrong; // Track that player answered incorrectly
             
             // Wrong answer
             switch (_currentAnswer)
@@ -1335,7 +1926,30 @@ public partial class ControlPanelForm : Form
             _soundService.StopAllSounds();
             await Task.Delay(500);
             PlayLoseSound(currentQuestionNumber);
-            // TODO: Show game over
+            
+            // Auto-show winnings after 2 seconds
+            await Task.Delay(2000);
+            if (!chkShowWinnings.Checked)
+            {
+                chkShowWinnings.Checked = true;
+            }
+            
+            // Disable Reveal button (grey)
+            btnReveal.Enabled = false;
+            btnReveal.BackColor = Color.Gray;
+            
+            // Enable Thanks for Playing (green)
+            btnThanksForPlaying.Enabled = true;
+            btnThanksForPlaying.BackColor = Color.LimeGreen;
+            btnThanksForPlaying.ForeColor = Color.Black;
+            
+            // Disable Walk Away (grey)
+            btnWalk.Enabled = false;
+            btnWalk.BackColor = Color.Gray;
+            
+            // Disable Lights Down (grey)
+            btnLightsDown.Enabled = false;
+            btnLightsDown.BackColor = Color.Gray;
         }
     }
 
@@ -1361,12 +1975,93 @@ public partial class ControlPanelForm : Form
         txtID.Clear();
         ResetAnswerColors();
         _currentAnswer = string.Empty;
+        _answerRevealStep = 0; // Reset reveal state
+        _gameOutcome = GameOutcome.InProgress; // Reset game outcome
         nmrLevel.Value = 0;
+        
+        // Disable answer buttons until a question is loaded and set to grey
+        btnA.Enabled = false;
+        btnA.BackColor = Color.Gray;
+        btnB.Enabled = false;
+        btnB.BackColor = Color.Gray;
+        btnC.Enabled = false;
+        btnC.BackColor = Color.Gray;
+        btnD.Enabled = false;
+        btnD.BackColor = Color.Gray;
 
         // Reset lifeline buttons
         _gameService.State.ResetLifelines();
         _lifelineMode = LifelineMode.Inactive;
         SetLifelineMode(LifelineMode.Inactive);
+        
+        // Explicitly disable and grey out all lifeline buttons when round is over
+        btn5050.Enabled = false;
+        btn5050.BackColor = Color.Gray;
+        btnPhoneFriend.Enabled = false;
+        btnPhoneFriend.BackColor = Color.Gray;
+        btnAskAudience.Enabled = false;
+        btnAskAudience.BackColor = Color.Gray;
+        btnSwitch.Enabled = false;
+        btnSwitch.BackColor = Color.Gray;
+        
+        // Reset closing state
+        if (_closingTimer != null)
+        {
+            _closingTimer.Stop();
+            _closingTimer.Dispose();
+            _closingTimer = null;
+        }
+        _closingInProgress = false;
+        
+        // Disable Host Intro (grey)
+        btnHostIntro.Enabled = false;
+        btnHostIntro.BackColor = Color.Gray;
+        
+        // Enable Pick Player for next player (green)
+        btnPickPlayer.Enabled = true;
+        btnPickPlayer.BackColor = Color.LimeGreen;
+        btnPickPlayer.ForeColor = Color.Black;
+        
+        // Disable all other buttons (grey)
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        btnNewQuestion.Enabled = false;
+        btnNewQuestion.BackColor = Color.Gray;
+        
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
+        
+        btnThanksForPlaying.Enabled = false;
+        btnThanksForPlaying.BackColor = Color.Gray;
+        
+        // Keep Closing enabled after first round completes
+        if (_firstRoundCompleted)
+        {
+            btnClosing.Enabled = true;
+            btnClosing.BackColor = Color.LimeGreen;
+            btnClosing.ForeColor = Color.Black;
+        }
+        else
+        {
+            btnClosing.Enabled = false;
+            btnClosing.BackColor = Color.Gray;
+        }
+        
+        // Re-enable and reset risk mode button
+        btnActivateRiskMode.Enabled = true;
+        btnActivateRiskMode.BackColor = Color.Yellow;
+        btnActivateRiskMode.Text = "Activate Risk Mode";
+        
+        // Disable Reset button until lights down again (grey)
+        btnResetGame.Enabled = false;
+        btnResetGame.BackColor = Color.Gray;
     }
 
     private void SetLifelineMode(LifelineMode mode)
@@ -1376,11 +2071,11 @@ public partial class ControlPanelForm : Form
         switch (mode)
         {
             case LifelineMode.Inactive:
-                // Orange - default state (disabled, not clickable)
-                SetLifelineButtonColor(btn5050, Color.DarkOrange, false);
-                SetLifelineButtonColor(btnPhoneFriend, Color.DarkOrange, false);
-                SetLifelineButtonColor(btnAskAudience, Color.DarkOrange, false);
-                SetLifelineButtonColor(btnSwitch, Color.DarkOrange, false);
+                // Grey - default state (disabled, not clickable)
+                SetLifelineButtonColor(btn5050, Color.Gray, false);
+                SetLifelineButtonColor(btnPhoneFriend, Color.Gray, false);
+                SetLifelineButtonColor(btnAskAudience, Color.Gray, false);
+                SetLifelineButtonColor(btnSwitch, Color.Gray, false);
                 break;
                 
             case LifelineMode.Demo:
@@ -1528,6 +2223,27 @@ public partial class ControlPanelForm : Form
     private void CloseToolStripMenuItem_Click(object? sender, EventArgs e)
     {
         Close();
+    }
+    
+    private void UsageToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        // Future feature: Show usage documentation
+        MessageBox.Show(
+            "Usage documentation will be available in a future update.\n\n" +
+            "For now, please refer to the README.md file in the project repository.",
+            "Usage",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
+    }
+    
+    private void CheckUpdatesToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        // Future feature: Check for updates
+        MessageBox.Show(
+            "Update checking will be available in a future update.",
+            "Check for Updates",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
     private void AboutToolStripMenuItem_Click(object? sender, EventArgs e)

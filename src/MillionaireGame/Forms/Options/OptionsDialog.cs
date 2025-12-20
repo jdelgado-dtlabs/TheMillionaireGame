@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.Forms.Options;
 
@@ -13,6 +14,7 @@ public partial class OptionsDialog : Form
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsManager = new ApplicationSettingsManager(); // For saving
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         LoadSettings();
     }
 

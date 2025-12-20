@@ -78,6 +78,8 @@ public class ApplicationSettings
     public string SoundExplainRules { get; set; } = "explain_rules.mp3";
     public string SoundToHotSeat { get; set; } = string.Empty;
     public string SoundToHotSeatLightsDown { get; set; } = string.Empty;
+    public string SoundQuitSmall { get; set; } = "quit_small.mp3";
+    public string SoundQuitLarge { get; set; } = "quit_large.mp3";
     public string SoundWalkAway1 { get; set; } = "walk_away_small.mp3";
     public string SoundWalkAway2 { get; set; } = "walk_away_large.mp3";
     public string SoundGameOver { get; set; } = "game_over.mp3";
@@ -119,7 +121,8 @@ public class ApplicationSettings
     public string SoundSwitchClear { get; set; } = "stq_new_question_flip.mp3";
     public string Sound5050 { get; set; } = "fifty_fifty.mp3";
     public string SoundHostStart { get; set; } = "host_entrance.mp3";
-    public string SoundHostEnd { get; set; } = "host_end.mp3";
+    public string SoundCloseStart { get; set; } = "close_underscore.mp3";
+    public string SoundCloseFinal { get; set; } = "close_theme.mp3";
 
     // Sound File Paths - Lights Down by Question Level
     public string SoundQ1to5LightsDown { get; set; } = "lights_down_classic.mp3";
@@ -178,13 +181,13 @@ public class ApplicationSettings
     // Sound File Paths - Correct Answer Sounds
     public string SoundQ1to4Correct { get; set; } = "q1_to_q4_correct.mp3";
     public string SoundQ5Correct { get; set; } = "q5_correct.mp3";
-    public string SoundQ5CorrectRisk { get; set; } = "q5_correct_2.mp3";
+    public string SoundQ5Correct2 { get; set; } = "q5_correct_2.mp3";
     public string SoundQ6Correct { get; set; } = "q6_correct.mp3";
     public string SoundQ7Correct { get; set; } = "q7_correct.mp3";
     public string SoundQ8Correct { get; set; } = "q8_correct.mp3";
     public string SoundQ9Correct { get; set; } = "q9_correct.mp3";
     public string SoundQ10Correct { get; set; } = "q10_correct.mp3";
-    public string SoundQ10CorrectRisk { get; set; } = "q10_correct_2.mp3";
+    public string SoundQ10Correct2 { get; set; } = "q10_correct_2.mp3";
     public string SoundQ11Correct { get; set; } = "q11_correct.mp3";
     public string SoundQ12Correct { get; set; } = "q12_correct.mp3";
     public string SoundQ13Correct { get; set; } = "q13_correct.mp3";

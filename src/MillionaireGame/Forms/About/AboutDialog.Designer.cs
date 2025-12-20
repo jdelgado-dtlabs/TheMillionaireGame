@@ -21,9 +21,11 @@ namespace MillionaireGame.Forms.About
             picLogo = new PictureBox();
             lblTitle = new Label();
             lblSubtitle = new Label();
-            lblAuthor = new Label();
+            lnkAuthor = new LinkLabel();
+            lnkOriginalAuthor = new LinkLabel();
             lblVersionLabel = new Label();
             lblVersion = new Label();
+            lblBuildInfo = new Label();
             btnClose = new Button();
             pnlBackground.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)picLogo).BeginInit();
@@ -35,9 +37,11 @@ namespace MillionaireGame.Forms.About
             pnlBackground.Controls.Add(picLogo);
             pnlBackground.Controls.Add(lblTitle);
             pnlBackground.Controls.Add(lblSubtitle);
-            pnlBackground.Controls.Add(lblAuthor);
+            pnlBackground.Controls.Add(lnkAuthor);
+            pnlBackground.Controls.Add(lnkOriginalAuthor);
             pnlBackground.Controls.Add(lblVersionLabel);
             pnlBackground.Controls.Add(lblVersion);
+            pnlBackground.Controls.Add(lblBuildInfo);
             pnlBackground.Controls.Add(btnClose);
             pnlBackground.Dock = DockStyle.Fill;
             pnlBackground.Location = new Point(0, 0);
@@ -48,7 +52,7 @@ namespace MillionaireGame.Forms.About
             // picLogo
             // 
             picLogo.BackColor = Color.Transparent;
-            picLogo.Location = new Point(20, 20);
+            picLogo.Location = new Point(20, 60);
             picLogo.Name = "picLogo";
             picLogo.Size = new Size(120, 120);
             picLogo.SizeMode = PictureBoxSizeMode.Zoom;
@@ -79,17 +83,33 @@ namespace MillionaireGame.Forms.About
             lblSubtitle.TabIndex = 2;
             lblSubtitle.Text = "Based on the TV Show\r\n\"Who Wants To Be A Millionaire\"";
             // 
-            // lblAuthor
+            // lnkAuthor
             // 
-            lblAuthor.AutoSize = true;
-            lblAuthor.BackColor = Color.Transparent;
-            lblAuthor.Font = new Font("Segoe UI", 9.75F);
-            lblAuthor.ForeColor = Color.LightGray;
-            lblAuthor.Location = new Point(160, 140);
-            lblAuthor.Name = "lblAuthor";
-            lblAuthor.Size = new Size(172, 17);
-            lblAuthor.TabIndex = 3;
-            lblAuthor.Text = "Made by Marco (Macronair)";
+            lnkAuthor.AutoSize = true;
+            lnkAuthor.BackColor = Color.Transparent;
+            lnkAuthor.Font = new Font("Segoe UI", 9.75F);
+            lnkAuthor.LinkColor = Color.SkyBlue;
+            lnkAuthor.Location = new Point(160, 125);
+            lnkAuthor.Name = "lnkAuthor";
+            lnkAuthor.Size = new Size(180, 17);
+            lnkAuthor.TabIndex = 3;
+            lnkAuthor.TabStop = true;
+            lnkAuthor.Text = "Author: Jean F Delgado";
+            lnkAuthor.LinkClicked += lnkAuthor_LinkClicked;
+            // 
+            // lnkOriginalAuthor
+            // 
+            lnkOriginalAuthor.AutoSize = true;
+            lnkOriginalAuthor.BackColor = Color.Transparent;
+            lnkOriginalAuthor.Font = new Font("Segoe UI", 8.25F);
+            lnkOriginalAuthor.LinkColor = Color.SkyBlue;
+            lnkOriginalAuthor.Location = new Point(160, 145);
+            lnkOriginalAuthor.Name = "lnkOriginalAuthor";
+            lnkOriginalAuthor.Size = new Size(210, 13);
+            lnkOriginalAuthor.TabIndex = 7;
+            lnkOriginalAuthor.TabStop = true;
+            lnkOriginalAuthor.Text = "Originally created by Marco Loenen";
+            lnkOriginalAuthor.LinkClicked += lnkOriginalAuthor_LinkClicked;
             // 
             // lblVersionLabel
             // 
@@ -113,7 +133,19 @@ namespace MillionaireGame.Forms.About
             lblVersion.Name = "lblVersion";
             lblVersion.Size = new Size(50, 17);
             lblVersion.TabIndex = 5;
-            lblVersion.Text = "1.0.0.0";
+            lblVersion.Text = "0.1-2512";
+            // 
+            // lblBuildInfo
+            // 
+            lblBuildInfo.AutoSize = true;
+            lblBuildInfo.BackColor = Color.Transparent;
+            lblBuildInfo.Font = new Font("Segoe UI", 8.25F);
+            lblBuildInfo.ForeColor = Color.DarkGray;
+            lblBuildInfo.Location = new Point(160, 185);
+            lblBuildInfo.Name = "lblBuildInfo";
+            lblBuildInfo.Size = new Size(150, 13);
+            lblBuildInfo.TabIndex = 10;
+            lblBuildInfo.Text = "Built in: C# using .NET 8.0";
             // 
             // btnClose
             // 
@@ -143,7 +175,7 @@ namespace MillionaireGame.Forms.About
             ShowIcon = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = "About The Millionaire Game";
+            Text = "Millionaire Game - About";
             pnlBackground.ResumeLayout(false);
             pnlBackground.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)picLogo).EndInit();
@@ -156,9 +188,11 @@ namespace MillionaireGame.Forms.About
         private PictureBox picLogo;
         private Label lblTitle;
         private Label lblSubtitle;
-        private Label lblAuthor;
+        private LinkLabel lnkAuthor;
+        private LinkLabel lnkOriginalAuthor;
         private Label lblVersionLabel;
         private Label lblVersion;
+        private Label lblBuildInfo;
         private Button btnClose;
     }
 }

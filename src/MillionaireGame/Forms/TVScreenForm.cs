@@ -1,5 +1,6 @@
 using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.Forms;
 
@@ -16,6 +17,7 @@ public partial class TVScreenForm : Form, IGameScreen
     public TVScreenForm()
     {
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         FormBorderStyle = FormBorderStyle.None;
         WindowState = FormWindowState.Maximized;
         
@@ -76,6 +78,62 @@ public partial class TVScreenForm : Form, IGameScreen
                 lblAnswerD.ForeColor = Color.Black;
                 break;
         }
+    }
+
+    public void ShowAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowAnswer(answer)));
+            return;
+        }
+
+        // Make the specified answer visible (implementation depends on how answers are hidden initially)
+        // For now, this is a no-op as answers are shown by default on TV screen
+    }
+
+    public void ShowCorrectAnswerToHost(string correctAnswer)
+    {
+        // TV screen does nothing - this is host-only
+    }
+
+    public void ShowQuestion(bool show)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowQuestion(show)));
+            return;
+        }
+
+        // Show or hide question and answers
+        lblQuestion.Visible = show;
+        pnlAnswerA.Visible = show;
+        pnlAnswerB.Visible = show;
+        pnlAnswerC.Visible = show;
+        pnlAnswerD.Visible = show;
+    }
+
+    public void ShowWinnings(GameState state)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowWinnings(state)));
+            return;
+        }
+
+        // Hide question to show winnings
+        ShowQuestion(false);
+    }
+
+    public void HideWinnings()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(HideWinnings));
+            return;
+        }
+
+        // Just hide - question will be shown when checkbox is checked
     }
 
     public void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect)

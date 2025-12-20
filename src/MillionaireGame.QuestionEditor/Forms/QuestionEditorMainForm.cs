@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.QuestionEditor.Forms;
 
@@ -19,6 +20,7 @@ public partial class QuestionEditorMainForm : Form
     public QuestionEditorMainForm()
     {
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         
         _sqlSettings = new SqlSettingsManager();
         _sqlSettings.LoadSettings();

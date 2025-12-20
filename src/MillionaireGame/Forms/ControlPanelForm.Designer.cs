@@ -69,6 +69,7 @@ namespace MillionaireGame.Forms
             lblWrongLabel = new Label();
             lblDropLabel = new Label();
             lblQLeftLabel = new Label();
+            lblExplanationLabel = new Label();
             
             // Lifeline buttons
             btn5050 = new Button();
@@ -78,14 +79,14 @@ namespace MillionaireGame.Forms
             
             // Other controls
             chkShowQuestion = new CheckBox();
+            chkShowWinnings = new CheckBox();
             chkCorrectAnswer = new CheckBox();
             btnActivateRiskMode = new Button();
             
             // Menu
             menuStrip = new MenuStrip();
-            databaseToolStripMenuItem = new ToolStripMenuItem();
             gameToolStripMenuItem = new ToolStripMenuItem();
-            viewToolStripMenuItem = new ToolStripMenuItem();
+            screensToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             
             ((System.ComponentModel.ISupportInitialize)nmrLevel).BeginInit();
@@ -97,26 +98,13 @@ namespace MillionaireGame.Forms
             // 
             menuStrip.ImageScalingSize = new Size(20, 20);
             menuStrip.Items.AddRange(new ToolStripItem[] {
-                databaseToolStripMenuItem,
                 gameToolStripMenuItem,
-                viewToolStripMenuItem,
+                screensToolStripMenuItem,
                 helpToolStripMenuItem});
             menuStrip.Location = new Point(0, 0);
             menuStrip.Name = "menuStrip";
             menuStrip.Size = new Size(1000, 28);
             menuStrip.TabIndex = 0;
-            
-            // 
-            // databaseToolStripMenuItem
-            // 
-            databaseToolStripMenuItem.Name = "databaseToolStripMenuItem";
-            databaseToolStripMenuItem.Size = new Size(84, 24);
-            databaseToolStripMenuItem.Text = "Database";
-            databaseToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
-                new ToolStripMenuItem("Database Settings", null, DatabaseToolStripMenuItem_Click),
-                new ToolStripSeparator(),
-                new ToolStripMenuItem("Close", null, CloseToolStripMenuItem_Click)
-            });
             
             // 
             // gameToolStripMenuItem
@@ -125,18 +113,20 @@ namespace MillionaireGame.Forms
             gameToolStripMenuItem.Size = new Size(62, 24);
             gameToolStripMenuItem.Text = "Game";
             gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
-                new ToolStripMenuItem("Questions Editor", null, QuestionsEditorToolStripMenuItem_Click),
+                new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
+                new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
+                new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
                 new ToolStripSeparator(),
-                new ToolStripMenuItem("Options", null, OptionsToolStripMenuItem_Click)
+                new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
             
             // 
-            // viewToolStripMenuItem
+            // screensToolStripMenuItem
             // 
-            viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            viewToolStripMenuItem.Size = new Size(55, 24);
-            viewToolStripMenuItem.Text = "View";
-            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+            screensToolStripMenuItem.Name = "screensToolStripMenuItem";
+            screensToolStripMenuItem.Size = new Size(72, 24);
+            screensToolStripMenuItem.Text = "Screens";
+            screensToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
                 new ToolStripMenuItem("Host Screen", null, HostScreenToolStripMenuItem_Click),
                 new ToolStripMenuItem("Guest Screen", null, GuestScreenToolStripMenuItem_Click),
                 new ToolStripSeparator(),
@@ -150,6 +140,9 @@ namespace MillionaireGame.Forms
             helpToolStripMenuItem.Size = new Size(55, 24);
             helpToolStripMenuItem.Text = "Help";
             helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Usage", null, UsageToolStripMenuItem_Click),
+                new ToolStripMenuItem("Check for Updates", null, CheckUpdatesToolStripMenuItem_Click) { Enabled = false },
+                new ToolStripSeparator(),
                 new ToolStripMenuItem("About", null, AboutToolStripMenuItem_Click)
             });
             
@@ -211,6 +204,17 @@ namespace MillionaireGame.Forms
             txtD.TabIndex = 4;
             
             // 
+            // lblExplanationLabel
+            // 
+            lblExplanationLabel.AutoSize = true;
+            lblExplanationLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblExplanationLabel.Location = new Point(12, 410);
+            lblExplanationLabel.Name = "lblExplanationLabel";
+            lblExplanationLabel.Size = new Size(75, 15);
+            lblExplanationLabel.TabIndex = 0;
+            lblExplanationLabel.Text = "Explanation:";
+            
+            // 
             // txtExplain
             // 
             txtExplain.BackColor = SystemColors.Info;
@@ -225,7 +229,9 @@ namespace MillionaireGame.Forms
             // 
             // btnA
             // 
-            btnA.BackColor = Color.DarkOrange;
+            btnA.BackColor = Color.Gray;
+            btnA.FlatAppearance.BorderColor = Color.Black;
+            btnA.FlatAppearance.BorderSize = 2;
             btnA.FlatStyle = FlatStyle.Flat;
             btnA.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnA.Location = new Point(12, 120);
@@ -233,13 +239,14 @@ namespace MillionaireGame.Forms
             btnA.Size = new Size(60, 48);
             btnA.TabIndex = 6;
             btnA.Text = "A";
-            btnA.UseVisualStyleBackColor = false;
-            btnA.Click += btnA_Click;
+            btnA.UseVisualStyleBackColor = false;            btnA.Enabled = false;            btnA.Click += btnA_Click;
             
             // 
             // btnB
             // 
-            btnB.BackColor = Color.DarkOrange;
+            btnB.BackColor = Color.Gray;
+            btnB.FlatAppearance.BorderColor = Color.Black;
+            btnB.FlatAppearance.BorderSize = 2;
             btnB.FlatStyle = FlatStyle.Flat;
             btnB.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnB.Location = new Point(502, 120);
@@ -247,13 +254,14 @@ namespace MillionaireGame.Forms
             btnB.Size = new Size(60, 48);
             btnB.TabIndex = 7;
             btnB.Text = "B";
-            btnB.UseVisualStyleBackColor = false;
-            btnB.Click += btnB_Click;
+            btnB.UseVisualStyleBackColor = false;            btnB.Enabled = false;            btnB.Click += btnB_Click;
             
             // 
             // btnC
             // 
-            btnC.BackColor = Color.DarkOrange;
+            btnC.BackColor = Color.Gray;
+            btnC.FlatAppearance.BorderColor = Color.Black;
+            btnC.FlatAppearance.BorderSize = 2;
             btnC.FlatStyle = FlatStyle.Flat;
             btnC.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnC.Location = new Point(12, 180);
@@ -261,13 +269,14 @@ namespace MillionaireGame.Forms
             btnC.Size = new Size(60, 48);
             btnC.TabIndex = 8;
             btnC.Text = "C";
-            btnC.UseVisualStyleBackColor = false;
-            btnC.Click += btnC_Click;
+            btnC.UseVisualStyleBackColor = false;            btnC.Enabled = false;            btnC.Click += btnC_Click;
             
             // 
             // btnD
             // 
-            btnD.BackColor = Color.DarkOrange;
+            btnD.BackColor = Color.Gray;
+            btnD.FlatAppearance.BorderColor = Color.Black;
+            btnD.FlatAppearance.BorderSize = 2;
             btnD.FlatStyle = FlatStyle.Flat;
             btnD.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnD.Location = new Point(502, 180);
@@ -275,28 +284,32 @@ namespace MillionaireGame.Forms
             btnD.Size = new Size(60, 48);
             btnD.TabIndex = 9;
             btnD.Text = "D";
-            btnD.UseVisualStyleBackColor = false;
-            btnD.Click += btnD_Click;
+            btnD.UseVisualStyleBackColor = false;            btnD.Enabled = false;            btnD.Click += btnD_Click;
             
             // 
             // btnHostIntro
             // 
-            btnHostIntro.BackColor = Color.Blue;
+            btnHostIntro.BackColor = Color.LimeGreen;
+            btnHostIntro.FlatAppearance.BorderColor = Color.Black;
+            btnHostIntro.FlatAppearance.BorderSize = 2;
             btnHostIntro.FlatStyle = FlatStyle.Flat;
             btnHostIntro.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnHostIntro.ForeColor = Color.White;
+            btnHostIntro.ForeColor = Color.Black;
             btnHostIntro.Location = new Point(580, 40);
             btnHostIntro.Name = "btnHostIntro";
             btnHostIntro.Size = new Size(120, 45);
             btnHostIntro.TabIndex = 10;
-            btnHostIntro.Text = "1. Host Intro";
+            btnHostIntro.Text = "Host Intro";
             btnHostIntro.UseVisualStyleBackColor = false;
             btnHostIntro.Click += btnHostIntro_Click;
             
             // 
             // btnPickPlayer
             // 
-            btnPickPlayer.BackColor = Color.Blue;
+            btnPickPlayer.BackColor = Color.Gray;
+            btnPickPlayer.Enabled = false;
+            btnPickPlayer.FlatAppearance.BorderColor = Color.Black;
+            btnPickPlayer.FlatAppearance.BorderSize = 2;
             btnPickPlayer.FlatStyle = FlatStyle.Flat;
             btnPickPlayer.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnPickPlayer.ForeColor = Color.White;
@@ -304,124 +317,148 @@ namespace MillionaireGame.Forms
             btnPickPlayer.Name = "btnPickPlayer";
             btnPickPlayer.Size = new Size(120, 45);
             btnPickPlayer.TabIndex = 11;
-            btnPickPlayer.Text = "2. Pick Player";
+            btnPickPlayer.Text = "Pick Player";
             btnPickPlayer.UseVisualStyleBackColor = false;
             btnPickPlayer.Click += btnPickPlayer_Click;
             
             // 
             // btnExplainGame
             // 
-            btnExplainGame.BackColor = Color.Blue;
+            btnExplainGame.BackColor = Color.Gray;
+            btnExplainGame.Enabled = false;
+            btnExplainGame.FlatAppearance.BorderColor = Color.Black;
+            btnExplainGame.FlatAppearance.BorderSize = 2;
             btnExplainGame.FlatStyle = FlatStyle.Flat;
             btnExplainGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnExplainGame.ForeColor = Color.White;
-            btnExplainGame.Location = new Point(840, 40);
+            btnExplainGame.Location = new Point(710, 90);
             btnExplainGame.Name = "btnExplainGame";
             btnExplainGame.Size = new Size(120, 45);
             btnExplainGame.TabIndex = 12;
-            btnExplainGame.Text = "3. Explain Game";
+            btnExplainGame.Text = "Explain Game";
             btnExplainGame.UseVisualStyleBackColor = false;
             btnExplainGame.Click += btnExplainGame_Click;
             
             // 
             // btnLightsDown
             // 
-            btnLightsDown.BackColor = Color.MediumTurquoise;
+            btnLightsDown.BackColor = Color.Gray;
+            btnLightsDown.Enabled = false;
+            btnLightsDown.FlatAppearance.BorderColor = Color.Black;
+            btnLightsDown.FlatAppearance.BorderSize = 2;
             btnLightsDown.FlatStyle = FlatStyle.Flat;
             btnLightsDown.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnLightsDown.Location = new Point(580, 90);
             btnLightsDown.Name = "btnLightsDown";
             btnLightsDown.Size = new Size(120, 45);
             btnLightsDown.TabIndex = 13;
-            btnLightsDown.Text = "4. Lights Down (F7)";
+            btnLightsDown.Text = "Lights Down";
             btnLightsDown.UseVisualStyleBackColor = false;
             btnLightsDown.Click += btnLightsDown_Click;
             
             // 
             // btnNewQuestion
             // 
-            btnNewQuestion.BackColor = Color.Teal;
+            btnNewQuestion.BackColor = Color.Gray;
+            btnNewQuestion.Enabled = false;
+            btnNewQuestion.FlatAppearance.BorderColor = Color.Black;
+            btnNewQuestion.FlatAppearance.BorderSize = 2;
             btnNewQuestion.FlatStyle = FlatStyle.Flat;
             btnNewQuestion.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnNewQuestion.ForeColor = Color.White;
-            btnNewQuestion.Location = new Point(710, 90);
+            btnNewQuestion.Location = new Point(580, 140);
             btnNewQuestion.Name = "btnNewQuestion";
             btnNewQuestion.Size = new Size(120, 45);
             btnNewQuestion.TabIndex = 14;
-            btnNewQuestion.Text = "5. Question (F5)";
+            btnNewQuestion.Text = "Question";
             btnNewQuestion.UseVisualStyleBackColor = false;
             btnNewQuestion.Click += btnNewQuestion_Click;
             
             // 
             // btnReveal
             // 
-            btnReveal.BackColor = Color.Turquoise;
+            btnReveal.BackColor = Color.Gray;
+            btnReveal.Enabled = false;
+            btnReveal.FlatAppearance.BorderColor = Color.Black;
+            btnReveal.FlatAppearance.BorderSize = 2;
             btnReveal.FlatStyle = FlatStyle.Flat;
             btnReveal.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnReveal.Location = new Point(840, 90);
+            btnReveal.Location = new Point(710, 140);
             btnReveal.Name = "btnReveal";
             btnReveal.Size = new Size(120, 45);
             btnReveal.TabIndex = 15;
-            btnReveal.Text = "7. Reveal (F6)";
+            btnReveal.Text = "Reveal";
             btnReveal.UseVisualStyleBackColor = false;
             btnReveal.Click += btnReveal_Click;
             
             // 
             // btnWalk
             // 
-            btnWalk.BackColor = Color.FromArgb(255, 128, 0);
+            btnWalk.BackColor = Color.Gray;
+            btnWalk.Enabled = false;
+            btnWalk.FlatAppearance.BorderColor = Color.Black;
+            btnWalk.FlatAppearance.BorderSize = 2;
             btnWalk.FlatStyle = FlatStyle.Flat;
             btnWalk.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnWalk.Location = new Point(580, 140);
+            btnWalk.Location = new Point(580, 190);
             btnWalk.Name = "btnWalk";
             btnWalk.Size = new Size(120, 45);
             btnWalk.TabIndex = 16;
-            btnWalk.Text = "Walk Away (End)";
+            btnWalk.Text = "Walk Away";
             btnWalk.UseVisualStyleBackColor = false;
             btnWalk.Click += btnWalk_Click;
             
             // 
             // btnThanksForPlaying
             // 
-            btnThanksForPlaying.BackColor = Color.Blue;
+            btnThanksForPlaying.BackColor = Color.Gray;
+            btnThanksForPlaying.Enabled = false;
+            btnThanksForPlaying.FlatAppearance.BorderColor = Color.Black;
+            btnThanksForPlaying.FlatAppearance.BorderSize = 2;
             btnThanksForPlaying.FlatStyle = FlatStyle.Flat;
             btnThanksForPlaying.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnThanksForPlaying.ForeColor = Color.White;
-            btnThanksForPlaying.Location = new Point(710, 140);
+            btnThanksForPlaying.Location = new Point(710, 190);
             btnThanksForPlaying.Name = "btnThanksForPlaying";
             btnThanksForPlaying.Size = new Size(120, 45);
             btnThanksForPlaying.TabIndex = 17;
-            btnThanksForPlaying.Text = "8. Thanks!";
+            btnThanksForPlaying.Text = "Thanks for Playing";
             btnThanksForPlaying.UseVisualStyleBackColor = false;
             btnThanksForPlaying.Click += btnThanksForPlaying_Click;
             
             // 
             // btnResetGame
             // 
-            btnResetGame.BackColor = Color.Red;
+            btnResetGame.BackColor = Color.Gray;
+            btnResetGame.Enabled = false;
+            btnResetGame.FlatAppearance.BorderColor = Color.Black;
+            btnResetGame.FlatAppearance.BorderSize = 2;
             btnResetGame.FlatStyle = FlatStyle.Flat;
             btnResetGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnResetGame.ForeColor = Color.White;
-            btnResetGame.Location = new Point(840, 140);
+            btnResetGame.Location = new Point(710, 240);
             btnResetGame.Name = "btnResetGame";
             btnResetGame.Size = new Size(120, 45);
             btnResetGame.TabIndex = 18;
-            btnResetGame.Text = "9. Reset (Del)";
+            btnResetGame.Text = "Reset";
             btnResetGame.UseVisualStyleBackColor = false;
             btnResetGame.Click += btnResetGame_Click;
             
             // 
             // btnClosing
             // 
-            btnClosing.BackColor = Color.Blue;
+            btnClosing.BackColor = Color.Gray;
+            btnClosing.Enabled = false;
+            btnClosing.FlatAppearance.BorderColor = Color.Black;
+            btnClosing.FlatAppearance.BorderSize = 2;
             btnClosing.FlatStyle = FlatStyle.Flat;
             btnClosing.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnClosing.ForeColor = Color.White;
-            btnClosing.Location = new Point(580, 190);
+            btnClosing.Location = new Point(580, 240);
             btnClosing.Name = "btnClosing";
             btnClosing.Size = new Size(120, 45);
             btnClosing.TabIndex = 19;
-            btnClosing.Text = "10. Closing";
+            btnClosing.Text = "Closing";
             btnClosing.UseVisualStyleBackColor = false;
             btnClosing.Click += btnClosing_Click;
             
@@ -429,10 +466,12 @@ namespace MillionaireGame.Forms
             // btnStopAudio
             // 
             btnStopAudio.BackColor = Color.DarkRed;
+            btnStopAudio.FlatAppearance.BorderColor = Color.Black;
+            btnStopAudio.FlatAppearance.BorderSize = 2;
             btnStopAudio.FlatStyle = FlatStyle.Flat;
             btnStopAudio.ForeColor = Color.White;
             btnStopAudio.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnStopAudio.Location = new Point(710, 190);
+            btnStopAudio.Location = new Point(580, 290);
             btnStopAudio.Name = "btnStopAudio";
             btnStopAudio.Size = new Size(250, 45);
             btnStopAudio.TabIndex = 20;
@@ -596,15 +635,17 @@ namespace MillionaireGame.Forms
             lblQLeftLabel.Name = "lblQLeftLabel";
             lblQLeftLabel.Size = new Size(111, 20);
             lblQLeftLabel.TabIndex = 35;
-            lblQLeftLabel.Text = "Questions Left:";
+            lblQLeftLabel.Text = "Q's left:";
             
             // 
             // btn5050
             // 
             btn5050.BackColor = Color.DarkOrange;
+            btn5050.FlatAppearance.BorderColor = Color.Black;
+            btn5050.FlatAppearance.BorderSize = 2;
             btn5050.FlatStyle = FlatStyle.Flat;
             btn5050.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btn5050.Location = new Point(580, 245);
+            btn5050.Location = new Point(580, 345);
             btn5050.Name = "btn5050";
             btn5050.Size = new Size(120, 40);
             btn5050.TabIndex = 36;
@@ -616,9 +657,11 @@ namespace MillionaireGame.Forms
             // btnPhoneFriend
             // 
             btnPhoneFriend.BackColor = Color.DarkOrange;
+            btnPhoneFriend.FlatAppearance.BorderColor = Color.Black;
+            btnPhoneFriend.FlatAppearance.BorderSize = 2;
             btnPhoneFriend.FlatStyle = FlatStyle.Flat;
             btnPhoneFriend.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnPhoneFriend.Location = new Point(580, 290);
+            btnPhoneFriend.Location = new Point(580, 390);
             btnPhoneFriend.Name = "btnPhoneFriend";
             btnPhoneFriend.Size = new Size(120, 40);
             btnPhoneFriend.TabIndex = 37;
@@ -630,9 +673,11 @@ namespace MillionaireGame.Forms
             // btnAskAudience
             // 
             btnAskAudience.BackColor = Color.DarkOrange;
+            btnAskAudience.FlatAppearance.BorderColor = Color.Black;
+            btnAskAudience.FlatAppearance.BorderSize = 2;
             btnAskAudience.FlatStyle = FlatStyle.Flat;
             btnAskAudience.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnAskAudience.Location = new Point(580, 335);
+            btnAskAudience.Location = new Point(580, 435);
             btnAskAudience.Name = "btnAskAudience";
             btnAskAudience.Size = new Size(120, 40);
             btnAskAudience.TabIndex = 38;
@@ -644,9 +689,11 @@ namespace MillionaireGame.Forms
             // btnSwitch
             // 
             btnSwitch.BackColor = Color.DarkOrange;
+            btnSwitch.FlatAppearance.BorderColor = Color.Black;
+            btnSwitch.FlatAppearance.BorderSize = 2;
             btnSwitch.FlatStyle = FlatStyle.Flat;
             btnSwitch.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnSwitch.Location = new Point(580, 380);
+            btnSwitch.Location = new Point(580, 480);
             btnSwitch.Name = "btnSwitch";
             btnSwitch.Size = new Size(120, 40);
             btnSwitch.TabIndex = 39;
@@ -658,37 +705,54 @@ namespace MillionaireGame.Forms
             // chkShowQuestion
             // 
             chkShowQuestion.AutoSize = true;
-            chkShowQuestion.Checked = true;
-            chkShowQuestion.CheckState = CheckState.Checked;
-            chkShowQuestion.Location = new Point(580, 435);
+            chkShowQuestion.Checked = false;
+            chkShowQuestion.CheckState = CheckState.Unchecked;
+            chkShowQuestion.Location = new Point(12, 505);
             chkShowQuestion.Name = "chkShowQuestion";
             chkShowQuestion.Size = new Size(190, 24);
             chkShowQuestion.TabIndex = 40;
             chkShowQuestion.Text = "Show Question on TV";
             chkShowQuestion.UseVisualStyleBackColor = true;
+            chkShowQuestion.CheckedChanged += chkShowQuestion_CheckedChanged;
+            
+            // 
+            // chkShowWinnings
+            // 
+            chkShowWinnings.AutoSize = true;
+            chkShowWinnings.Checked = false;
+            chkShowWinnings.CheckState = CheckState.Unchecked;
+            chkShowWinnings.Location = new Point(12, 535);
+            chkShowWinnings.Name = "chkShowWinnings";
+            chkShowWinnings.Size = new Size(200, 24);
+            chkShowWinnings.TabIndex = 43;
+            chkShowWinnings.Text = "Show Current Winnings";
+            chkShowWinnings.UseVisualStyleBackColor = true;
+            chkShowWinnings.CheckedChanged += chkShowWinnings_CheckedChanged;
             
             // 
             // chkCorrectAnswer
             // 
             chkCorrectAnswer.AutoSize = true;
-            chkCorrectAnswer.Location = new Point(580, 465);
+            chkCorrectAnswer.Location = new Point(220, 505);
             chkCorrectAnswer.Name = "chkCorrectAnswer";
-            chkCorrectAnswer.Size = new Size(183, 24);
+            chkCorrectAnswer.Size = new Size(235, 24);
             chkCorrectAnswer.TabIndex = 41;
-            chkCorrectAnswer.Text = "Show Correct Answer";
+            chkCorrectAnswer.Text = "Show Correct Answer to Host";
             chkCorrectAnswer.UseVisualStyleBackColor = true;
             
             // 
             // btnActivateRiskMode
             // 
-            btnActivateRiskMode.BackColor = Color.Orange;
+            btnActivateRiskMode.BackColor = Color.Yellow;
+            btnActivateRiskMode.FlatAppearance.BorderColor = Color.Black;
+            btnActivateRiskMode.FlatAppearance.BorderSize = 2;
             btnActivateRiskMode.FlatStyle = FlatStyle.Flat;
             btnActivateRiskMode.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btnActivateRiskMode.Location = new Point(710, 245);
+            btnActivateRiskMode.Location = new Point(710, 345);
             btnActivateRiskMode.Name = "btnActivateRiskMode";
-            btnActivateRiskMode.Size = new Size(100, 175);
+            btnActivateRiskMode.Size = new Size(120, 175);
             btnActivateRiskMode.TabIndex = 42;
-            btnActivateRiskMode.Text = "RISK MODE OFF";
+            btnActivateRiskMode.Text = "Activate Risk Mode";
             btnActivateRiskMode.UseVisualStyleBackColor = false;
             btnActivateRiskMode.Click += btnActivateRiskMode_Click;
 
@@ -698,11 +762,12 @@ namespace MillionaireGame.Forms
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(980, 530);
+            ClientSize = new Size(980, 570);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Controls.Add(btnActivateRiskMode);
             Controls.Add(chkCorrectAnswer);
+            Controls.Add(chkShowWinnings);
             Controls.Add(chkShowQuestion);
             Controls.Add(btnSwitch);
             Controls.Add(btnAskAudience);
@@ -738,6 +803,7 @@ namespace MillionaireGame.Forms
             Controls.Add(btnC);
             Controls.Add(btnB);
             Controls.Add(btnA);
+            Controls.Add(lblExplanationLabel);
             Controls.Add(txtExplain);
             Controls.Add(txtD);
             Controls.Add(txtC);
@@ -747,7 +813,7 @@ namespace MillionaireGame.Forms
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
             Name = "ControlPanelForm";
-            Text = "The Millionaire Game - Control Panel";
+            Text = "Millionaire Game";
             Load += ControlPanelForm_Load;
             ((System.ComponentModel.ISupportInitialize)nmrLevel).EndInit();
             menuStrip.ResumeLayout(false);
@@ -759,9 +825,8 @@ namespace MillionaireGame.Forms
         #endregion
 
         private MenuStrip menuStrip;
-        private ToolStripMenuItem databaseToolStripMenuItem;
         private ToolStripMenuItem gameToolStripMenuItem;
-        private ToolStripMenuItem viewToolStripMenuItem;
+        private ToolStripMenuItem screensToolStripMenuItem;
         private ToolStripMenuItem helpToolStripMenuItem;
         private TextBox txtQuestion;
         private TextBox txtA;
@@ -783,6 +848,7 @@ namespace MillionaireGame.Forms
         private Label lblWrongLabel;
         private Label lblDropLabel;
         private Label lblQLeftLabel;
+        private Label lblExplanationLabel;
         private Button btnHostIntro;
         private Button btnPickPlayer;
         private Button btnExplainGame;
@@ -805,6 +871,7 @@ namespace MillionaireGame.Forms
         private Button btnSwitch;
         private NumericUpDown nmrLevel;
         private CheckBox chkShowQuestion;
+        private CheckBox chkShowWinnings;
         private CheckBox chkCorrectAnswer;
     }
 }

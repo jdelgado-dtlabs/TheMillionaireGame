@@ -1,5 +1,6 @@
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.QuestionEditor.Forms;
 
@@ -14,6 +15,7 @@ public partial class AddQuestionForm : Form
     public AddQuestionForm(string connectionString)
     {
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         _connectionString = connectionString;
         _repository = new QuestionRepository(_connectionString);
     }

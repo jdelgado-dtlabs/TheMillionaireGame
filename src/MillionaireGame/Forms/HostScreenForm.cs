@@ -1,5 +1,6 @@
 using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
+using MillionaireGame.Core.Helpers;
 
 namespace MillionaireGame.Forms;
 
@@ -13,6 +14,7 @@ public partial class HostScreenForm : Form, IGameScreen
     public HostScreenForm()
     {
         InitializeComponent();
+        IconHelper.ApplyToForm(this);
         FormBorderStyle = FormBorderStyle.None;
         WindowState = FormWindowState.Maximized;
     }
@@ -40,6 +42,7 @@ public partial class HostScreenForm : Form, IGameScreen
 
         // Update correct answer indicator (shown only to host)
         lblCorrectAnswer.Text = $"Correct: {question.CorrectAnswer}";
+        lblCorrectAnswer.Visible = false; // Hidden until all answers are revealed
 
         // Update ATA percentages (shown to host before lifeline activation)
         lblATAa.Text = $"A: {question.ATAPercentageA ?? 0}%";
@@ -77,6 +80,70 @@ public partial class HostScreenForm : Form, IGameScreen
                 pnlAnswerD.BackColor = Color.Yellow;
                 break;
         }
+    }
+
+    public void ShowAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowAnswer(answer)));
+            return;
+        }
+
+        // Make the specified answer visible (implementation depends on how answers are hidden initially)
+        // For now, this is a no-op as answers are shown by default on host screen
+    }
+
+    public void ShowCorrectAnswerToHost(string correctAnswer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowCorrectAnswerToHost(correctAnswer)));
+            return;
+        }
+
+        // Show correct answer on host screen
+        lblCorrectAnswer.Visible = true;
+    }
+
+    public void ShowQuestion(bool show)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowQuestion(show)));
+            return;
+        }
+
+        // Show or hide question and answers
+        lblQuestion.Visible = show;
+        pnlAnswerA.Visible = show;
+        pnlAnswerB.Visible = show;
+        pnlAnswerC.Visible = show;
+        pnlAnswerD.Visible = show;
+    }
+
+    public void ShowWinnings(GameState state)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowWinnings(state)));
+            return;
+        }
+
+        // Hide question and show money values prominently
+        ShowQuestion(false);
+        // TODO: Could add special winnings display panel
+    }
+
+    public void HideWinnings()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(HideWinnings));
+            return;
+        }
+
+        // Just hide - question will be shown when checkbox is checked
     }
 
     public void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect)

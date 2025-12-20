@@ -4,22 +4,27 @@
 
 ## 🎮 Welcome to The Millionaire Game - Modern C# Edition!
 
+**Version**: 0.2-2512 (December 2025)
+
 This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture and maintainability.
 
-### 🔄 Migration Status
+### 🔄 Current Status
 
-This C# version is currently under active development. See [MIGRATION.md](MIGRATION.md) for detailed status.
-
-**Current Status:**
+**Version 0.2-2512 Features:**
 - ✅ Core models and data structures
 - ✅ Settings management
 - ✅ Database layer
 - ✅ Game logic services
-- ✅ UI forms (Control Panel complete)
-- ✅ Sound engine (Question-specific audio system complete)
+- ✅ Complete Control Panel UI
+- ✅ Progressive answer reveal system
+- ✅ Sound engine (Question-specific audio system)
 - ✅ Audio transitions with 500ms timing
-- 🚧 Lifeline implementations (50:50, PAF, ATA working; STQ pending)
-- 🚧 Broadcast screens (in progress)
+- ✅ Lifeline implementations (50:50, Phone-a-Friend, Ask the Audience)
+- ✅ Host, Guest, and TV screen implementations
+- ✅ Game state management
+- ✅ Question Editor with CSV import/export
+- 🚧 Switch the Question lifeline (pending)
+- 🚧 FFF networking (pending)
 
 ## 🆕 What's New in the C# Version?
 
@@ -83,7 +88,16 @@ src/
 ├── TheMillionaireGame.sln           # Solution file
 ├── MillionaireGame/                 # Main application
 │   ├── Program.cs                   # Entry point
-│   └── (Forms and UI to be added)
+│   ├── Forms/                       # UI Forms
+│   │   ├── ControlPanelForm.cs      # Main control panel
+│   │   ├── HostScreenForm.cs        # Host display
+│   │   ├── GuestScreenForm.cs       # Guest display
+│   │   ├── TVScreenForm.cs          # TV/Audience display
+│   │   └── ...                      # Other dialogs
+│   ├── Services/                    # Application services
+│   │   ├── SoundService.cs          # Audio playback
+│   │   └── ScreenUpdateService.cs   # Screen coordination
+│   └── lib/                         # Resources (sounds, images)
 ├── MillionaireGame.Core/            # Core library
 │   ├── Models/                      # Data models
 │   │   ├── GameState.cs
@@ -98,24 +112,31 @@ src/
 │   │   └── SqlSettings.cs
 │   ├── Game/                        # Game logic
 │   │   └── GameService.cs
-│   └── ...
+│   └── Helpers/                     # Utility classes
 ├── MillionaireGame.QuestionEditor/  # Question editor
 └── MillionaireGame.FFFGuest/        # FFF client
 ```
 
 ## 🎯 Features
 
-All features from the original VB.NET version are planned for migration:
-
-- ✅ Customizable lifelines (up to 4)
+### Fully Implemented
+- ✅ Complete Control Panel UI with game flow management
+- ✅ Progressive answer reveal system (Question → A → B → C → D)
 - ✅ Multiple screen support (Host, Guest, TV/Audience)
-- ✅ Fastest Finger First with online features
+- ✅ Question-specific sound system with audio transitions
+- ✅ Three lifelines: 50:50, Phone-a-Friend (30s timer), Ask the Audience (2min timer)
 - ✅ Risk Mode (2nd safety net disabled)
 - ✅ Free Safety Net Mode
 - ✅ SQL Server support (Local & Remote)
-- ✅ Question Editor with CSV import/export
-- 🚧 Sound engine (in progress)
-- 🚧 Complete UI (in progress)
+- ✅ Question Editor with full CSV import/export
+- ✅ Game outcome tracking (Win/Walk Away/Wrong Answer)
+- ✅ Milestone prize calculations
+- ✅ Auto-show winnings feature with mutual exclusivity
+- ✅ Closing sequence with cancellation support
+
+### In Progress
+- 🚧 Switch the Question lifeline
+- 🚧 Fastest Finger First networking
 
 ## 💾 Database Compatibility
 
@@ -194,33 +215,29 @@ gameService.LevelChanged += (sender, e) => {
 
 ## 🧪 Development Roadmap
 
-See [MIGRATION.md](MIGRATION.md) for detailed migration progress.
+### Version 0.2-2512 (✅ Current)
+- [x] Project structure and core library
+- [x] Complete Control Panel with game flow
+- [x] Host, Guest, and TV screens
+- [x] Question Editor with CSV support
+- [x] Sound engine with question-specific audio
+- [x] Three lifelines: 50:50, PAF, ATA
+- [x] Progressive answer reveal system
+- [x] Game outcome tracking and winnings display
+- [x] Closing sequence management
 
-### Phase 1: Foundation (✅ Complete)
-- [x] Project structure
-- [x] Core models
-- [x] Settings management
-- [x] Database layer
-- [x] Game service
+### Version 0.3 (⏳ Planned)
+- [ ] Switch the Question lifeline implementation
+- [ ] Double Dip lifeline
+- [ ] Ask the Host lifeline
+- [ ] FFF networking and online features
+- [ ] Enhanced screen transitions
 
-### Phase 2: UI Migration (🚧 In Progress)
-- [ ] Control Panel
-- [ ] Host Screen
-- [ ] Guest Screen  
-- [ ] TV Screen
-- [ ] Question Editor
-
-### Phase 3: Advanced Features (⏳ Pending)
-- [ ] Sound engine
-- [ ] Lifeline implementations
-- [ ] FFF networking
-- [ ] Resource management
-
-### Phase 4: Polish & Release (⏳ Pending)
-- [ ] Testing
-- [ ] Documentation
-- [ ] Release builds
-- [ ] Migration guides
+### Version 1.0 (⏳ Future)
+- [ ] Feature parity with VB.NET version
+- [ ] Comprehensive testing
+- [ ] Release builds and installers
+- [ ] User documentation
 
 ## 📝 Contributing
 
