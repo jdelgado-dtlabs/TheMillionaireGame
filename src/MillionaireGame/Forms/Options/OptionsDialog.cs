@@ -34,22 +34,23 @@ public partial class OptionsDialog : Form
 
         // Lifeline settings
         numTotalLifelines.Value = _settings.TotalLifelines;
+        UpdateLifelineGroupStates(); // Enable/disable based on total
         
         // Lifeline 1 configuration
         cmbLifeline1Type.SelectedIndex = MapLifelineToIndex(_settings.Lifeline1);
-        SetLifelineAvailability(radL1Always, radL1AfterQ5, radL1AfterQ10, radL1RiskMode, _settings.Lifeline1Available);
+        cmbLifeline1Availability.SelectedIndex = _settings.Lifeline1Available;
         
         // Lifeline 2 configuration
         cmbLifeline2Type.SelectedIndex = MapLifelineToIndex(_settings.Lifeline2);
-        SetLifelineAvailability(radL2Always, radL2AfterQ5, radL2AfterQ10, radL2RiskMode, _settings.Lifeline2Available);
+        cmbLifeline2Availability.SelectedIndex = _settings.Lifeline2Available;
         
         // Lifeline 3 configuration
         cmbLifeline3Type.SelectedIndex = MapLifelineToIndex(_settings.Lifeline3);
-        SetLifelineAvailability(radL3Always, radL3AfterQ5, radL3AfterQ10, radL3RiskMode, _settings.Lifeline3Available);
+        cmbLifeline3Availability.SelectedIndex = _settings.Lifeline3Available;
         
         // Lifeline 4 configuration
         cmbLifeline4Type.SelectedIndex = MapLifelineToIndex(_settings.Lifeline4);
-        SetLifelineAvailability(radL4Always, radL4AfterQ5, radL4AfterQ10, radL4RiskMode, _settings.Lifeline4Available);
+        cmbLifeline4Availability.SelectedIndex = _settings.Lifeline4Available;
 
         // Sound settings (main game sounds)
         txtSoundQuestionCue.Text = _settings.SoundQ1to5Bed ?? string.Empty;
@@ -67,32 +68,24 @@ public partial class OptionsDialog : Form
         _hasChanges = false;
     }
 
-    private void SetLifelineAvailability(RadioButton always, RadioButton afterQ5, RadioButton afterQ10, RadioButton riskMode, int availability)
+    private void UpdateLifelineGroupStates()
     {
-        switch (availability)
-        {
-            case 0:
-                always.Checked = true;
-                break;
-            case 1:
-                afterQ5.Checked = true;
-                break;
-            case 2:
-                afterQ10.Checked = true;
-                break;
-            case 3:
-                riskMode.Checked = true;
-                break;
-        }
+        int total = (int)numTotalLifelines.Value;
+        
+        grpLifeline1.Enabled = total >= 1;
+        grpLifeline2.Enabled = total >= 2;
+        grpLifeline3.Enabled = total >= 3;
+        grpLifeline4.Enabled = total >= 4;
     }
 
-    private int GetLifelineAvailability(RadioButton always, RadioButton afterQ5, RadioButton afterQ10, RadioButton riskMode)
+    private void SetLifelineAvailability(ComboBox cmbAvailability, int availability)
     {
-        if (always.Checked) return 0;
-        if (afterQ5.Checked) return 1;
-        if (afterQ10.Checked) return 2;
-        if (riskMode.Checked) return 3;
-        return 0;
+        cmbAvailability.SelectedIndex = availability;
+    }
+
+    private int GetLifelineAvailability(ComboBox cmbAvailability)
+    {
+        return cmbAvailability.SelectedIndex;
     }
 
     private int MapLifelineToIndex(string lifelineName)
@@ -136,13 +129,13 @@ public partial class OptionsDialog : Form
         // Lifeline settings
         _settings.TotalLifelines = (int)numTotalLifelines.Value;
         _settings.Lifeline1 = MapIndexToLifeline(cmbLifeline1Type.SelectedIndex);
-        _settings.Lifeline1Available = GetLifelineAvailability(radL1Always, radL1AfterQ5, radL1AfterQ10, radL1RiskMode);
+        _settings.Lifeline1Available = GetLifelineAvailability(cmbLifeline1Availability);
         _settings.Lifeline2 = MapIndexToLifeline(cmbLifeline2Type.SelectedIndex);
-        _settings.Lifeline2Available = GetLifelineAvailability(radL2Always, radL2AfterQ5, radL2AfterQ10, radL2RiskMode);
+        _settings.Lifeline2Available = GetLifelineAvailability(cmbLifeline2Availability);
         _settings.Lifeline3 = MapIndexToLifeline(cmbLifeline3Type.SelectedIndex);
-        _settings.Lifeline3Available = GetLifelineAvailability(radL3Always, radL3AfterQ5, radL3AfterQ10, radL3RiskMode);
+        _settings.Lifeline3Available = GetLifelineAvailability(cmbLifeline3Availability);
         _settings.Lifeline4 = MapIndexToLifeline(cmbLifeline4Type.SelectedIndex);
-        _settings.Lifeline4Available = GetLifelineAvailability(radL4Always, radL4AfterQ5, radL4AfterQ10, radL4RiskMode);
+        _settings.Lifeline4Available = GetLifelineAvailability(cmbLifeline4Availability);
 
         // Sound settings (main game sounds)
         _settings.SoundQ1to5Bed = txtSoundQuestionCue.Text;
@@ -151,7 +144,7 @@ public partial class OptionsDialog : Form
         _settings.SoundQ1to4Correct = txtSoundCorrectAnswer.Text;
         _settings.SoundWalkAway1 = txtSoundWalkAway.Text;
 
-        // Lifeline sounds
+        // Sound settings (lifeline sounds)
         _settings.Sound5050 = txtSound5050.Text;
         _settings.SoundPlusOneStart = txtSoundPhone.Text;
         _settings.SoundATAStart = txtSoundATA.Text;
@@ -243,6 +236,23 @@ public partial class OptionsDialog : Form
             }
         }
         return null;
+    }
+
+    // Update lifeline group box enabled states based on total lifelines setting
+    private void UpdateLifelineGroupBoxStates()
+    {
+        int totalLifelines = (int)numTotalLifelines.Value;
+        grpLifeline1.Enabled = totalLifelines >= 1;
+        grpLifeline2.Enabled = totalLifelines >= 2;
+        grpLifeline3.Enabled = totalLifelines >= 3;
+        grpLifeline4.Enabled = totalLifelines >= 4;
+    }
+
+    // Event handler for total lifelines value changed
+    private void numTotalLifelines_ValueChanged(object sender, EventArgs e)
+    {
+        UpdateLifelineGroupBoxStates();
+        MarkChanged();
     }
 
     // Change event handlers

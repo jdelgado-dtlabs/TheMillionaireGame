@@ -33,31 +33,19 @@ namespace MillionaireGame.Forms.Options
             chkShowAnswerOnlyAtFinal = new CheckBox();
             tabLifelines = new TabPage();
             grpLifeline4 = new GroupBox();
-            radL4RiskMode = new RadioButton();
-            radL4AfterQ10 = new RadioButton();
-            radL4AfterQ5 = new RadioButton();
-            radL4Always = new RadioButton();
+            cmbLifeline4Availability = new ComboBox();
             cmbLifeline4Type = new ComboBox();
             lblLifeline4 = new Label();
             grpLifeline3 = new GroupBox();
-            radL3RiskMode = new RadioButton();
-            radL3AfterQ10 = new RadioButton();
-            radL3AfterQ5 = new RadioButton();
-            radL3Always = new RadioButton();
+            cmbLifeline3Availability = new ComboBox();
             cmbLifeline3Type = new ComboBox();
             lblLifeline3 = new Label();
             grpLifeline2 = new GroupBox();
-            radL2RiskMode = new RadioButton();
-            radL2AfterQ10 = new RadioButton();
-            radL2AfterQ5 = new RadioButton();
-            radL2Always = new RadioButton();
+            cmbLifeline2Availability = new ComboBox();
             cmbLifeline2Type = new ComboBox();
             lblLifeline2 = new Label();
             grpLifeline1 = new GroupBox();
-            radL1RiskMode = new RadioButton();
-            radL1AfterQ10 = new RadioButton();
-            radL1AfterQ5 = new RadioButton();
-            radL1Always = new RadioButton();
+            cmbLifeline1Availability = new ComboBox();
             cmbLifeline1Type = new ComboBox();
             lblLifeline1 = new Label();
             numTotalLifelines = new NumericUpDown();
@@ -290,10 +278,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpLifeline4
             // 
-            grpLifeline4.Controls.Add(radL4RiskMode);
-            grpLifeline4.Controls.Add(radL4AfterQ10);
-            grpLifeline4.Controls.Add(radL4AfterQ5);
-            grpLifeline4.Controls.Add(radL4Always);
+            grpLifeline4.Controls.Add(cmbLifeline4Availability);
             grpLifeline4.Controls.Add(cmbLifeline4Type);
             grpLifeline4.Controls.Add(lblLifeline4);
             grpLifeline4.Location = new Point(336, 236);
@@ -303,51 +288,17 @@ namespace MillionaireGame.Forms.Options
             grpLifeline4.TabStop = false;
             grpLifeline4.Text = "Lifeline 4";
             // 
-            // radL4RiskMode
+            // cmbLifeline4Availability
             // 
-            radL4RiskMode.AutoSize = true;
-            radL4RiskMode.Location = new Point(20, 140);
-            radL4RiskMode.Name = "radL4RiskMode";
-            radL4RiskMode.Size = new Size(128, 19);
-            radL4RiskMode.TabIndex = 5;
-            radL4RiskMode.Text = "In Risk Mode Only";
-            radL4RiskMode.UseVisualStyleBackColor = true;
-            radL4RiskMode.CheckedChanged += Control_Changed;
-            // 
-            // radL4AfterQ10
-            // 
-            radL4AfterQ10.AutoSize = true;
-            radL4AfterQ10.Location = new Point(20, 115);
-            radL4AfterQ10.Name = "radL4AfterQ10";
-            radL4AfterQ10.Size = new Size(134, 19);
-            radL4AfterQ10.TabIndex = 4;
-            radL4AfterQ10.Text = "After Question 10";
-            radL4AfterQ10.UseVisualStyleBackColor = true;
-            radL4AfterQ10.CheckedChanged += Control_Changed;
-            // 
-            // radL4AfterQ5
-            // 
-            radL4AfterQ5.AutoSize = true;
-            radL4AfterQ5.Location = new Point(20, 90);
-            radL4AfterQ5.Name = "radL4AfterQ5";
-            radL4AfterQ5.Size = new Size(125, 19);
-            radL4AfterQ5.TabIndex = 3;
-            radL4AfterQ5.Text = "After Question 5";
-            radL4AfterQ5.UseVisualStyleBackColor = true;
-            radL4AfterQ5.CheckedChanged += Control_Changed;
-            // 
-            // radL4Always
-            // 
-            radL4Always.AutoSize = true;
-            radL4Always.Checked = true;
-            radL4Always.Location = new Point(20, 65);
-            radL4Always.Name = "radL4Always";
-            radL4Always.Size = new Size(108, 19);
-            radL4Always.TabIndex = 2;
-            radL4Always.TabStop = true;
-            radL4Always.Text = "Always Available";
-            radL4Always.UseVisualStyleBackColor = true;
-            radL4Always.CheckedChanged += Control_Changed;
+            cmbLifeline4Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline4Availability.FormattingEnabled = true;
+            cmbLifeline4Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline4Availability.Location = new Point(20, 65);
+            cmbLifeline4Availability.Name = "cmbLifeline4Availability";
+            cmbLifeline4Availability.Size = new Size(260, 23);
+            cmbLifeline4Availability.TabIndex = 2;
+            cmbLifeline4Availability.SelectedIndex = 0;
+            cmbLifeline4Availability.SelectedIndexChanged += Control_Changed;
             // 
             // cmbLifeline4Type
             // 
@@ -371,10 +322,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpLifeline3
             // 
-            grpLifeline3.Controls.Add(radL3RiskMode);
-            grpLifeline3.Controls.Add(radL3AfterQ10);
-            grpLifeline3.Controls.Add(radL3AfterQ5);
-            grpLifeline3.Controls.Add(radL3Always);
+            grpLifeline3.Controls.Add(cmbLifeline3Availability);
             grpLifeline3.Controls.Add(cmbLifeline3Type);
             grpLifeline3.Controls.Add(lblLifeline3);
             grpLifeline3.Location = new Point(16, 236);
@@ -384,51 +332,17 @@ namespace MillionaireGame.Forms.Options
             grpLifeline3.TabStop = false;
             grpLifeline3.Text = "Lifeline 3";
             // 
-            // radL3RiskMode
+            // cmbLifeline3Availability
             // 
-            radL3RiskMode.AutoSize = true;
-            radL3RiskMode.Location = new Point(20, 140);
-            radL3RiskMode.Name = "radL3RiskMode";
-            radL3RiskMode.Size = new Size(128, 19);
-            radL3RiskMode.TabIndex = 5;
-            radL3RiskMode.Text = "In Risk Mode Only";
-            radL3RiskMode.UseVisualStyleBackColor = true;
-            radL3RiskMode.CheckedChanged += Control_Changed;
-            // 
-            // radL3AfterQ10
-            // 
-            radL3AfterQ10.AutoSize = true;
-            radL3AfterQ10.Location = new Point(20, 115);
-            radL3AfterQ10.Name = "radL3AfterQ10";
-            radL3AfterQ10.Size = new Size(134, 19);
-            radL3AfterQ10.TabIndex = 4;
-            radL3AfterQ10.Text = "After Question 10";
-            radL3AfterQ10.UseVisualStyleBackColor = true;
-            radL3AfterQ10.CheckedChanged += Control_Changed;
-            // 
-            // radL3AfterQ5
-            // 
-            radL3AfterQ5.AutoSize = true;
-            radL3AfterQ5.Location = new Point(20, 90);
-            radL3AfterQ5.Name = "radL3AfterQ5";
-            radL3AfterQ5.Size = new Size(125, 19);
-            radL3AfterQ5.TabIndex = 3;
-            radL3AfterQ5.Text = "After Question 5";
-            radL3AfterQ5.UseVisualStyleBackColor = true;
-            radL3AfterQ5.CheckedChanged += Control_Changed;
-            // 
-            // radL3Always
-            // 
-            radL3Always.AutoSize = true;
-            radL3Always.Checked = true;
-            radL3Always.Location = new Point(20, 65);
-            radL3Always.Name = "radL3Always";
-            radL3Always.Size = new Size(108, 19);
-            radL3Always.TabIndex = 2;
-            radL3Always.TabStop = true;
-            radL3Always.Text = "Always Available";
-            radL3Always.UseVisualStyleBackColor = true;
-            radL3Always.CheckedChanged += Control_Changed;
+            cmbLifeline3Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline3Availability.FormattingEnabled = true;
+            cmbLifeline3Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline3Availability.Location = new Point(20, 65);
+            cmbLifeline3Availability.Name = "cmbLifeline3Availability";
+            cmbLifeline3Availability.Size = new Size(260, 23);
+            cmbLifeline3Availability.TabIndex = 2;
+            cmbLifeline3Availability.SelectedIndex = 0;
+            cmbLifeline3Availability.SelectedIndexChanged += Control_Changed;
             // 
             // cmbLifeline3Type
             // 
@@ -452,10 +366,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpLifeline2
             // 
-            grpLifeline2.Controls.Add(radL2RiskMode);
-            grpLifeline2.Controls.Add(radL2AfterQ10);
-            grpLifeline2.Controls.Add(radL2AfterQ5);
-            grpLifeline2.Controls.Add(radL2Always);
+            grpLifeline2.Controls.Add(cmbLifeline2Availability);
             grpLifeline2.Controls.Add(cmbLifeline2Type);
             grpLifeline2.Controls.Add(lblLifeline2);
             grpLifeline2.Location = new Point(336, 56);
@@ -465,51 +376,17 @@ namespace MillionaireGame.Forms.Options
             grpLifeline2.TabStop = false;
             grpLifeline2.Text = "Lifeline 2";
             // 
-            // radL2RiskMode
+            // cmbLifeline2Availability
             // 
-            radL2RiskMode.AutoSize = true;
-            radL2RiskMode.Location = new Point(20, 130);
-            radL2RiskMode.Name = "radL2RiskMode";
-            radL2RiskMode.Size = new Size(128, 19);
-            radL2RiskMode.TabIndex = 5;
-            radL2RiskMode.Text = "In Risk Mode Only";
-            radL2RiskMode.UseVisualStyleBackColor = true;
-            radL2RiskMode.CheckedChanged += Control_Changed;
-            // 
-            // radL2AfterQ10
-            // 
-            radL2AfterQ10.AutoSize = true;
-            radL2AfterQ10.Location = new Point(20, 105);
-            radL2AfterQ10.Name = "radL2AfterQ10";
-            radL2AfterQ10.Size = new Size(134, 19);
-            radL2AfterQ10.TabIndex = 4;
-            radL2AfterQ10.Text = "After Question 10";
-            radL2AfterQ10.UseVisualStyleBackColor = true;
-            radL2AfterQ10.CheckedChanged += Control_Changed;
-            // 
-            // radL2AfterQ5
-            // 
-            radL2AfterQ5.AutoSize = true;
-            radL2AfterQ5.Location = new Point(20, 80);
-            radL2AfterQ5.Name = "radL2AfterQ5";
-            radL2AfterQ5.Size = new Size(125, 19);
-            radL2AfterQ5.TabIndex = 3;
-            radL2AfterQ5.Text = "After Question 5";
-            radL2AfterQ5.UseVisualStyleBackColor = true;
-            radL2AfterQ5.CheckedChanged += Control_Changed;
-            // 
-            // radL2Always
-            // 
-            radL2Always.AutoSize = true;
-            radL2Always.Checked = true;
-            radL2Always.Location = new Point(20, 55);
-            radL2Always.Name = "radL2Always";
-            radL2Always.Size = new Size(108, 19);
-            radL2Always.TabIndex = 2;
-            radL2Always.TabStop = true;
-            radL2Always.Text = "Always Available";
-            radL2Always.UseVisualStyleBackColor = true;
-            radL2Always.CheckedChanged += Control_Changed;
+            cmbLifeline2Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline2Availability.FormattingEnabled = true;
+            cmbLifeline2Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline2Availability.Location = new Point(20, 55);
+            cmbLifeline2Availability.Name = "cmbLifeline2Availability";
+            cmbLifeline2Availability.Size = new Size(260, 23);
+            cmbLifeline2Availability.TabIndex = 2;
+            cmbLifeline2Availability.SelectedIndex = 0;
+            cmbLifeline2Availability.SelectedIndexChanged += Control_Changed;
             // 
             // cmbLifeline2Type
             // 
@@ -533,10 +410,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpLifeline1
             // 
-            grpLifeline1.Controls.Add(radL1RiskMode);
-            grpLifeline1.Controls.Add(radL1AfterQ10);
-            grpLifeline1.Controls.Add(radL1AfterQ5);
-            grpLifeline1.Controls.Add(radL1Always);
+            grpLifeline1.Controls.Add(cmbLifeline1Availability);
             grpLifeline1.Controls.Add(cmbLifeline1Type);
             grpLifeline1.Controls.Add(lblLifeline1);
             grpLifeline1.Location = new Point(16, 56);
@@ -546,51 +420,17 @@ namespace MillionaireGame.Forms.Options
             grpLifeline1.TabStop = false;
             grpLifeline1.Text = "Lifeline 1";
             // 
-            // radL1RiskMode
+            // cmbLifeline1Availability
             // 
-            radL1RiskMode.AutoSize = true;
-            radL1RiskMode.Location = new Point(20, 130);
-            radL1RiskMode.Name = "radL1RiskMode";
-            radL1RiskMode.Size = new Size(128, 19);
-            radL1RiskMode.TabIndex = 5;
-            radL1RiskMode.Text = "In Risk Mode Only";
-            radL1RiskMode.UseVisualStyleBackColor = true;
-            radL1RiskMode.CheckedChanged += Control_Changed;
-            // 
-            // radL1AfterQ10
-            // 
-            radL1AfterQ10.AutoSize = true;
-            radL1AfterQ10.Location = new Point(20, 105);
-            radL1AfterQ10.Name = "radL1AfterQ10";
-            radL1AfterQ10.Size = new Size(134, 19);
-            radL1AfterQ10.TabIndex = 4;
-            radL1AfterQ10.Text = "After Question 10";
-            radL1AfterQ10.UseVisualStyleBackColor = true;
-            radL1AfterQ10.CheckedChanged += Control_Changed;
-            // 
-            // radL1AfterQ5
-            // 
-            radL1AfterQ5.AutoSize = true;
-            radL1AfterQ5.Location = new Point(20, 80);
-            radL1AfterQ5.Name = "radL1AfterQ5";
-            radL1AfterQ5.Size = new Size(125, 19);
-            radL1AfterQ5.TabIndex = 3;
-            radL1AfterQ5.Text = "After Question 5";
-            radL1AfterQ5.UseVisualStyleBackColor = true;
-            radL1AfterQ5.CheckedChanged += Control_Changed;
-            // 
-            // radL1Always
-            // 
-            radL1Always.AutoSize = true;
-            radL1Always.Checked = true;
-            radL1Always.Location = new Point(20, 55);
-            radL1Always.Name = "radL1Always";
-            radL1Always.Size = new Size(108, 19);
-            radL1Always.TabIndex = 2;
-            radL1Always.TabStop = true;
-            radL1Always.Text = "Always Available";
-            radL1Always.UseVisualStyleBackColor = true;
-            radL1Always.CheckedChanged += Control_Changed;
+            cmbLifeline1Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline1Availability.FormattingEnabled = true;
+            cmbLifeline1Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline1Availability.Location = new Point(20, 55);
+            cmbLifeline1Availability.Name = "cmbLifeline1Availability";
+            cmbLifeline1Availability.Size = new Size(260, 23);
+            cmbLifeline1Availability.TabIndex = 2;
+            cmbLifeline1Availability.SelectedIndex = 0;
+            cmbLifeline1Availability.SelectedIndexChanged += Control_Changed;
             // 
             // cmbLifeline1Type
             // 
@@ -621,7 +461,7 @@ namespace MillionaireGame.Forms.Options
             numTotalLifelines.Size = new Size(80, 23);
             numTotalLifelines.TabIndex = 1;
             numTotalLifelines.Value = new decimal(new int[] { 4, 0, 0, 0 });
-            numTotalLifelines.ValueChanged += Control_Changed;
+            numTotalLifelines.ValueChanged += numTotalLifelines_ValueChanged;
             // 
             // lblTotalLifelines
             // 
@@ -993,7 +833,7 @@ namespace MillionaireGame.Forms.Options
             Name = "OptionsDialog";
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = "Options";
+            Text = "Settings";
             tabControl.ResumeLayout(false);
             tabGeneral.ResumeLayout(false);
             grpScreens.ResumeLayout(false);
@@ -1045,31 +885,19 @@ namespace MillionaireGame.Forms.Options
         private GroupBox grpLifeline1;
         private Label lblLifeline1;
         private ComboBox cmbLifeline1Type;
-        private RadioButton radL1Always;
-        private RadioButton radL1AfterQ5;
-        private RadioButton radL1AfterQ10;
-        private RadioButton radL1RiskMode;
+        private ComboBox cmbLifeline1Availability;
         private GroupBox grpLifeline2;
-        private RadioButton radL2RiskMode;
-        private RadioButton radL2AfterQ10;
-        private RadioButton radL2AfterQ5;
-        private RadioButton radL2Always;
         private ComboBox cmbLifeline2Type;
         private Label lblLifeline2;
+        private ComboBox cmbLifeline2Availability;
         private GroupBox grpLifeline3;
-        private RadioButton radL3RiskMode;
-        private RadioButton radL3AfterQ10;
-        private RadioButton radL3AfterQ5;
-        private RadioButton radL3Always;
         private ComboBox cmbLifeline3Type;
         private Label lblLifeline3;
+        private ComboBox cmbLifeline3Availability;
         private GroupBox grpLifeline4;
-        private RadioButton radL4RiskMode;
-        private RadioButton radL4AfterQ10;
-        private RadioButton radL4AfterQ5;
-        private RadioButton radL4Always;
         private ComboBox cmbLifeline4Type;
         private Label lblLifeline4;
+        private ComboBox cmbLifeline4Availability;
         private GroupBox grpGameSounds;
         private Label lblSoundQuestionCue;
         private TextBox txtSoundQuestionCue;
