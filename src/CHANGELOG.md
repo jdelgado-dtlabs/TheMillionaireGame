@@ -2,6 +2,44 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [0.3-2512] - 2025-12-20
+
+### Added
+- **Money Tree Settings System**
+  - Complete settings UI with descending money tree (Q15→Q1)
+  - Dual currency support (Currency 1 and Currency 2)
+  - Per-question currency selection (dropdown for each level)
+  - Safety net configuration via checkboxes at Q5 and Q10
+  - Currency symbols: $, €, £, ¥, and custom text option
+  - Currency position control (prefix/suffix)
+  - XML persistence to AppData/MillionaireGame/tree.xml
+
+- **Game Integration**
+  - Prize displays now reference money tree configuration
+  - Dynamic currency selection per level (GetFormattedValue)
+  - Risk mode button reflects safety net configuration:
+    * Yellow "Activate Risk Mode" = both nets enabled
+    * Blue "RISK MODE: 5" = Q5 disabled
+    * Blue "RISK MODE: 10" = Q10 disabled
+    * Red "RISK MODE: ON" = both disabled (unclickable)
+
+- **Settings Dialog Improvements**
+  - Real-time updates via SettingsApplied event
+  - Removed Apply button for cleaner UI
+  - Cancel button warns about unsaved changes
+  - OK button saves and fires update events
+  - Settings changes immediately reflected in Control Panel
+
+### Technical Improvements
+- MoneyTreeSettings model with dual currency properties
+- MoneyTreeService for XML serialization and formatting
+- Event-driven settings reload architecture
+- Dynamic control creation for flexible money tree UI
+
+### Next Steps
+- Add money tree visualization to screen outputs
+- Implement money tree animations
+
 ## [0.2-2512] - 2025-12-19
 
 ### Added

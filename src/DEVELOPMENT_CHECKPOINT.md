@@ -1,12 +1,66 @@
-# Development Checkpoint - v0.2-2512
-**Date**: December 19, 2025  
-**Version**: 0.2-2512  
+# Development Checkpoint - v0.3-2512
+**Date**: December 20, 2025  
+**Version**: 0.3-2512  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
 
 ## Session Summary
+
+### Latest Session (v0.3-2512) - December 20, 2025
+
+#### Money Tree Settings System
+- ✅ Complete settings UI implementation
+  - Descending money tree display (Q15→Q1)
+  - 15 prize input fields with validation
+  - Safety net checkboxes at Q5 and Q10
+  - Dual currency support (Currency 1 and Currency 2)
+  - Per-question currency selector (dropdown showing "1" or "2")
+  - Enable/disable toggle for Currency 2
+  - Currency symbol selection: $, €, £, ¥, or custom text
+  - Currency position control (prefix/suffix for each currency)
+
+- ✅ MoneyTreeSettings Model
+  - Properties: 15 level values, SafetyNet1/2, Currency1/2, CurrencyAtSuffix1/2
+  - LevelCurrencies array (15 elements) for per-level currency assignment
+  - Currency2Enabled flag to control dual currency mode
+  - Helper methods: GetLevelValue(), FormatMoney(), IsSafetyNet()
+
+- ✅ MoneyTreeService
+  - XML persistence to AppData/MillionaireGame/tree.xml
+  - GetFormattedValue(level) with dual currency support
+  - LoadSettings() and SaveSettings() with error handling
+  - GetWrongValue() and GetDropValue() for safety net calculations
+
+- ✅ Game Integration
+  - Prize displays reference money tree configuration
+  - Dynamic per-level currency selection in GetFormattedValue()
+  - Risk mode button reflects safety net configuration
+  - Four button states:
+    * Yellow "Activate Risk Mode" (both safety nets enabled)
+    * Blue "RISK MODE: 5" (Q5 safety net disabled)
+    * Blue "RISK MODE: 10" (Q10 safety net disabled)
+    * Red "RISK MODE: ON" (both disabled, unclickable)
+  - UpdateRiskModeButton() called on level/mode changes
+
+- ✅ Settings Dialog Improvements
+  - Removed Apply button for cleaner two-button layout
+  - OK button saves all settings and fires SettingsApplied event
+  - Cancel button checks for unsaved changes and shows warning
+  - Real-time updates: control panel immediately reflects settings changes
+  - Event-driven architecture: SettingsApplied event subscribed by ControlPanelForm
+  - Change tracking with _hasChanges flag
+
+#### Technical Architecture
+- Event-driven settings reload pattern
+- Dynamic WinForms control creation (30+ controls in InitializeMoneyTreeTab)
+- Clean separation: settings persistence vs. game logic vs. UI display
+- Immediate visual feedback without dialog closure
+
+---
+
+## Previous Session Summary
 
 ### Completed Features (v0.2-2512)
 
@@ -85,7 +139,41 @@
 
 ---
 
-## Missing Features (To Be Migrated from VB.NET)
+## Next Steps (Immediate Priority)
+
+### Screen Money Tree Visualization
+**Status**: Not yet started  
+**Priority**: High  
+**Implementation Plan**:
+1. Add money tree visual component to Host, Guest, and TV screens
+2. Display all 15 prize levels with current position highlighting
+3. Show currency symbols based on money tree configuration
+4. Implement visual states:
+   - Unplayed levels (default appearance)
+   - Current level (highlighted)
+   - Passed levels (dimmed or different color)
+   - Safety net levels (special indicator)
+
+### Money Tree Animations
+**Status**: Not yet started  
+**Priority**: High  
+**Implementation Plan**:
+1. Level progression animation (moving up the tree)
+2. Safety net "lock-in" animation when passing Q5/Q10
+3. Wrong answer animation (fall to safety net level)
+4. Walk away animation (highlight final value)
+5. Smooth transitions using async/await patterns
+
+### Technical Approach
+- Add MoneyTreeControl custom control for reusability
+- Use TableLayoutPanel or custom drawing for tree layout
+- Subscribe to GameService level change events
+- Coordinate animations with screen update service
+- Test with various money tree configurations (different currencies, safety nets)
+
+---
+
+## Future Enhancements
 
 ### High Priority
 

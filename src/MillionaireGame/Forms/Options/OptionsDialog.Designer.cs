@@ -29,6 +29,36 @@ namespace MillionaireGame.Forms.Options
             chkFullScreenTVScreen = new CheckBox();
             chkAutoShowTVScreen = new CheckBox();
             tabLifelines = new TabPage();
+            tabMoneyTree = new TabPage();
+            grpPrizeValues = new GroupBox();
+            numLevel15 = new NumericUpDown();
+            numLevel14 = new NumericUpDown();
+            numLevel13 = new NumericUpDown();
+            numLevel12 = new NumericUpDown();
+            numLevel11 = new NumericUpDown();
+            numLevel10 = new NumericUpDown();
+            numLevel09 = new NumericUpDown();
+            numLevel08 = new NumericUpDown();
+            numLevel07 = new NumericUpDown();
+            numLevel06 = new NumericUpDown();
+            numLevel05 = new NumericUpDown();
+            numLevel04 = new NumericUpDown();
+            numLevel03 = new NumericUpDown();
+            numLevel02 = new NumericUpDown();
+            numLevel01 = new NumericUpDown();
+            grpCurrency = new GroupBox();
+            txtCustomCurrency = new TextBox();
+            radCurrencyOther = new RadioButton();
+            radCurrencyYen = new RadioButton();
+            radCurrencyPound = new RadioButton();
+            radCurrencyEuro = new RadioButton();
+            radCurrencyDollar = new RadioButton();
+            chkCurrencyAtSuffix = new CheckBox();
+            grpSafetyNets = new GroupBox();
+            numSafetyNet2 = new NumericUpDown();
+            numSafetyNet1 = new NumericUpDown();
+            lblSafetyNet2 = new Label();
+            lblSafetyNet1 = new Label();
             grpLifeline4 = new GroupBox();
             cmbLifeline4Availability = new ComboBox();
             cmbLifeline4Type = new ComboBox();
@@ -57,7 +87,6 @@ namespace MillionaireGame.Forms.Options
             lblSoundPack = new Label();
             btnOK = new Button();
             btnCancel = new Button();
-            btnApply = new Button();
             tabControl.SuspendLayout();
             tabGeneral.SuspendLayout();
             grpScreens.SuspendLayout();
@@ -79,6 +108,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Controls.Add(tabGeneral);
             tabControl.Controls.Add(tabBroadcast);
             tabControl.Controls.Add(tabLifelines);
+            tabControl.Controls.Add(tabMoneyTree);
             tabControl.Controls.Add(tabSounds);
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
@@ -213,6 +243,16 @@ namespace MillionaireGame.Forms.Options
             tabLifelines.TabIndex = 1;
             tabLifelines.Text = "Lifelines";
             tabLifelines.UseVisualStyleBackColor = true;
+            // 
+            // tabMoneyTree
+            // 
+            tabMoneyTree.Location = new Point(4, 24);
+            tabMoneyTree.Name = "tabMoneyTree";
+            tabMoneyTree.Padding = new Padding(3);
+            tabMoneyTree.Size = new Size(652, 459);
+            tabMoneyTree.TabIndex = 3;
+            tabMoneyTree.Text = "Money Tree";
+            tabMoneyTree.UseVisualStyleBackColor = true;
             // 
             // grpLifeline4
             // 
@@ -509,17 +549,6 @@ namespace MillionaireGame.Forms.Options
             btnCancel.UseVisualStyleBackColor = true;
             btnCancel.Click += btnCancel_Click;
             // 
-            // btnApply
-            // 
-            btnApply.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnApply.Location = new Point(588, 515);
-            btnApply.Name = "btnApply";
-            btnApply.Size = new Size(80, 30);
-            btnApply.TabIndex = 3;
-            btnApply.Text = "Apply";
-            btnApply.UseVisualStyleBackColor = true;
-            btnApply.Click += btnApply_Click;
-            // 
             // OptionsDialog
             // 
             AcceptButton = btnOK;
@@ -527,7 +556,6 @@ namespace MillionaireGame.Forms.Options
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
             ClientSize = new Size(684, 561);
-            Controls.Add(btnApply);
             Controls.Add(btnCancel);
             Controls.Add(btnOK);
             Controls.Add(tabControl);
@@ -567,10 +595,39 @@ namespace MillionaireGame.Forms.Options
         private TabPage tabGeneral;
         private TabPage tabBroadcast;
         private TabPage tabLifelines;
+        private TabPage tabMoneyTree;
         private TabPage tabSounds;
+        private GroupBox grpPrizeValues;
+        private NumericUpDown numLevel01;
+        private NumericUpDown numLevel02;
+        private NumericUpDown numLevel03;
+        private NumericUpDown numLevel04;
+        private NumericUpDown numLevel05;
+        private NumericUpDown numLevel06;
+        private NumericUpDown numLevel07;
+        private NumericUpDown numLevel08;
+        private NumericUpDown numLevel09;
+        private NumericUpDown numLevel10;
+        private NumericUpDown numLevel11;
+        private NumericUpDown numLevel12;
+        private NumericUpDown numLevel13;
+        private NumericUpDown numLevel14;
+        private NumericUpDown numLevel15;
+        private GroupBox grpCurrency;
+        private RadioButton radCurrencyDollar;
+        private RadioButton radCurrencyEuro;
+        private RadioButton radCurrencyPound;
+        private RadioButton radCurrencyYen;
+        private RadioButton radCurrencyOther;
+        private TextBox txtCustomCurrency;
+        private CheckBox chkCurrencyAtSuffix;
+        private GroupBox grpSafetyNets;
+        private Label lblSafetyNet1;
+        private Label lblSafetyNet2;
+        private NumericUpDown numSafetyNet1;
+        private NumericUpDown numSafetyNet2;
         private Button btnOK;
         private Button btnCancel;
-        private Button btnApply;
         private GroupBox grpScreens;
         private GroupBox grpBroadcast;
         private CheckBox chkAutoShowHostScreen;

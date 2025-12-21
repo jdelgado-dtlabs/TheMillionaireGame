@@ -46,8 +46,6 @@ namespace MillionaireGame.Forms
             btnNewQuestion = new Button();
             btnReveal = new Button();
             btnWalk = new Button();
-            btnThanksForPlaying = new Button();
-            btnResetGame = new Button();
             btnClosing = new Button();
             btnStopAudio = new Button();
             
@@ -72,10 +70,10 @@ namespace MillionaireGame.Forms
             lblExplanationLabel = new Label();
             
             // Lifeline buttons
-            btn5050 = new Button();
-            btnPhoneFriend = new Button();
-            btnAskAudience = new Button();
-            btnSwitch = new Button();
+            btnLifeline1 = new Button();
+            btnLifeline2 = new Button();
+            btnLifeline3 = new Button();
+            btnLifeline4 = new Button();
             
             // Other controls
             chkShowQuestion = new CheckBox();
@@ -409,42 +407,6 @@ namespace MillionaireGame.Forms
             btnWalk.Click += btnWalk_Click;
             
             // 
-            // btnThanksForPlaying
-            // 
-            btnThanksForPlaying.BackColor = Color.Gray;
-            btnThanksForPlaying.Enabled = false;
-            btnThanksForPlaying.FlatAppearance.BorderColor = Color.Black;
-            btnThanksForPlaying.FlatAppearance.BorderSize = 2;
-            btnThanksForPlaying.FlatStyle = FlatStyle.Flat;
-            btnThanksForPlaying.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnThanksForPlaying.ForeColor = Color.White;
-            btnThanksForPlaying.Location = new Point(710, 190);
-            btnThanksForPlaying.Name = "btnThanksForPlaying";
-            btnThanksForPlaying.Size = new Size(120, 45);
-            btnThanksForPlaying.TabIndex = 17;
-            btnThanksForPlaying.Text = "Thanks for Playing";
-            btnThanksForPlaying.UseVisualStyleBackColor = false;
-            btnThanksForPlaying.Click += btnThanksForPlaying_Click;
-            
-            // 
-            // btnResetGame
-            // 
-            btnResetGame.BackColor = Color.Gray;
-            btnResetGame.Enabled = false;
-            btnResetGame.FlatAppearance.BorderColor = Color.Black;
-            btnResetGame.FlatAppearance.BorderSize = 2;
-            btnResetGame.FlatStyle = FlatStyle.Flat;
-            btnResetGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnResetGame.ForeColor = Color.White;
-            btnResetGame.Location = new Point(710, 240);
-            btnResetGame.Name = "btnResetGame";
-            btnResetGame.Size = new Size(120, 45);
-            btnResetGame.TabIndex = 18;
-            btnResetGame.Text = "Reset";
-            btnResetGame.UseVisualStyleBackColor = false;
-            btnResetGame.Click += btnResetGame_Click;
-            
-            // 
             // btnClosing
             // 
             btnClosing.BackColor = Color.Gray;
@@ -454,10 +416,10 @@ namespace MillionaireGame.Forms
             btnClosing.FlatStyle = FlatStyle.Flat;
             btnClosing.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnClosing.ForeColor = Color.White;
-            btnClosing.Location = new Point(580, 240);
+            btnClosing.Location = new Point(710, 190);
             btnClosing.Name = "btnClosing";
             btnClosing.Size = new Size(120, 45);
-            btnClosing.TabIndex = 19;
+            btnClosing.TabIndex = 17;
             btnClosing.Text = "Closing";
             btnClosing.UseVisualStyleBackColor = false;
             btnClosing.Click += btnClosing_Click;
@@ -638,68 +600,68 @@ namespace MillionaireGame.Forms
             lblQLeftLabel.Text = "Q's left:";
             
             // 
-            // btn5050
+            // btnLifeline1
             // 
-            btn5050.BackColor = Color.DarkOrange;
-            btn5050.FlatAppearance.BorderColor = Color.Black;
-            btn5050.FlatAppearance.BorderSize = 2;
-            btn5050.FlatStyle = FlatStyle.Flat;
-            btn5050.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btn5050.Location = new Point(580, 345);
-            btn5050.Name = "btn5050";
-            btn5050.Size = new Size(120, 40);
-            btn5050.TabIndex = 36;
-            btn5050.Text = "";
-            btn5050.UseVisualStyleBackColor = false;
-            btn5050.Click += btn5050_Click;
+            btnLifeline1.BackColor = Color.DarkOrange;
+            btnLifeline1.FlatAppearance.BorderColor = Color.Black;
+            btnLifeline1.FlatAppearance.BorderSize = 2;
+            btnLifeline1.FlatStyle = FlatStyle.Flat;
+            btnLifeline1.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnLifeline1.Location = new Point(580, 345);
+            btnLifeline1.Name = "btnLifeline1";
+            btnLifeline1.Size = new Size(120, 40);
+            btnLifeline1.TabIndex = 36;
+            btnLifeline1.Text = "";
+            btnLifeline1.UseVisualStyleBackColor = false;
+            btnLifeline1.Click += btnLifeline1_Click;
             
             // 
-            // btnPhoneFriend
+            // btnLifeline2
             // 
-            btnPhoneFriend.BackColor = Color.DarkOrange;
-            btnPhoneFriend.FlatAppearance.BorderColor = Color.Black;
-            btnPhoneFriend.FlatAppearance.BorderSize = 2;
-            btnPhoneFriend.FlatStyle = FlatStyle.Flat;
-            btnPhoneFriend.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnPhoneFriend.Location = new Point(580, 390);
-            btnPhoneFriend.Name = "btnPhoneFriend";
-            btnPhoneFriend.Size = new Size(120, 40);
-            btnPhoneFriend.TabIndex = 37;
-            btnPhoneFriend.Text = "";
-            btnPhoneFriend.UseVisualStyleBackColor = false;
-            btnPhoneFriend.Click += btnPhoneFriend_Click;
+            btnLifeline2.BackColor = Color.DarkOrange;
+            btnLifeline2.FlatAppearance.BorderColor = Color.Black;
+            btnLifeline2.FlatAppearance.BorderSize = 2;
+            btnLifeline2.FlatStyle = FlatStyle.Flat;
+            btnLifeline2.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnLifeline2.Location = new Point(580, 390);
+            btnLifeline2.Name = "btnLifeline2";
+            btnLifeline2.Size = new Size(120, 40);
+            btnLifeline2.TabIndex = 37;
+            btnLifeline2.Text = "";
+            btnLifeline2.UseVisualStyleBackColor = false;
+            btnLifeline2.Click += btnLifeline2_Click;
             
             // 
-            // btnAskAudience
+            // btnLifeline3
             // 
-            btnAskAudience.BackColor = Color.DarkOrange;
-            btnAskAudience.FlatAppearance.BorderColor = Color.Black;
-            btnAskAudience.FlatAppearance.BorderSize = 2;
-            btnAskAudience.FlatStyle = FlatStyle.Flat;
-            btnAskAudience.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnAskAudience.Location = new Point(580, 435);
-            btnAskAudience.Name = "btnAskAudience";
-            btnAskAudience.Size = new Size(120, 40);
-            btnAskAudience.TabIndex = 38;
-            btnAskAudience.Text = "";
-            btnAskAudience.UseVisualStyleBackColor = false;
-            btnAskAudience.Click += btnAskAudience_Click;
+            btnLifeline3.BackColor = Color.DarkOrange;
+            btnLifeline3.FlatAppearance.BorderColor = Color.Black;
+            btnLifeline3.FlatAppearance.BorderSize = 2;
+            btnLifeline3.FlatStyle = FlatStyle.Flat;
+            btnLifeline3.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnLifeline3.Location = new Point(580, 435);
+            btnLifeline3.Name = "btnLifeline3";
+            btnLifeline3.Size = new Size(120, 40);
+            btnLifeline3.TabIndex = 38;
+            btnLifeline3.Text = "";
+            btnLifeline3.UseVisualStyleBackColor = false;
+            btnLifeline3.Click += btnLifeline3_Click;
             
             // 
-            // btnSwitch
+            // btnLifeline4
             // 
-            btnSwitch.BackColor = Color.DarkOrange;
-            btnSwitch.FlatAppearance.BorderColor = Color.Black;
-            btnSwitch.FlatAppearance.BorderSize = 2;
-            btnSwitch.FlatStyle = FlatStyle.Flat;
-            btnSwitch.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnSwitch.Location = new Point(580, 480);
-            btnSwitch.Name = "btnSwitch";
-            btnSwitch.Size = new Size(120, 40);
-            btnSwitch.TabIndex = 39;
-            btnSwitch.Text = "";
-            btnSwitch.UseVisualStyleBackColor = false;
-            btnSwitch.Click += btnSwitch_Click;
+            btnLifeline4.BackColor = Color.DarkOrange;
+            btnLifeline4.FlatAppearance.BorderColor = Color.Black;
+            btnLifeline4.FlatAppearance.BorderSize = 2;
+            btnLifeline4.FlatStyle = FlatStyle.Flat;
+            btnLifeline4.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnLifeline4.Location = new Point(580, 480);
+            btnLifeline4.Name = "btnLifeline4";
+            btnLifeline4.Size = new Size(120, 40);
+            btnLifeline4.TabIndex = 39;
+            btnLifeline4.Text = "";
+            btnLifeline4.UseVisualStyleBackColor = false;
+            btnLifeline4.Click += btnLifeline4_Click;
             
             // 
             // chkShowQuestion
@@ -769,10 +731,10 @@ namespace MillionaireGame.Forms
             Controls.Add(chkCorrectAnswer);
             Controls.Add(chkShowWinnings);
             Controls.Add(chkShowQuestion);
-            Controls.Add(btnSwitch);
-            Controls.Add(btnAskAudience);
-            Controls.Add(btnPhoneFriend);
-            Controls.Add(btn5050);
+            Controls.Add(btnLifeline4);
+            Controls.Add(btnLifeline3);
+            Controls.Add(btnLifeline2);
+            Controls.Add(btnLifeline1);
             Controls.Add(lblQLeftLabel);
             Controls.Add(lblDropLabel);
             Controls.Add(lblWrongLabel);
@@ -790,8 +752,6 @@ namespace MillionaireGame.Forms
             Controls.Add(nmrLevel);
             Controls.Add(btnStopAudio);
             Controls.Add(btnClosing);
-            Controls.Add(btnResetGame);
-            Controls.Add(btnThanksForPlaying);
             Controls.Add(btnWalk);
             Controls.Add(btnReveal);
             Controls.Add(btnNewQuestion);
@@ -856,8 +816,6 @@ namespace MillionaireGame.Forms
         private Button btnNewQuestion;
         private Button btnReveal;
         private Button btnWalk;
-        private Button btnThanksForPlaying;
-        private Button btnResetGame;
         private Button btnClosing;
         private Button btnStopAudio;
         private Button btnA;
@@ -865,10 +823,10 @@ namespace MillionaireGame.Forms
         private Button btnC;
         private Button btnD;
         private Button btnActivateRiskMode;
-        private Button btn5050;
-        private Button btnPhoneFriend;
-        private Button btnAskAudience;
-        private Button btnSwitch;
+        private Button btnLifeline1;
+        private Button btnLifeline2;
+        private Button btnLifeline3;
+        private Button btnLifeline4;
         private NumericUpDown nmrLevel;
         private CheckBox chkShowQuestion;
         private CheckBox chkShowWinnings;

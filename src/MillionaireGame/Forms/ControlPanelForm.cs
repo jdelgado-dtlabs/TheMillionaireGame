@@ -41,6 +41,18 @@ public enum ATAStage
 }
 
 /// <summary>
+/// Closing sequence stages
+/// </summary>
+public enum ClosingStage
+{
+    NotStarted,     // Closing not started
+    GameOver,       // Red - Playing game over sound (if round in progress)
+    Underscore,     // Orange - Playing closing underscore
+    Theme,          // Yellow - Playing closing theme
+    Complete        // Green - Sequence complete, ready to reset
+}
+
+/// <summary>
 /// Game outcome states for determining final winnings
 /// </summary>
 public enum GameOutcome
@@ -65,6 +77,8 @@ public partial class ControlPanelForm : Form
     private readonly SoundService _soundService;
     private string _currentAnswer = string.Empty;
     private LifelineMode _lifelineMode = LifelineMode.Inactive;
+    private string? _currentFinalAnswerKey = null; // Track the final answer sound key for stopping
+    private string? _currentLightsDownIdentifier = null; // Track the lights down sound identifier (GUID) for stopping
     
     // Question reveal state tracking
     private int _answerRevealStep = 0; // 0 = not started, 1 = question shown, 2-5 = answers A-D shown
@@ -72,6 +86,11 @@ public partial class ControlPanelForm : Form
     
     // Game outcome tracking
     private GameOutcome _gameOutcome = GameOutcome.InProgress;
+    private CancellationTokenSource? _automatedSequenceCts = null;
+    private string? _finalWinningsAmount = null; // Store final winnings for end-of-round display
+    
+    // Track if automated sequence is running (walk away, thanks for playing)
+    private bool _isAutomatedSequenceRunning = false;
     
     // PAF lifeline state tracking
     private PAFStage _pafStage = PAFStage.NotStarted;
@@ -87,7 +106,7 @@ public partial class ControlPanelForm : Form
     
     // Closing sequence state tracking
     private System.Windows.Forms.Timer? _closingTimer;
-    private bool _closingInProgress = false;
+    private ClosingStage _closingStage = ClosingStage.NotStarted;
     
     // Track if at least one round has been completed
     private bool _firstRoundCompleted = false;
@@ -98,7 +117,7 @@ public partial class ControlPanelForm : Form
     // Screen forms
     private HostScreenForm? _hostScreen;
     private GuestScreenForm? _guestScreen;
-    private TVScreenForm? _tvScreen;
+    private IGameScreen? _tvScreen;
 
     public ControlPanelForm(
         GameService gameService,
@@ -128,7 +147,6 @@ public partial class ControlPanelForm : Form
             onF7: () => btnLightsDown.PerformClick(),
             onPageUp: LevelUp,
             onPageDown: LevelDown,
-            onDelete: () => btnResetGame.PerformClick(),
             onEnd: () => btnWalk.PerformClick(),
             onR: () => btnActivateRiskMode.PerformClick()
         );
@@ -152,6 +170,9 @@ public partial class ControlPanelForm : Form
         // Initialize game to level 0
         _gameService.ChangeLevel(0);
         UpdateMoneyDisplay();
+        
+        // Disable question level selector until Pick a Player is clicked
+        nmrLevel.Enabled = false;
         
         // Set lifelines to inactive mode (disabled, not clickable)
         SetLifelineMode(LifelineMode.Inactive);
@@ -189,6 +210,7 @@ public partial class ControlPanelForm : Form
 
         nmrLevel.Value = e.NewLevel;
         UpdateMoneyDisplay();
+        UpdateRiskModeButton();
     }
 
     private void OnModeChanged(object? sender, GameModeChangedEventArgs e)
@@ -199,12 +221,71 @@ public partial class ControlPanelForm : Form
             return;
         }
 
-        btnActivateRiskMode.Text = e.NewMode == Core.Models.GameMode.Risk
-            ? "RISK MODE ON"
-            : "RISK MODE OFF";
-        btnActivateRiskMode.BackColor = e.NewMode == Core.Models.GameMode.Risk
-            ? Color.DarkGreen
-            : Color.Orange;
+        UpdateRiskModeButton();
+    }
+    
+    /// <summary>
+    /// Updates risk mode button appearance based on safety net configuration
+    /// </summary>
+    private void UpdateRiskModeButton()
+    {
+        var settings = _gameService.MoneyTree.Settings;
+        bool isNet5Active = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
+        bool isNet10Active = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
+        
+        // Determine button state based on safety net configuration
+        if (!isNet5Active && !isNet10Active)
+        {
+            // Both safety nets disabled = permanent risk mode
+            btnActivateRiskMode.BackColor = Color.Red;
+            btnActivateRiskMode.Text = "RISK MODE: ON";
+            btnActivateRiskMode.Enabled = false; // Unclickable
+        }
+        else if (!isNet5Active)
+        {
+            // Q5 safety net disabled
+            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
+            {
+                btnActivateRiskMode.BackColor = Color.Red;
+                btnActivateRiskMode.Text = "RISK MODE: ON";
+            }
+            else
+            {
+                btnActivateRiskMode.BackColor = Color.Blue;
+                btnActivateRiskMode.Text = "RISK MODE: 5";
+            }
+            btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
+        }
+        else if (!isNet10Active)
+        {
+            // Q10 safety net disabled
+            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
+            {
+                btnActivateRiskMode.BackColor = Color.Red;
+                btnActivateRiskMode.Text = "RISK MODE: ON";
+            }
+            else
+            {
+                btnActivateRiskMode.BackColor = Color.Blue;
+                btnActivateRiskMode.Text = "RISK MODE: 10";
+            }
+            btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
+        }
+        else
+        {
+            // Both safety nets active = normal risk mode toggle
+            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
+            {
+                btnActivateRiskMode.BackColor = Color.Red;
+                btnActivateRiskMode.Text = "RISK MODE: ON";
+            }
+            else
+            {
+                btnActivateRiskMode.BackColor = Color.Yellow;
+                btnActivateRiskMode.Text = "Activate Risk Mode";
+            }
+            btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
+        }
     }
 
     private void OnLifelineUsed(object? sender, LifelineUsedEventArgs e)
@@ -244,11 +325,14 @@ public partial class ControlPanelForm : Form
         // Show or hide winnings on screens
         if (chkShowWinnings.Checked)
         {
-            _screenService.ShowWinnings(_gameService.State);
+            // Use final winnings amount if available (end-of-round), otherwise use current value
+            var amountToShow = _finalWinningsAmount ?? _gameService.State.CurrentValue;
+            _screenService.ShowWinningsAmount(amountToShow);
         }
         else
         {
             _screenService.HideWinnings();
+            _finalWinningsAmount = null; // Clear stored amount when hiding
         }
     }
 
@@ -260,6 +344,13 @@ public partial class ControlPanelForm : Form
     {
         if (_answerRevealStep == 0)
         {
+            // Stop lights down sound if it's playing (for Q6+)
+            if (!string.IsNullOrEmpty(_currentLightsDownIdentifier))
+            {
+                _soundService.StopSound(_currentLightsDownIdentifier);
+                _currentLightsDownIdentifier = null; // Clear it
+            }
+            
             // First click: Load question but don't show answers yet
             await LoadNewQuestion();
             _answerRevealStep = 1; // Question shown, no answers
@@ -427,20 +518,20 @@ public partial class ControlPanelForm : Form
             // Question button remains enabled for progressive reveal
             // Will be disabled after all 4 answers are shown
             
-            // Enable Walk Away (yellow) after Q2 is presented
-            if (questionNumber >= 2)
-            {
-                btnWalk.Enabled = true;
-                btnWalk.BackColor = Color.Yellow;
-                btnWalk.ForeColor = Color.Black;
-            }
+            // Walk Away button will be enabled (green) after all answers are revealed
+            // See the answer reveal step 5 logic below
             
-            // Enable Closing (green) from Q6 onwards to allow ending show mid-game
-            if (questionNumber >= 6)
+            // Enable Closing (green) for Q2-14 only (disable at Q1 and Q15)
+            if (questionNumber >= 2 && questionNumber <= 14)
             {
                 btnClosing.Enabled = true;
                 btnClosing.BackColor = Color.LimeGreen;
                 btnClosing.ForeColor = Color.Black;
+            }
+            else
+            {
+                btnClosing.Enabled = false;
+                btnClosing.BackColor = Color.Gray;
             }
             
             // For Q1-5: Don't stop lights down or restart bed music (continuous quick round)
@@ -491,6 +582,9 @@ public partial class ControlPanelForm : Form
         btnExplainGame.Enabled = false;
         btnExplainGame.BackColor = Color.Gray;
         
+        // Disable question level selector during active question
+        nmrLevel.Enabled = false;
+        
         // Stop any playing sounds first
         _soundService.StopAllSounds();
         
@@ -502,10 +596,6 @@ public partial class ControlPanelForm : Form
         // For Q1-5, enable Reset button on first lights down and play bed music after delay
         if (questionNumber >= 1 && questionNumber <= 5)
         {
-            // Enable Reset button (red) on first lights down
-            btnResetGame.Enabled = true;
-            btnResetGame.BackColor = Color.Red;
-            
             // Disable risk mode button after first lights down
             btnActivateRiskMode.Enabled = false;
             
@@ -564,8 +654,18 @@ public partial class ControlPanelForm : Form
 
     private async void btnWalk_Click(object? sender, EventArgs e)
     {
+        // Capture winnings BEFORE modifying game state
+        var winnings = _gameService.State.CurrentValue;
+        
         _gameService.State.WalkAway = true;
         _gameOutcome = GameOutcome.Drop; // Track that player walked away
+        _isAutomatedSequenceRunning = true;
+        
+        // Create cancellation token for this sequence
+        _automatedSequenceCts?.Cancel();
+        _automatedSequenceCts?.Dispose();
+        _automatedSequenceCts = new CancellationTokenSource();
+        var token = _automatedSequenceCts.Token;
         
         // Stop all sounds before playing quit sound
         _soundService.StopAllSounds();
@@ -578,12 +678,18 @@ public partial class ControlPanelForm : Form
         _soundService.PlaySound(quitSound, quitSoundId, loop: false);
         
         // Give sound time to register before checking status
-        await Task.Delay(100);
+        try
+        {
+            await Task.Delay(100, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return; // Sequence was cancelled
+        }
         
         // Only show message box in debug mode (non-blocking)
         if (Program.DebugMode)
         {
-            var winnings = _gameService.State.CurrentValue;
 #pragma warning disable CS4014
             Task.Run(() => MessageBox.Show($"Total winnings: {winnings}", 
                 "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information));
@@ -600,10 +706,7 @@ public partial class ControlPanelForm : Form
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
         
-        // Keep Reset button enabled (green) so new player can start
-        btnResetGame.Enabled = true;
-        btnResetGame.BackColor = Color.LimeGreen;
-        btnResetGame.ForeColor = Color.Black;
+        // Reset button deprecated - automated sequences handle all resets
         
         // Disable lifelines immediately - round is over
         SetLifelineMode(LifelineMode.Inactive);
@@ -613,9 +716,16 @@ public partial class ControlPanelForm : Form
         btnClosing.BackColor = Color.LimeGreen;
         btnClosing.ForeColor = Color.Black;
         
-        // Wait for quit sound to finish, then auto-trigger Thanks for Playing
-        await _soundService.WaitForSoundAsync(quitSoundId);
-        btnThanksForPlaying_Click(null, EventArgs.Empty);
+        // Wait for quit sound to finish, then auto-trigger end-of-round sequence
+        try
+        {
+            await _soundService.WaitForSoundAsync(quitSoundId, token);
+            await EndRoundSequence(winnings);
+        }
+        catch (OperationCanceledException)
+        {
+            // Sequence was cancelled by reset
+        }
     }
 
     private void btnActivateRiskMode_Click(object? sender, EventArgs e)
@@ -660,8 +770,39 @@ public partial class ControlPanelForm : Form
         }
     }
 
+    // DEPRECATED: Reset button removed from UI - automated sequences handle all resets
+    // Keeping this method commented out for reference in case manual reset is needed in future
+    /*
     private void btnResetGame_Click(object? sender, EventArgs e)
     {
+        // If automated sequence is running, cancel it
+        if (_isAutomatedSequenceRunning)
+        {
+            _isAutomatedSequenceRunning = false;
+            _automatedSequenceCts?.Cancel();
+            _automatedSequenceCts?.Dispose();
+            _automatedSequenceCts = null;
+            _soundService.StopAllSounds();
+            
+            // Clean up all timers
+            _pafTimer?.Stop();
+            _pafTimer?.Dispose();
+            _pafTimer = null;
+            
+            _ataTimer?.Stop();
+            _ataTimer?.Dispose();
+            _ataTimer = null;
+            
+            _closingTimer?.Stop();
+            _closingTimer?.Dispose();
+            _closingTimer = null;
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Reset] Cancelled automated sequence and cleaned up timers");
+            }
+        }
+        
         // Show confirmation dialog (Reset only active during game play)
         var result = MessageBox.Show(
             "Are you sure you want to reset the game?",
@@ -689,11 +830,17 @@ public partial class ControlPanelForm : Form
             _ataLifelineNumber = 0;
             _ataSecondsRemaining = 120;
             
+            // Reset closing timer
+            _closingTimer?.Stop();
+            _closingTimer?.Dispose();
+            _closingTimer = null;
+            
             _gameService.ResetGame();
             _firstRoundCompleted = true; // Mark that at least one round has been completed
             ResetAllControls();
         }
     }
+    */
 
     private void btnLifeline1_Click(object? sender, EventArgs e)
     {
@@ -1340,6 +1487,9 @@ public partial class ControlPanelForm : Form
         btnLightsDown.Enabled = true;
         btnLightsDown.BackColor = Color.LimeGreen;
         btnLightsDown.ForeColor = Color.Black;
+        
+        // Enable question level selector - allow setting before first lights down
+        nmrLevel.Enabled = true;
     }
 
     private void btnExplainGame_Click(object? sender, EventArgs e)
@@ -1351,8 +1501,25 @@ public partial class ControlPanelForm : Form
         SetLifelineMode(LifelineMode.Demo);
     }
 
-    private async void btnThanksForPlaying_Click(object? sender, EventArgs e)
+    /// <summary>
+    /// End-of-round sequence: plays walk away sound, shows winnings, and resets game for next player
+    /// </summary>
+    /// <param name="capturedWinnings">Optional pre-captured winnings value to display</param>
+    private async Task EndRoundSequence(string? capturedWinnings = null)
     {
+        // Use captured winnings if provided, otherwise calculate from game outcome
+        string winnings = capturedWinnings ?? (_gameOutcome switch
+        {
+            // Use top prize from money tree settings (properly formatted with currency)
+            GameOutcome.Win => _gameService.MoneyTree.GetFormattedValue(15),  // Won Q15 - show top prize from settings
+            GameOutcome.Drop => _gameService.State.DropValue,      // Walked away - show drop value  
+            GameOutcome.Wrong => _gameService.State.WrongValue,    // Answered wrong - show wrong value (0 or last milestone)
+            _ => _gameService.State.CurrentValue                   // Fallback to current value
+        });
+        
+        // Store final winnings for screen display
+        _finalWinningsAmount = winnings;
+        
         // Use current question level to determine which walk away sound to play
         var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
         var walkAwaySound = questionNumber <= 10 ? SoundEffect.WalkAwaySmall : SoundEffect.WalkAwayLarge;
@@ -1362,15 +1529,6 @@ public partial class ControlPanelForm : Form
         
         // Give sound time to register before checking status
         await Task.Delay(100);
-        
-        // Determine winnings based on game outcome
-        string winnings = _gameOutcome switch
-        {
-            GameOutcome.Win => _gameService.State.CorrectValue,   // Won Q15 - show the million
-            GameOutcome.Drop => _gameService.State.DropValue,      // Walked away - show drop value
-            GameOutcome.Wrong => _gameService.State.WrongValue,    // Answered wrong - show wrong value (0 or last milestone)
-            _ => _gameService.State.CurrentValue                   // Fallback to current value
-        };
         
         // Only show message box in debug mode (non-blocking)
         if (Program.DebugMode)
@@ -1387,23 +1545,13 @@ public partial class ControlPanelForm : Form
             chkShowWinnings.Checked = true;
         }
         
-        // Disable Thanks for Playing (grey)
-        btnThanksForPlaying.Enabled = false;
-        btnThanksForPlaying.BackColor = Color.Gray;
-        
-        // Disable Reset (grey) - round is over
-        btnResetGame.Enabled = false;
-        btnResetGame.BackColor = Color.Gray;
-        
-        // Enable Closing (green)
-        btnClosing.Enabled = true;
-        btnClosing.BackColor = Color.LimeGreen;
-        btnClosing.ForeColor = Color.Black;
-        
-        // Wait for walk away sound to finish, then enable Pick Player immediately
+        // Wait for walk away sound to finish
         await _soundService.WaitForSoundAsync(walkAwaySoundId);
         
-        // Automatically reset for next player
+        // Reset automated sequence flag
+        _isAutomatedSequenceRunning = false;
+        
+        // Now reset the game (after winnings have been shown)
         _soundService.StopAllSounds();
         
         // Reset PAF state
@@ -1425,76 +1573,123 @@ public partial class ControlPanelForm : Form
         _gameService.ResetGame();
         _firstRoundCompleted = true; // Mark that at least one round has been completed
         ResetAllControls();
+        
+        // After reset, ensure Closing button is enabled and ready for next closing sequence
+        // (ResetAllControls already handles this based on _firstRoundCompleted)
     }
 
     private async void btnClosing_Click(object? sender, EventArgs e)
     {
-        if (!_closingInProgress)
+        switch (_closingStage)
         {
-            // First click - start closing sequence
-            _closingInProgress = true;
-            btnClosing.BackColor = Color.Red;
-            
-            // Reset question level and clear all questions/lifelines
-            nmrLevel.Value = 0;
-            ResetAllControls();
-            
-            // Disable Reset button to prevent interference (grey)
-            btnResetGame.Enabled = false;
-            btnResetGame.BackColor = Color.Gray;
-            
-            // Stop all sounds before starting closing sequence
-            _soundService.StopAllSounds();
-            
-            // If round is active (Reset button enabled), play game over sound first
-            if (btnResetGame.Enabled)
-            {
-                _soundService.PlaySoundFile(_appSettings.Settings.SoundGameOver, "game_over", loop: false);
+            case ClosingStage.NotStarted:
+                // Start closing sequence
+                _closingStage = ClosingStage.GameOver;
                 
-                if (Program.DebugMode)
+                // Reset question level and clear all questions/lifelines
+                nmrLevel.Value = 0;
+                ResetAllControls();
+                
+                // Stop all sounds
+                _soundService.StopAllSounds();
+                
+                // Check if round is in progress
+                if (_isAutomatedSequenceRunning)
                 {
-                    Console.WriteLine("[Closing] Round in play - playing game_over.mp3 (5 seconds)");
+                    // Round in progress - play game over sound first
+                    btnClosing.BackColor = Color.Red;
+                    _soundService.PlaySoundByKey("GameOver");
+                    
+                    if (Program.DebugMode)
+                    {
+                        Console.WriteLine("[Closing] Stage: GameOver - playing sound (5s)");
+                    }
+                    
+                    // Set timer for 5 seconds, then move to underscore
+                    _closingTimer = new System.Windows.Forms.Timer();
+                    _closingTimer.Interval = 5000;
+                    _closingTimer.Tick += (s, args) => { _closingTimer?.Stop(); MoveToUnderscoreStage(); };
+                    _closingTimer.Start();
                 }
+                else
+                {
+                    // No round in progress - skip game over, go straight to underscore
+                    MoveToUnderscoreStage();
+                }
+                break;
                 
-                // Wait for game over sound to finish (approximately 5 seconds)
-                await Task.Delay(5000);
-            }
-            
-            // Play closing underscore with identifier
-            _soundService.PlaySoundFile(_appSettings.Settings.SoundCloseStart, "close_underscore", loop: false);
-            
-            // Start 150 second timer
-            _closingTimer = new System.Windows.Forms.Timer();
-            _closingTimer.Interval = 150000; // 150 seconds
-            _closingTimer.Tick += (s, args) => CompleteClosing();
-            _closingTimer.Start();
-            
-            if (Program.DebugMode)
-            {
-                Console.WriteLine("[Closing] Started closing sequence - 150 second timer");
-            }
-        }
-        else
-        {
-            // Second click - expire timer immediately
-            if (_closingTimer != null)
-            {
-                _closingTimer.Stop();
-                _closingTimer.Dispose();
-                _closingTimer = null;
-            }
-            
-            if (Program.DebugMode)
-            {
-                Console.WriteLine("[Closing] Timer expired early by user");
-            }
-            
-            CompleteClosing();
+            case ClosingStage.GameOver:
+                // Skip game over, move to underscore
+                _closingTimer?.Stop();
+                _soundService.StopSound("GameOver");
+                MoveToUnderscoreStage();
+                break;
+                
+            case ClosingStage.Underscore:
+                // Skip underscore, move to theme
+                _closingTimer?.Stop();
+                _soundService.StopSound("CloseUnderscore");
+                MoveToThemeStage();
+                break;
+                
+            case ClosingStage.Theme:
+                // Skip to completion
+                _closingTimer?.Stop();
+                CompleteClosing();
+                break;
+                
+            case ClosingStage.Complete:
+                // Already complete, do nothing
+                break;
         }
     }
     
-    private async void CompleteClosing()
+    private void MoveToUnderscoreStage()
     {
+        _closingStage = ClosingStage.Underscore;
+        btnClosing.BackColor = Color.Orange;
+        
+        _soundService.PlaySoundByKey("CloseUnderscore");
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Closing] Stage: Underscore - playing sound (150s)");
+        }
+        
+        // Set timer for 150 seconds, then move to theme
+        _closingTimer = new System.Windows.Forms.Timer();
+        _closingTimer.Interval = 150000;
+        _closingTimer.Tick += (s, args) => { _closingTimer?.Stop(); MoveToThemeStage(); };
+        _closingTimer.Start();
+    }
+    
+    private async void MoveToThemeStage()
+    {
+        _closingStage = ClosingStage.Theme;
+        btnClosing.BackColor = Color.Yellow;
+        
+        // Stop underscore
+        _soundService.StopSound("CloseUnderscore");
+        
+        // Play closing theme
+        _soundService.PlaySound(SoundEffect.CloseTheme, "close_theme", loop: false);
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Closing] Stage: Theme - playing sound (wait for completion)");
+        }
+        
+        // Wait for closing theme to finish
+        await _soundService.WaitForSoundAsync("close_theme");
+        
+        CompleteClosing();
+    }
+    
+    private void CompleteClosing()
+    {
+        _closingStage = ClosingStage.Complete;
+        btnClosing.BackColor = Color.LimeGreen;
+        
         // Stop and dispose timer if still running
         if (_closingTimer != null)
         {
@@ -1505,15 +1700,17 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine("[Closing] Completing closing sequence");
+            Console.WriteLine("[Closing] Complete - resetting application");
         }
         
-        // Play closing theme
-        _soundService.PlaySound(SoundEffect.CloseTheme, loop: false);
+        // Stop all sounds
+        _soundService.StopAllSounds();
         
-        // Wait 500ms then stop close_underscore if still playing
-        await Task.Delay(500);
-        _soundService.StopSound("close_underscore");
+        // Reset closing stage
+        _closingStage = ClosingStage.NotStarted;
+        
+        // Reset first round flag
+        _firstRoundCompleted = false;
         
         // Enable Host Intro (green) for next show
         btnHostIntro.Enabled = true;
@@ -1539,20 +1736,8 @@ public partial class ControlPanelForm : Form
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
         
-        btnThanksForPlaying.Enabled = false;
-        btnThanksForPlaying.BackColor = Color.Gray;
-        
         btnClosing.Enabled = false;
         btnClosing.BackColor = Color.Gray;
-        
-        btnResetGame.Enabled = false;
-        btnResetGame.BackColor = Color.Gray;
-        
-        btnActivateRiskMode.Enabled = true;
-        btnActivateRiskMode.BackColor = Color.Yellow;
-        btnActivateRiskMode.Text = "Activate Risk Mode";
-        
-        // Keep btnStopAudio enabled
     }
 
     private void btnStopAudio_Click(object? sender, EventArgs e)
@@ -1634,12 +1819,29 @@ public partial class ControlPanelForm : Form
         // Play final answer sound based on current question number
         PlayFinalAnswerSound();
         
-        // For Q6-15, stop bed music 500ms after final answer starts
+        // For Q6-15, stop bed music when final answer starts
         var questionNumber = (int)nmrLevel.Value + 1;
         if (questionNumber >= 6)
         {
-            await Task.Delay(500);
-            _soundService.StopSound("bed_music"); // Stop the bed music
+            // Stop the bed music using the question-specific identifier
+            var bedMusicKey = questionNumber switch
+            {
+                6 => "Q06Bed",
+                7 => "Q07Bed",
+                8 => "Q08Bed",
+                9 => "Q09Bed",
+                10 => "Q10Bed",
+                11 => "Q11Bed",
+                12 => "Q12Bed",
+                13 => "Q13Bed",
+                14 => "Q14Bed",
+                15 => "Q15Bed",
+                _ => string.Empty
+            };
+            if (!string.IsNullOrEmpty(bedMusicKey))
+            {
+                _soundService.StopSound(bedMusicKey);
+            }
         }
     }
 
@@ -1660,41 +1862,42 @@ public partial class ControlPanelForm : Form
             Console.WriteLine($"[Sound] Looking for final answer sound for question #{questionNumber}");
         }
         
-        var soundFile = questionNumber switch
+        var soundKey = questionNumber switch
         {
-            1 => _appSettings.Settings.SoundQ1Final,
-            2 => _appSettings.Settings.SoundQ1Final,
-            3 => _appSettings.Settings.SoundQ1Final,
-            4 => _appSettings.Settings.SoundQ1Final,
-            5 => _appSettings.Settings.SoundQ1Final,
-            6 => _appSettings.Settings.SoundQ6Final,
-            7 => _appSettings.Settings.SoundQ7Final,
-            8 => _appSettings.Settings.SoundQ8Final,
-            9 => _appSettings.Settings.SoundQ9Final,
-            10 => _appSettings.Settings.SoundQ10Final,
-            11 => _appSettings.Settings.SoundQ11Final,
-            12 => _appSettings.Settings.SoundQ12Final,
-            13 => _appSettings.Settings.SoundQ13Final,
-            14 => _appSettings.Settings.SoundQ14Final,
-            15 => _appSettings.Settings.SoundQ15Final,
+            1 => "Q01Final",
+            2 => "Q02Final",
+            3 => "Q03Final",
+            4 => "Q04Final",
+            5 => "Q05Final",
+            6 => "Q06Final",
+            7 => "Q07Final",
+            8 => "Q08Final",
+            9 => "Q09Final",
+            10 => "Q10Final",
+            11 => "Q11Final",
+            12 => "Q12Final",
+            13 => "Q13Final",
+            14 => "Q14Final",
+            15 => "Q15Final",
             _ => string.Empty
         };
 
-        if (string.IsNullOrEmpty(soundFile))
+        if (string.IsNullOrEmpty(soundKey))
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No final answer sound configured for Q{questionNumber} (sound file is empty)");
+                Console.WriteLine($"[Sound] No final answer sound key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing final answer sound for Q{questionNumber}: {soundFile}");
+            Console.WriteLine($"[Sound] Playing final answer sound for Q{questionNumber}: {soundKey}");
         }
         
-        _soundService.PlaySoundFile(soundFile, "final_answer");
+        // Play without loop and store the identifier for later stopping
+        _currentFinalAnswerKey = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
     }
 
     private void PlayLoseSound(int? questionNumber = null)
@@ -1706,41 +1909,41 @@ public partial class ControlPanelForm : Form
             Console.WriteLine($"[Sound] Looking for lose sound for question #{currentQuestion}");
         }
         
-        var soundFile = currentQuestion switch
+        var soundKey = currentQuestion switch
         {
-            1 => _appSettings.Settings.SoundQ1to5Wrong,
-            2 => _appSettings.Settings.SoundQ1to5Wrong,
-            3 => _appSettings.Settings.SoundQ1to5Wrong,
-            4 => _appSettings.Settings.SoundQ1to5Wrong,
-            5 => _appSettings.Settings.SoundQ1to5Wrong,
-            6 => _appSettings.Settings.SoundQ6Wrong,
-            7 => _appSettings.Settings.SoundQ7Wrong,
-            8 => _appSettings.Settings.SoundQ8Wrong,
-            9 => _appSettings.Settings.SoundQ9Wrong,
-            10 => _appSettings.Settings.SoundQ10Wrong,
-            11 => _appSettings.Settings.SoundQ11Wrong,
-            12 => _appSettings.Settings.SoundQ12Wrong,
-            13 => _appSettings.Settings.SoundQ13Wrong,
-            14 => _appSettings.Settings.SoundQ14Wrong,
-            15 => _appSettings.Settings.SoundQ15Wrong,
+            1 => "Q01to05Wrong",
+            2 => "Q01to05Wrong",
+            3 => "Q01to05Wrong",
+            4 => "Q01to05Wrong",
+            5 => "Q01to05Wrong",
+            6 => "Q06Wrong",
+            7 => "Q07Wrong",
+            8 => "Q08Wrong",
+            9 => "Q09Wrong",
+            10 => "Q10Wrong",
+            11 => "Q11Wrong",
+            12 => "Q12Wrong",
+            13 => "Q13Wrong",
+            14 => "Q14Wrong",
+            15 => "Q15Wrong",
             _ => string.Empty
         };
 
-        if (string.IsNullOrEmpty(soundFile))
+        if (string.IsNullOrEmpty(soundKey))
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No lose sound configured for Q{currentQuestion} (sound file is empty)");
+                Console.WriteLine($"[Sound] No lose sound key for Q{currentQuestion}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing lose sound for Q{currentQuestion}: {soundFile}");
+            Console.WriteLine($"[Sound] Playing lose sound for Q{currentQuestion}: {soundKey}");
         }
         
-        _soundService.PlaySoundFile(soundFile);
+        _soundService.PlaySoundByKey(soundKey);
     }
 
     private void PlayCorrectSound(int? questionNumber = null)
@@ -1754,41 +1957,41 @@ public partial class ControlPanelForm : Form
             Console.WriteLine($"[Sound] Looking for correct sound for question #{currentQuestion}, Risk Mode: {isRiskMode}");
         }
         
-        var soundFile = currentQuestion switch
+        var soundKey = currentQuestion switch
         {
-            1 => _appSettings.Settings.SoundQ1to4Correct,
-            2 => _appSettings.Settings.SoundQ1to4Correct,
-            3 => _appSettings.Settings.SoundQ1to4Correct,
-            4 => _appSettings.Settings.SoundQ1to4Correct,
-            5 => isRiskMode ? _appSettings.Settings.SoundQ5Correct2 : _appSettings.Settings.SoundQ5Correct,
-            6 => _appSettings.Settings.SoundQ6Correct,
-            7 => _appSettings.Settings.SoundQ7Correct,
-            8 => _appSettings.Settings.SoundQ8Correct,
-            9 => _appSettings.Settings.SoundQ9Correct,
-            10 => isRiskMode ? _appSettings.Settings.SoundQ10Correct2 : _appSettings.Settings.SoundQ10Correct,
-            11 => _appSettings.Settings.SoundQ11Correct,
-            12 => _appSettings.Settings.SoundQ12Correct,
-            13 => _appSettings.Settings.SoundQ13Correct,
-            14 => _appSettings.Settings.SoundQ14Correct,
-            15 => _appSettings.Settings.SoundQ15Correct,
+            1 => "Q01to04Correct",
+            2 => "Q01to04Correct",
+            3 => "Q01to04Correct",
+            4 => "Q01to04Correct",
+            5 => isRiskMode ? "Q05Correct2" : "Q05Correct",
+            6 => "Q06Correct",
+            7 => "Q07Correct",
+            8 => "Q08Correct",
+            9 => "Q09Correct",
+            10 => isRiskMode ? "Q10Correct2" : "Q10Correct",
+            11 => "Q11Correct",
+            12 => "Q12Correct",
+            13 => "Q13Correct",
+            14 => "Q14Correct",
+            15 => "Q15Correct",
             _ => string.Empty
         };
 
-        if (string.IsNullOrEmpty(soundFile))
+        if (string.IsNullOrEmpty(soundKey))
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No correct sound configured for Q{currentQuestion} (sound file is empty)");
+                Console.WriteLine($"[Sound] No correct sound key for Q{currentQuestion}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing correct sound for Q{currentQuestion}: {soundFile}");
+            Console.WriteLine($"[Sound] Playing correct sound for Q{currentQuestion}: {soundKey}");
         }
         
-        _soundService.PlaySoundFile(soundFile);
+        _soundService.PlaySoundByKey(soundKey);
     }
 
     private void PlayQuestionBed()
@@ -1800,41 +2003,41 @@ public partial class ControlPanelForm : Form
             Console.WriteLine($"[Sound] Looking for bed music for question #{questionNumber}");
         }
         
-        var soundFile = questionNumber switch
+        var soundKey = questionNumber switch
         {
-            1 => _appSettings.Settings.SoundQ1to5Bed,
-            2 => _appSettings.Settings.SoundQ1to5Bed,
-            3 => _appSettings.Settings.SoundQ1to5Bed,
-            4 => _appSettings.Settings.SoundQ1to5Bed,
-            5 => _appSettings.Settings.SoundQ1to5Bed,
-            6 => _appSettings.Settings.SoundQ6Bed,
-            7 => _appSettings.Settings.SoundQ7Bed,
-            8 => _appSettings.Settings.SoundQ8Bed,
-            9 => _appSettings.Settings.SoundQ9Bed,
-            10 => _appSettings.Settings.SoundQ10Bed,
-            11 => _appSettings.Settings.SoundQ11Bed,
-            12 => _appSettings.Settings.SoundQ12Bed,
-            13 => _appSettings.Settings.SoundQ13Bed,
-            14 => _appSettings.Settings.SoundQ14Bed,
-            15 => _appSettings.Settings.SoundQ15Bed,
+            1 => "Q01to05Bed",
+            2 => "Q01to05Bed",
+            3 => "Q01to05Bed",
+            4 => "Q01to05Bed",
+            5 => "Q01to05Bed",
+            6 => "Q06Bed",
+            7 => "Q07Bed",
+            8 => "Q08Bed",
+            9 => "Q09Bed",
+            10 => "Q10Bed",
+            11 => "Q11Bed",
+            12 => "Q12Bed",
+            13 => "Q13Bed",
+            14 => "Q14Bed",
+            15 => "Q15Bed",
             _ => string.Empty
         };
 
-        if (string.IsNullOrEmpty(soundFile))
+        if (string.IsNullOrEmpty(soundKey))
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No bed music configured for Q{questionNumber} (sound file is empty)");
+                Console.WriteLine($"[Sound] No bed music key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing bed music for Q{questionNumber}: {soundFile}");
+            Console.WriteLine($"[Sound] Playing bed music for Q{questionNumber}: {soundKey}");
         }
         
-        _soundService.PlaySoundFile(soundFile, "bed_music", loop: true);
+        _soundService.PlaySoundByKey(soundKey, loop: true);
     }
 
     private void PlayLightsDownSound()
@@ -1846,41 +2049,42 @@ public partial class ControlPanelForm : Form
             Console.WriteLine($"[Sound] Looking for lights down sound for question #{questionNumber}");
         }
         
-        var soundFile = questionNumber switch
+        var soundKey = questionNumber switch
         {
-            1 => _appSettings.Settings.SoundQ1to5LightsDown,
-            2 => _appSettings.Settings.SoundQ1to5LightsDown,
-            3 => _appSettings.Settings.SoundQ1to5LightsDown,
-            4 => _appSettings.Settings.SoundQ1to5LightsDown,
-            5 => _appSettings.Settings.SoundQ1to5LightsDown,
-            6 => _appSettings.Settings.SoundQ6LightsDown,
-            7 => _appSettings.Settings.SoundQ7LightsDown,
-            8 => _appSettings.Settings.SoundQ8LightsDown,
-            9 => _appSettings.Settings.SoundQ9LightsDown,
-            10 => _appSettings.Settings.SoundQ10LightsDown,
-            11 => _appSettings.Settings.SoundQ11LightsDown,
-            12 => _appSettings.Settings.SoundQ12LightsDown,
-            13 => _appSettings.Settings.SoundQ13LightsDown,
-            14 => _appSettings.Settings.SoundQ14LightsDown,
-            15 => _appSettings.Settings.SoundQ15LightsDown,
+            1 => "Q01to05LightsDown",
+            2 => "Q01to05LightsDown",
+            3 => "Q01to05LightsDown",
+            4 => "Q01to05LightsDown",
+            5 => "Q01to05LightsDown",
+            6 => "Q06LightsDown",
+            7 => "Q07LightsDown",
+            8 => "Q08LightsDown",
+            9 => "Q09LightsDown",
+            10 => "Q10LightsDown",
+            11 => "Q11LightsDown",
+            12 => "Q12LightsDown",
+            13 => "Q13LightsDown",
+            14 => "Q14LightsDown",
+            15 => "Q15LightsDown",
             _ => string.Empty
         };
 
-        if (string.IsNullOrEmpty(soundFile))
+        if (string.IsNullOrEmpty(soundKey))
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No lights down sound configured for Q{questionNumber} (sound file is empty)");
+                Console.WriteLine($"[Sound] No lights down sound key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing lights down sound for Q{questionNumber}: {soundFile}");
+            Console.WriteLine($"[Sound] Playing lights down sound for Q{questionNumber}: {soundKey}");
         }
         
-        _soundService.PlaySoundFile(soundFile, "lights_down");
+        // Play without loop and store the identifier for later stopping
+        _currentLightsDownIdentifier = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
     }
 
     private async void RevealAnswer(bool isCorrect)
@@ -1908,9 +2112,39 @@ public partial class ControlPanelForm : Form
             // Broadcast correct answer to all screens
             _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true);
 
-            // Stop final answer sound 500ms before playing correct sound
-            await Task.Delay(500);
-            _soundService.StopSound("final_answer");
+            // Stop final answer sound before playing correct sound
+            // Stop final answer using the stored key
+            if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
+            {
+                _soundService.StopSound(_currentFinalAnswerKey);
+                _currentFinalAnswerKey = null; // Clear it
+            }
+            
+            // Stop bed music immediately before playing correct sound (Q5+)
+            // For Q1-4, the bed continues playing through the correct answer
+            if (currentQuestionNumber >= 5)
+            {
+                var bedMusicKey = currentQuestionNumber switch
+                {
+                    >= 1 and <= 5 => "Q01to05Bed",
+                    6 => "Q06Bed",
+                    7 => "Q07Bed",
+                    8 => "Q08Bed",
+                    9 => "Q09Bed",
+                    10 => "Q10Bed",
+                    11 => "Q11Bed",
+                    12 => "Q12Bed",
+                    13 => "Q13Bed",
+                    14 => "Q14Bed",
+                    15 => "Q15Bed",
+                    _ => string.Empty
+                };
+                
+                if (!string.IsNullOrEmpty(bedMusicKey))
+                {
+                    _soundService.StopSound(bedMusicKey);
+                }
+            }
             
             // Play question-specific correct answer sound using captured question number
             PlayCorrectSound(currentQuestionNumber);
@@ -1935,16 +2169,16 @@ public partial class ControlPanelForm : Form
             btnReveal.Enabled = false;
             btnReveal.BackColor = Color.Gray;
             
-            // If Q5 was just answered correctly, stop the bed music and enable Lights Down for Q6
+            // If Q5 was just answered correctly, enable Lights Down for Q6
             if (currentQuestionNumber == 5)
             {
-                await Task.Delay(1000);
-                _soundService.StopSound("bed_music");
-                
                 // Enable Lights Down (green) for Q6
                 btnLightsDown.Enabled = true;
                 btnLightsDown.BackColor = Color.LimeGreen;
                 btnLightsDown.ForeColor = Color.Black;
+                
+                // Re-enable question level selector (can now change for Q6+)
+                nmrLevel.Enabled = true;
             }
             // For Q1-Q4, re-enable Question button (green) for next question
             else if (currentQuestionNumber >= 1 && currentQuestionNumber <= 4)
@@ -1966,6 +2200,9 @@ public partial class ControlPanelForm : Form
                 btnLightsDown.BackColor = Color.LimeGreen;
                 btnLightsDown.ForeColor = Color.Black;
                 
+                // Re-enable question level selector (can now change for next question)
+                nmrLevel.Enabled = true;
+                
                 // Disable Walk Away until next question is fully revealed (grey)
                 btnWalk.Enabled = false;
                 btnWalk.BackColor = Color.Gray;
@@ -1974,9 +2211,21 @@ public partial class ControlPanelForm : Form
             else if (currentQuestionNumber == 15)
             {
                 _gameOutcome = GameOutcome.Win; // Player won the game!
-                btnThanksForPlaying.Enabled = true;
-                btnThanksForPlaying.BackColor = Color.LimeGreen;
-                btnThanksForPlaying.ForeColor = Color.Black;
+                _isAutomatedSequenceRunning = true; // Mark sequence as automated
+                
+                // Stop final answer sound immediately (it was already stopped above but ensure it's stopped)
+                // This is needed because we're about to wait 25 seconds for Q15Correct to finish
+                if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
+                {
+                    _soundService.StopSound(_currentFinalAnswerKey);
+                    _currentFinalAnswerKey = null;
+                }
+                
+                // Create cancellation token for this sequence
+                _automatedSequenceCts?.Cancel();
+                _automatedSequenceCts?.Dispose();
+                _automatedSequenceCts = new CancellationTokenSource();
+                var token = _automatedSequenceCts.Token;
                 
                 // Disable Walk Away (grey)
                 btnWalk.Enabled = false;
@@ -1985,6 +2234,18 @@ public partial class ControlPanelForm : Form
                 // Disable Lights Down (grey)
                 btnLightsDown.Enabled = false;
                 btnLightsDown.BackColor = Color.Gray;
+                
+                // Wait for Q15 correct sound to finish (approximately 20-30 seconds)
+                try
+                {
+                    await Task.Delay(25000, token);
+                    // Auto-trigger end-of-round sequence
+                    await EndRoundSequence();
+                }
+                catch (OperationCanceledException)
+                {
+                    // Sequence was cancelled by reset
+                }
             }
         }
         else
@@ -2016,9 +2277,8 @@ public partial class ControlPanelForm : Form
             // Broadcast wrong answer to all screens
             _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false);
 
-            // Stop all audio first (including final answer), wait 500ms, then play question-specific lose sound
+            // Stop all audio first (including final answer), then play question-specific lose sound
             _soundService.StopAllSounds();
-            await Task.Delay(500);
             PlayLoseSound(currentQuestionNumber);
             
             // Auto-show winnings after 2 seconds
@@ -2032,11 +2292,6 @@ public partial class ControlPanelForm : Form
             btnReveal.Enabled = false;
             btnReveal.BackColor = Color.Gray;
             
-            // Enable Thanks for Playing (green)
-            btnThanksForPlaying.Enabled = true;
-            btnThanksForPlaying.BackColor = Color.LimeGreen;
-            btnThanksForPlaying.ForeColor = Color.Black;
-            
             // Disable Walk Away (grey)
             btnWalk.Enabled = false;
             btnWalk.BackColor = Color.Gray;
@@ -2044,6 +2299,10 @@ public partial class ControlPanelForm : Form
             // Disable Lights Down (grey)
             btnLightsDown.Enabled = false;
             btnLightsDown.BackColor = Color.Gray;
+            
+            // Auto-trigger end-of-round sequence after wrong answer
+            await Task.Delay(2000);
+            await EndRoundSequence();
         }
     }
 
@@ -2072,6 +2331,7 @@ public partial class ControlPanelForm : Form
         _answerRevealStep = 0; // Reset reveal state
         _gameOutcome = GameOutcome.InProgress; // Reset game outcome
         nmrLevel.Value = 0;
+        nmrLevel.Enabled = false; // Disable until Pick a Player is clicked
         
         // Disable answer buttons until a question is loaded and set to grey
         btnA.Enabled = false;
@@ -2121,7 +2381,7 @@ public partial class ControlPanelForm : Form
             _closingTimer.Dispose();
             _closingTimer = null;
         }
-        _closingInProgress = false;
+        _closingStage = ClosingStage.NotStarted;
         
         // Disable Host Intro (grey)
         btnHostIntro.Enabled = false;
@@ -2148,9 +2408,6 @@ public partial class ControlPanelForm : Form
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
         
-        btnThanksForPlaying.Enabled = false;
-        btnThanksForPlaying.BackColor = Color.Gray;
-        
         // Keep Closing enabled after first round completes
         if (_firstRoundCompleted)
         {
@@ -2165,13 +2422,7 @@ public partial class ControlPanelForm : Form
         }
         
         // Re-enable and reset risk mode button
-        btnActivateRiskMode.Enabled = true;
-        btnActivateRiskMode.BackColor = Color.Yellow;
-        btnActivateRiskMode.Text = "Activate Risk Mode";
-        
-        // Disable Reset button until lights down again (grey)
-        btnResetGame.Enabled = false;
-        btnResetGame.BackColor = Color.Gray;
+        UpdateRiskModeButton();
     }
 
     private void SetLifelineMode(LifelineMode mode)
@@ -2292,7 +2543,9 @@ public partial class ControlPanelForm : Form
     private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
     {
         using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings);
-        if (optionsDialog.ShowDialog() == DialogResult.OK)
+        
+        // Subscribe to settings applied event to update immediately when Apply is clicked
+        optionsDialog.SettingsApplied += (s, ev) =>
         {
             // Reload sounds after settings change
             _soundService.LoadSoundsFromSettings(_appSettings.Settings);
@@ -2302,7 +2555,13 @@ public partial class ControlPanelForm : Form
             
             // Reapply current lifeline mode to update colors
             SetLifelineMode(_lifelineMode);
-        }
+            
+            // Reload money tree settings and update risk mode button
+            _gameService.MoneyTree.LoadSettings();
+            UpdateRiskModeButton();
+        };
+        
+        optionsDialog.ShowDialog();
     }
 
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)
@@ -2312,6 +2571,10 @@ public partial class ControlPanelForm : Form
             _hostScreen = new HostScreenForm();
             _screenService.RegisterScreen(_hostScreen);
             _hostScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_hostScreen);
+            
+            // Sync current game state to the newly opened screen
+            SyncScreenState(_hostScreen);
+            
             _hostScreen.Show();
         }
         else
@@ -2356,6 +2619,10 @@ public partial class ControlPanelForm : Form
             _guestScreen = new GuestScreenForm();
             _screenService.RegisterScreen(_guestScreen);
             _guestScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_guestScreen);
+            
+            // Sync current game state to the newly opened screen
+            SyncScreenState(_guestScreen);
+            
             _guestScreen.Show();
         }
         else
@@ -2364,18 +2631,78 @@ public partial class ControlPanelForm : Form
         }
     }
 
+    /// <summary>
+    /// Synchronizes the current game state to a newly opened screen
+    /// </summary>
+    private void SyncScreenState(IGameScreen screen)
+    {
+        // Sync current question if one is loaded
+        if (_currentQuestion != null)
+        {
+            screen.UpdateQuestion(_currentQuestion);
+            
+            // Show visible answers progressively based on reveal step
+            if (_answerRevealStep >= 2) screen.ShowAnswer("A");
+            if (_answerRevealStep >= 3) screen.ShowAnswer("B");
+            if (_answerRevealStep >= 4) screen.ShowAnswer("C");
+            if (_answerRevealStep >= 5) screen.ShowAnswer("D");
+            
+            // If answer has been selected, show it
+            if (!string.IsNullOrEmpty(_currentAnswer))
+            {
+                screen.SelectAnswer(_currentAnswer);
+            }
+        }
+        
+        // Sync question visibility state
+        if (chkShowQuestion.Checked)
+        {
+            screen.ShowQuestion(true);
+        }
+        
+        // Sync winnings visibility state
+        if (chkShowWinnings.Checked)
+        {
+            // Use the final winnings amount if available, otherwise current value
+            var amountToShow = _finalWinningsAmount ?? _gameService.State.CurrentValue;
+            if (screen is TVScreenFormScalable scalableScreen)
+            {
+                scalableScreen.ShowWinningsAmount(amountToShow);
+            }
+            else
+            {
+                screen.ShowWinnings(_gameService.State);
+            }
+        }
+        
+        // Sync money display
+        screen.UpdateMoney(
+            _gameService.State.CurrentValue,
+            _gameService.State.CorrectValue,
+            _gameService.State.WrongValue,
+            _gameService.State.DropValue,
+            _gameService.State.QuestionsLeft
+        );
+    }
+
     private void TVScreenToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        if (_tvScreen == null || _tvScreen.IsDisposed)
+        if (_tvScreen == null || (_tvScreen as Form)?.IsDisposed == true)
         {
-            _tvScreen = new TVScreenForm();
+            // Use the new scalable TV screen
+            var tvForm = new TVScreenFormScalable();
+            _tvScreen = tvForm;
             _screenService.RegisterScreen(_tvScreen);
-            _tvScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_tvScreen);
-            _tvScreen.Show();
+            tvForm.FormClosed += (s, args) => _screenService.UnregisterScreen(_tvScreen);
+            
+            // Sync current game state to the newly opened screen
+            SyncScreenState(_tvScreen);
+            
+            tvForm.Show();
         }
         else
         {
-            _tvScreen.BringToFront();
+            (_tvScreen as Form)?.BringToFront();
         }
     }
 
