@@ -4,6 +4,7 @@ using MillionaireGame.Core.Settings;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame;
 
@@ -16,6 +17,8 @@ internal static class Program
     private static extern bool FreeConsole();
 
     public static bool DebugMode { get; private set; }
+    
+    public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
     /// <summary>
     ///  The main entry point for the application.
@@ -23,8 +26,12 @@ internal static class Program
     [STAThread]
     static async Task Main(string[] args)
     {
-        // Check for debug mode argument
+        // Check for debug mode argument or Debug build configuration
         DebugMode = args.Contains("--debug") || args.Contains("-d");
+        
+        #if DEBUG
+        DebugMode = true;
+        #endif
         
         if (DebugMode)
         {
@@ -142,6 +149,20 @@ internal static class Program
         var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
         var screenService = new ScreenUpdateService();
         var soundService = new SoundService();
+        
+        // Load sounds from settings
+        soundService.LoadSoundsFromSettings(appSettings.Settings);
+
+        // Setup dependency injection container
+        var services = new ServiceCollection();
+        services.AddSingleton(gameService);
+        services.AddSingleton(appSettings);
+        services.AddSingleton(sqlSettings);
+        services.AddSingleton(questionRepository);
+        services.AddSingleton(screenService);
+        services.AddSingleton(soundService);
+        
+        ServiceProvider = services.BuildServiceProvider();
 
         // Create and run main control panel
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);

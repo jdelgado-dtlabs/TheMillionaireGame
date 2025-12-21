@@ -2,6 +2,31 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [0.3-2512] - 2025-12-21
+
+### Added
+- **Graphical Money Tree Rendering**
+  - Replaced text-based MoneyTreeControl with VB.NET-style graphical version
+  - Host/Guest screens: Money tree on right side (650×569px) with overlays
+  - Uses cropped 630×720 tree images with VB.NET coordinate system
+  - Text positioning: question numbers and money values with Copperplate Gothic Bold
+  - Color-coded levels: Black (current), White (milestones), Gold (regular)
+
+- **Money Tree Demo Animation**
+  - Timer-based progression through levels 1-15 at 500ms intervals
+  - Three-state button: Show → Hide → Demo (during Explain Game)
+  - State tracking with _isExplainGameActive flag for automatic Demo transition
+  - Button becomes disabled "Demo Running..." during animation
+  - Integrated with Explain Game workflow (no audio restart)
+
+### Fixed
+- Money tree automatically hides winning strap when shown (prevents overlap)
+- Proportional scaling maintains aspect ratio (650px height avoids question strap)
+- Lights Down exits Explain Game mode and resets money tree state
+
+### Known Issues
+- TV Screen money tree needs updating to match Host/Guest graphical implementation
+
 ## [0.3-2512] - 2025-12-20
 
 ### Added

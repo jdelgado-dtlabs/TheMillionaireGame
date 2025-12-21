@@ -1,0 +1,5 @@
+{
+  "configProperties": {
+    "System.Runtime.Loader.AdditionalProbingPaths": "lib/dlls"
+  }
+}

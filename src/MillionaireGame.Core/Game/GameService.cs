@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Models;
+using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Core.Game;
 
@@ -9,18 +10,21 @@ public class GameService
 {
     private readonly GameState _gameState;
     private readonly List<Lifeline> _lifelines;
+    private readonly MoneyTreeService _moneyTreeService;
 
     public GameState State => _gameState;
     public IReadOnlyList<Lifeline> Lifelines => _lifelines.AsReadOnly();
+    public MoneyTreeService MoneyTree => _moneyTreeService;
 
     public event EventHandler<GameLevelChangedEventArgs>? LevelChanged;
     public event EventHandler<GameModeChangedEventArgs>? ModeChanged;
     public event EventHandler<LifelineUsedEventArgs>? LifelineUsed;
 
-    public GameService()
+    public GameService(MoneyTreeService? moneyTreeService = null)
     {
         _gameState = new GameState();
         _lifelines = new List<Lifeline>();
+        _moneyTreeService = moneyTreeService ?? new MoneyTreeService();
         InitializeLifelines();
     }
 
@@ -121,11 +125,11 @@ public class GameService
         var level = _gameState.CurrentLevel;
         var isRiskMode = _gameState.Mode == GameMode.Risk;
 
-        // These values would come from MoneyTreeSettings in the full implementation
-        _gameState.CurrentValue = GetMoneyValue(level);
-        _gameState.CorrectValue = GetMoneyValue(level + 1);
-        _gameState.WrongValue = GetWrongValue(level, isRiskMode);
-        _gameState.DropValue = GetDropValue(level, isRiskMode);
+        // Use MoneyTreeService to get formatted values
+        _gameState.CurrentValue = _moneyTreeService.GetFormattedValue(level);
+        _gameState.CorrectValue = _moneyTreeService.GetFormattedValue(level + 1);
+        _gameState.WrongValue = _moneyTreeService.GetWrongValue(level, isRiskMode);
+        _gameState.DropValue = _moneyTreeService.GetDropValue(level, isRiskMode);
         _gameState.QuestionsLeft = (15 - level).ToString();
     }
 
@@ -145,46 +149,6 @@ public class GameService
                 _ => false
             };
         }
-    }
-
-    // Helper methods for money values (simplified version)
-    private string GetMoneyValue(int level) => level switch
-    {
-        0 => "$0",
-        1 => "$100",
-        2 => "$200",
-        3 => "$300",
-        4 => "$500",
-        5 => "$1,000",
-        6 => "$2,000",
-        7 => "$4,000",
-        8 => "$8,000",
-        9 => "$16,000",
-        10 => "$32,000",
-        11 => "$64,000",
-        12 => "$125,000",
-        13 => "$250,000",
-        14 => "$500,000",
-        15 => "$1,000,000",
-        _ => "$0"
-    };
-
-    private string GetWrongValue(int level, bool riskMode)
-    {
-        if (riskMode)
-        {
-            return level >= 10 ? "$32,000" : "$0";
-        }
-        return level >= 10 ? "$32,000" : level >= 5 ? "$1,000" : "$0";
-    }
-
-    private string GetDropValue(int level, bool riskMode)
-    {
-        if (riskMode)
-        {
-            return level >= 10 ? "$32,000" : "$0";
-        }
-        return level >= 10 ? "$32,000" : level >= 5 ? "$1,000" : "$0";
     }
 }
 

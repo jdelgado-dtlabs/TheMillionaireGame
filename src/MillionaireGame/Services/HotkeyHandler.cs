@@ -88,9 +88,6 @@ public class HotkeyHandler
             case Keys.F7:
                 _onF7?.Invoke();
                 break;
-            case Keys.Home:
-                _onHome?.Invoke();
-                break;
             case Keys.End:
                 _onEnd?.Invoke();
                 break;

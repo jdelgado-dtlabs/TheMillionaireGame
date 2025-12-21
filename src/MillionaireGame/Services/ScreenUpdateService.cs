@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Models;
+using MillionaireGame.Forms;
 
 namespace MillionaireGame.Services;
 
@@ -122,6 +123,25 @@ public class ScreenUpdateService
     }
 
     /// <summary>
+    /// Show a specific winnings amount on all screens
+    /// </summary>
+    public void ShowWinningsAmount(string amount)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            if (screen is TVScreenFormScalable scalableScreen)
+            {
+                scalableScreen.ShowWinningsAmount(amount);
+            }
+            else
+            {
+                // For non-scalable screens, use the existing ShowWinnings with current state
+                screen.ShowWinnings(new GameState { CurrentValue = amount });
+            }
+        }
+    }
+
+    /// <summary>
     /// Hide the winnings on all screens
     /// </summary>
     public void HideWinnings()
@@ -172,6 +192,17 @@ public class ScreenUpdateService
             screen.ResetScreen();
         }
     }
+
+    /// <summary>
+    /// Clear question and answer text on all screens (for Q6+ lights down)
+    /// </summary>
+    public void ClearQuestionAndAnswerText()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ClearQuestionAndAnswerText();
+        }
+    }
 }
 
 /// <summary>
@@ -190,6 +221,7 @@ public interface IGameScreen
     void UpdateMoney(string current, string correct, string wrong, string drop, string questionsLeft);
     void ActivateLifeline(Lifeline lifeline);
     void ResetScreen();
+    void ClearQuestionAndAnswerText();
 }
 
 #region Event Args

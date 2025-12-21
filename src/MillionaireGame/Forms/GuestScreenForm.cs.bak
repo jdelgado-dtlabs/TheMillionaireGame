@@ -1,0 +1,425 @@
+using MillionaireGame.Core.Models;
+using MillionaireGame.Services;
+using MillionaireGame.Core.Helpers;
+using MillionaireGame.Graphics;
+using MillionaireGame.Controls;
+using MillionaireGame.Core.Services;
+
+namespace MillionaireGame.Forms;
+
+/// <summary>
+/// Host screen with scalable rendering - shows correct answers and ATA percentages
+/// </summary>
+public class HostScreenForm : ScalableScreenBase, IGameScreen
+{
+    private Question? _currentQuestion;
+    private string? _selectedAnswer;
+    private string? _correctAnswer;
+    private bool _isRevealing;
+    private bool _showATA;
+    private Dictionary<string, int> _ataVotes = new();
+    private string? _currentAmount;
+    private HashSet<string> _visibleAnswers = new();
+    private MoneyTreeControl? _moneyTreeControl;
+    private MoneyTreeService? _moneyTreeService;
+
+    // Design-time coordinates (based on 1920x1080)
+    private readonly RectangleF _questionStrapBounds = new(250, 100, 1420, 120);
+    private readonly RectangleF _winningsStrapBounds = new(250, 900, 1420, 120);
+    private readonly RectangleF _answerABounds = new(250, 250, 680, 100);
+    private readonly RectangleF _answerBBounds = new(990, 250, 680, 100);
+    private readonly RectangleF _answerCBounds = new(250, 370, 680, 100);
+    private readonly RectangleF _answerDBounds = new(990, 370, 680, 100);
+    
+    // ATA percentages display area (shown to host)
+    private readonly RectangleF _ataDisplayBounds = new(250, 500, 720, 200);
+
+    public HostScreenForm()
+    {
+        IconHelper.ApplyToForm(this);
+        
+        // Start at 50% of screen resolution with borders
+        var screen = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
+        int width = screen.Width / 2;
+        int height = screen.Height / 2;
+        Size = new Size(width, height);
+        
+        // Center on screen
+        StartPosition = FormStartPosition.CenterScreen;
+        
+        // Enable borders and window controls
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MaximizeBox = true;
+        MinimizeBox = true;
+        
+        Text = "Host Screen";
+        BackColor = Color.Black;
+        
+        // Save initial state for fullscreen toggle
+        SaveWindowState();
+    }
+
+    public void Initialize(MoneyTreeService moneyTreeService)
+    {
+        _moneyTreeService = moneyTreeService;
+
+        // Create money tree control at fixed position (right side)
+        _moneyTreeControl = new MoneyTreeControl(moneyTreeService);
+        _moneyTreeControl.Location = new Point(1640, 50);
+        _moneyTreeControl.Size = new Size(250, 900);
+        Controls.Add(_moneyTreeControl);
+    }
+
+    public void UpdateMoneyTreeLevel(int level)
+    {
+        _moneyTreeControl?.SetCurrentLevel(level);
+    }
+
+    protected override void RenderScreen(System.Drawing.Graphics g)
+    {
+        // Always draw question strap (with or without text)
+        DrawQuestionStrap(g);
+
+        // If no question loaded yet, still draw empty answer backgrounds
+        if (_currentQuestion == null)
+        {
+            DrawAnswerBox(g, "A", "", _answerABounds, true, false);
+            DrawAnswerBox(g, "B", "", _answerBBounds, false, false);
+            DrawAnswerBox(g, "C", "", _answerCBounds, true, false);
+            DrawAnswerBox(g, "D", "", _answerDBounds, false, false);
+            return;
+        }
+
+        // Always draw answer backgrounds, showing visible answers
+        DrawAnswerBox(g, "A", _currentQuestion.AnswerA, _answerABounds, true, _visibleAnswers.Contains("A"));
+        DrawAnswerBox(g, "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
+        DrawAnswerBox(g, "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
+        DrawAnswerBox(g, "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
+
+        // Draw ATA percentages if all answers are visible (for host preview)
+        if (_visibleAnswers.Count == 4 && _currentQuestion != null)
+        {
+            DrawATAPreview(g);
+        }
+
+        // Draw ATA results if active
+        if (_showATA)
+        {
+            DrawATAResults(g);
+        }
+    }
+
+    private void DrawQuestionStrap(System.Drawing.Graphics g)
+    {
+        var scaledBounds = ScaleRect(_questionStrapBounds.X, _questionStrapBounds.Y, _questionStrapBounds.Width, _questionStrapBounds.Height);
+        
+        // Draw background strap
+        var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
+        if (texture != null)
+        {
+            g.DrawImage(texture, scaledBounds);
+        }
+
+        // Draw question text if available
+        if (_currentQuestion != null && !string.IsNullOrEmpty(_currentQuestion.QuestionText))
+        {
+            using var font = new Font("Arial", 48, FontStyle.Bold);
+            using var brush = new SolidBrush(Color.White);
+            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            
+            DrawScaledText(g, _currentQuestion.QuestionText, font, brush,
+                _questionStrapBounds.X, _questionStrapBounds.Y, _questionStrapBounds.Width, _questionStrapBounds.Height,
+                format);
+        }
+    }
+
+
+
+    private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeftSide, bool isVisible)
+    {
+        var scaledBounds = ScaleRect(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        
+        // Determine if this is a left or right answer
+        bool isLeft = (letter == "A" || letter == "C");
+        
+        // Determine texture based on state
+        TextureManager.ElementType elementType;
+        
+        if (_isRevealing && letter == _correctAnswer)
+        {
+            elementType = isLeft ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
+        }
+        else if (_selectedAnswer == letter && !_isRevealing)
+        {
+            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
+        }
+        else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
+        {
+            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
+        }
+        else
+        {
+            elementType = isLeft ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
+        }
+
+        var texture = TextureManager.GetTexture(elementType, CurrentTextureSet);
+        if (texture != null)
+        {
+            g.DrawImage(texture, scaledBounds);
+        }
+
+        // Draw answer text if visible
+        if (isVisible && !string.IsNullOrEmpty(text))
+        {
+            var displayText = $"{letter}: {text}";
+            using var font = new Font("Arial", 36, FontStyle.Bold);
+            using var brush = new SolidBrush(Color.White);
+            
+            DrawScaledText(g, displayText, font, brush,
+                bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        }
+    }
+
+    private void DrawATAPreview(System.Drawing.Graphics g)
+    {
+        if (_currentQuestion == null) return;
+
+        var previewBounds = new RectangleF(250, 500, 400, 180);
+        var scaledBounds = ScaleRect(previewBounds.X, previewBounds.Y, previewBounds.Width, previewBounds.Height);
+
+        // Semi-transparent background
+        using var brush = new SolidBrush(Color.FromArgb(180, 20, 20, 40));
+        g.FillRectangle(brush, scaledBounds);
+
+        // Draw title
+        var titleBounds = new RectangleF(previewBounds.X, previewBounds.Y + 10, previewBounds.Width, 40);
+        using var titleFont = new Font("Arial", 28, FontStyle.Bold);
+        using var titleBrush = new SolidBrush(Color.Yellow);
+        using var titleFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        DrawScaledText(g, "ATA Preview", titleFont, titleBrush,
+            titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, titleFormat);
+
+        // Draw percentages
+        float yOffset = 60;
+        var lineHeight = 30f;
+        
+        DrawATALine(g, "A", _currentQuestion.ATAPercentageA ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        yOffset += lineHeight;
+        DrawATALine(g, "B", _currentQuestion.ATAPercentageB ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        yOffset += lineHeight;
+        DrawATALine(g, "C", _currentQuestion.ATAPercentageC ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        yOffset += lineHeight;
+        DrawATALine(g, "D", _currentQuestion.ATAPercentageD ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+    }
+
+    private void DrawATALine(System.Drawing.Graphics g, string answer, int percentage, RectangleF bounds)
+    {
+        var text = $"{answer}: {percentage}%";
+        using var font = new Font("Arial", 24, FontStyle.Regular);
+        using var brush = new SolidBrush(Color.White);
+        DrawScaledText(g, text, font, brush,
+            bounds.X, bounds.Y, bounds.Width, bounds.Height);
+    }
+
+    private void DrawATAResults(System.Drawing.Graphics g)
+    {
+        if (_ataVotes.Count == 0) return;
+
+        var overlayBounds = new RectangleF(600, 500, 720, 400);
+        var scaledBounds = ScaleRect(overlayBounds.X, overlayBounds.Y, overlayBounds.Width, overlayBounds.Height);
+
+        // Semi-transparent background
+        using var brush = new SolidBrush(Color.FromArgb(200, 0, 0, 0));
+        g.FillRectangle(brush, scaledBounds);
+
+        // Draw title
+        var titleBounds = new RectangleF(overlayBounds.X, overlayBounds.Y + 20, overlayBounds.Width, 60);
+        using var titleFont = new Font("Arial", 48, FontStyle.Bold);
+        using var titleBrush = new SolidBrush(Color.Yellow);
+        using var titleFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        DrawScaledText(g, "Ask the Audience", titleFont, titleBrush,
+            titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, titleFormat);
+
+        // Draw vote bars
+        float yOffset = 100;
+        foreach (var kvp in _ataVotes.OrderBy(x => x.Key))
+        {
+            var barBounds = new RectangleF(overlayBounds.X + 50, overlayBounds.Y + yOffset, 620, 60);
+            DrawVoteBar(g, kvp.Key, kvp.Value, barBounds);
+            yOffset += 80;
+        }
+    }
+
+    private void DrawVoteBar(System.Drawing.Graphics g, string answer, int percentage, RectangleF bounds)
+    {
+        var scaledBounds = ScaleRect(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        
+        // Background
+        using var bgBrush = new SolidBrush(Color.FromArgb(100, 100, 100));
+        g.FillRectangle(bgBrush, scaledBounds);
+
+        // Percentage bar
+        float barWidth = scaledBounds.Width * (percentage / 100f);
+        using var barBrush = new SolidBrush(Color.FromArgb(0, 120, 215));
+        g.FillRectangle(barBrush, scaledBounds.X, scaledBounds.Y, barWidth, scaledBounds.Height);
+
+        // Text
+        var text = $"{answer}: {percentage}%";
+        using var font = new Font("Arial", 32, FontStyle.Bold);
+        using var textBrush = new SolidBrush(Color.White);
+        DrawScaledText(g, text, font, textBrush,
+            bounds.X, bounds.Y, bounds.Width, bounds.Height);
+    }
+
+    // IGameScreen implementation
+    public void UpdateQuestion(Question question)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => UpdateQuestion(question)));
+            return;
+        }
+
+        _currentQuestion = question;
+        _selectedAnswer = null;
+        _correctAnswer = question.CorrectAnswer.ToString();
+        _isRevealing = false;
+        _showATA = false;
+        _ataVotes.Clear();
+        _visibleAnswers.Clear();
+        
+        Invalidate();
+    }
+
+    public void SelectAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => SelectAnswer(answer)));
+            return;
+        }
+
+        _selectedAnswer = answer;
+        Invalidate();
+    }
+
+    public void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
+            return;
+        }
+
+        _selectedAnswer = selectedAnswer;
+        _correctAnswer = correctAnswer;
+        _isRevealing = true;
+        Invalidate();
+    }
+
+    public void ShowAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowAnswer(answer)));
+            return;
+        }
+
+        _visibleAnswers.Add(answer);
+        Invalidate();
+    }
+
+    public void ShowCorrectAnswerToHost(string correctAnswer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowCorrectAnswerToHost(correctAnswer)));
+            return;
+        }
+
+        _correctAnswer = correctAnswer;
+        Invalidate();
+    }
+
+    public void ShowQuestion(bool show)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowQuestion(show)));
+            return;
+        }
+
+        // Question strap is always visible, just trigger repaint
+        Invalidate();
+    }
+
+    public void ShowWinnings(GameState state)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowWinnings(state)));
+            return;
+        }
+
+        // Money tree is always visible, nothing to do
+        Invalidate();
+    }
+
+    public void HideWinnings()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(HideWinnings));
+            return;
+        }
+
+        // Money tree is always visible, nothing to hide
+        Invalidate();
+    }
+
+    public void UpdateMoney(string current, string correct, string wrong, string drop, string questionsLeft)
+    {
+        // Host screen shows money tree control instead
+    }
+
+    public void ActivateLifeline(Lifeline lifeline)
+    {
+        // Could show visual effects for lifeline activation
+        if (lifeline.Type == LifelineType.AskTheAudience)
+        {
+            _showATA = true;
+            // Generate ATA results based on question percentages
+            if (_currentQuestion != null)
+            {
+                _ataVotes = new Dictionary<string, int>
+                {
+                    ["A"] = _currentQuestion.ATAPercentageA ?? 0,
+                    ["B"] = _currentQuestion.ATAPercentageB ?? 0,
+                    ["C"] = _currentQuestion.ATAPercentageC ?? 0,
+                    ["D"] = _currentQuestion.ATAPercentageD ?? 0
+                };
+                Invalidate();
+            }
+        }
+    }
+
+    public void ResetScreen()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ResetScreen));
+            return;
+        }
+
+        _currentQuestion = null;
+        _selectedAnswer = null;
+        _correctAnswer = null;
+        _isRevealing = false;
+        _showATA = false;
+        _ataVotes.Clear();
+        _currentAmount = null;
+        _visibleAnswers.Clear();
+        // Straps remain always visible
+        Invalidate();
+    }
+}

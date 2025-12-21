@@ -16,7 +16,12 @@
     <AssemblyVersion>0.2.2512.0</AssemblyVersion>
     <FileVersion>0.2.2512.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
+    <EnableDefaultItems>true</EnableDefaultItems>
   </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.Runtime.Loader.UseRidGraph" Value="true" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MillionaireGame.Core\MillionaireGame.Core.csproj" />
@@ -24,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
   </ItemGroup>
@@ -37,6 +43,11 @@
     <!-- Embed logo image and icon as resources -->
     <EmbeddedResource Include="lib\image\logo.png" />
     <EmbeddedResource Include="lib\image\logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed texture files as resources -->
+    <EmbeddedResource Include="lib\textures\*.png" />
   </ItemGroup>
 
 </Project>

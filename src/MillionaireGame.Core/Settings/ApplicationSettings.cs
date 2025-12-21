@@ -59,6 +59,9 @@ public class ApplicationSettings
     public string FFFPlayer7Name { get; set; } = "Player 7";
     public string FFFPlayer8Name { get; set; } = "Player 8";
 
+    // Sound Pack Settings
+    public string SelectedSoundPack { get; set; } = "Default";
+
     // Sound File Paths - General
     public string SoundOpening { get; set; } = "opening_theme.mp3";
     public string SoundCommercialIn { get; set; } = "commercial_in.mp3";

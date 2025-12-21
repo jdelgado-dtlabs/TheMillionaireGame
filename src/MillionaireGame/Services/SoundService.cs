@@ -9,15 +9,50 @@ public class SoundService : IDisposable
 {
     private readonly Dictionary<SoundEffect, string> _soundPaths = new();
     private readonly Dictionary<string, IWavePlayer> _activePlayers = new();
+    private readonly SoundPackManager _soundPackManager;
     private readonly object _lock = new();
     private bool _soundEnabled = true;
     private bool _disposed = false;
+    private static readonly string _baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    public SoundService()
+    {
+        _soundPackManager = new SoundPackManager();
+    }
 
     public bool SoundEnabled
     {
         get => _soundEnabled;
         set => _soundEnabled = value;
     }
+
+    /// <summary>
+    /// Convert absolute path to relative path from executable directory for logging
+    /// </summary>
+    private static string GetRelativePath(string absolutePath)
+    {
+        if (string.IsNullOrEmpty(absolutePath))
+            return absolutePath;
+
+        try
+        {
+            if (absolutePath.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                return absolutePath.Substring(_baseDirectory.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+        }
+        catch
+        {
+            // If anything fails, return the original path
+        }
+
+        return absolutePath;
+    }
+
+    /// <summary>
+    /// Gets the sound pack manager for managing sound packs
+    /// </summary>
+    public SoundPackManager GetSoundPackManager() => _soundPackManager;
 
     /// <summary>
     /// Resolve a file path - handles both absolute paths and relative paths from application directory
@@ -60,14 +95,14 @@ public class SoundService : IDisposable
             _soundPaths[effect] = resolvedPath;
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] Registered {effect}: {resolvedPath}");
+                Console.WriteLine($"[Sound] Registered {effect}: {GetRelativePath(resolvedPath)}");
             }
         }
         else
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] Warning: File not found for {effect}: {filePath}");
+                Console.WriteLine($"[Sound] Warning: File not found for {effect}: {GetRelativePath(filePath)}");
             }
         }
     }
@@ -110,6 +145,81 @@ public class SoundService : IDisposable
         if (_soundPaths.TryGetValue(effect, out var filePath))
         {
             var identifier = loop ? effect.ToString() : Guid.NewGuid().ToString();
+            await Task.Run(() => PlaySoundFile(filePath, identifier, loop));
+        }
+    }
+
+    /// <summary>
+    /// Play a sound by its key name from the sound pack
+    /// </summary>
+    public void PlaySoundByKey(string key, bool loop = false)
+    {
+        if (!_soundEnabled)
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] Playback disabled for key {key}");
+            }
+            return;
+        }
+
+        var filePath = _soundPackManager.GetSoundFile(key);
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var identifier = loop ? key : Guid.NewGuid().ToString();
+            Task.Run(() => PlaySoundFile(filePath, identifier, loop));
+        }
+        else
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] No file found for key: {key}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Play a sound by its key name and return the identifier for later stopping
+    /// </summary>
+    public string PlaySoundByKeyWithIdentifier(string key, bool loop = false)
+    {
+        if (!_soundEnabled)
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] Playback disabled for key {key}");
+            }
+            return string.Empty;
+        }
+
+        var filePath = _soundPackManager.GetSoundFile(key);
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var identifier = loop ? key : Guid.NewGuid().ToString();
+            Task.Run(() => PlaySoundFile(filePath, identifier, loop));
+            return identifier;
+        }
+        else
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] No file found for key: {key}");
+            }
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Play a sound by its key name asynchronously
+    /// </summary>
+    public async Task PlaySoundByKeyAsync(string key, bool loop = false)
+    {
+        if (!_soundEnabled) return;
+
+        var filePath = _soundPackManager.GetSoundFile(key);
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var identifier = loop ? key : Guid.NewGuid().ToString();
             await Task.Run(() => PlaySoundFile(filePath, identifier, loop));
         }
     }
@@ -167,6 +277,39 @@ public class SoundService : IDisposable
     }
 
     /// <summary>
+    /// Check if a specific sound is currently playing
+    /// </summary>
+    public bool IsSoundPlaying(string identifier)
+    {
+        lock (_lock)
+        {
+            return _activePlayers.ContainsKey(identifier);
+        }
+    }
+
+    /// <summary>
+    /// Wait for a specific sound to finish playing
+    /// </summary>
+    public async Task WaitForSoundAsync(string identifier, CancellationToken cancellationToken = default, int timeoutMs = 30000)
+    {
+        var startTime = DateTime.Now;
+        while (IsSoundPlaying(identifier) && !cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(100, cancellationToken);
+            
+            // Safety timeout
+            if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMs)
+            {
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine($"[Sound] Timeout waiting for {identifier}");
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>
     /// Play a sound file directly
     /// </summary>
     public void PlaySoundFile(string filePath, string? identifier = null, bool loop = false)
@@ -186,7 +329,7 @@ public class SoundService : IDisposable
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] File not found: {filePath} (resolved to: {resolvedPath})");
+                Console.WriteLine($"[Sound] File not found: {GetRelativePath(filePath)} (resolved to: {GetRelativePath(resolvedPath)})");
             }
             return;
         }
@@ -284,6 +427,100 @@ public class SoundService : IDisposable
     /// Load sound paths from settings
     /// </summary>
     public void LoadSoundsFromSettings(Core.Settings.ApplicationSettings settings)
+    {
+        // Try to load from selected sound pack
+        var packName = settings.SelectedSoundPack ?? "Default";
+        var success = _soundPackManager.LoadSoundPack(packName);
+        
+        if (success)
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] Loading sounds from pack: {packName}");
+            }
+            
+            LoadSoundsFromPack(_soundPackManager.CurrentSounds);
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] Registered {_soundPaths.Count} sounds to enum values");
+                Console.WriteLine($"[Sound] {_soundPackManager.CurrentSounds.Count - _soundPaths.Count} sounds available via PlaySoundByKey()");
+            }
+        }
+        else
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[Sound] Warning: Could not load sound pack '{packName}', falling back to legacy loading");
+            }
+            
+            // Fallback to legacy loading from settings
+            LoadSoundsFromSettingsLegacy(settings);
+        }
+    }
+
+    /// <summary>
+    /// Load sounds from a sound pack dictionary
+    /// </summary>
+    private void LoadSoundsFromPack(IReadOnlyDictionary<string, string> soundPack)
+    {
+        // Helper to register sound with debug logging
+        void TryRegister(SoundEffect effect, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                if (soundPack.TryGetValue(key, out var path) && !string.IsNullOrEmpty(path))
+                {
+                    RegisterSound(effect, path);
+                    return; // Use first match
+                }
+            }
+        }
+
+        // Broadcast flow sounds
+        TryRegister(SoundEffect.HostEntrance, "HostEntrance", "host_entrance");
+        TryRegister(SoundEffect.ExplainGame, "ExplainRules", "explain_rules");
+        TryRegister(SoundEffect.QuitSmall, "QuitSmall", "quit_small");
+        TryRegister(SoundEffect.QuitLarge, "QuitLarge", "quit_large");
+        TryRegister(SoundEffect.WalkAwaySmall, "WalkAwaySmall", "walk_away_small");
+        TryRegister(SoundEffect.WalkAwayLarge, "WalkAwayLarge", "walk_away_large");
+        TryRegister(SoundEffect.CloseTheme, "ClosingTheme", "close_theme");
+        TryRegister(SoundEffect.CloseUnderscore, "CloseUnderscore", "close_underscore");
+        
+        // Register common game sounds (try with and without underscores, with leading zeros)
+        TryRegister(SoundEffect.LightsDown, "Q01to05LightsDown", "Q1to5LightsDown", "q1_to_q5_lights_down");
+        TryRegister(SoundEffect.QuestionCue, "Q01to05Bed", "Q1to5Bed", "q1_to_q5_bed");
+        TryRegister(SoundEffect.FinalAnswer, "Q01Final", "Q1Final", "q1_final");
+        TryRegister(SoundEffect.CorrectAnswer, "Q01to04Correct", "Q1to4Correct", "q1_to_q4_correct");
+        TryRegister(SoundEffect.WrongAnswer, "Q01to05Wrong", "Q1to5Wrong", "q1_to_q5_wrong", "GameOver");
+        TryRegister(SoundEffect.WalkAway, "WalkAwaySmall", "walk_away_small");
+        
+        // Lifelines (try multiple naming conventions)
+        TryRegister(SoundEffect.Lifeline5050, "5050", "fifty_fifty", "FiftyFifty");
+        TryRegister(SoundEffect.LifelinePhone, "PAFStart", "paf_start", "PhoneAFriend");
+        TryRegister(SoundEffect.LifelinePAFStart, "PAFStart", "paf_start");
+        TryRegister(SoundEffect.LifelinePAFCountdown, "PAFCountdown", "paf_countdown");
+        TryRegister(SoundEffect.LifelinePAFEndEarly, "PAFEndEarly", "paf_end_call_early", "paf_end_early");
+        TryRegister(SoundEffect.LifelineATA, "ATAStart", "ata_start", "AskTheAudience");
+        TryRegister(SoundEffect.LifelineATAStart, "ATAStart", "ata_start");
+        TryRegister(SoundEffect.LifelineATAVote, "ATAVote", "ata_vote");
+        TryRegister(SoundEffect.LifelineATAEnd, "ATAEnd", "ata_end");
+        TryRegister(SoundEffect.LifelineSwitch, "SwitchActivate", "stq_start", "switch_activate");
+        
+        // Other
+        TryRegister(SoundEffect.ToHotSeat, "ToHotSeat", "to_hotseat");
+        TryRegister(SoundEffect.ExplainRules, "ExplainRules", "explain_rules");
+        TryRegister(SoundEffect.RiskMode, "RiskModeActive", "risk_mode");
+        TryRegister(SoundEffect.LifelinePing1, "Lifeline1Ping", "lifeline_1_on");
+        TryRegister(SoundEffect.LifelinePing2, "Lifeline2Ping", "lifeline_2_on");
+        TryRegister(SoundEffect.LifelinePing3, "Lifeline3Ping", "lifeline_3_on");
+        TryRegister(SoundEffect.LifelinePing4, "Lifeline4Ping", "lifeline_4_on");
+    }
+
+    /// <summary>
+    /// Legacy method: Load sound paths directly from settings (fallback)
+    /// </summary>
+    private void LoadSoundsFromSettingsLegacy(Core.Settings.ApplicationSettings settings)
     {
         // Broadcast flow sounds
         RegisterSound(SoundEffect.HostEntrance, settings.SoundHostStart);

@@ -1,6 +1,8 @@
 using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
+using MillionaireGame.Controls;
+using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Forms;
 
@@ -13,6 +15,8 @@ public partial class TVScreenForm : Form, IGameScreen
     private System.Windows.Forms.Timer? _flashTimer;
     private int _flashStep = 0;
     private bool _flashState = false;
+    private MoneyTreeControl? _moneyTreeControl;
+    private MoneyTreeService? _moneyTreeService;
 
     public TVScreenForm()
     {
@@ -25,6 +29,21 @@ public partial class TVScreenForm : Form, IGameScreen
         _flashTimer = new System.Windows.Forms.Timer();
         _flashTimer.Interval = 500; // Flash every 500ms
         _flashTimer.Tick += FlashTimer_Tick;
+    }
+
+    public void Initialize(MoneyTreeService moneyTreeService)
+    {
+        _moneyTreeService = moneyTreeService;
+        _moneyTreeControl = new MoneyTreeControl(moneyTreeService);
+        _moneyTreeControl.Location = new Point(1050, 50);
+        _moneyTreeControl.Size = new Size(250, 600);
+        _moneyTreeControl.Visible = false; // Initially hidden until Show button is clicked
+        Controls.Add(_moneyTreeControl);
+    }
+
+    public void UpdateMoneyTreeLevel(int level)
+    {
+        _moneyTreeControl?.SetCurrentLevel(level);
     }
 
     #region IGameScreen Implementation
@@ -198,6 +217,11 @@ public partial class TVScreenForm : Form, IGameScreen
         StopFlashing();
     }
 
+    public void ClearQuestionAndAnswerText()
+    {
+        // TV screen doesn't need this - it's only for host/guest screens
+    }
+
     #endregion
 
     #region Flash Animation
@@ -326,6 +350,59 @@ public partial class TVScreenForm : Form, IGameScreen
         }
     }
 
+    #endregion
+    
+    #region Money Tree Show/Hide with Slide Animation
+    
+    /// <summary>
+    /// Shows the money tree with slide-in animation from the right
+    /// </summary>
+    public async Task ShowMoneyTreeAsync()
+    {
+        if (_moneyTreeControl == null || _moneyTreeControl.Visible)
+            return;
+        
+        int targetX = ClientSize.Width - 270;
+        int startX = ClientSize.Width;
+        
+        _moneyTreeControl.Location = new Point(startX, 50);
+        _moneyTreeControl.Visible = true;
+        
+        int steps = 30;
+        int deltaX = (startX - targetX) / steps;
+        
+        for (int i = 0; i < steps; i++)
+        {
+            _moneyTreeControl.Location = new Point(startX - (deltaX * (i + 1)), 50);
+            await Task.Delay(16);
+        }
+        
+        _moneyTreeControl.Location = new Point(targetX, 50);
+    }
+    
+    /// <summary>
+    /// Hides the money tree with slide-out animation to the right
+    /// </summary>
+    public async Task HideMoneyTreeAsync()
+    {
+        if (_moneyTreeControl == null || !_moneyTreeControl.Visible)
+            return;
+        
+        int startX = _moneyTreeControl.Location.X;
+        int targetX = ClientSize.Width;
+        
+        int steps = 30;
+        int deltaX = (targetX - startX) / steps;
+        
+        for (int i = 0; i < steps; i++)
+        {
+            _moneyTreeControl.Location = new Point(startX + (deltaX * (i + 1)), 50);
+            await Task.Delay(16);
+        }
+        
+        _moneyTreeControl.Visible = false;
+    }
+    
     #endregion
 
     protected override void Dispose(bool disposing)

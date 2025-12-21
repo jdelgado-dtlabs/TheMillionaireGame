@@ -80,6 +80,7 @@ namespace MillionaireGame.Forms
             chkShowWinnings = new CheckBox();
             chkCorrectAnswer = new CheckBox();
             btnActivateRiskMode = new Button();
+            btnShowMoneyTree = new Button();
             
             // Menu
             menuStrip = new MenuStrip();
@@ -703,6 +704,24 @@ namespace MillionaireGame.Forms
             chkCorrectAnswer.UseVisualStyleBackColor = true;
             
             // 
+            // btnShowMoneyTree
+            // 
+            btnShowMoneyTree.BackColor = Color.Gray;
+            btnShowMoneyTree.Enabled = false;
+            btnShowMoneyTree.FlatAppearance.BorderColor = Color.Black;
+            btnShowMoneyTree.FlatAppearance.BorderSize = 2;
+            btnShowMoneyTree.FlatStyle = FlatStyle.Flat;
+            btnShowMoneyTree.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnShowMoneyTree.ForeColor = Color.White;
+            btnShowMoneyTree.Location = new Point(710, 345);
+            btnShowMoneyTree.Name = "btnShowMoneyTree";
+            btnShowMoneyTree.Size = new Size(120, 85);
+            btnShowMoneyTree.TabIndex = 42;
+            btnShowMoneyTree.Text = "Show Money Tree";
+            btnShowMoneyTree.UseVisualStyleBackColor = false;
+            btnShowMoneyTree.Click += btnShowMoneyTree_Click;
+            
+            // 
             // btnActivateRiskMode
             // 
             btnActivateRiskMode.BackColor = Color.Yellow;
@@ -710,12 +729,12 @@ namespace MillionaireGame.Forms
             btnActivateRiskMode.FlatAppearance.BorderSize = 2;
             btnActivateRiskMode.FlatStyle = FlatStyle.Flat;
             btnActivateRiskMode.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btnActivateRiskMode.Location = new Point(710, 345);
+            btnActivateRiskMode.Location = new Point(710, 435);
             btnActivateRiskMode.Name = "btnActivateRiskMode";
-            btnActivateRiskMode.Size = new Size(120, 175);
-            btnActivateRiskMode.TabIndex = 42;
+            btnActivateRiskMode.Size = new Size(120, 85);
+            btnActivateRiskMode.TabIndex = 43;
             btnActivateRiskMode.Text = "Activate Risk Mode";
-            btnActivateRiskMode.UseVisualStyleBackColor = false;
+            btnShowMoneyTree.UseVisualStyleBackColor = false;
             btnActivateRiskMode.Click += btnActivateRiskMode_Click;
 
             
@@ -727,6 +746,7 @@ namespace MillionaireGame.Forms
             ClientSize = new Size(980, 570);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
+            Controls.Add(btnShowMoneyTree);
             Controls.Add(btnActivateRiskMode);
             Controls.Add(chkCorrectAnswer);
             Controls.Add(chkShowWinnings);
@@ -823,6 +843,7 @@ namespace MillionaireGame.Forms
         private Button btnC;
         private Button btnD;
         private Button btnActivateRiskMode;
+        private Button btnShowMoneyTree;
         private Button btnLifeline1;
         private Button btnLifeline2;
         private Button btnLifeline3;

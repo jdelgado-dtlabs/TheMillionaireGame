@@ -80,6 +80,13 @@ public partial class ControlPanelForm : Form
     private string? _currentFinalAnswerKey = null; // Track the final answer sound key for stopping
     private string? _currentLightsDownIdentifier = null; // Track the lights down sound identifier (GUID) for stopping
     
+    // Money Tree demo animation state tracking
+    private System.Windows.Forms.Timer? _moneyTreeDemoTimer;
+    private int _moneyTreeDemoLevel = 0;
+    private bool _isMoneyTreeDemoActive = false;
+    private bool _isExplainGameActive = false; // Track if Explain Game mode is active
+    private const int MONEY_TREE_DEMO_INTERVAL = 500; // milliseconds between level changes
+    
     // Question reveal state tracking
     private int _answerRevealStep = 0; // 0 = not started, 1 = question shown, 2-5 = answers A-D shown
     private Question? _currentQuestion = null; // Store current question for progressive reveal
@@ -211,6 +218,9 @@ public partial class ControlPanelForm : Form
         nmrLevel.Value = e.NewLevel;
         UpdateMoneyDisplay();
         UpdateRiskModeButton();
+        
+        // Update money tree on all screens
+        UpdateMoneyTreeOnScreens(e.NewLevel);
     }
 
     private void OnModeChanged(object? sender, GameModeChangedEventArgs e)
@@ -285,6 +295,24 @@ public partial class ControlPanelForm : Form
                 btnActivateRiskMode.Text = "Activate Risk Mode";
             }
             btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
+        }
+    }
+    
+    /// <summary>
+    /// Updates money tree display on all open screens
+    /// </summary>
+    private void UpdateMoneyTreeOnScreens(int level)
+    {
+        _hostScreen?.UpdateMoneyTreeLevel(level);
+        _guestScreen?.UpdateMoneyTreeLevel(level);
+        
+        if (_tvScreen is TVScreenForm tvForm)
+        {
+            tvForm.UpdateMoneyTreeLevel(level);
+        }
+        else if (_tvScreen is TVScreenFormScalable tvScalable)
+        {
+            tvScalable.UpdateMoneyTreeLevel(level);
         }
     }
 
@@ -585,6 +613,31 @@ public partial class ControlPanelForm : Form
         // Disable question level selector during active question
         nmrLevel.Enabled = false;
         
+        // Exit Explain Game mode
+        _isExplainGameActive = false;
+        
+        // Stop money tree demo if running
+        StopMoneyTreeDemo();
+        
+        // Hide money tree if visible on TV screen
+        if (btnShowMoneyTree.Text == "Hide Money Tree" || btnShowMoneyTree.Text == "Demo Money Tree" || btnShowMoneyTree.Text == "Demo Running...")
+        {
+            if (_tvScreen is TVScreenFormScalable tvScalable)
+            {
+                await tvScalable.HideMoneyTreeAsync();
+            }
+            else if (_tvScreen is TVScreenForm tvForm)
+            {
+                await tvForm.HideMoneyTreeAsync();
+            }
+            
+            // Reset button to Show state
+            btnShowMoneyTree.BackColor = Color.LimeGreen;
+            btnShowMoneyTree.ForeColor = Color.Black;
+            btnShowMoneyTree.Text = "Show Money Tree";
+            btnShowMoneyTree.Enabled = true;
+        }
+        
         // Stop any playing sounds first
         _soundService.StopAllSounds();
         
@@ -619,6 +672,9 @@ public partial class ControlPanelForm : Form
             {
                 chkShowWinnings.Checked = false;
             }
+            
+            // Clear text on host and guest screens for Q6+
+            _screenService.ClearQuestionAndAnswerText();
         }
         
         // Enable Question button (green) for all questions after lights down
@@ -769,7 +825,126 @@ public partial class ControlPanelForm : Form
             }
         }
     }
+    
+    private async void btnShowMoneyTree_Click(object? sender, EventArgs e)
+    {
+        if (btnShowMoneyTree.Text == "Show Money Tree")
+        {
+            // Hide the winning strap if it's showing (to avoid overlap)
+            if (chkShowWinnings.Checked)
+            {
+                chkShowWinnings.Checked = false;
+            }
+            
+            // Show the money tree on TV screen only
+            if (_tvScreen is TVScreenFormScalable tvScalable)
+            {
+                await tvScalable.ShowMoneyTreeAsync();
+            }
+            else if (_tvScreen is TVScreenForm tvForm)
+            {
+                await tvForm.ShowMoneyTreeAsync();
+            }
+            
+            // Update button state based on whether Explain Game is active
+            if (_isExplainGameActive)
+            {
+                // In Explain Game mode - go directly to Demo state
+                btnShowMoneyTree.BackColor = Color.DeepSkyBlue;
+                btnShowMoneyTree.ForeColor = Color.Black;
+                btnShowMoneyTree.Text = "Demo Money Tree";
+            }
+            else
+            {
+                // Normal mode - just hide
+                btnShowMoneyTree.BackColor = Color.Orange;
+                btnShowMoneyTree.ForeColor = Color.Black;
+                btnShowMoneyTree.Text = "Hide Money Tree";
+            }
+        }
+        else if (btnShowMoneyTree.Text == "Demo Money Tree")
+        {
+            // Start demo animation - progress through levels 1-15
+            StartMoneyTreeDemo();
+        }
+        else // "Hide Money Tree"
+        {
+            // Stop demo if it's running
+            StopMoneyTreeDemo();
+            
+            // Hide the money tree from TV screen
+            if (_tvScreen is TVScreenFormScalable tvScalable)
+            {
+                await tvScalable.HideMoneyTreeAsync();
+            }
+            else if (_tvScreen is TVScreenForm tvForm)
+            {
+                await tvForm.HideMoneyTreeAsync();
+            }
+            
+            // Update button state
+            btnShowMoneyTree.BackColor = Color.LimeGreen;
+            btnShowMoneyTree.ForeColor = Color.Black;
+            btnShowMoneyTree.Text = "Show Money Tree";
+        }
+    }
 
+    private void StartMoneyTreeDemo()
+    {
+        _isMoneyTreeDemoActive = true;
+        _moneyTreeDemoLevel = 1; // Start at level 1
+        
+        // Initialize timer if not already created
+        if (_moneyTreeDemoTimer == null)
+        {
+            _moneyTreeDemoTimer = new System.Windows.Forms.Timer();
+            _moneyTreeDemoTimer.Interval = MONEY_TREE_DEMO_INTERVAL;
+            _moneyTreeDemoTimer.Tick += MoneyTreeDemoTimer_Tick;
+        }
+        
+        // Update to first level immediately
+        UpdateMoneyTreeOnScreens(_moneyTreeDemoLevel);
+        
+        // Start timer for subsequent levels
+        _moneyTreeDemoTimer.Start();
+        
+        // Update button appearance during demo
+        btnShowMoneyTree.BackColor = Color.Yellow;
+        btnShowMoneyTree.ForeColor = Color.Black;
+        btnShowMoneyTree.Text = "Demo Running...";
+        btnShowMoneyTree.Enabled = false;
+    }
+    
+    private void MoneyTreeDemoTimer_Tick(object? sender, EventArgs e)
+    {
+        _moneyTreeDemoLevel++;
+        
+        if (_moneyTreeDemoLevel <= 15)
+        {
+            // Update all screens with new level
+            UpdateMoneyTreeOnScreens(_moneyTreeDemoLevel);
+        }
+        else
+        {
+            // Demo complete - stop and revert to Hide state
+            StopMoneyTreeDemo();
+            btnShowMoneyTree.BackColor = Color.Orange;
+            btnShowMoneyTree.ForeColor = Color.Black;
+            btnShowMoneyTree.Text = "Hide Money Tree";
+            btnShowMoneyTree.Enabled = true;
+        }
+    }
+    
+    private void StopMoneyTreeDemo()
+    {
+        if (_moneyTreeDemoTimer != null)
+        {
+            _moneyTreeDemoTimer.Stop();
+        }
+        _isMoneyTreeDemoActive = false;
+        _moneyTreeDemoLevel = 0;
+    }
+    
     // DEPRECATED: Reset button removed from UI - automated sequences handle all resets
     // Keeping this method commented out for reference in case manual reset is needed in future
     /*
@@ -1488,6 +1663,11 @@ public partial class ControlPanelForm : Form
         btnLightsDown.BackColor = Color.LimeGreen;
         btnLightsDown.ForeColor = Color.Black;
         
+        // Enable Show Money Tree button (green)
+        btnShowMoneyTree.Enabled = true;
+        btnShowMoneyTree.BackColor = Color.LimeGreen;
+        btnShowMoneyTree.ForeColor = Color.Black;
+        
         // Enable question level selector - allow setting before first lights down
         nmrLevel.Enabled = true;
     }
@@ -1499,6 +1679,9 @@ public partial class ControlPanelForm : Form
         
         // Enter demo mode - lifelines turn yellow
         SetLifelineMode(LifelineMode.Demo);
+        
+        // Set explain game active state
+        _isExplainGameActive = true;
     }
 
     /// <summary>
@@ -1561,6 +1744,13 @@ public partial class ControlPanelForm : Form
         _pafStage = PAFStage.NotStarted;
         _pafLifelineNumber = 0;
         _pafSecondsRemaining = 30;
+        
+        // Reset money tree demo state
+        _moneyTreeDemoTimer?.Stop();
+        _moneyTreeDemoTimer?.Dispose();
+        _moneyTreeDemoTimer = null;
+        _isMoneyTreeDemoActive = false;
+        _moneyTreeDemoLevel = 0;
         
         // Reset ATA state
         _ataTimer?.Stop();
@@ -2569,6 +2759,7 @@ public partial class ControlPanelForm : Form
         if (_hostScreen == null || _hostScreen.IsDisposed)
         {
             _hostScreen = new HostScreenForm();
+            _hostScreen.Initialize(_gameService.MoneyTree);
             _screenService.RegisterScreen(_hostScreen);
             _hostScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_hostScreen);
             
@@ -2617,6 +2808,7 @@ public partial class ControlPanelForm : Form
         if (_guestScreen == null || _guestScreen.IsDisposed)
         {
             _guestScreen = new GuestScreenForm();
+            _guestScreen.Initialize(_gameService.MoneyTree);
             _screenService.RegisterScreen(_guestScreen);
             _guestScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_guestScreen);
             
@@ -2691,6 +2883,7 @@ public partial class ControlPanelForm : Form
         {
             // Use the new scalable TV screen
             var tvForm = new TVScreenFormScalable();
+            tvForm.Initialize(_gameService.MoneyTree);
             _tvScreen = tvForm;
             _screenService.RegisterScreen(_tvScreen);
             tvForm.FormClosed += (s, args) => _screenService.UnregisterScreen(_tvScreen);
