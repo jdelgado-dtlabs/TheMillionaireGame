@@ -8,7 +8,46 @@
 
 ## Session Summary
 
-### Latest Session (Debug Infrastructure Improvements) - December 22, 2025
+### Latest Session (Threading Fix - RevealAnswer Refactor) - December 22, 2025
+
+#### Complete async/await Elimination in RevealAnswer
+- ✅ **Threading Issue Resolution**
+  - Fixed persistent cross-thread exceptions during answer reveal sequences
+  - Root cause: `async void` with `await Task.Delay` causing continuations on ThreadPool threads
+  - Solution: Complete removal of async/await, replaced with Windows Forms Timer-based delays
+  - RevealAnswer changed from `async void` to `void` (synchronous method)
+  - All UI operations now guaranteed to execute on UI thread (message pump)
+  
+- ✅ **Timer-Based Delay Implementation**
+  - **initialDelayTimer**: 2-second delay before wrong answer sequence (lose sound)
+  - **bedMusicTimer**: 2-second delay for Q1-5 bed music restart after correct answer
+  - **winningsTimer**: 2-second delay before showing winnings after correct answer
+  - **completionTimer**: 5-second delay for safety net animation completion
+  - **q15Timer**: 25-second delay for Q15 victory sound sequence
+  - All timers use `System.Windows.Forms.Timer` (fires on UI thread via message pump)
+  - Proper disposal in Tick handlers prevents resource leaks
+  
+- ✅ **Code Organization Refactoring**
+  - Created `ShowWinningsAndEnableButtons(int currentQuestionNumber)` helper method
+  - Created `HandleQ15Win()` helper for Q15 victory sequence management
+  - Refactored `ContinueWrongAnswerSequence(int droppedLevel)` to use timer
+  - Created `FinishWrongAnswerSequence()` for final wrong answer UI updates
+  - Cleaner separation of concerns and improved readability
+  
+- ✅ **Benefits**
+  - Thread-safe by design: Windows Forms Timer always fires on UI thread
+  - No thread context switching possible
+  - No cross-thread exceptions can occur
+  - No need for Invoke/BeginInvoke checks
+  - Synchronous flow easier to understand and debug
+  - Eliminates async void pitfalls entirely
+
+- ✅ **Debug Logging Cleanup**
+  - Removed misleading stack trace logging from `StartSafetyNetAnimation()`
+  - Stack traces now only appear for actual errors
+  - Kept informational debug messages for troubleshooting
+
+### Previous Session (Debug Infrastructure Improvements) - December 22, 2025
 
 #### Console Management System
 - ✅ **Settings Integration**

@@ -4,6 +4,17 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [Unreleased] - 2025-12-22
 
+### Fixed
+- **Threading Issues in Answer Reveal**
+  - Fixed persistent cross-thread exceptions during answer reveal sequences
+  - Eliminated all async/await from RevealAnswer method - replaced with timer-based delays
+  - Changed RevealAnswer from async void to void (synchronous method)
+  - All UI operations now guaranteed to execute on UI thread
+  - Five timers implemented: initialDelayTimer, bedMusicTimer, winningsTimer, completionTimer, q15Timer
+  - Benefits: Thread-safe by design, no context switching, no Invoke() needed, easier to debug
+  - Created helper methods: ShowWinningsAndEnableButtons(), HandleQ15Win(), FinishWrongAnswerSequence()
+  - Removed misleading stack trace logging from StartSafetyNetAnimation()
+
 ### Added
 - **Console Management System**
   - Added "Console" group with "Show Console" checkbox in Settings > Screens

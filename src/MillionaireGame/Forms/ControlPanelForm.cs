@@ -1143,7 +1143,6 @@ public partial class ControlPanelForm : Form
         if (Program.DebugMode)
         {
             Console.WriteLine($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}, playSound={playSound}, targetLevel={targetLevelAfterAnimation}");
-            Console.WriteLine($"[SafetyNetAnimation] Stack trace: {Environment.StackTrace}");
         }
         
         // Optionally play safety net lock-in sound
