@@ -57,6 +57,9 @@ public class ApplicationSettings
 
     // Sound Pack Settings
     public string SelectedSoundPack { get; set; } = "Default";
+
+    // Debug Console Settings
+    public bool ShowConsole { get; set; } = false;
 }
 
 /// <summary>

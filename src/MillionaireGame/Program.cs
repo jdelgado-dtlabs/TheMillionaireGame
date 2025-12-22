@@ -16,6 +16,9 @@ internal static class Program
     [DllImport("kernel32.dll")]
     private static extern bool FreeConsole();
 
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetConsoleWindow();
+
     public static bool DebugMode { get; private set; }
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
@@ -33,7 +36,13 @@ internal static class Program
         DebugMode = true;
         #endif
         
-        if (DebugMode)
+        // Settings are stored in XML for now (database migration disabled)
+        // Load application settings from XML first to check console setting
+        var appSettings = new ApplicationSettingsManager();
+        appSettings.LoadSettings();
+        
+        // Allocate console in debug mode or if ShowConsole is enabled in release mode
+        if (DebugMode || appSettings.Settings.ShowConsole)
         {
             // Allocate console window for debug output
             AllocConsole();
@@ -53,19 +62,14 @@ internal static class Program
         var sqlSettings = new SqlSettingsManager();
         sqlSettings.LoadSettings();
 
-        if (DebugMode)
+        if (DebugMode || appSettings.Settings.ShowConsole)
         {
             Console.WriteLine("Loading SQL settings...");
             Console.WriteLine($"Connection string configured: {!string.IsNullOrEmpty(sqlSettings.Settings.GetConnectionString())}");
             Console.WriteLine();
         }
 
-        // Settings are stored in XML for now (database migration disabled)
-        // Load application settings from XML
-        var appSettings = new ApplicationSettingsManager();
-        appSettings.LoadSettings();
-
-        if (DebugMode)
+        if (DebugMode || appSettings.Settings.ShowConsole)
         {
             Console.WriteLine("Application settings loaded from XML.");
             Console.WriteLine();
@@ -133,5 +137,40 @@ internal static class Program
         // Create and run main control panel
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
         Application.Run(controlPanel);
+    }
+
+    /// <summary>
+    /// Shows or hides the console window based on the current setting
+    /// </summary>
+    public static void UpdateConsoleVisibility(bool showConsole)
+    {
+        #if DEBUG
+        // In debug mode, console is always visible
+        return;
+        #else
+        IntPtr consoleWindow = GetConsoleWindow();
+        
+        if (showConsole)
+        {
+            // Show console if it doesn't exist
+            if (consoleWindow == IntPtr.Zero)
+            {
+                AllocConsole();
+                Console.WriteLine("===========================================");
+                Console.WriteLine("  THE MILLIONAIRE GAME - CONSOLE");
+                Console.WriteLine("===========================================");
+                Console.WriteLine($"Console opened at {DateTime.Now}");
+                Console.WriteLine();
+            }
+        }
+        else
+        {
+            // Hide console by freeing it
+            if (consoleWindow != IntPtr.Zero)
+            {
+                FreeConsole();
+            }
+        }
+        #endif
     }
 }

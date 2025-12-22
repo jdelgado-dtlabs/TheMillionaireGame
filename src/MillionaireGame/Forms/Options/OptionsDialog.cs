@@ -96,6 +96,17 @@ public partial class OptionsDialog : Form
             cmbSoundPack.SelectedIndex = 0; // Default to first pack if selected pack not found
         }
         
+        // Load console settings
+        chkShowConsole.Checked = _settings.ShowConsole;
+#if DEBUG
+        // In debug mode, always show console and disable checkbox
+        chkShowConsole.Checked = true;
+        chkShowConsole.Enabled = false;
+#else
+        // In release mode, allow user control
+        chkShowConsole.Enabled = true;
+#endif
+        
         // Load money tree settings
         LoadMoneyTreeSettings();
         
@@ -259,6 +270,11 @@ public partial class OptionsDialog : Form
             _settings.SelectedSoundPack = cmbSoundPack.SelectedItem.ToString() ?? "Default";
         }
 
+        // Console settings (only save in release mode, debug is always true)
+#if !DEBUG
+        _settings.ShowConsole = chkShowConsole.Checked;
+#endif
+
         // Save money tree settings
         SaveMoneyTreeSettings();
 
@@ -311,6 +327,10 @@ public partial class OptionsDialog : Form
 #endif
         
         SaveSettings();
+        
+        // Update console visibility based on new setting
+        Program.UpdateConsoleVisibility(_settings.ShowConsole);
+        
         SettingsApplied?.Invoke(this, EventArgs.Empty);
         DialogResult = DialogResult.OK;
         Close();

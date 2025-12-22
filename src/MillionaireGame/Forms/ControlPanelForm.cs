@@ -901,14 +901,8 @@ public partial class ControlPanelForm : Form
             return; // Sequence was cancelled
         }
         
-        // Only show message box in debug mode (non-blocking)
-        if (Program.DebugMode)
-        {
-#pragma warning disable CS4014
-            Task.Run(() => MessageBox.Show($"Total winnings: {winnings}", 
-                "Walk Away", MessageBoxButtons.OK, MessageBoxIcon.Information));
-#pragma warning restore CS4014
-        }
+        // Log walk away to console
+        Console.WriteLine($"[WALK AWAY] Player walked away with: {winnings}");
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)
@@ -2055,14 +2049,8 @@ public partial class ControlPanelForm : Form
         // Give sound time to register before checking status
         await Task.Delay(100);
         
-        // Only show message box in debug mode (non-blocking)
-        if (Program.DebugMode)
-        {
-#pragma warning disable CS4014
-            Task.Run(() => MessageBox.Show($"Total Winnings: {winnings}\n\nThanks for playing!", 
-                "Game Over", MessageBoxButtons.OK, MessageBoxIcon.Information));
-#pragma warning restore CS4014
-        }
+        // Log final winnings to console
+        Console.WriteLine($"[GAME OVER] Total Winnings: {winnings} - Thanks for playing!");
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)

@@ -8,7 +8,52 @@
 
 ## Session Summary
 
-### Latest Session (Preview Screen Feature) - December 22, 2025
+### Latest Session (Debug Infrastructure Improvements) - December 22, 2025
+
+#### Console Management System
+- ✅ **Settings Integration**
+  - Added "Console" group to Options dialog (Settings > Screens) at bottom
+  - "Show Console" checkbox controls console window visibility
+  - Debug mode: Checkbox checked and disabled (console always visible)
+  - Release mode: User can toggle console window visibility
+  - ShowConsole property added to ApplicationSettings with XML persistence
+  
+- ✅ **Windows API Integration**
+  - AllocConsole() - Creates new console window
+  - FreeConsole() - Closes console window
+  - GetConsoleWindow() - Gets handle to check if console exists
+  - Program.UpdateConsoleVisibility() public method for runtime console management
+  - Console output persists in memory when window is closed and reopened
+  
+- ✅ **Debug Logging Infrastructure**
+  - Replaced MessageBox.Show() dialogs with Console.WriteLine() throughout
+  - Walk Away: `Console.WriteLine($"[WALK AWAY] Player walked away with: {winnings}");`
+  - Game Over: `Console.WriteLine($"[GAME OVER] Total Winnings: {winnings} - Thanks for playing!");`
+  - Tagged prefix format: [TAG] Message for easy filtering and identification
+  - Consistent console-first approach for all debug notifications
+  
+- ✅ **TV Screen Answer Highlighting Fix**
+  - Fixed TVScreenFormScalable not showing correct answer when player selects wrong answer
+  - Modified DrawAnswerBox() to check `_correctAnswer == letter` independently
+  - Previous bug: Required BOTH `_selectedAnswer == letter && _correctAnswer == letter` to be true
+  - Correct answer now highlights green even when different from selected answer
+  - Wrong answer shows in red as expected
+  - TVScreenForm (non-scalable) already had correct implementation in ShowFinalAnswer()
+
+### Session: Wrong Answer Display Improvements - December 22, 2025
+
+#### Money Tree and Safety Net Fixes
+- ✅ **Wrong Answer Display**
+  - Fixed money tree displaying wrong value instead of dropped value after wrong answer
+  - Fixed safety net animation playing with sound on wrong answer (now silent animation only)
+  - Fixed TV screens showing correct winnings amount after wrong answer
+  - Fixed dialog boxes showing correct dropped winnings value
+  - GetDroppedLevel() calculates safety net level (0, 5, or 10) from WrongValue
+  - ParseMoneyValue() parses formatted money strings for comparison
+  - _finalWinningsAmount stores dropped value before animation
+  - StartSafetyNetAnimation() accepts optional playSound and targetLevelAfterAnimation parameters
+
+### Session: Preview Screen Feature - December 22, 2025
 
 #### Unified Preview Window System
 - ✅ **PreviewScreenForm Implementation**

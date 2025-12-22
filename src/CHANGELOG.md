@@ -5,6 +5,14 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2025-12-22
 
 ### Added
+- **Console Management System**
+  - Added "Console" group with "Show Console" checkbox in Settings > Screens
+  - Debug mode: Checkbox checked and disabled (console always visible)
+  - Release mode: User can toggle console window visibility via checkbox
+  - Console window show/hide functionality with Windows API integration (AllocConsole/FreeConsole)
+  - Console output persists when window is reopened
+  - ShowConsole property added to ApplicationSettings with XML persistence
+
 - **Preview Screen Feature**
   - Unified preview window showing Host, Guest, and TV screens simultaneously
   - Two orientation modes: Vertical (stacked) and Horizontal (side-by-side)
@@ -43,6 +51,23 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   - src/.gitignore now only tracks: config.xml, sql.xml (runtime configs)
 
 ### Fixed
+- **TV Screen Answer Highlighting**
+  - Fixed TV screens (both live and preview) not showing correct answer when player selects wrong answer
+  - Modified TVScreenFormScalable.DrawAnswerBox() to independently show correct answer in green
+  - Correct answer now highlights green even when different from selected answer
+  - Wrong answer shows in red as expected
+
+- **Debug Logging Infrastructure**
+  - Replaced Walk Away and Thanks for Playing MessageBox dialogs with console logging
+  - All game events now use Console.WriteLine() with tagged prefixes ([WALK AWAY], [GAME OVER])
+  - Consistent console-first approach for all debug notifications
+
+- **Wrong Answer Display**
+  - Fixed money tree displaying wrong value instead of dropped value after wrong answer
+  - Fixed safety net animation playing with sound on wrong answer (now silent animation only)
+  - Fixed TV screens showing correct winnings amount after wrong answer
+  - Fixed dialog boxes showing correct dropped winnings value
+
 - **Preview Screen Updates**
   - Fixed demo money tree animation not displaying on preview screens
   - Fixed safety net lock-in animation not displaying on preview screens

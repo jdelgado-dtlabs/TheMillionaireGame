@@ -33,6 +33,8 @@ namespace MillionaireGame.Forms.Options
             cmbMonitorGuest = new ComboBox();
             cmbMonitorTV = new ComboBox();
             btnIdentifyMonitors = new Button();
+            grpConsole = new GroupBox();
+            chkShowConsole = new CheckBox();
             tabBroadcast = new TabPage();
             grpBroadcast = new GroupBox();
             tabLifelines = new TabPage();
@@ -98,6 +100,7 @@ namespace MillionaireGame.Forms.Options
             tabGeneral.SuspendLayout();
             grpPreviews.SuspendLayout();
             grpMultipleMonitorControl.SuspendLayout();
+            grpConsole.SuspendLayout();
             tabBroadcast.SuspendLayout();
             grpBroadcast.SuspendLayout();
             tabLifelines.SuspendLayout();
@@ -126,6 +129,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // tabGeneral
             // 
+            tabGeneral.Controls.Add(grpConsole);
             tabGeneral.Controls.Add(grpMultipleMonitorControl);
             tabGeneral.Controls.Add(grpPreviews);
             tabGeneral.Location = new Point(4, 24);
@@ -311,6 +315,27 @@ namespace MillionaireGame.Forms.Options
             btnIdentifyMonitors.Text = "Identify Monitors";
             btnIdentifyMonitors.UseVisualStyleBackColor = true;
             btnIdentifyMonitors.Click += btnIdentifyMonitors_Click;
+            // 
+            // grpConsole
+            // 
+            grpConsole.Controls.Add(chkShowConsole);
+            grpConsole.Location = new Point(16, 370);
+            grpConsole.Name = "grpConsole";
+            grpConsole.Size = new Size(570, 60);
+            grpConsole.TabIndex = 2;
+            grpConsole.TabStop = false;
+            grpConsole.Text = "Console";
+            // 
+            // chkShowConsole
+            // 
+            chkShowConsole.AutoSize = true;
+            chkShowConsole.Location = new Point(20, 25);
+            chkShowConsole.Name = "chkShowConsole";
+            chkShowConsole.Size = new Size(103, 19);
+            chkShowConsole.TabIndex = 0;
+            chkShowConsole.Text = "Show Console";
+            chkShowConsole.UseVisualStyleBackColor = true;
+            chkShowConsole.CheckedChanged += Control_Changed;
             // 
             // tabBroadcast
             // 
@@ -676,6 +701,8 @@ namespace MillionaireGame.Forms.Options
             grpPreviews.PerformLayout();
             grpMultipleMonitorControl.ResumeLayout(false);
             grpMultipleMonitorControl.PerformLayout();
+            grpConsole.ResumeLayout(false);
+            grpConsole.PerformLayout();
             tabBroadcast.ResumeLayout(false);
             grpBroadcast.ResumeLayout(false);
             grpBroadcast.PerformLayout();
@@ -774,6 +801,8 @@ namespace MillionaireGame.Forms.Options
         private Button btnRemovePack;
         private Button btnExportExample;
         private ListBox lstSoundPackInfo;
+        private GroupBox grpConsole;
+        private CheckBox chkShowConsole;
     }
 }
 

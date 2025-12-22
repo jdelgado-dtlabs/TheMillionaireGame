@@ -147,12 +147,19 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // Determine which texture to use
         var elementType = TextureManager.ElementType.AnswerLeftNormal;
         
-        if (_isRevealing && _selectedAnswer == letter && _correctAnswer == letter)
+        if (_isRevealing && _correctAnswer == letter)
         {
+            // Always show correct answer in green
             elementType = isLeft ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
+        }
+        else if (_isRevealing && _selectedAnswer == letter && _selectedAnswer != _correctAnswer)
+        {
+            // Show wrong answer in red (final answer that was incorrect)
+            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
         }
         else if (_selectedAnswer == letter)
         {
+            // Show selected answer (before reveal)
             elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
         }
         else
