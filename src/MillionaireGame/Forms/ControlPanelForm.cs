@@ -93,6 +93,8 @@ public partial class ControlPanelForm : Form
     private int _safetyNetFlashCount = 0;
     private bool _safetyNetFlashState = false; // true = highlighted, false = normal
     private int _pendingSafetyNetLevel = 0; // Tracks if Q5 (5) or Q10 (10) just passed and lock-in is available
+    private int _safetyNetAnimationTargetLevel = 0; // Level to stay on after animation completes
+    private bool _safetyNetAnimationPlaySound = true; // Whether to play sound during animation
     private const int SAFETY_NET_FLASH_INTERVAL = 300; // milliseconds between flashes
     private const int SAFETY_NET_FLASH_TOTAL = 6; // total number of flashes (3 on, 3 off)
     
@@ -1035,8 +1037,8 @@ public partial class ControlPanelForm : Form
             btnShowMoneyTree.Text = "Locking In...";
             btnShowMoneyTree.Enabled = false;
             
-            // Start the animation
-            StartSafetyNetAnimation(levelToLock);
+            // Start the animation with sound and revert to current level after
+            StartSafetyNetAnimation(levelToLock, playSound: true, targetLevelAfterAnimation: _gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
             
             // Wait for animation to complete (6 flashes × 300ms = 1800ms + small buffer)
             await Task.Delay(2000);
@@ -1141,18 +1143,23 @@ public partial class ControlPanelForm : Form
     /// Starts the safety net lock-in animation for Q5 or Q10
     /// Flashes the safety net level 3 times to show it's locked in
     /// </summary>
-    private void StartSafetyNetAnimation(int safetyNetLevel)
+    private void StartSafetyNetAnimation(int safetyNetLevel, bool playSound = true, int? targetLevelAfterAnimation = null)
     {
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}");
+            Console.WriteLine($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}, playSound={playSound}, targetLevel={targetLevelAfterAnimation}");
             Console.WriteLine($"[SafetyNetAnimation] Stack trace: {Environment.StackTrace}");
         }
         
-        // Play safety net lock-in sound
-        _soundService.PlaySound(SoundEffect.SetSafetyNet, "safety_net_lock_in", loop: false);
+        // Optionally play safety net lock-in sound
+        _safetyNetAnimationPlaySound = playSound;
+        if (playSound)
+        {
+            _soundService.PlaySound(SoundEffect.SetSafetyNet, "safety_net_lock_in", loop: false);
+        }
         
         _safetyNetAnimationLevel = safetyNetLevel;
+        _safetyNetAnimationTargetLevel = targetLevelAfterAnimation ?? safetyNetLevel; // Default to animation level if not specified
         _safetyNetFlashCount = 0;
         _safetyNetFlashState = false;
         
@@ -1181,12 +1188,12 @@ public partial class ControlPanelForm : Form
             // Animation complete, stop timer
             StopSafetyNetAnimation();
             
-            // Ensure money tree returns to normal state (showing current level)
-            UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
+            // Update money tree to target level (stays on dropped level for wrong answer, reverts for correct answer)
+            UpdateMoneyTreeOnScreens(_safetyNetAnimationTargetLevel);
             
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[SafetyNetAnimation] Animation complete for level {_safetyNetAnimationLevel}");
+                Console.WriteLine($"[SafetyNetAnimation] Animation complete for level {_safetyNetAnimationLevel}, staying on target level {_safetyNetAnimationTargetLevel}");
             }
         }
         else
@@ -3015,8 +3022,8 @@ public partial class ControlPanelForm : Form
             // If dropped to a safety net level (Q5 or Q10), play lock-in animation
             if (droppedLevel == 5 || droppedLevel == 10)
             {
-                // Start safety net lock-in animation
-                StartSafetyNetAnimation(droppedLevel);
+                // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
+                StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
                 
                 // Wait for animation to complete (12 flashes × 400ms = 4800ms + small buffer)
                 await Task.Delay(5000);
