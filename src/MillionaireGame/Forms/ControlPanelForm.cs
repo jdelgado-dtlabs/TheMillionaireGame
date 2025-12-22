@@ -436,6 +436,9 @@ public partial class ControlPanelForm : Form
         {
             tvScalable.UpdateMoneyTreeLevel(level);
         }
+        
+        // Update preview screen if open
+        _previewScreen?.UpdateMoneyTreeLevel(level);
     }
 
     private void OnLifelineUsed(object? sender, LifelineUsedEventArgs e)
@@ -1238,6 +1241,15 @@ public partial class ControlPanelForm : Form
             tvScalable.Invoke((MethodInvoker)delegate
             {
                 tvScalable.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+            });
+        }
+        
+        // Preview screen
+        if (_previewScreen != null)
+        {
+            _previewScreen.Invoke((MethodInvoker)delegate
+            {
+                _previewScreen.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
             });
         }
     }

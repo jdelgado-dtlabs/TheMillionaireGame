@@ -27,6 +27,8 @@
   - Timer-based refresh every 100ms
   - Overlay labels for screen identification (Host, Guest, TV)
   - Proper aspect ratio scaling with letterbox/pillarbox support
+  - Demo money tree animation support (UpdateMoneyTreeLevel method)
+  - Safety net lock-in flash animation support (UpdateMoneyTreeWithSafetyNetFlash method)
   
 - ✅ **Settings Integration**
   - Reorganized Options dialog into two groups:
@@ -48,6 +50,40 @@
   - Border restoration with FormWindowState tracking and BeginInvoke deferral
   - Fixed double dialog bug on Cancel with unsaved changes
   - Proper WndProc message handling for resize constraints
+
+- ✅ **Bug Fixes**
+  - Fixed demo money tree animation not displaying on preview screens
+  - Fixed safety net lock-in animation not displaying on preview screens
+  - Added UpdateMoneyTreeLevel and UpdateMoneyTreeWithSafetyNetFlash to PreviewScreenForm
+  - Updated ControlPanelForm to call preview screen update methods
+
+### Session: Safety Net Lock-In Animation - December 22, 2025
+
+#### Safety Net Animation System
+- ✅ **Lock-In Flash Animation**
+  - Alternating graphic overlay when passing safety net levels (Q5/Q10)
+  - Timer-based animation with configurable flash count and interval
+  - Uses alternate position overlay texture (999_Tree_05_lck_alt.png, 999_Tree_10_lck_alt.png)
+  - SAFETY_NET_FLASH_INTERVAL = 400ms per flash
+  - SAFETY_NET_FLASH_TOTAL = 6 complete flashes (12 state changes)
+  - Synchronized across Host, Guest, TV, and Preview screens
+  
+- ✅ **Sound Integration**
+  - PlaySound(SoundEffect.SetSafetyNet, "safety_net_lock_in") when animation starts
+  - Non-looping sound effect synchronized with visual flash
+  
+- ✅ **Implementation Details**
+  - StartSafetyNetAnimation(int safetyNetLevel) triggers animation
+  - UpdateMoneyTreeWithSafetyNetFlash(int level, bool flashState) updates all screens
+  - SafetyNetAnimationTimer_Tick() alternates flash state every 400ms
+  - Animation automatically stops after 6 flashes and returns to normal display
+  - Supports both standard (Q5, Q10) and custom safety net levels
+  
+- ✅ **Screen Support**
+  - HostScreenForm: _useSafetyNetAltGraphic flag switches between normal/alternate overlay
+  - GuestScreenForm: Identical implementation to HostScreenForm
+  - TVScreenFormScalable: Same animation support with scalable rendering
+  - PreviewScreenForm: Propagates animation to all three preview panel instances
 
 ### Previous Session (Graphical Money Tree Implementation) - December 21, 2025
 

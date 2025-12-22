@@ -14,6 +14,8 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   - Toggle visibility from Screens menu
   - Dedicated screen instances to prevent conflicts with main display screens
   - Settings integration: Preview Orientation dropdown in Options dialog
+  - Demo money tree animation support on preview screens
+  - Safety net lock-in flash animation support on preview screens
 
 - **Sound Files to Repository**
   - Added Default soundpack with 123 sound files (120 MP3s + soundpack.xml + README.md)
@@ -33,6 +35,12 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   - Removed .github/copilot-instructions.md from git tracking (keeping local file)
   - Removed redundant ignore patterns already covered by root .gitignore
   - src/.gitignore now only tracks: config.xml, sql.xml (runtime configs)
+
+### Fixed
+- **Preview Screen Updates**
+  - Fixed demo money tree animation not displaying on preview screens
+  - Fixed safety net lock-in animation not displaying on preview screens
+  - Added UpdateMoneyTreeLevel and UpdateMoneyTreeWithSafetyNetFlash methods to PreviewScreenForm
 
 ## [0.3-2512] - 2025-12-22
 

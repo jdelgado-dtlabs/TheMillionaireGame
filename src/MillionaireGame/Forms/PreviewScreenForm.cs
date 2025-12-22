@@ -289,6 +289,26 @@ public class PreviewScreenForm : Form
         LayoutPanels();
     }
 
+    /// <summary>
+    /// Updates the money tree level on all preview screen instances
+    /// </summary>
+    public void UpdateMoneyTreeLevel(int level)
+    {
+        _hostScreen?.UpdateMoneyTreeLevel(level);
+        _guestScreen?.UpdateMoneyTreeLevel(level);
+        _tvScreen?.UpdateMoneyTreeLevel(level);
+    }
+
+    /// <summary>
+    /// Updates the money tree with safety net lock-in flash animation on all preview screen instances
+    /// </summary>
+    public void UpdateMoneyTreeWithSafetyNetFlash(int safetyNetLevel, bool flashState)
+    {
+        _hostScreen?.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+        _guestScreen?.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+        _tvScreen?.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+    }
+
     private void PreviewScreenForm_KeyDown(object? sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.Escape)
