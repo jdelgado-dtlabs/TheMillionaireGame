@@ -209,9 +209,9 @@ public class MoneyTreeService
     /// <summary>
     /// Checks if a safety net is disabled in risk mode at a specific level
     /// </summary>
-    public bool IsSafetyNetDisabledInRiskMode(int level)
+    public bool IsSafetyNetDisabledInRiskMode(int level, Models.GameMode currentMode)
     {
-        return _settings.IsSafetyNetDisabledInRiskMode(level);
+        return _settings.IsSafetyNetDisabledInRiskMode(level, currentMode);
     }
 
     /// <summary>

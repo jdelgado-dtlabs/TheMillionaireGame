@@ -149,8 +149,12 @@ public class MoneyTreeSettings
     /// <summary>
     /// Determines if a safety net is disabled in risk mode
     /// </summary>
-    public bool IsSafetyNetDisabledInRiskMode(int level)
+    public bool IsSafetyNetDisabledInRiskMode(int level, MillionaireGame.Core.Models.GameMode currentMode)
     {
+        // Only disable safety nets if actually in Risk Mode
+        if (currentMode != MillionaireGame.Core.Models.GameMode.Risk)
+            return false;
+            
         if (FreeSafetyNetMode)
             return false;
             

@@ -504,6 +504,9 @@ public class SoundService : IDisposable
         TryRegister(SoundEffect.LifelineATAEnd, "ATAEnd", "ata_end");
         TryRegister(SoundEffect.LifelineSwitch, "SwitchActivate", "stq_start", "switch_activate");
         
+        // Safety Net
+        TryRegister(SoundEffect.SetSafetyNet, "SetSafetyNet", "set_safety_net");
+        
         // Other
         TryRegister(SoundEffect.ToHotSeat, "ToHotSeat", "to_hotseat");
         TryRegister(SoundEffect.ExplainRules, "ExplainRules", "explain_rules");
@@ -560,5 +563,6 @@ public enum SoundEffect
     LifelinePAFEndEarly,
     LifelineATAStart,
     LifelineATAVote,
-    LifelineATAEnd
+    LifelineATAEnd,
+    SetSafetyNet
 }

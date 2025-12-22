@@ -26,9 +26,8 @@ public class ApplicationSettings
     public int QuestionsTexture { get; set; } = 0;
 
     // Screen Display Settings
-    public bool AutoShowHostScreen { get; set; } = false;
-    public bool AutoShowGuestScreen { get; set; } = false;
-    public bool AutoShowTVScreen { get; set; } = false;
+    public bool EnablePreviewAutomatically { get; set; } = false;
+    public string PreviewOrientation { get; set; } = "Vertical";
     public bool FullScreenHostScreenEnable { get; set; } = false;
     public int FullScreenHostScreenMonitor { get; set; } = 0;
     public bool FullScreenGuestScreenEnable { get; set; } = false;

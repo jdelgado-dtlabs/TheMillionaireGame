@@ -88,6 +88,9 @@ namespace MillionaireGame.Forms
             menuStrip = new MenuStrip();
             gameToolStripMenuItem = new ToolStripMenuItem();
             screensToolStripMenuItem = new ToolStripMenuItem();
+            hostScreenMenuItem = new ToolStripMenuItem("Host Screen", null, HostScreenToolStripMenuItem_Click);
+            guestScreenMenuItem = new ToolStripMenuItem("Guest Screen", null, GuestScreenToolStripMenuItem_Click);
+            tvScreenMenuItem = new ToolStripMenuItem("TV Screen", null, TVScreenToolStripMenuItem_Click);
             helpToolStripMenuItem = new ToolStripMenuItem();
             
             ((System.ComponentModel.ISupportInitialize)nmrLevel).BeginInit();
@@ -128,10 +131,12 @@ namespace MillionaireGame.Forms
             screensToolStripMenuItem.Size = new Size(72, 24);
             screensToolStripMenuItem.Text = "Screens";
             screensToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
-                new ToolStripMenuItem("Host Screen", null, HostScreenToolStripMenuItem_Click),
-                new ToolStripMenuItem("Guest Screen", null, GuestScreenToolStripMenuItem_Click),
+                hostScreenMenuItem,
+                guestScreenMenuItem,
                 new ToolStripSeparator(),
-                new ToolStripMenuItem("TV Screen", null, TVScreenToolStripMenuItem_Click)
+                tvScreenMenuItem,
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Preview Screen", null, PreviewScreenToolStripMenuItem_Click)
             });
             
             // 
@@ -859,6 +864,9 @@ namespace MillionaireGame.Forms
         private ToolStripMenuItem gameToolStripMenuItem;
         private ToolStripMenuItem screensToolStripMenuItem;
         private ToolStripMenuItem helpToolStripMenuItem;
+        private ToolStripMenuItem hostScreenMenuItem;
+        private ToolStripMenuItem guestScreenMenuItem;
+        private ToolStripMenuItem tvScreenMenuItem;
         private TextBox txtQuestion;
         private TextBox txtA;
         private TextBox txtB;

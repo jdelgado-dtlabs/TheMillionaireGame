@@ -8,7 +8,139 @@
 
 ## Session Summary
 
-### Latest Session (Repository Management) - December 22, 2025
+### Latest Session (Preview Screen Feature) - December 22, 2025
+
+#### Unified Preview Window System
+- ✅ **PreviewScreenForm Implementation**
+  - Unified window showing Host, Guest, and TV screens simultaneously
+  - Two orientation modes: Vertical (stacked) and Horizontal (side-by-side)
+  - Dedicated screen instances to prevent conflicts with main display screens
+  - Windows API integration for directional resize constraints
+    * Vertical: Allows top/bottom resize only
+    * Horizontal: Allows left/right resize only
+  - Right-side positioning and maximize behavior using MaximizedBounds property
+  - Maximum size constraints maintain aspect ratio (80% screen height for vertical)
+  
+- ✅ **Real-Time Updates**
+  - PreviewPanel with reflection-based rendering of protected RenderScreen() methods
+  - ScreenUpdateService registration for synchronized updates with main screens
+  - Timer-based refresh every 100ms
+  - Overlay labels for screen identification (Host, Guest, TV)
+  - Proper aspect ratio scaling with letterbox/pillarbox support
+  
+- ✅ **Settings Integration**
+  - Reorganized Options dialog into two groups:
+    * "Previews" group (90px): Preview Orientation dropdown
+    * "Multiple Monitor Control" group (250px): Screen assignment
+  - Monitor count display: "Number of Monitors: # (4 Monitors are required)"
+  - DEBUG MODE indicator when running in debug configuration
+  - Auto-update preview window when orientation changed in settings
+  - Toggle visibility from Screens menu
+  
+- ✅ **Monitor Management**
+  - 4-monitor requirement enforced in release mode
+  - Display 1 (control screen) restricted in release mode, available in debug mode
+  - Duplicate monitor assignment validation (release mode only)
+  - Debug mode bypasses restrictions for development
+
+- ✅ **Window Behavior**
+  - Maximize to right side of screen using MaximizedBounds property
+  - Border restoration with FormWindowState tracking and BeginInvoke deferral
+  - Fixed double dialog bug on Cancel with unsaved changes
+  - Proper WndProc message handling for resize constraints
+
+### Previous Session (Graphical Money Tree Implementation) - December 21, 2025
+
+#### Graphical Money Tree System
+- ✅ **VB.NET-Style Graphics Rendering**
+  - Replaced text-based MoneyTreeControl with graphical version
+  - Uses cropped VB.NET graphics (630×720 pixels, removed 650px left blank space)
+  - Display size: 650px height × 569px width (maintains aspect ratio)
+  - Texture files: Base trees (01-05_Tree.png) + Position overlays (999_Tree_01-15.png)
+  
+- ✅ **Host/Guest Screen Implementation**
+  - Money tree displayed on right side (1351px X position, 650px height)
+  - Always visible during gameplay
+  - Text rendering with VB.NET coordinate system:
+    * money_pos_X: 910 → 260 (adjusted for 650px crop)
+    * qno_pos_X: 855 → 205 (levels 1-9), 832 → 182 (levels 10-15)
+    * money_pos_Y array: [0, 662, 622, 582, 542, 502, 462, 422, 382, 342, 302, 262, 222, 182, 142, 102]
+  - Font: "Copperplate Gothic Bold", size 24 (scaled proportionally)
+  - Color coding: Black (current level), White (milestones), Gold (regular levels)
+  - Overlay graphics positioned at (165, 100) in cropped coordinates with size (399, 599)
+  
+- ✅ **Demo Animation System**
+  - Timer-based progression through levels 1-15 at 500ms intervals
+  - Three-state button logic:
+    * Green "Show Money Tree" → Shows tree on TV screen
+    * Orange "Hide Money Tree" (normal mode) / Blue "Demo Money Tree" (Explain Game mode)
+    * Yellow "Demo Running..." (disabled during animation)
+  - State tracking with `_isExplainGameActive` flag
+  - Automatic transition to Demo mode when tree shown during Explain Game
+  - No audio restart issue (Explain Game sets flag once, button checks flag)
+  - Lights Down exits Explain Game mode and resets money tree state
+  
+- ✅ **TV Screen Integration**
+  - Money tree slide-in animation on ShowWinnings
+  - Clears screen before animation
+  - Uses same graphical rendering as Host/Guest
+  - Note: TV implementation partially complete, text positioning may need refinement
+
+- ✅ **TextureManager System**
+  - Singleton pattern for texture loading and caching
+  - ElementType enum: MoneyTreeBase, MoneyTreePosition, QuestionStrap, Answers
+  - GetMoneyTreePosition(int level) returns overlay texture for levels 1-15
+  - Embedded resource loading from lib/textures/ directory
+  - Support for multiple texture sets (Default set = 1-5)
+  
+- ✅ **ScalableScreenBase Architecture**
+  - Base class for all screen implementations
+  - DrawScaledImage methods with proportional scaling
+  - Source rectangle cropping support (not currently used, images pre-cropped)
+  - Texture set management
+  
+#### Bug Fixes
+- ✅ **Winning Strap Overlap Prevention**
+  - Show Money Tree button now automatically unchecks Show Winnings checkbox
+  - Prevents winning strap from overlapping money tree display
+  - Clean user experience without manual checkbox management
+
+#### Files Created/Modified
+**New Files:**
+- `MillionaireGame/Graphics/TextureManager.cs` - Texture loading and caching system
+- `MillionaireGame/Graphics/ScalableScreenBase.cs` - Base class for scalable rendering
+- `MillionaireGame/Forms/TVScreenFormScalable.cs` - New TV screen with graphics support
+- `MillionaireGame/Controls/MoneyTreeControl.cs` - Custom control (legacy, not currently used)
+- `MillionaireGame/lib/textures/*` - 106 texture files (trees, overlays, straps, answers)
+
+**Modified Files:**
+- `MillionaireGame/Forms/ControlPanelForm.cs`:
+  * Lines 84-88: Demo timer and state tracking fields
+  * Lines 829-839: Hide winning strap when showing money tree
+  * Lines 983-1008: Three-state button logic with Explain Game integration
+  * Lines 1018-1071: StartMoneyTreeDemo() and StopMoneyTreeDemo() methods
+  * Line 758: Lights Down exits Explain Game mode
+  * Line 1834: Explain Game sets _isExplainGameActive flag
+  
+- `MillionaireGame/Forms/HostScreenForm.cs`:
+  * Lines 22, 67-70: _currentMoneyTreeLevel field and UpdateMoneyTreeLevel() method
+  * Lines 247-276: DrawMoneyTreeGraphical() with VB.NET coordinates
+  * Lines 278-336: DrawMoneyTreeText() with color-coded levels
+  
+- `MillionaireGame/Forms/GuestScreenForm.cs`:
+  * Identical implementation to HostScreenForm
+  * Lines 22, 64-67: Level tracking
+  * Lines 228-324: Graphical rendering
+
+- `MillionaireGame/Services/ScreenUpdateService.cs`:
+  * UpdateMoneyTreeOnScreens(int level) method to synchronize all screens
+
+#### Technical Debt Notes
+- TV Screen money tree text positioning may need refinement to match Host/Guest exactly
+- Source rectangle cropping feature implemented but unused (images pre-cropped)
+- Consider consolidating Host/Guest rendering code to avoid duplication
+
+### Previous Session (Repository Management) - December 22, 2025
 
 #### Sound Files Added to Repository
 - ✅ Default Soundpack Added
@@ -240,34 +372,54 @@
 ## Next Steps (Immediate Priority)
 
 ### Screen Money Tree Visualization
-**Status**: Not yet started  
+**Status**: ✅ COMPLETED (December 21, 2025)  
 **Priority**: High  
-**Implementation Plan**:
-1. Add money tree visual component to Host, Guest, and TV screens
-2. Display all 15 prize levels with current position highlighting
-3. Show currency symbols based on money tree configuration
-4. Implement visual states:
-   - Unplayed levels (default appearance)
-   - Current level (highlighted)
-   - Passed levels (dimmed or different color)
-   - Safety net levels (special indicator)
+**Implementation Summary**:
+1. ✅ Added graphical money tree to Host, Guest, and TV screens
+2. ✅ Display all 15 prize levels with current position highlighting (overlay graphics)
+3. ✅ Show currency symbols based on money tree configuration
+4. ✅ Implemented visual states:
+   - ✅ Unplayed levels (white/gold text)
+   - ✅ Current level (black text with position overlay)
+   - ✅ Passed levels (dimmed via overlay graphics)
+   - ✅ Safety net levels (white text for milestones)
+5. ✅ Demo animation system for Explain Game mode
+6. ✅ State tracking prevents audio restart issues
+
+**Notes**: TV screen implementation complete but may need text positioning refinement to exactly match Host/Guest screens.
 
 ### Money Tree Animations
-**Status**: Not yet started  
+**Status**: ✅ PARTIALLY COMPLETED (December 21, 2025)  
 **Priority**: High  
-**Implementation Plan**:
-1. Level progression animation (moving up the tree)
-2. Safety net "lock-in" animation when passing Q5/Q10
-3. Wrong answer animation (fall to safety net level)
-4. Walk away animation (highlight final value)
-5. Smooth transitions using async/await patterns
+**Completed**:
+1. ✅ Demo animation (levels 1-15 progression at 500ms intervals)
+2. ✅ Level progression display (UpdateMoneyTreeLevel updates overlay)
+3. ✅ Smooth transitions using timer-based patterns
+
+**Remaining**:
+1. ⚠️ Safety net "lock-in" animation when passing Q5/Q10
+2. ⚠️ Wrong answer animation (fall to safety net level with visual effect)
+3. ⚠️ Walk away animation (highlight final value with special effect)
+4. ⚠️ Win animation (celebrate reaching Q15)
+
+**Implementation Plan for Remaining Animations**:
+- Add animation state machine to ControlPanelForm
+- Coordinate with SoundService for synchronized audio/visual
+- Use timer-based transitions with easing functions
+- Test with various money tree configurations
 
 ### Technical Approach
-- Add MoneyTreeControl custom control for reusability
-- Use TableLayoutPanel or custom drawing for tree layout
-- Subscribe to GameService level change events
-- Coordinate animations with screen update service
-- Test with various money tree configurations (different currencies, safety nets)
+- ✅ Added TextureManager for texture loading and caching
+- ✅ Created ScalableScreenBase for reusable rendering logic
+- ✅ Subscribe to GameService level change events via UpdateMoneyTreeLevel()
+- ✅ Coordinate updates with ScreenUpdateService
+- ✅ Tested with various money tree configurations (different currencies, safety nets)
+
+**Next Animation Development Session Goals**:
+1. Implement safety net lock-in visual effect when passing Q5/Q10
+2. Add wrong answer "fall down" animation with highlight trail
+3. Create walk away highlight animation
+4. Implement Q15 win celebration animation
 
 ---
 
@@ -516,6 +668,36 @@
 - Event-driven updates prevent tight coupling
 - Screens implement `IGameScreen` interface for consistency
 
+### Money Tree Graphics Architecture (NEW)
+- **TextureManager Singleton Pattern**
+  - Centralized texture loading and caching
+  - Embedded resource management from lib/textures/
+  - ElementType enum for texture categories
+  - GetMoneyTreePosition(int level) for level-specific overlays
+  
+- **VB.NET Coordinate Translation**
+  - Original graphics had 650px blank space on left
+  - User manually cropped images to 630×720 (removed blank space)
+  - Code adjusted coordinates: money_pos_X (910→260), qno_pos_X (855→205/832→182)
+  - Proportional scaling maintains aspect ratio (650px display height)
+  
+- **Three-State Button Pattern**
+  - State 1: "Show Money Tree" (green) - Shows tree on TV
+  - State 2: "Demo Money Tree" (blue) or "Hide Money Tree" (orange)
+  - State 3: "Demo Running..." (yellow, disabled) during animation
+  - _isExplainGameActive flag controls automatic state transitions
+  
+- **Demo Animation System**
+  - Timer-based progression (System.Windows.Forms.Timer, 500ms interval)
+  - Levels 1-15 displayed sequentially
+  - UpdateMoneyTreeOnScreens(level) synchronizes all screens
+  - Explain Game sets flag once, no audio restart
+  
+- **Winning Strap Conflict Resolution**
+  - Show Money Tree automatically unchecks Show Winnings checkbox
+  - Prevents visual overlap on TV screen
+  - Clean user experience without manual checkbox management
+
 ---
 
 ## Important Files Reference
@@ -528,10 +710,20 @@
 - `MillionaireGame.Core/Helpers/IconHelper.cs` - Resource loading
 
 ### Main Application Files
-- `MillionaireGame/Forms/ControlPanelForm.cs` - Main control panel (2262 lines)
-- `MillionaireGame/Forms/HostScreenForm.cs` - Host screen
-- `MillionaireGame/Forms/GuestScreenForm.cs` - Guest screen
-- `MillionaireGame/Forms/TVScreenForm.cs` - TV screen
+- `MillionaireGame/Forms/ControlPanelForm.cs` - Main control panel (2918 lines)
+  - Lines 84-88: Money tree demo timer and state tracking
+  - Lines 829-839: Winning strap auto-hide on show money tree
+  - Lines 983-1008: Three-state button logic
+  - Lines 1018-1071: Demo animation methods
+- `MillionaireGame/Forms/HostScreenForm.cs` - Host screen (606 lines)
+  - Lines 247-336: Graphical money tree rendering with VB.NET coordinates
+- `MillionaireGame/Forms/GuestScreenForm.cs` - Guest screen (547 lines)
+  - Lines 228-324: Identical money tree implementation to Host
+- `MillionaireGame/Forms/TVScreenForm.cs` - TV screen (legacy, text-based)
+- `MillionaireGame/Forms/TVScreenFormScalable.cs` - TV screen (graphical, 668 lines)
+  - Lines 213-322: Graphical money tree with slide-in animation
+- `MillionaireGame/Graphics/TextureManager.cs` - Texture loading system (187 lines)
+- `MillionaireGame/Graphics/ScalableScreenBase.cs` - Base class for scalable screens (215 lines)
 - `MillionaireGame/Services/SoundService.cs` - Audio playback
 - `MillionaireGame/Services/ScreenUpdateService.cs` - Screen coordination
 - `MillionaireGame/Helpers/IconHelper.cs` - UI resource loading
@@ -550,43 +742,71 @@
 ## Testing Checklist for Next Session
 
 ### Core Gameplay Flow
-- [ ] Start new game → Pick Player → Explain Game → Lights Down
-- [ ] Q1-5: Load question, reveal answers progressively, select answer
-- [ ] Q6-15: Same flow with higher stakes
-- [ ] Walk Away: Proper winnings display, Thanks for Playing
-- [ ] Wrong Answer: Milestone or $0 based on level
-- [ ] Win Q15: $1,000,000 display
+- [x] Start new game → Pick Player → Explain Game → Lights Down
+- [x] Q1-5: Load question, reveal answers progressively, select answer
+- [x] Q6-15: Same flow with higher stakes
+- [x] Walk Away: Proper winnings display, Thanks for Playing
+- [x] Wrong Answer: Milestone or $0 based on level
+- [x] Win Q15: $1,000,000 display
 
 ### Lifelines
-- [ ] 50:50: Removes two wrong answers correctly
-- [ ] PAF: Intro loop → countdown → timeout/stop
-- [ ] ATA: 2min intro → 1min voting → completion
-- [ ] All lifelines: Proper button state changes (color, enabled/disabled)
+- [x] 50:50: Removes two wrong answers correctly
+- [x] PAF: Intro loop → countdown → timeout/stop
+- [x] ATA: 2min intro → 1min voting → completion
+- [x] All lifelines: Proper button state changes (color, enabled/disabled)
 
 ### Screen Coordination
-- [ ] Host screen shows correct answer indicator
-- [ ] Guest screen hides answers until revealed
-- [ ] TV screen matches guest screen
-- [ ] All screens update simultaneously
-- [ ] Winnings display works on all screens
+- [x] Host screen shows correct answer indicator
+- [x] Guest screen hides answers until revealed
+- [x] TV screen matches guest screen
+- [x] All screens update simultaneously
+- [x] Winnings display works on all screens
+
+### Money Tree System (NEW)
+- [x] Money tree displays graphically on Host/Guest screens (right side, always visible)
+- [x] Money tree displays graphically on TV screen (slide-in animation)
+- [x] Current level highlighted with overlay graphic (black text)
+- [x] Milestone levels display in white text
+- [x] Regular levels display in gold text
+- [x] Currency symbols from money tree configuration shown correctly
+- [x] Demo animation: Explain Game → Show Money Tree → Demo Money Tree
+- [x] Demo animation progresses through levels 1-15 at 500ms intervals
+- [x] Money tree resets to level 0 on Lights Down (new player)
+- [x] Show Money Tree automatically hides winning strap (prevents overlap)
+- [x] Lights Down exits Explain Game mode and resets state
+- [ ] Safety net lock-in animation when passing Q5/Q10 (not yet implemented)
+- [ ] Wrong answer fall animation (not yet implemented)
+- [ ] Walk away highlight animation (not yet implemented)
+- [ ] Win Q15 celebration animation (not yet implemented)
 
 ### Edge Cases
-- [ ] Closing button cancels auto-reset timer
-- [ ] Show Question/Winnings mutual exclusivity works
-- [ ] Q6+ Lights Down resets reveal state
-- [ ] Reset button properly clears all state
-- [ ] Audio transitions work smoothly
+- [x] Closing button cancels auto-reset timer
+- [x] Show Question/Winnings mutual exclusivity works
+- [x] Q6+ Lights Down resets reveal state
+- [x] Reset button properly clears all state
+- [x] Audio transitions work smoothly
+- [x] Money tree demo doesn't restart Explain Game audio
+- [x] Winning strap hidden when money tree shown
 
 ---
 
 ## Next Development Session Goals
 
 ### Immediate (Next Session)
+1. **Money Tree Animations** - Complete remaining animations:
+   - Safety net lock-in visual effect (Q5/Q10)
+   - Wrong answer fall animation
+   - Walk away highlight animation
+   - Win Q15 celebration animation
+2. **TV Screen Text Refinement** - Align text positioning with Host/Guest exactly
+3. **Testing** - Comprehensive testing of all money tree scenarios
+
+### Short-term (1-2 Sessions)
 1. Implement **Switch the Question** lifeline
 2. Add STQ to lifeline configuration system
 3. Test STQ with all game flow scenarios
 
-### Short-term (1-2 Sessions)
+### Medium-term (3-5 Sessions)
 1. Implement **Double Dip** lifeline
 2. Implement **Ask the Host** lifeline
 3. Add all three to lifeline configuration

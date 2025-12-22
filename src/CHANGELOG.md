@@ -5,12 +5,29 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2025-12-22
 
 ### Added
+- **Preview Screen Feature**
+  - Unified preview window showing Host, Guest, and TV screens simultaneously
+  - Two orientation modes: Vertical (stacked) and Horizontal (side-by-side)
+  - Real-time updates synchronized with main screens via ScreenUpdateService
+  - Right-side maximize behavior with aspect ratio preservation
+  - Screen labels overlay for easy identification
+  - Toggle visibility from Screens menu
+  - Dedicated screen instances to prevent conflicts with main display screens
+  - Settings integration: Preview Orientation dropdown in Options dialog
+
 - **Sound Files to Repository**
   - Added Default soundpack with 123 sound files (120 MP3s + soundpack.xml + README.md)
   - Complete audio package now included in repository distribution
   - Sound files tracked in src/MillionaireGame/lib/sounds/Default/
 
 ### Changed
+- **Settings Dialog Reorganization**
+  - Split Screens menu into "Previews" and "Multiple Monitor Control" groups
+  - Added monitor count display: "Number of Monitors: # (4 Monitors are required)"
+  - Added DEBUG MODE indicator when running in debug configuration
+  - Display 1 (control screen) restricted in release mode, available in debug mode
+  - Duplicate monitor assignment validation (release mode only)
+
 - **Repository Management**
   - Simplified src/.gitignore to only contain src-specific ignores
   - Removed .github/copilot-instructions.md from git tracking (keeping local file)

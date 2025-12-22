@@ -21,6 +21,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
     // Question in upper part of lower third
@@ -54,6 +55,16 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         
         // Save initial state for fullscreen toggle
         SaveWindowState();
+        
+        // Enable ESC key to close
+        KeyPreview = true;
+        KeyDown += (s, e) => {
+            if (e.KeyCode == Keys.Escape)
+            {
+                Close();
+                e.Handled = true;
+            }
+        };
     }
 
     public void Initialize(MoneyTreeService moneyTreeService)
@@ -63,8 +74,25 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
 
     public void UpdateMoneyTreeLevel(int level)
     {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => UpdateMoneyTreeLevel(level)));
+            return;
+        }
+        
         _currentMoneyTreeLevel = level;
-        Invalidate(); // Redraw to update money tree
+        _useSafetyNetAltGraphic = false; // Reset to normal graphic
+        Refresh(); // Force immediate redraw to update money tree
+    }
+    
+    /// <summary>
+    /// Updates money tree with safety net lock-in flash animation
+    /// </summary>
+    public void UpdateMoneyTreeWithSafetyNetFlash(int safetyNetLevel, bool flashState)
+    {
+        _currentMoneyTreeLevel = safetyNetLevel;
+        _useSafetyNetAltGraphic = flashState; // true = use alternate graphic, false = use regular
+        Invalidate(); // Redraw to show flash state
     }
 
     protected override void RenderScreen(System.Drawing.Graphics g)
@@ -239,7 +267,11 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
 
         // Get base money tree image
         var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
-        var treePosition = TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
+        
+        // Get position overlay - use alternate lock-in graphic if in safety net animation
+        var treePosition = _useSafetyNetAltGraphic 
+            ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
+            : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
 
         if (treeBase == null) return;
 
@@ -310,7 +342,8 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                textColor = Color.Black; // Current level - highlighted by overlay
+                // Current level - use white text if showing alternate lock-in graphic, black otherwise
+                textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
             }
             else if (level == 5 || level == 10 || level == 15)
             {

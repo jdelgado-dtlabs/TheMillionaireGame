@@ -26,6 +26,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private float _moneyTreeAnimationProgress = 0f; // 0.0 to 1.0
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
 
     // Design-time coordinates (based on 1920x1080, positioned in lower third)
     // Backgrounds are fully edge-to-edge (0 margins)
@@ -62,6 +63,16 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         
         // Save initial state for fullscreen toggle
         SaveWindowState();
+        
+        // Enable ESC key to close
+        KeyPreview = true;
+        KeyDown += (s, e) => {
+            if (e.KeyCode == Keys.Escape)
+            {
+                Close();
+                e.Handled = true;
+            }
+        };
     }
 
     protected override void RenderScreen(System.Drawing.Graphics g)
@@ -214,7 +225,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         // Get base money tree image for current texture set
         var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
-        var treePosition = TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
+        
+        // Get position overlay - use alternate lock-in graphic if in safety net animation
+        var treePosition = _useSafetyNetAltGraphic 
+            ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
+            : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
 
         if (treeBase == null) return;
 
@@ -321,7 +336,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                textColor = Color.Black; // Current level - highlighted by overlay
+                // Current level - use white text if showing alternate lock-in graphic, black otherwise
+                textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
             }
             else if (level == 5 || level == 10 || level == 15)
             {
@@ -434,9 +450,23 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     public void UpdateMoneyTreeLevel(int level)
     {
         _currentMoneyTreeLevel = level;
+        _useSafetyNetAltGraphic = false; // Reset to normal graphic
         if (_showMoneyTree)
         {
             Invalidate(); // Redraw if money tree is currently visible
+        }
+    }
+    
+    /// <summary>
+    /// Updates money tree with safety net lock-in flash animation
+    /// </summary>
+    public void UpdateMoneyTreeWithSafetyNetFlash(int safetyNetLevel, bool flashState)
+    {
+        _currentMoneyTreeLevel = safetyNetLevel;
+        _useSafetyNetAltGraphic = flashState; // true = use alternate graphic, false = use regular
+        if (_showMoneyTree)
+        {
+            Invalidate(); // Redraw to show flash state if money tree is visible
         }
     }
 

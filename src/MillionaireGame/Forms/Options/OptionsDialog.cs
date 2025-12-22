@@ -29,8 +29,18 @@ public partial class OptionsDialog : Form
         // Initialize Money Tree tab dynamically
         InitializeMoneyTreeTab();
         
+        // Show debug mode label if in DEBUG configuration
+#if DEBUG
+        lblDebugMode.Visible = true;
+#else
+        lblDebugMode.Visible = false;
+#endif
+        
         // Populate monitor dropdowns
         PopulateMonitorDropdowns();
+        
+        // Update monitor count display and enforce restrictions
+        UpdateMonitorStatus();
         
         // Handle form closing to respect user's choice about unsaved changes
         FormClosing += OptionsDialog_FormClosing;
@@ -43,9 +53,10 @@ public partial class OptionsDialog : Form
         // Suspend change tracking while loading
         _hasChanges = false;
         // Screen settings
-        chkAutoShowHostScreen.Checked = _settings.AutoShowHostScreen;
-        chkAutoShowGuestScreen.Checked = _settings.AutoShowGuestScreen;
-        chkAutoShowTVScreen.Checked = _settings.AutoShowTVScreen;
+        chkEnablePreviewAutomatically.Checked = _settings.EnablePreviewAutomatically;
+        cmbPreviewOrientation.SelectedItem = _settings.PreviewOrientation;
+        if (cmbPreviewOrientation.SelectedIndex == -1)
+            cmbPreviewOrientation.SelectedIndex = 0; // Default to Vertical
         chkFullScreenHostScreen.Checked = _settings.FullScreenHostScreenEnable;
         chkFullScreenGuestScreen.Checked = _settings.FullScreenGuestScreenEnable;
         chkFullScreenTVScreen.Checked = _settings.FullScreenTVScreenEnable;
@@ -146,6 +157,9 @@ public partial class OptionsDialog : Form
         var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
         if (controlPanel == null) return;
         
+        // Update menu item enabled states
+        controlPanel.UpdateScreenMenuItemStates();
+        
         // Apply full-screen state to the screen if it's open
         switch (screenType)
         {
@@ -216,9 +230,8 @@ public partial class OptionsDialog : Form
     private void SaveSettings()
     {
         // Screen settings
-        _settings.AutoShowHostScreen = chkAutoShowHostScreen.Checked;
-        _settings.AutoShowGuestScreen = chkAutoShowGuestScreen.Checked;
-        _settings.AutoShowTVScreen = chkAutoShowTVScreen.Checked;
+        _settings.EnablePreviewAutomatically = chkEnablePreviewAutomatically.Checked;
+        _settings.PreviewOrientation = cmbPreviewOrientation.SelectedItem?.ToString() ?? "Vertical";
         _settings.FullScreenHostScreenEnable = chkFullScreenHostScreen.Checked;
         _settings.FullScreenGuestScreenEnable = chkFullScreenGuestScreen.Checked;
         _settings.FullScreenTVScreenEnable = chkFullScreenTVScreen.Checked;
@@ -261,6 +274,42 @@ public partial class OptionsDialog : Form
 
     private void btnOK_Click(object sender, EventArgs e)
     {
+#if !DEBUG
+        // In release mode, validate that no two screens are assigned to the same monitor
+        if (chkFullScreenHostScreen.Checked && chkFullScreenGuestScreen.Checked && 
+            GetSelectedMonitorIndex(cmbMonitorHost) == GetSelectedMonitorIndex(cmbMonitorGuest))
+        {
+            MessageBox.Show(
+                "You cannot assign more than one screen to the same monitor!",
+                "Invalid Monitor Assignment",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return;
+        }
+        
+        if (chkFullScreenHostScreen.Checked && chkFullScreenTVScreen.Checked && 
+            GetSelectedMonitorIndex(cmbMonitorHost) == GetSelectedMonitorIndex(cmbMonitorTV))
+        {
+            MessageBox.Show(
+                "You cannot assign more than one screen to the same monitor!",
+                "Invalid Monitor Assignment",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return;
+        }
+        
+        if (chkFullScreenGuestScreen.Checked && chkFullScreenTVScreen.Checked && 
+            GetSelectedMonitorIndex(cmbMonitorGuest) == GetSelectedMonitorIndex(cmbMonitorTV))
+        {
+            MessageBox.Show(
+                "You cannot assign more than one screen to the same monitor!",
+                "Invalid Monitor Assignment",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return;
+        }
+#endif
+        
         SaveSettings();
         SettingsApplied?.Invoke(this, EventArgs.Empty);
         DialogResult = DialogResult.OK;
@@ -269,8 +318,8 @@ public partial class OptionsDialog : Form
 
     private void OptionsDialog_FormClosing(object? sender, FormClosingEventArgs e)
     {
-        // Only prompt if there are unsaved changes and user didn't click OK
-        if (_hasChanges && DialogResult != DialogResult.OK)
+        // Only prompt if there are unsaved changes and user didn't click OK or Cancel
+        if (_hasChanges && DialogResult != DialogResult.OK && DialogResult != DialogResult.Cancel)
         {
             var result = MessageBox.Show(
                 "You have unsaved changes. Do you want to discard them?",
@@ -288,6 +337,9 @@ public partial class OptionsDialog : Form
 
     private void btnCancel_Click(object sender, EventArgs e)
     {
+        // Set DialogResult first to prevent FormClosing from showing another dialog
+        DialogResult = DialogResult.Cancel;
+        
         // Check for unsaved changes and show error/warning
         if (_hasChanges)
         {
@@ -299,11 +351,11 @@ public partial class OptionsDialog : Form
 
             if (result == DialogResult.No)
             {
+                DialogResult = DialogResult.None; // Reset so form stays open
                 return; // Don't close the form
             }
         }
         
-        DialogResult = DialogResult.Cancel;
         Close();
     }
 
@@ -1243,13 +1295,23 @@ public partial class OptionsDialog : Form
         // Add each monitor to the dropdowns
         for (int i = 0; i < screens.Length; i++)
         {
-            var screen = screens[i];
-            var (manufacturer, modelName) = GetMonitorModelName(screen);
-            string displayText = $"{i + 1}:{manufacturer}:{modelName} ({screen.Bounds.Width}x{screen.Bounds.Height})";
+            // Skip Display 1 unless in DEBUG mode
+#if DEBUG
+            bool includeThisDisplay = true;
+#else
+            bool includeThisDisplay = i > 0; // Skip index 0 (Display 1) in release mode
+#endif
             
-            cmbMonitorHost.Items.Add(displayText);
-            cmbMonitorGuest.Items.Add(displayText);
-            cmbMonitorTV.Items.Add(displayText);
+            if (includeThisDisplay)
+            {
+                var screen = screens[i];
+                var (manufacturer, modelName) = GetMonitorModelName(screen);
+                string displayText = $"{i + 1}:{manufacturer}:{modelName} ({screen.Bounds.Width}x{screen.Bounds.Height})";
+                
+                cmbMonitorHost.Items.Add(displayText);
+                cmbMonitorGuest.Items.Add(displayText);
+                cmbMonitorTV.Items.Add(displayText);
+            }
         }
         
         // Select first item by default if available
@@ -1258,6 +1320,35 @@ public partial class OptionsDialog : Form
             cmbMonitorHost.SelectedIndex = 0;
             cmbMonitorGuest.SelectedIndex = 0;
             cmbMonitorTV.SelectedIndex = 0;
+        }
+    }
+
+    private void UpdateMonitorStatus()
+    {
+        var monitorCount = Screen.AllScreens.Length;
+        lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (4 Monitors are required for this feature)";
+        
+        // In DEBUG mode, always enable controls regardless of monitor count
+        // In RELEASE mode, require 4+ monitors
+#if DEBUG
+        bool hasEnoughMonitors = true;
+#else
+        bool hasEnoughMonitors = monitorCount >= 4;
+#endif
+        
+        chkFullScreenHostScreen.Enabled = hasEnoughMonitors;
+        chkFullScreenGuestScreen.Enabled = hasEnoughMonitors;
+        chkFullScreenTVScreen.Enabled = hasEnoughMonitors;
+        cmbMonitorHost.Enabled = hasEnoughMonitors;
+        cmbMonitorGuest.Enabled = hasEnoughMonitors;
+        cmbMonitorTV.Enabled = hasEnoughMonitors;
+        btnIdentifyMonitors.Enabled = hasEnoughMonitors;
+        
+        if (!hasEnoughMonitors)
+        {
+            chkFullScreenHostScreen.Checked = false;
+            chkFullScreenGuestScreen.Checked = false;
+            chkFullScreenTVScreen.Checked = false;
         }
     }
 

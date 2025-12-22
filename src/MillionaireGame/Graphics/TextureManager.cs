@@ -153,6 +153,48 @@ public class TextureManager
     }
 
     /// <summary>
+    /// Get money tree position alternate lock-in graphic for safety net levels (5, 10)
+    /// </summary>
+    public Image? GetMoneyTreePositionLockAlt(int level)
+    {
+        if (level < 0 || level > 15)
+        {
+            throw new ArgumentOutOfRangeException(nameof(level), "Level must be between 0 and 15");
+        }
+
+        string cacheKey = $"MoneyTree_Position_LockAlt_{level:D2}";
+        
+        if (_textureCache.TryGetValue(cacheKey, out var cachedImage))
+        {
+            return cachedImage;
+        }
+
+        string resourceName = $"999_Tree_{level:D2}_lck_alt.png";
+        string fullResourceName = $"MillionaireGame.lib.textures.{resourceName}";
+
+        try
+        {
+            using var stream = _assembly.GetManifestResourceStream(fullResourceName);
+            if (stream != null)
+            {
+                var image = Image.FromStream(stream);
+                _textureCache[cacheKey] = image;
+                return image;
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[TextureManager] Error loading money tree lock-in alt '{fullResourceName}': {ex.Message}");
+            }
+        }
+
+        // Fall back to regular position graphic if alternate not found
+        return GetMoneyTreePosition(level);
+    }
+
+    /// <summary>
     /// List all available embedded texture resources (for debugging)
     /// </summary>
     public List<string> ListEmbeddedTextures()

@@ -87,6 +87,15 @@ public partial class ControlPanelForm : Form
     private bool _isExplainGameActive = false; // Track if Explain Game mode is active
     private const int MONEY_TREE_DEMO_INTERVAL = 500; // milliseconds between level changes
     
+    // Safety Net Lock-In Animation state tracking
+    private System.Windows.Forms.Timer? _safetyNetAnimationTimer;
+    private int _safetyNetAnimationLevel = 0;
+    private int _safetyNetFlashCount = 0;
+    private bool _safetyNetFlashState = false; // true = highlighted, false = normal
+    private int _pendingSafetyNetLevel = 0; // Tracks if Q5 (5) or Q10 (10) just passed and lock-in is available
+    private const int SAFETY_NET_FLASH_INTERVAL = 300; // milliseconds between flashes
+    private const int SAFETY_NET_FLASH_TOTAL = 6; // total number of flashes (3 on, 3 off)
+    
     // Question reveal state tracking
     private int _answerRevealStep = 0; // 0 = not started, 1 = question shown, 2-5 = answers A-D shown
     private Question? _currentQuestion = null; // Store current question for progressive reveal
@@ -94,6 +103,7 @@ public partial class ControlPanelForm : Form
     // Game outcome tracking
     private GameOutcome _gameOutcome = GameOutcome.InProgress;
     private CancellationTokenSource? _automatedSequenceCts = null;
+    private CancellationTokenSource? _lightsDownCts = null;
     private string? _finalWinningsAmount = null; // Store final winnings for end-of-round display
     
     // Track if automated sequence is running (walk away, thanks for playing)
@@ -125,6 +135,8 @@ public partial class ControlPanelForm : Form
     private HostScreenForm? _hostScreen;
     private GuestScreenForm? _guestScreen;
     private IGameScreen? _tvScreen;
+    private PreviewScreenForm? _previewScreen;
+    private PreviewOrientation _lastPreviewOrientation = PreviewOrientation.Vertical;
 
     // Helper methods to access stop images from Designer
     private static Image? GetRedStopImage()
@@ -201,37 +213,24 @@ public partial class ControlPanelForm : Form
         // Load lifeline images based on settings
         // TODO: Implement lifeline image loading
         
-        // Auto-show screens if configured
-        if (_appSettings.Settings.AutoShowHostScreen)
+        // Update menu item enabled states based on settings
+        UpdateScreenMenuItemStates();
+        
+        // Auto-show Preview Screen if enabled
+        if (_appSettings.Settings.EnablePreviewAutomatically)
         {
-            HostScreenToolStripMenuItem_Click(null, EventArgs.Empty);
-            
-            // Apply full-screen if configured
-            if (_appSettings.Settings.FullScreenHostScreenEnable)
-            {
-                ApplyFullScreenToHostScreen(true, _appSettings.Settings.FullScreenHostScreenMonitor);
-            }
+            PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
         }
-        if (_appSettings.Settings.AutoShowGuestScreen)
-        {
-            GuestScreenToolStripMenuItem_Click(null, EventArgs.Empty);
-            
-            // Apply full-screen if configured
-            if (_appSettings.Settings.FullScreenGuestScreenEnable)
-            {
-                ApplyFullScreenToGuestScreen(true, _appSettings.Settings.FullScreenGuestScreenMonitor);
-            }
-        }
-        if (_appSettings.Settings.AutoShowTVScreen)
-        {
-            TVScreenToolStripMenuItem_Click(null, EventArgs.Empty);
-            
-            // Apply full-screen if configured
-            if (_appSettings.Settings.FullScreenTVScreenEnable)
-            {
-                ApplyFullScreenToTVScreen(true, _appSettings.Settings.FullScreenTVScreenMonitor);
-            }
-        }
+    }
+    
+    /// <summary>
+    /// Updates the enabled state of screen menu items based on Full Screen checkbox settings
+    /// </summary>
+    public void UpdateScreenMenuItemStates()
+    {
+        hostScreenMenuItem.Enabled = _appSettings.Settings.FullScreenHostScreenEnable;
+        guestScreenMenuItem.Enabled = _appSettings.Settings.FullScreenGuestScreenEnable;
+        tvScreenMenuItem.Enabled = _appSettings.Settings.FullScreenTVScreenEnable;
     }
     
     #region Full Screen Management
@@ -589,6 +588,9 @@ public partial class ControlPanelForm : Form
 
     private async Task LoadNewQuestion()
     {
+        // Clear any pending safety net lock-in when starting a new question
+        _pendingSafetyNetLevel = 0;
+        
         try
         {
             // Use the question number directly from the control (user may have manually set it)
@@ -743,6 +745,12 @@ public partial class ControlPanelForm : Form
 
     private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
+        // Cancel any previous lights down operation
+        _lightsDownCts?.Cancel();
+        _lightsDownCts?.Dispose();
+        _lightsDownCts = new CancellationTokenSource();
+        var token = _lightsDownCts.Token;
+        
         // Disable Lights Down immediately to prevent double-clicks
         btnLightsDown.Enabled = false;
         btnLightsDown.BackColor = Color.Gray;
@@ -759,9 +767,6 @@ public partial class ControlPanelForm : Form
         
         // Stop money tree demo if running
         StopMoneyTreeDemo();
-        
-        // Reset money tree display to level 0 when starting a new player's game
-        UpdateMoneyTreeOnScreens(0);
         
         // Hide money tree if visible on TV screen
         if (btnShowMoneyTree.Text == "Hide Money Tree" || btnShowMoneyTree.Text == "Demo Money Tree" || btnShowMoneyTree.Text == "Demo Running...")
@@ -792,7 +797,15 @@ public partial class ControlPanelForm : Form
             btnActivateRiskMode.BackColor = Color.Gray;
             
             // Wait for lights down sound to finish before starting bed music
-            await Task.Delay(4000);
+            try
+            {
+                await Task.Delay(4000, token);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // Operation was cancelled
+            }
+            
             PlayQuestionBed();
             
             // Emulate first Question button click: load question and prepare for progressive reveal
@@ -967,6 +980,11 @@ public partial class ControlPanelForm : Form
     
     private async void btnShowMoneyTree_Click(object? sender, EventArgs e)
     {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[MoneyTreeButton] Button clicked, current text: '{btnShowMoneyTree.Text}', _pendingSafetyNetLevel={_pendingSafetyNetLevel}, _isExplainGameActive={_isExplainGameActive}");
+        }
+        
         if (btnShowMoneyTree.Text == "Show Money Tree")
         {
             // Hide the winning strap if it's showing (to avoid overlap)
@@ -979,13 +997,20 @@ public partial class ControlPanelForm : Form
             var currentState = _gameService.State;
             _screenService.ShowWinnings(currentState);
             
-            // Update button state based on whether Explain Game is active
+            // Update button state based on context
             if (_isExplainGameActive)
             {
                 // In Explain Game mode - go directly to Demo state
                 btnShowMoneyTree.BackColor = Color.DeepSkyBlue;
                 btnShowMoneyTree.ForeColor = Color.Black;
                 btnShowMoneyTree.Text = "Demo Money Tree";
+            }
+            else if (_pendingSafetyNetLevel > 0)
+            {
+                // Safety net lock-in is available - show "Lock In Safety" button
+                btnShowMoneyTree.BackColor = Color.LightBlue;
+                btnShowMoneyTree.ForeColor = Color.Black;
+                btnShowMoneyTree.Text = "Lock In Safety";
             }
             else
             {
@@ -995,6 +1020,30 @@ public partial class ControlPanelForm : Form
                 btnShowMoneyTree.Text = "Hide Money Tree";
             }
         }
+        else if (btnShowMoneyTree.Text == "Lock In Safety")
+        {
+            // User clicked to lock in the safety net - play animation
+            var levelToLock = _pendingSafetyNetLevel;
+            _pendingSafetyNetLevel = 0; // Clear the pending state
+            
+            // Change button to indicate animation is running
+            btnShowMoneyTree.BackColor = Color.Yellow;
+            btnShowMoneyTree.ForeColor = Color.Black;
+            btnShowMoneyTree.Text = "Locking In...";
+            btnShowMoneyTree.Enabled = false;
+            
+            // Start the animation
+            StartSafetyNetAnimation(levelToLock);
+            
+            // Wait for animation to complete (6 flashes × 300ms = 1800ms + small buffer)
+            await Task.Delay(2000);
+            
+            // After animation, change to "Hide Money Tree"
+            btnShowMoneyTree.BackColor = Color.Orange;
+            btnShowMoneyTree.ForeColor = Color.Black;
+            btnShowMoneyTree.Text = "Hide Money Tree";
+            btnShowMoneyTree.Enabled = true;
+        }
         else if (btnShowMoneyTree.Text == "Demo Money Tree")
         {
             // Start demo animation - progress through levels 1-15
@@ -1002,11 +1051,23 @@ public partial class ControlPanelForm : Form
         }
         else // "Hide Money Tree"
         {
+            // Check if demo was running before we stop it
+            bool wasDemoActive = _isMoneyTreeDemoActive;
+            
             // Stop demo if it's running
             StopMoneyTreeDemo();
             
+            // Clear any pending safety net lock-in
+            _pendingSafetyNetLevel = 0;
+            
             // Hide the money tree from TV screen
             _screenService.HideWinnings();
+            
+            // If demo was running, reset money tree to level 0 after hiding (so host/guest screens update)
+            if (wasDemoActive)
+            {
+                UpdateMoneyTreeOnScreens(0);
+            }
             
             // Update button state
             btnShowMoneyTree.BackColor = Color.LimeGreen;
@@ -1052,8 +1113,10 @@ public partial class ControlPanelForm : Form
         }
         else
         {
-            // Demo complete - stop and revert to Hide state
-            StopMoneyTreeDemo();
+            // Demo complete - stop timer but keep _isMoneyTreeDemoActive = true
+            // so that hiding the tree will reset it to level 0
+            _moneyTreeDemoTimer?.Stop();
+            
             btnShowMoneyTree.BackColor = Color.Orange;
             btnShowMoneyTree.ForeColor = Color.Black;
             btnShowMoneyTree.Text = "Hide Money Tree";
@@ -1070,6 +1133,115 @@ public partial class ControlPanelForm : Form
         _isMoneyTreeDemoActive = false;
         _moneyTreeDemoLevel = 0;
     }
+    
+    /// <summary>
+    /// Starts the safety net lock-in animation for Q5 or Q10
+    /// Flashes the safety net level 3 times to show it's locked in
+    /// </summary>
+    private void StartSafetyNetAnimation(int safetyNetLevel)
+    {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}");
+            Console.WriteLine($"[SafetyNetAnimation] Stack trace: {Environment.StackTrace}");
+        }
+        
+        // Play safety net lock-in sound
+        _soundService.PlaySound(SoundEffect.SetSafetyNet, "safety_net_lock_in", loop: false);
+        
+        _safetyNetAnimationLevel = safetyNetLevel;
+        _safetyNetFlashCount = 0;
+        _safetyNetFlashState = false;
+        
+        if (_safetyNetAnimationTimer == null)
+        {
+            _safetyNetAnimationTimer = new System.Windows.Forms.Timer();
+            _safetyNetAnimationTimer.Interval = SAFETY_NET_FLASH_INTERVAL;
+            _safetyNetAnimationTimer.Tick += SafetyNetAnimationTimer_Tick;
+        }
+        
+        _safetyNetAnimationTimer.Start();
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[SafetyNetAnimation] Started lock-in animation for level {safetyNetLevel}");
+        }
+    }
+    
+    private void SafetyNetAnimationTimer_Tick(object? sender, EventArgs e)
+    {
+        _safetyNetFlashCount++;
+        _safetyNetFlashState = !_safetyNetFlashState; // Toggle flash state
+        
+        if (_safetyNetFlashCount >= SAFETY_NET_FLASH_TOTAL)
+        {
+            // Animation complete, stop timer
+            StopSafetyNetAnimation();
+            
+            // Ensure money tree returns to normal state (showing current level)
+            UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[SafetyNetAnimation] Animation complete for level {_safetyNetAnimationLevel}");
+            }
+        }
+        else
+        {
+            // Update screens with flash state
+            // We'll need to add a method to handle this special state
+            UpdateMoneyTreeWithSafetyNetFlash(_safetyNetAnimationLevel, _safetyNetFlashState);
+            
+            if (Program.DebugMode)
+            {
+                Console.WriteLine($"[SafetyNetAnimation] Flash {_safetyNetFlashCount}/{SAFETY_NET_FLASH_TOTAL}, State: {(_safetyNetFlashState ? "ON" : "OFF")}");
+            }
+        }
+    }
+    
+    private void StopSafetyNetAnimation()
+    {
+        if (_safetyNetAnimationTimer != null)
+        {
+            _safetyNetAnimationTimer.Stop();
+        }
+        _safetyNetFlashCount = 0;
+        _safetyNetFlashState = false;
+    }
+    
+    /// <summary>
+    /// Updates money tree on all screens with safety net flash animation
+    /// </summary>
+    private void UpdateMoneyTreeWithSafetyNetFlash(int safetyNetLevel, bool flashState)
+    {
+        // Host screen
+        if (_hostScreen != null)
+        {
+            _hostScreen.Invoke((MethodInvoker)delegate
+            {
+                _hostScreen.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+            });
+        }
+        
+        // Guest screen
+        if (_guestScreen != null)
+        {
+            _guestScreen.Invoke((MethodInvoker)delegate
+            {
+                _guestScreen.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+            });
+        }
+        
+        // TV screen (scalable version)
+        if (_tvScreen is TVScreenFormScalable tvScalable)
+        {
+            tvScalable.Invoke((MethodInvoker)delegate
+            {
+                tvScalable.UpdateMoneyTreeWithSafetyNetFlash(safetyNetLevel, flashState);
+            });
+        }
+    }
+
     
     // DEPRECATED: Reset button removed from UI - automated sequences handle all resets
     // Keeping this method commented out for reference in case manual reset is needed in future
@@ -2061,6 +2233,15 @@ public partial class ControlPanelForm : Form
 
     private void btnResetGame_Click(object? sender, EventArgs e)
     {
+        // Cancel any running async operations
+        _automatedSequenceCts?.Cancel();
+        _automatedSequenceCts?.Dispose();
+        _automatedSequenceCts = null;
+        
+        _lightsDownCts?.Cancel();
+        _lightsDownCts?.Dispose();
+        _lightsDownCts = null;
+        
         // Reset to fresh initialization - application start state
         _soundService.StopAllSounds();
         
@@ -2074,6 +2255,9 @@ public partial class ControlPanelForm : Form
         _moneyTreeDemoTimer?.Stop();
         _moneyTreeDemoTimer?.Dispose();
         _moneyTreeDemoTimer = null;
+        _safetyNetAnimationTimer?.Stop();
+        _safetyNetAnimationTimer?.Dispose();
+        _safetyNetAnimationTimer = null;
         _closingTimer?.Stop();
         _closingTimer?.Dispose();
         _closingTimer = null;
@@ -2088,6 +2272,7 @@ public partial class ControlPanelForm : Form
         _isMoneyTreeDemoActive = false;
         _moneyTreeDemoLevel = 0;
         _isExplainGameActive = false;
+        _pendingSafetyNetLevel = 0;
         _closingStage = ClosingStage.NotStarted;
         _isAutomatedSequenceRunning = false;
         _gameOutcome = GameOutcome.InProgress;
@@ -2152,6 +2337,9 @@ public partial class ControlPanelForm : Form
         _moneyTreeDemoTimer?.Stop();
         _moneyTreeDemoTimer?.Dispose();
         _moneyTreeDemoTimer = null;
+        _safetyNetAnimationTimer?.Stop();
+        _safetyNetAnimationTimer?.Dispose();
+        _safetyNetAnimationTimer = null;
         
         // Reset round state
         _pafStage = PAFStage.NotStarted;
@@ -2163,6 +2351,7 @@ public partial class ControlPanelForm : Form
         _isMoneyTreeDemoActive = false;
         _moneyTreeDemoLevel = 0;
         _isExplainGameActive = false;
+        _pendingSafetyNetLevel = 0;
         _isAutomatedSequenceRunning = false;
         _gameOutcome = GameOutcome.InProgress;
         
@@ -2613,6 +2802,23 @@ public partial class ControlPanelForm : Form
             // Play question-specific correct answer sound using captured question number
             PlayCorrectSound(currentQuestionNumber);
             
+            // Check if this is a safety net question (Q5 or Q10) and mark it as pending for manual lock-in
+            var isSafetyNet = _gameService.MoneyTree.IsSafetyNet(currentQuestionNumber);
+            if (isSafetyNet && !_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(currentQuestionNumber, _gameService.State.Mode))
+            {
+                _pendingSafetyNetLevel = currentQuestionNumber;
+                
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine($"[SafetyNetAnimation] Q{currentQuestionNumber} is a safety net, lock-in available");
+                    Console.WriteLine($"[SafetyNetAnimation] _pendingSafetyNetLevel set to {_pendingSafetyNetLevel}");
+                }
+            }
+            else if (Program.DebugMode)
+            {
+                Console.WriteLine($"[SafetyNetAnimation] Q{currentQuestionNumber} - isSafetyNet={isSafetyNet}, disabled={_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(currentQuestionNumber, _gameService.State.Mode)}, mode={_gameService.State.Mode}");
+            }
+            
             // For Q1-5, restart bed music after correct answer if it was stopped by a lifeline
             if (currentQuestionNumber >= 1 && currentQuestionNumber <= 5 && _shouldRestartBedMusic)
             {
@@ -3027,6 +3233,26 @@ public partial class ControlPanelForm : Form
             // Reload money tree settings and update risk mode button
             _gameService.MoneyTree.LoadSettings();
             UpdateRiskModeButton();
+            
+            // Update screen menu item enabled/disabled states
+            UpdateScreenMenuItemStates();
+            
+            // Check if preview orientation changed and update if preview is visible
+            if (_previewScreen != null && !_previewScreen.IsDisposed && _previewScreen.Visible)
+            {
+                var currentOrientation = _appSettings.Settings.PreviewOrientation == "Horizontal" 
+                    ? PreviewOrientation.Horizontal 
+                    : PreviewOrientation.Vertical;
+                
+                if (_lastPreviewOrientation != currentOrientation)
+                {
+                    // Orientation changed, recreate the preview window with dedicated instances
+                    _previewScreen.Close();
+                    _previewScreen = new PreviewScreenForm(_gameService, _screenService, currentOrientation);
+                    _lastPreviewOrientation = currentOrientation;
+                    _previewScreen.Show();
+                }
+            }
         };
         
         optionsDialog.ShowDialog();
@@ -3045,6 +3271,12 @@ public partial class ControlPanelForm : Form
             SyncScreenState(_hostScreen);
             
             _hostScreen.Show();
+            
+            // Auto fullscreen to assigned monitor if enabled
+            if (_appSettings.Settings.FullScreenHostScreenEnable)
+            {
+                ApplyFullScreenToHostScreen(true, _appSettings.Settings.FullScreenHostScreenMonitor);
+            }
         }
         else
         {
@@ -3094,6 +3326,12 @@ public partial class ControlPanelForm : Form
             SyncScreenState(_guestScreen);
             
             _guestScreen.Show();
+            
+            // Auto fullscreen to assigned monitor if enabled
+            if (_appSettings.Settings.FullScreenGuestScreenEnable)
+            {
+                ApplyFullScreenToGuestScreen(true, _appSettings.Settings.FullScreenGuestScreenMonitor);
+            }
         }
         else
         {
@@ -3184,11 +3422,56 @@ public partial class ControlPanelForm : Form
             SyncScreenState(_tvScreen);
             
             tvForm.Show();
+            
+            // Auto fullscreen to assigned monitor if enabled
+            if (_appSettings.Settings.FullScreenTVScreenEnable)
+            {
+                ApplyFullScreenToTVScreen(true, _appSettings.Settings.FullScreenTVScreenMonitor);
+            }
         }
         else
         {
             (_tvScreen as Form)?.BringToFront();
         }
+    }
+
+    private void PreviewScreenToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        // Toggle preview screen visibility
+        if (_previewScreen != null && !_previewScreen.IsDisposed && _previewScreen.Visible)
+        {
+            _previewScreen.Close();
+            _previewScreen = null;
+            return;
+        }
+        
+        // Check if orientation changed since last time
+        var currentOrientation = _appSettings.Settings.PreviewOrientation == "Horizontal" 
+            ? PreviewOrientation.Horizontal 
+            : PreviewOrientation.Vertical;
+        
+        if (_previewScreen != null && !_previewScreen.IsDisposed)
+        {
+            if (_previewScreen.Orientation != currentOrientation)
+            {
+                // Orientation changed, recreate the window
+                _previewScreen.Close();
+                _previewScreen = null;
+            }
+            else
+            {
+                // Just show the existing window
+                _previewScreen.Show();
+                return;
+            }
+        }
+        
+        // Preview screen creates its own dedicated instances
+        
+        // Create preview screen with dedicated instances
+        _previewScreen = new PreviewScreenForm(_gameService, _screenService, currentOrientation);
+        _lastPreviewOrientation = currentOrientation;
+        _previewScreen.Show();
     }
 
     private void CloseToolStripMenuItem_Click(object? sender, EventArgs e)
