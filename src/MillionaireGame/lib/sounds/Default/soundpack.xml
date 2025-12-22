@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SoundPack>
+  <PackName>Default</PackName>
+  <Sounds>
+    <!-- General/Broadcast Sounds -->
+    <Sound Key="OpeningTheme" File="opening_theme.mp3" />
+    <Sound Key="CommercialIn" File="commercial_in.mp3" />
+    <Sound Key="CommercialOut" File="commercial_out.mp3" />
+    <Sound Key="ClosingTheme" File="close_theme.mp3" />
+    <Sound Key="HostEntrance" File="host_entrance.mp3" />
+    <Sound Key="CloseUnderscore" File="close_underscore.mp3" />
+    <Sound Key="ExplainRules" File="explain_rules.mp3" />
+    <Sound Key="QuitSmall" File="quit_small.mp3" />
+    <Sound Key="QuitLarge" File="quit_large.mp3" />
+    <Sound Key="WalkAwaySmall" File="walk_away_small.mp3" />
+    <Sound Key="WalkAwayLarge" File="walk_away_large.mp3" />
+    <Sound Key="GameOver" File="game_over.mp3" />
+    <Sound Key="RiskModeActive" File="risk_mode.mp3" />
+    <Sound Key="RandomContestantPicking" File="pick_random_contestant.mp3" />
+    <Sound Key="SetSafetyNet" File="set_safety_net.mp3" />
+    
+    <!-- Fastest Finger First Sounds -->
+    <Sound Key="FFFMeet2" File="fastest_finger_contestants.mp3" />
+    <Sound Key="FFFMeet3" File="fastest_finger_contestants_2.mp3" />
+    <Sound Key="FFFMeet4" File="fastest_finger_contestants_3.mp3" />
+    <Sound Key="FFFMeet5" File="fastest_finger_contestants_4.mp3" />
+    <Sound Key="FFFMeet6" File="fastest_finger_contestants_5.mp3" />
+    <Sound Key="FFFMeet7" File="fastest_finger_contestants_6.mp3" />
+    <Sound Key="FFFMeet8" File="fastest_finger_contestants_7.mp3" />
+    <Sound Key="FFFReadQuestion" File="fastest_finger_read_question.mp3" />
+    <Sound Key="FFFThreeNotes" File="fastest_finger_3_stabs.mp3" />
+    <Sound Key="FFFThinking" File="fastest_finger_think.mp3" />
+    <Sound Key="FFFReadCorrectOrder" File="fastest_finger_read_answer_order.mp3" />
+    <Sound Key="FFFOrder1" File="fastest_finger_answer_correct_1.mp3" />
+    <Sound Key="FFFOrder2" File="fastest_finger_answer_correct_2.mp3" />
+    <Sound Key="FFFOrder3" File="fastest_finger_answer_correct_3.mp3" />
+    <Sound Key="FFFOrder4" File="fastest_finger_answer_correct_4.mp3" />
+    <Sound Key="FFFWhoWasCorrect" File="fastest_finger_reveal_times.mp3" />
+    <Sound Key="FFFWinner" File="fastest_finger_winner.mp3" />
+    
+    <!-- Lifeline Sounds -->
+    <Sound Key="Lifeline1Ping" File="lifeline_1_on.mp3" />
+    <Sound Key="Lifeline2Ping" File="lifeline_2_on.mp3" />
+    <Sound Key="Lifeline3Ping" File="lifeline_3_on.mp3" />
+    <Sound Key="Lifeline4Ping" File="lifeline_4_on.mp3" />
+    <Sound Key="5050" File="fifty_fifty.mp3" />
+    <Sound Key="PAFStart" File="paf_start.mp3" />
+    <Sound Key="PAFCountdown" File="paf_countdown.mp3" />
+    <Sound Key="PAFEndEarly" File="paf_end_call_early.mp3" />
+    <Sound Key="ATAStart" File="ata_start.mp3" />
+    <Sound Key="ATAVote" File="ata_vote.mp3" />
+    <Sound Key="ATAEnd" File="ata_end.mp3" />
+    <Sound Key="SwitchActivate" File="stq_start.mp3" />
+    <Sound Key="SwitchShowCorrect" File="stq_reveal_correct_answer.mp3" />
+    <Sound Key="SwitchClear" File="stq_new_question_flip.mp3" />
+    
+    <!-- Question Lights Down Sounds -->
+    <Sound Key="Q01to05LightsDown" File="q1_to_q5_lights_down.mp3" />
+    <Sound Key="Q06LightsDown" File="lights_down_1.mp3" />
+    <Sound Key="Q07LightsDown" File="lights_down_2.mp3" />
+    <Sound Key="Q08LightsDown" File="lights_down_3.mp3" />
+    <Sound Key="Q09LightsDown" File="lights_down_4.mp3" />
+    <Sound Key="Q10LightsDown" File="lights_down_5.mp3" />
+    <Sound Key="Q11LightsDown" File="lights_down_1.mp3" />
+    <Sound Key="Q12LightsDown" File="lights_down_2.mp3" />
+    <Sound Key="Q13LightsDown" File="lights_down_3.mp3" />
+    <Sound Key="Q14LightsDown" File="lights_down_4.mp3" />
+    <Sound Key="Q15LightsDown" File="lights_down_5.mp3" />
+    
+    <!-- Question Bed Music -->
+    <Sound Key="Q01to05Bed" File="q1_to_q5_bed.mp3" />
+    <Sound Key="Q06Bed" File="q6_bed.mp3" />
+    <Sound Key="Q07Bed" File="q7_bed.mp3" />
+    <Sound Key="Q08Bed" File="q8_bed.mp3" />
+    <Sound Key="Q09Bed" File="q9_bed.mp3" />
+    <Sound Key="Q10Bed" File="q10_bed.mp3" />
+    <Sound Key="Q11Bed" File="q11_bed.mp3" />
+    <Sound Key="Q12Bed" File="q12_bed.mp3" />
+    <Sound Key="Q13Bed" File="q13_bed.mp3" />
+    <Sound Key="Q14Bed" File="q14_bed.mp3" />
+    <Sound Key="Q15Bed" File="q15_bed.mp3" />
+    
+    <!-- Final Answer Sounds -->
+    <Sound Key="Q06Final" File="final_answer_1.mp3" />
+    <Sound Key="Q07Final" File="final_answer_2.mp3" />
+    <Sound Key="Q08Final" File="final_answer_3.mp3" />
+    <Sound Key="Q09Final" File="final_answer_4.mp3" />
+    <Sound Key="Q10Final" File="final_answer_5.mp3" />
+    <Sound Key="Q11Final" File="final_answer_1.mp3" />
+    <Sound Key="Q12Final" File="final_answer_2.mp3" />
+    <Sound Key="Q13Final" File="final_answer_3.mp3" />
+    <Sound Key="Q14Final" File="final_answer_4.mp3" />
+    <Sound Key="Q15Final" File="final_answer_5.mp3" />
+    
+    <!-- Correct Answer Sounds -->
+    <Sound Key="Q01to04Correct" File="q1_to_q4_correct.mp3" />
+    <Sound Key="Q05Correct" File="q5_correct.mp3" />
+    <Sound Key="Q05Correct2" File="q5_correct_2.mp3" />
+    <Sound Key="Q06Correct" File="q6_correct.mp3" />
+    <Sound Key="Q07Correct" File="q7_correct.mp3" />
+    <Sound Key="Q08Correct" File="q8_correct.mp3" />
+    <Sound Key="Q09Correct" File="q9_correct.mp3" />
+    <Sound Key="Q10Correct" File="q10_correct.mp3" />
+    <Sound Key="Q10Correct2" File="q10_correct_2.mp3" />
+    <Sound Key="Q11Correct" File="q11_correct.mp3" />
+    <Sound Key="Q12Correct" File="q12_correct.mp3" />
+    <Sound Key="Q13Correct" File="q13_correct.mp3" />
+    <Sound Key="Q14Correct" File="q14_correct.mp3" />
+    <Sound Key="Q15Correct" File="q15_correct.mp3" />
+    
+    <!-- Wrong Answer Sounds -->
+    <Sound Key="Q01to05Wrong" File="q1_to_q5_lose.mp3" />
+    <Sound Key="Q06Wrong" File="q6_lose.mp3" />
+    <Sound Key="Q07Wrong" File="q7_lose.mp3" />
+    <Sound Key="Q08Wrong" File="q8_lose.mp3" />
+    <Sound Key="Q09Wrong" File="q9_lose.mp3" />
+    <Sound Key="Q10Wrong" File="q10_lose.mp3" />
+    <Sound Key="Q11Wrong" File="q11_lose.mp3" />
+    <Sound Key="Q12Wrong" File="q12_lose.mp3" />
+    <Sound Key="Q13Wrong" File="q13_lose.mp3" />
+    <Sound Key="Q14Wrong" File="q14_lose.mp3" />
+    <Sound Key="Q15Wrong" File="q15_lose.mp3" />
+  </Sounds>
+</SoundPack>
