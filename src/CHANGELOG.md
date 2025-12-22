@@ -48,6 +48,18 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   - Fixed safety net lock-in animation not displaying on preview screens
   - Added UpdateMoneyTreeLevel and UpdateMoneyTreeWithSafetyNetFlash methods to PreviewScreenForm
 
+- **Wrong Answer Money Tree Display**
+  - Fixed money tree not updating to dropped level (Q0, Q5, or Q10) when player loses
+  - Fixed TV screen preview showing incorrect winning amount after wrong answer
+  - Fixed Guest and Host screens clearing money tree instead of showing dropped level
+  - Money tree now properly displays safety net level reached on all screens
+
+- **Wrong Answer Flow**
+  - Wrong answer now triggers safety net lock-in animation when dropping to Q5 or Q10
+  - Added 5-second animation delay (12 flashes at 400ms intervals) before showing final dropped value
+  - Walk Away button now enabled after wrong answer instead of auto-triggering end-of-round sequence
+  - Host and player now have time to discuss the loss before manually ending the round
+
 ## [0.3-2512] - 2025-12-22
 
 ### Added

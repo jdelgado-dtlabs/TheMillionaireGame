@@ -2415,6 +2415,45 @@ public partial class ControlPanelForm : Form
 
     #region Helper Methods
 
+    private int GetDroppedLevel(int currentQuestionNumber)
+    {
+        // Determine which safety net level the player drops to based on game mode
+        var isRiskMode = _gameService.State.Mode == GameMode.Risk;
+        var wrongValue = _gameService.State.WrongValue;
+        
+        // Parse the wrong value to determine the dropped level
+        // WrongValue is a formatted string like "$0", "$1,000", or "$32,000"
+        var wrongValueNumeric = ParseMoneyValue(wrongValue);
+        
+        if (wrongValueNumeric == 0)
+        {
+            return 0; // Player drops to $0 (no safety net reached)
+        }
+        else if (wrongValueNumeric == _gameService.MoneyTree.Settings.Level05Value)
+        {
+            return 5; // Player drops to Q5 safety net ($1,000)
+        }
+        else if (wrongValueNumeric == _gameService.MoneyTree.Settings.Level10Value)
+        {
+            return 10; // Player drops to Q10 safety net ($32,000)
+        }
+        
+        return 0; // Default to 0 if no match
+    }
+    
+    private int ParseMoneyValue(string moneyString)
+    {
+        // Remove currency symbols, commas, and spaces
+        var cleaned = moneyString.Replace("$", "").Replace(",", "").Replace(" ", "").Trim();
+        
+        if (int.TryParse(cleaned, out int value))
+        {
+            return value;
+        }
+        
+        return 0;
+    }
+
     private async void SelectAnswer(string answer)
     {
         ResetAnswerColors();
@@ -2967,8 +3006,28 @@ public partial class ControlPanelForm : Form
             _soundService.StopAllSounds();
             PlayLoseSound(currentQuestionNumber);
             
-            // Auto-show winnings after 2 seconds
+            // Calculate the dropped level based on wrong value (safety net level or 0)
+            int droppedLevel = GetDroppedLevel(currentQuestionNumber);
+            
+            // Wait for lose sound to play a bit before showing dropped level
             await Task.Delay(2000);
+            
+            // If dropped to a safety net level (Q5 or Q10), play lock-in animation
+            if (droppedLevel == 5 || droppedLevel == 10)
+            {
+                // Start safety net lock-in animation
+                StartSafetyNetAnimation(droppedLevel);
+                
+                // Wait for animation to complete (12 flashes × 400ms = 4800ms + small buffer)
+                await Task.Delay(5000);
+            }
+            else
+            {
+                // No safety net, just update to level 0 immediately
+                UpdateMoneyTreeOnScreens(droppedLevel);
+            }
+            
+            // Auto-show winnings after animation completes
             if (!chkShowWinnings.Checked)
             {
                 chkShowWinnings.Checked = true;
@@ -2978,17 +3037,15 @@ public partial class ControlPanelForm : Form
             btnReveal.Enabled = false;
             btnReveal.BackColor = Color.Gray;
             
-            // Disable Walk Away (grey)
-            btnWalk.Enabled = false;
-            btnWalk.BackColor = Color.Gray;
-            
             // Disable Lights Down (grey)
             btnLightsDown.Enabled = false;
             btnLightsDown.BackColor = Color.Gray;
             
-            // Auto-trigger end-of-round sequence after wrong answer
-            await Task.Delay(2000);
-            await EndRoundSequence();
+            // Enable Walk Away button (green) so host can manually trigger end-of-round sequence
+            // This gives the host and player time to talk about the loss before moving forward
+            btnWalk.Enabled = true;
+            btnWalk.BackColor = Color.LimeGreen;
+            btnWalk.ForeColor = Color.Black;
         }
     }
 

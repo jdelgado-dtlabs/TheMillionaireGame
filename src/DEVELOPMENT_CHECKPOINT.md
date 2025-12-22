@@ -56,6 +56,19 @@
   - Fixed safety net lock-in animation not displaying on preview screens
   - Added UpdateMoneyTreeLevel and UpdateMoneyTreeWithSafetyNetFlash to PreviewScreenForm
   - Updated ControlPanelForm to call preview screen update methods
+  - Fixed money tree not updating to dropped level when player loses
+  - Fixed TV screen preview showing incorrect winning amount after wrong answer
+  - Fixed Guest and Host screens clearing money tree instead of showing dropped level
+  - Implemented safety net animation when player drops to Q5 or Q10 after wrong answer
+  - Changed wrong answer flow to enable Walk Away button instead of auto-ending round
+
+- ✅ **Wrong Answer Improvements**
+  - Added GetDroppedLevel() helper method to calculate safety net level from wrong value
+  - Added ParseMoneyValue() helper to parse formatted money strings (e.g., "$1,000")
+  - Safety net lock-in animation now plays when dropping to Q5 or Q10 (5-second animation)
+  - Walk Away button enabled after wrong answer for manual round completion
+  - Gives host and player time to discuss the loss before ending round
+  - Money tree displays correct dropped level (0, 5, or 10) on all screens
 
 - ✅ **Build Optimization**
   - Converted QuestionEditor from standalone executable to class library
