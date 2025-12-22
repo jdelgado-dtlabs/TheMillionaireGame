@@ -3034,6 +3034,9 @@ public partial class ControlPanelForm : Form
                 UpdateMoneyTreeOnScreens(droppedLevel);
             }
             
+            // Store the wrong value as final winnings for TV screen display
+            _finalWinningsAmount = _gameService.State.WrongValue;
+            
             // Auto-show winnings after animation completes
             if (!chkShowWinnings.Checked)
             {
