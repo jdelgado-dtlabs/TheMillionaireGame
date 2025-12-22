@@ -30,6 +30,12 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   - Display 1 (control screen) restricted in release mode, available in debug mode
   - Duplicate monitor assignment validation (release mode only)
 
+- **Question Editor Build Output**
+  - Converted from standalone executable to class library
+  - Now builds as DLL only (MillionaireGameQEditor.dll)
+  - Eliminates redundant exe file in build output
+  - Question Editor remains accessible from main application menu
+
 - **Repository Management**
   - Simplified src/.gitignore to only contain src-specific ignores
   - Removed .github/copilot-instructions.md from git tracking (keeping local file)
