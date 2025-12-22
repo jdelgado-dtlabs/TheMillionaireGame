@@ -1,5 +1,5 @@
 # Development Checkpoint - v0.3-2512
-**Date**: December 20, 2025  
+**Date**: December 22, 2025  
 **Version**: 0.3-2512  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
@@ -8,7 +8,80 @@
 
 ## Session Summary
 
-### Latest Session (v0.3-2512) - December 20, 2025
+### Latest Session (v0.3-2512) - December 22, 2025
+
+#### Settings System Improvements
+- ✅ Monitor Selection Enhancement
+  - Enhanced dropdown format: "ID:Manufacturer:Model (Resolution)"
+  - WMI queries via System.Management to extract monitor metadata
+  - Uses WmiMonitorID class for UserFriendlyName and ManufacturerName
+  - Handles cases where manufacturer/model unavailable (falls back to basic format)
+
+- ✅ Full Screen & Auto Show Checkboxes
+  - Full Screen checkbox has immediate effect (applies full-screen on toggle)
+  - Auto Show checkbox behavior at startup (shows screens automatically)
+  - Dropdowns disable when Full Screen is enabled (grey out)
+  - Event handlers: chkFullScreenHost_CheckedChanged, chkFullScreenGuest_CheckedChanged, chkFullScreenTV_CheckedChanged
+
+- ✅ Settings Persistence to XML
+  - Fixed Program.cs to use XML mode: `new ApplicationSettingsManager()` without connection string
+  - Removed database migration code
+  - Synchronous SaveSettings() instead of SaveSettingsAsync().Wait() to prevent deadlocks
+  - ApplicationSettingsManager instance properly passed to OptionsDialog
+  - Settings load from config.xml on startup
+
+#### Sound System Cleanup
+- ✅ Deprecated Properties Removed
+  - Removed ~160 Sound* properties from ApplicationSettings.cs
+  - Properties removed: SoundOpening, SoundCommercialIn, SoundLifeline*, SoundFFF*, SoundQ1-Q15 variants
+  - Only SelectedSoundPack property retained
+  - Removed LoadSoundsFromSettingsLegacy method from SoundService.cs
+  - Updated LoadSoundsFromSettings to use soundpack system exclusively
+  - No fallback to legacy properties (logs error if soundpack fails)
+
+- ✅ Soundpack System
+  - Primary: SoundPackManager loads from lib/sounds/{PackName}/soundpack.xml
+  - Default pack at lib/sounds/Default/soundpack.xml fully operational
+  - Cleaner config.xml with only SelectedSoundPack for sounds
+
+#### Bug Fixes
+- ✅ Money Tree Reset
+  - Added UpdateMoneyTreeOnScreens(0) after StopMoneyTreeDemo() in btnLightsDown_Click
+  - Money tree now properly resets to level 0 when starting new player's game
+  - Prevents Q15 position from remaining after demo animation
+
+- ✅ ATA Statistics Display
+  - Removed DrawATAPreview() call that was triggering on all 4 answers revealed
+  - ATA preview now only shows when _showATA flag is true (lifeline activated)
+  - Fixed unwanted ATA statistics window appearing on host screen
+
+- ✅ Show Correct Answer to Host
+  - Fixed ShowCorrectAnswerToHost to set _isRevealing = true
+  - Added immediate effect checkbox handler: chkCorrectAnswer_CheckedChanged
+  - Checkbox only works when _answerRevealStep == 5 (all answers revealed)
+  - Toggle show/hide correct answer at any time after full reveal
+  - Updated interface signatures to accept nullable string for hide functionality
+
+#### Files Modified
+**Settings System:**
+- `MillionaireGame.Core/Settings/ApplicationSettings.cs` - Removed deprecated Sound* properties
+- `MillionaireGame/Program.cs` - Fixed to XML-only mode
+- `MillionaireGame/Forms/Options/OptionsDialog.cs` - Added checkbox event handlers, receives ApplicationSettingsManager
+- `MillionaireGame/Forms/ControlPanelForm.cs` - Passes ApplicationSettingsManager to OptionsDialog
+
+**Sound System:**
+- `MillionaireGame/Services/SoundService.cs` - Removed legacy loading, soundpack-only
+- `MillionaireGame/Services/SoundPackManager.cs` - Primary sound loading system
+
+**Bug Fixes:**
+- `MillionaireGame/Forms/ControlPanelForm.cs` - Money tree reset, checkbox handler
+- `MillionaireGame/Forms/HostScreenForm.cs` - Fixed correct answer display, removed ATA preview
+- `MillionaireGame/Services/ScreenUpdateService.cs` - Updated interface for nullable string
+- `MillionaireGame/Forms/TVScreenForm.cs` - Updated interface implementation
+- `MillionaireGame/Forms/TVScreenFormScalable.cs` - Updated interface implementation
+- `MillionaireGame/Forms/GuestScreenForm.cs` - Updated interface implementation
+
+### Previous Session (v0.3-2512) - December 20-21, 2025
 
 #### Money Tree Settings System
 - ✅ Complete settings UI implementation

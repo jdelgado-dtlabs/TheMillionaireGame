@@ -126,6 +126,17 @@ public partial class ControlPanelForm : Form
     private GuestScreenForm? _guestScreen;
     private IGameScreen? _tvScreen;
 
+    // Helper methods to access stop images from Designer
+    private static Image? GetRedStopImage()
+    {
+        return _stopImageNormal; // Red for disabled state
+    }
+
+    private static Image? GetBlackStopImage()
+    {
+        return _stopImageWhite; // Actually black, named _stopImageWhite for compatibility
+    }
+
     public ControlPanelForm(
         GameService gameService,
         ApplicationSettingsManager appSettings,
@@ -193,17 +204,129 @@ public partial class ControlPanelForm : Form
         // Auto-show screens if configured
         if (_appSettings.Settings.AutoShowHostScreen)
         {
-            // TODO: Show host screen
+            HostScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+            
+            // Apply full-screen if configured
+            if (_appSettings.Settings.FullScreenHostScreenEnable)
+            {
+                ApplyFullScreenToHostScreen(true, _appSettings.Settings.FullScreenHostScreenMonitor);
+            }
         }
         if (_appSettings.Settings.AutoShowGuestScreen)
         {
-            // TODO: Show guest screen
+            GuestScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+            
+            // Apply full-screen if configured
+            if (_appSettings.Settings.FullScreenGuestScreenEnable)
+            {
+                ApplyFullScreenToGuestScreen(true, _appSettings.Settings.FullScreenGuestScreenMonitor);
+            }
         }
         if (_appSettings.Settings.AutoShowTVScreen)
         {
-            // TODO: Show TV screen
+            TVScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+            
+            // Apply full-screen if configured
+            if (_appSettings.Settings.FullScreenTVScreenEnable)
+            {
+                ApplyFullScreenToTVScreen(true, _appSettings.Settings.FullScreenTVScreenMonitor);
+            }
         }
     }
+    
+    #region Full Screen Management
+    
+    /// <summary>
+    /// Apply full-screen settings to host screen
+    /// </summary>
+    public void ApplyFullScreenToHostScreen(bool fullScreen, int monitorIndex)
+    {
+        if (_hostScreen == null || _hostScreen.IsDisposed) return;
+        
+        if (fullScreen)
+        {
+            // Set to full-screen on specified monitor
+            var screens = Screen.AllScreens;
+            if (monitorIndex >= 0 && monitorIndex < screens.Length)
+            {
+                var targetScreen = screens[monitorIndex];
+                _hostScreen.FormBorderStyle = FormBorderStyle.None;
+                _hostScreen.WindowState = FormWindowState.Normal; // Reset before setting bounds
+                _hostScreen.Bounds = targetScreen.Bounds;
+                _hostScreen.WindowState = FormWindowState.Maximized;
+            }
+        }
+        else
+        {
+            // Revert to windowed mode
+            _hostScreen.FormBorderStyle = FormBorderStyle.Sizable;
+            _hostScreen.WindowState = FormWindowState.Normal;
+            _hostScreen.StartPosition = FormStartPosition.CenterScreen;
+        }
+    }
+    
+    /// <summary>
+    /// Apply full-screen settings to guest screen
+    /// </summary>
+    public void ApplyFullScreenToGuestScreen(bool fullScreen, int monitorIndex)
+    {
+        if (_guestScreen == null || _guestScreen.IsDisposed) return;
+        
+        if (fullScreen)
+        {
+            // Set to full-screen on specified monitor
+            var screens = Screen.AllScreens;
+            if (monitorIndex >= 0 && monitorIndex < screens.Length)
+            {
+                var targetScreen = screens[monitorIndex];
+                _guestScreen.FormBorderStyle = FormBorderStyle.None;
+                _guestScreen.WindowState = FormWindowState.Normal; // Reset before setting bounds
+                _guestScreen.Bounds = targetScreen.Bounds;
+                _guestScreen.WindowState = FormWindowState.Maximized;
+            }
+        }
+        else
+        {
+            // Revert to windowed mode
+            _guestScreen.FormBorderStyle = FormBorderStyle.Sizable;
+            _guestScreen.WindowState = FormWindowState.Normal;
+            _guestScreen.StartPosition = FormStartPosition.CenterScreen;
+        }
+    }
+    
+    /// <summary>
+    /// Apply full-screen settings to TV screen
+    /// </summary>
+    public void ApplyFullScreenToTVScreen(bool fullScreen, int monitorIndex)
+    {
+        if (_tvScreen == null) return;
+        
+        var tvForm = _tvScreen as Form;
+        if (tvForm == null || tvForm.IsDisposed) return;
+        
+        if (fullScreen)
+        {
+            // Set to full-screen on specified monitor
+            var screens = Screen.AllScreens;
+            if (monitorIndex >= 0 && monitorIndex < screens.Length)
+            {
+                var targetScreen = screens[monitorIndex];
+                tvForm.FormBorderStyle = FormBorderStyle.None;
+                tvForm.WindowState = FormWindowState.Normal; // Reset before setting bounds
+                tvForm.Bounds = targetScreen.Bounds;
+                tvForm.WindowState = FormWindowState.Maximized;
+            }
+        }
+        else
+        {
+            // Revert to windowed mode
+            tvForm.FormBorderStyle = FormBorderStyle.Sizable;
+            tvForm.WindowState = FormWindowState.Normal;
+            tvForm.StartPosition = FormStartPosition.CenterScreen;
+        }
+    }
+    
+    #endregion
 
     #region Event Handlers
 
@@ -361,6 +484,24 @@ public partial class ControlPanelForm : Form
         {
             _screenService.HideWinnings();
             _finalWinningsAmount = null; // Clear stored amount when hiding
+        }
+    }
+
+    private void chkCorrectAnswer_CheckedChanged(object? sender, EventArgs e)
+    {
+        // Show or hide correct answer on host screen based on checkbox state
+        if (chkCorrectAnswer.Checked)
+        {
+            // Only show if all answers have been revealed (step 5) and we have a correct answer loaded
+            if (_answerRevealStep == 5 && !string.IsNullOrEmpty(lblAnswer.Text))
+            {
+                _screenService.ShowCorrectAnswerToHost(lblAnswer.Text);
+            }
+        }
+        else
+        {
+            // Hide the correct answer by clearing it on the host screen
+            _hostScreen?.ShowCorrectAnswerToHost(null);
         }
     }
 
@@ -619,17 +760,14 @@ public partial class ControlPanelForm : Form
         // Stop money tree demo if running
         StopMoneyTreeDemo();
         
+        // Reset money tree display to level 0 when starting a new player's game
+        UpdateMoneyTreeOnScreens(0);
+        
         // Hide money tree if visible on TV screen
         if (btnShowMoneyTree.Text == "Hide Money Tree" || btnShowMoneyTree.Text == "Demo Money Tree" || btnShowMoneyTree.Text == "Demo Running...")
         {
-            if (_tvScreen is TVScreenFormScalable tvScalable)
-            {
-                await tvScalable.HideMoneyTreeAsync();
-            }
-            else if (_tvScreen is TVScreenForm tvForm)
-            {
-                await tvForm.HideMoneyTreeAsync();
-            }
+            // Money tree will be hidden via HideWinnings on the screen
+            _screenService.HideWinnings();
             
             // Reset button to Show state
             btnShowMoneyTree.BackColor = Color.LimeGreen;
@@ -649,8 +787,9 @@ public partial class ControlPanelForm : Form
         // For Q1-5, enable Reset button on first lights down and play bed music after delay
         if (questionNumber >= 1 && questionNumber <= 5)
         {
-            // Disable risk mode button after first lights down
+            // Disable risk mode button after first lights down (grey)
             btnActivateRiskMode.Enabled = false;
+            btnActivateRiskMode.BackColor = Color.Gray;
             
             // Wait for lights down sound to finish before starting bed music
             await Task.Delay(4000);
@@ -837,14 +976,8 @@ public partial class ControlPanelForm : Form
             }
             
             // Show the money tree on TV screen only
-            if (_tvScreen is TVScreenFormScalable tvScalable)
-            {
-                await tvScalable.ShowMoneyTreeAsync();
-            }
-            else if (_tvScreen is TVScreenForm tvForm)
-            {
-                await tvForm.ShowMoneyTreeAsync();
-            }
+            var currentState = _gameService.State;
+            _screenService.ShowWinnings(currentState);
             
             // Update button state based on whether Explain Game is active
             if (_isExplainGameActive)
@@ -873,14 +1006,7 @@ public partial class ControlPanelForm : Form
             StopMoneyTreeDemo();
             
             // Hide the money tree from TV screen
-            if (_tvScreen is TVScreenFormScalable tvScalable)
-            {
-                await tvScalable.HideMoneyTreeAsync();
-            }
-            else if (_tvScreen is TVScreenForm tvForm)
-            {
-                await tvForm.HideMoneyTreeAsync();
-            }
+            _screenService.HideWinnings();
             
             // Update button state
             btnShowMoneyTree.BackColor = Color.LimeGreen;
@@ -1639,6 +1765,14 @@ public partial class ControlPanelForm : Form
         btnPickPlayer.BackColor = Color.LimeGreen;
         btnPickPlayer.ForeColor = Color.Black;
         
+        // Enable Reset Game button (grey with red border/symbol and black text)
+        btnResetGame.Enabled = true;
+        btnResetGame.BackColor = Color.Gray;
+        btnResetGame.FlatAppearance.BorderColor = Color.Red;
+        btnResetGame.FlatAppearance.BorderSize = 3;
+        btnResetGame.ForeColor = Color.Black;
+        btnResetGame.Image = GetRedStopImage();
+        
         // Play host entrance audio once
         _soundService.PlaySound(SoundEffect.HostEntrance, loop: false);
     }
@@ -1648,6 +1782,9 @@ public partial class ControlPanelForm : Form
         // TODO: Open FFF Server dialog to pick contestant
         MessageBox.Show("FFF Server functionality will be implemented later.", 
             "Pick Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        
+        // Reset game win flag for new round
+        _gameService.State.GameWin = false;
         
         // After picking player, disable Pick Player
         btnPickPlayer.Enabled = false;
@@ -1667,6 +1804,19 @@ public partial class ControlPanelForm : Form
         btnShowMoneyTree.Enabled = true;
         btnShowMoneyTree.BackColor = Color.LimeGreen;
         btnShowMoneyTree.ForeColor = Color.Black;
+        
+        // Enable Activate Risk Mode button (yellow - deactivated but available)
+        btnActivateRiskMode.Enabled = true;
+        btnActivateRiskMode.BackColor = Color.Yellow;
+        btnActivateRiskMode.ForeColor = Color.Black;
+        
+        // Enable Reset Round button (grey with red border/symbol and black text)
+        btnResetRound.Enabled = true;
+        btnResetRound.BackColor = Color.Gray;
+        btnResetRound.FlatAppearance.BorderColor = Color.Red;
+        btnResetRound.FlatAppearance.BorderSize = 3;
+        btnResetRound.ForeColor = Color.Black;
+        btnResetRound.Image = GetRedStopImage();
         
         // Enable question level selector - allow setting before first lights down
         nmrLevel.Enabled = true;
@@ -1734,38 +1884,11 @@ public partial class ControlPanelForm : Form
         // Reset automated sequence flag
         _isAutomatedSequenceRunning = false;
         
-        // Now reset the game (after winnings have been shown)
-        _soundService.StopAllSounds();
+        // Mark that at least one round has been completed
+        _firstRoundCompleted = true;
         
-        // Reset PAF state
-        _pafTimer?.Stop();
-        _pafTimer?.Dispose();
-        _pafTimer = null;
-        _pafStage = PAFStage.NotStarted;
-        _pafLifelineNumber = 0;
-        _pafSecondsRemaining = 30;
-        
-        // Reset money tree demo state
-        _moneyTreeDemoTimer?.Stop();
-        _moneyTreeDemoTimer?.Dispose();
-        _moneyTreeDemoTimer = null;
-        _isMoneyTreeDemoActive = false;
-        _moneyTreeDemoLevel = 0;
-        
-        // Reset ATA state
-        _ataTimer?.Stop();
-        _ataTimer?.Dispose();
-        _ataTimer = null;
-        _ataStage = ATAStage.NotStarted;
-        _ataLifelineNumber = 0;
-        _ataSecondsRemaining = 120;
-        
-        _gameService.ResetGame();
-        _firstRoundCompleted = true; // Mark that at least one round has been completed
-        ResetAllControls();
-        
-        // After reset, ensure Closing button is enabled and ready for next closing sequence
-        // (ResetAllControls already handles this based on _firstRoundCompleted)
+        // Don't automatically reset - let user manually reset with Reset Round button
+        // All buttons should already be disabled at this point except Closing
     }
 
     private async void btnClosing_Click(object? sender, EventArgs e)
@@ -1934,6 +2057,157 @@ public partial class ControlPanelForm : Form
     {
         // Stop all currently playing audio
         _soundService.StopAllSounds();
+    }
+
+    private void btnResetGame_Click(object? sender, EventArgs e)
+    {
+        // Reset to fresh initialization - application start state
+        _soundService.StopAllSounds();
+        
+        // Stop and dispose all timers
+        _pafTimer?.Stop();
+        _pafTimer?.Dispose();
+        _pafTimer = null;
+        _ataTimer?.Stop();
+        _ataTimer?.Dispose();
+        _ataTimer = null;
+        _moneyTreeDemoTimer?.Stop();
+        _moneyTreeDemoTimer?.Dispose();
+        _moneyTreeDemoTimer = null;
+        _closingTimer?.Stop();
+        _closingTimer?.Dispose();
+        _closingTimer = null;
+        
+        // Reset all state
+        _pafStage = PAFStage.NotStarted;
+        _pafLifelineNumber = 0;
+        _pafSecondsRemaining = 30;
+        _ataStage = ATAStage.NotStarted;
+        _ataLifelineNumber = 0;
+        _ataSecondsRemaining = 120;
+        _isMoneyTreeDemoActive = false;
+        _moneyTreeDemoLevel = 0;
+        _isExplainGameActive = false;
+        _closingStage = ClosingStage.NotStarted;
+        _isAutomatedSequenceRunning = false;
+        _gameOutcome = GameOutcome.InProgress;
+        _firstRoundCompleted = false;
+        
+        // Reset game service
+        _gameService.ResetGame();
+        
+        // Reset all controls
+        ResetAllControls();
+        
+        // Clear screens
+        _screenService.ResetAllScreens();
+        
+        // Reset to initial button states
+        btnHostIntro.Enabled = true;
+        btnHostIntro.BackColor = Color.LimeGreen;
+        btnHostIntro.ForeColor = Color.Black;
+        
+        btnPickPlayer.Enabled = false;
+        btnPickPlayer.BackColor = Color.Gray;
+        
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        btnClosing.Enabled = false;
+        btnClosing.BackColor = Color.Gray;
+        
+        btnActivateRiskMode.Enabled = false;
+        btnActivateRiskMode.BackColor = Color.Gray;
+        
+        btnResetGame.Enabled = false;
+        btnResetGame.BackColor = Color.Gray;
+        btnResetGame.FlatAppearance.BorderColor = Color.Black;
+        btnResetGame.FlatAppearance.BorderSize = 2;
+        btnResetGame.ForeColor = Color.Black;
+        btnResetGame.Image = GetBlackStopImage();
+        
+        btnResetRound.Enabled = false;
+        btnResetRound.BackColor = Color.Gray;
+        btnResetRound.FlatAppearance.BorderColor = Color.Black;
+        btnResetRound.FlatAppearance.BorderSize = 2;
+        btnResetRound.ForeColor = Color.Black;
+        btnResetRound.Image = GetBlackStopImage();
+    }
+
+    private void btnResetRound_Click(object? sender, EventArgs e)
+    {
+        // Reset to after Host Intro - ready for Pick a Player
+        _soundService.StopAllSounds();
+        
+        // Stop and dispose all timers
+        _pafTimer?.Stop();
+        _pafTimer?.Dispose();
+        _pafTimer = null;
+        _ataTimer?.Stop();
+        _ataTimer?.Dispose();
+        _ataTimer = null;
+        _moneyTreeDemoTimer?.Stop();
+        _moneyTreeDemoTimer?.Dispose();
+        _moneyTreeDemoTimer = null;
+        
+        // Reset round state
+        _pafStage = PAFStage.NotStarted;
+        _pafLifelineNumber = 0;
+        _pafSecondsRemaining = 30;
+        _ataStage = ATAStage.NotStarted;
+        _ataLifelineNumber = 0;
+        _ataSecondsRemaining = 120;
+        _isMoneyTreeDemoActive = false;
+        _moneyTreeDemoLevel = 0;
+        _isExplainGameActive = false;
+        _isAutomatedSequenceRunning = false;
+        _gameOutcome = GameOutcome.InProgress;
+        
+        // Reset game service
+        _gameService.ResetGame();
+        
+        // Reset all controls
+        ResetAllControls();
+        
+        // Clear screens
+        _screenService.ResetAllScreens();
+        
+        // Set to checkpoint after Host Intro
+        btnHostIntro.Enabled = false;
+        btnHostIntro.BackColor = Color.Gray;
+        
+        btnPickPlayer.Enabled = true;
+        btnPickPlayer.BackColor = Color.LimeGreen;
+        btnPickPlayer.ForeColor = Color.Black;
+        
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        // Risk Mode should be disabled (grey) - not available until Pick Player
+        btnActivateRiskMode.Enabled = false;
+        btnActivateRiskMode.BackColor = Color.Gray;
+        
+        // Reset Round should still be enabled
+        btnResetRound.Enabled = true;
+        btnResetRound.BackColor = Color.Gray;
+        btnResetRound.FlatAppearance.BorderColor = Color.Red;
+        btnResetRound.FlatAppearance.BorderSize = 3;
+        btnResetRound.ForeColor = Color.Black;
+        btnResetRound.Image = GetRedStopImage();
+        
+        // Reset Game should still be enabled
+        btnResetGame.Enabled = true;
+        btnResetGame.BackColor = Color.Gray;
+        btnResetGame.FlatAppearance.BorderColor = Color.Red;
+        btnResetGame.FlatAppearance.BorderSize = 3;
+        btnResetGame.ForeColor = Color.Black;
+        btnResetGame.Image = GetRedStopImage();
     }
 
     #endregion
@@ -2400,6 +2674,10 @@ public partial class ControlPanelForm : Form
             // For Q15, enable Thanks for Playing (green)
             else if (currentQuestionNumber == 15)
             {
+                _gameService.State.GameWin = true; // Set flag immediately when Q15 is answered correctly
+                _gameService.RefreshMoneyValues(); // Update CurrentValue to show top prize
+                UpdateMoneyDisplay(); // Update control panel display to show $1,000,000
+                UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin)); // Update money tree to level 15
                 _gameOutcome = GameOutcome.Win; // Player won the game!
                 _isAutomatedSequenceRunning = true; // Mark sequence as automated
                 
@@ -2732,7 +3010,7 @@ public partial class ControlPanelForm : Form
 
     private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings);
+        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings);
         
         // Subscribe to settings applied event to update immediately when Apply is clicked
         optionsDialog.SettingsApplied += (s, ev) =>
@@ -2864,6 +3142,20 @@ public partial class ControlPanelForm : Form
             else
             {
                 screen.ShowWinnings(_gameService.State);
+            }
+        }
+        
+        // Sync money tree visibility state
+        if (btnShowMoneyTree.Text == "Hide Money Tree" || btnShowMoneyTree.Text == "Demo Money Tree" || btnShowMoneyTree.Text == "Demo Running...")
+        {
+            // Money tree is currently visible, show it on the new screen
+            var currentState = _gameService.State;
+            screen.ShowWinnings(currentState);
+            
+            // If demo is active, sync the current demo level (only works for scalable screens)
+            if (_isMoneyTreeDemoActive && _moneyTreeDemoLevel > 0 && screen is TVScreenFormScalable tvScalable)
+            {
+                tvScalable.UpdateMoneyTreeLevel(_moneyTreeDemoLevel);
             }
         }
         

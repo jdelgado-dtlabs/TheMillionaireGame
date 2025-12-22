@@ -60,48 +60,14 @@ internal static class Program
             Console.WriteLine();
         }
 
-        // Perform settings migration if needed
-        var migrationService = new SettingsMigrationService(
-            new ApplicationSettingsRepository(sqlSettings.Settings.GetConnectionString()));
-
-        if (await migrationService.MigrationNeededAsync())
-        {
-            if (DebugMode)
-            {
-                Console.WriteLine("=== SETTINGS MIGRATION ===");
-                Console.WriteLine("Migrating settings from XML to database...");
-            }
-
-            var migrationResult = await migrationService.MigrateAsync();
-            
-            if (DebugMode)
-            {
-                Console.WriteLine(migrationResult.ToString());
-                Console.WriteLine();
-            }
-
-            if (!migrationResult.Success)
-            {
-                MessageBox.Show(
-                    $"Warning: Settings migration encountered an issue:\n{migrationResult.ErrorMessage}\n\nUsing default settings.",
-                    "Migration Warning",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-            }
-        }
-        else if (DebugMode)
-        {
-            Console.WriteLine("Settings already in database, skipping migration.");
-            Console.WriteLine();
-        }
-
-        // Load application settings from database
-        var appSettings = new ApplicationSettingsManager(null, sqlSettings.Settings.GetConnectionString());
-        await appSettings.LoadSettingsAsync();
+        // Settings are stored in XML for now (database migration disabled)
+        // Load application settings from XML
+        var appSettings = new ApplicationSettingsManager();
+        appSettings.LoadSettings();
 
         if (DebugMode)
         {
-            Console.WriteLine("Application settings loaded from database.");
+            Console.WriteLine("Application settings loaded from XML.");
             Console.WriteLine();
         }
 

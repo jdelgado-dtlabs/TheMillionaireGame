@@ -2,6 +2,53 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [0.3-2512] - 2025-12-22
+
+### Added
+- **Settings Enhancements**
+  - Screen monitor selection with detailed format: "ID:Manufacturer:Model (Resolution)"
+  - WMI queries to extract monitor manufacturer and model names
+  - Auto Show and Full Screen checkboxes with immediate effect
+  - Dropdown enable/disable based on Full Screen checkbox state
+  - Full-screen mode applied immediately when checkbox is toggled
+  - Settings persistence to XML (config.xml)
+
+- **Show Correct Answer to Host**
+  - Checkbox control with immediate effect (only when all answers revealed)
+  - Green highlight on correct answer for host screen preview
+  - Toggle on/off at any time during question review
+  - Prevents premature answer reveal (requires _answerRevealStep == 5)
+
+### Fixed
+- **Money Tree Display**
+  - Money tree now resets to level 0 when lights down starts a new player's game
+  - Prevents Q15 from remaining displayed after demo animation
+  
+- **ATA Statistics Display**
+  - Removed automatic ATA preview that appeared when all answers were revealed
+  - ATA statistics now only show when ATA lifeline is actually activated
+  - Cleaned up DrawATAPreview call that was triggering incorrectly
+
+- **Settings Persistence**
+  - Fixed ApplicationSettingsManager to use XML mode instead of database
+  - Removed database migration code from Program.cs
+  - Synchronous SaveSettings() to prevent deadlocks
+  - ApplicationSettingsManager instance properly shared across forms
+
+### Removed
+- **Deprecated Sound Properties**
+  - Removed ~160 individual Sound* properties from ApplicationSettings
+  - Removed LoadSoundsFromSettingsLegacy fallback method
+  - Soundpack system now exclusively used for all audio
+  - Only SelectedSoundPack property retained for sound configuration
+  - Cleaner config.xml with minimal sound settings
+
+### Technical Improvements
+- System.Management 8.0.0 for WMI monitor queries
+- Event handlers for immediate checkbox effects
+- Enhanced ApplicationSettings with only active properties
+- Nullable string support for ShowCorrectAnswerToHost interface
+
 ## [0.3-2512] - 2025-12-21
 
 ### Added

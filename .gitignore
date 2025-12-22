@@ -366,3 +366,9 @@ FodyWeavers.xsd
 .vscode/
 .history/
 *.code-workspace
+
+# Local NuGet cache folders
+.nuget/packages/
+
+# GitHub Copilot Instructions
+.github/copilot-instructions.md

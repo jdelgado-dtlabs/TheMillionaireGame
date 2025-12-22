@@ -111,7 +111,7 @@ public partial class TVScreenForm : Form, IGameScreen
         // For now, this is a no-op as answers are shown by default on TV screen
     }
 
-    public void ShowCorrectAnswerToHost(string correctAnswer)
+    public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         // TV screen does nothing - this is host-only
     }

@@ -2,7 +2,6 @@ using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
-using MillionaireGame.Controls;
 using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Forms;
@@ -21,7 +20,6 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private string? _currentAmount;
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
-    private MoneyTreeControl? _moneyTreeControl;
     private MoneyTreeService? _moneyTreeService;
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
@@ -64,18 +62,11 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
-
-        // Create money tree control at fixed position (right side)
-        _moneyTreeControl = new MoneyTreeControl(moneyTreeService);
-        _moneyTreeControl.Location = new Point(1640, 50);
-        _moneyTreeControl.Size = new Size(250, 900);
-        Controls.Add(_moneyTreeControl);
     }
 
     public void UpdateMoneyTreeLevel(int level)
     {
         _currentMoneyTreeLevel = level;
-        _moneyTreeControl?.SetCurrentLevel(level);
         Invalidate(); // Redraw to update money tree
     }
 
@@ -102,12 +93,6 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         DrawAnswerBox(g, "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
         DrawAnswerBox(g, "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
         DrawAnswerBox(g, "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
-
-        // Draw ATA percentages if all answers are visible (for host preview)
-        if (_visibleAnswers.Count == 4 && _currentQuestion != null)
-        {
-            DrawATAPreview(g);
-        }
 
         // Draw ATA results if active
         if (_showATA)
@@ -504,7 +489,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         Invalidate();
     }
 
-    public void ShowCorrectAnswerToHost(string correctAnswer)
+    public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         if (InvokeRequired)
         {
@@ -513,6 +498,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         }
 
         _correctAnswer = correctAnswer;
+        _isRevealing = !string.IsNullOrEmpty(correctAnswer);
         Invalidate();
     }
 

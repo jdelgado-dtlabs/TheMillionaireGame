@@ -2,6 +2,7 @@ using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Management;
 
 namespace MillionaireGame.Forms.Options;
 
@@ -17,16 +18,19 @@ public partial class OptionsDialog : Form
     /// </summary>
     public event EventHandler? SettingsApplied;
 
-    public OptionsDialog(ApplicationSettings settings)
+    public OptionsDialog(ApplicationSettings settings, ApplicationSettingsManager settingsManager)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _settingsManager = new ApplicationSettingsManager(); // For saving
+        _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
         _moneyTreeService = new MoneyTreeService(); // Load money tree settings
         InitializeComponent();
         IconHelper.ApplyToForm(this);
         
         // Initialize Money Tree tab dynamically
         InitializeMoneyTreeTab();
+        
+        // Populate monitor dropdowns
+        PopulateMonitorDropdowns();
         
         // Handle form closing to respect user's choice about unsaved changes
         FormClosing += OptionsDialog_FormClosing;
@@ -45,6 +49,11 @@ public partial class OptionsDialog : Form
         chkFullScreenHostScreen.Checked = _settings.FullScreenHostScreenEnable;
         chkFullScreenGuestScreen.Checked = _settings.FullScreenGuestScreenEnable;
         chkFullScreenTVScreen.Checked = _settings.FullScreenTVScreenEnable;
+        
+        // Monitor selections
+        SelectMonitorIndex(cmbMonitorHost, _settings.FullScreenHostScreenMonitor);
+        SelectMonitorIndex(cmbMonitorGuest, _settings.FullScreenGuestScreenMonitor);
+        SelectMonitorIndex(cmbMonitorTV, _settings.FullScreenTVScreenMonitor);
 
         // Lifeline settings
         numTotalLifelines.Value = _settings.TotalLifelines;
@@ -78,9 +87,87 @@ public partial class OptionsDialog : Form
         
         // Load money tree settings
         LoadMoneyTreeSettings();
+        
+        // Update dropdown enabled states based on full-screen checkboxes
+        UpdateDropdownEnabledStates();
 
         _hasChanges = false;
     }
+    
+    private void UpdateDropdownEnabledStates()
+    {
+        // Disable dropdown when full-screen is enabled, enable when disabled
+        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+    }
+    
+    #region Full Screen Checkbox Event Handlers
+    
+    private void chkFullScreenHost_CheckedChanged(object sender, EventArgs e)
+    {
+        // Mark settings as changed
+        MarkChanged();
+        
+        // Update dropdown enabled state
+        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+        
+        // Apply full-screen immediately if checked and host screen is open
+        ApplyFullScreenToOpenScreen("Host");
+    }
+    
+    private void chkFullScreenGuest_CheckedChanged(object sender, EventArgs e)
+    {
+        // Mark settings as changed
+        MarkChanged();
+        
+        // Update dropdown enabled state
+        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+        
+        // Apply full-screen immediately if checked and guest screen is open
+        ApplyFullScreenToOpenScreen("Guest");
+    }
+    
+    private void chkFullScreenTV_CheckedChanged(object sender, EventArgs e)
+    {
+        // Mark settings as changed
+        MarkChanged();
+        
+        // Update dropdown enabled state
+        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+        
+        // Apply full-screen immediately if checked and TV screen is open
+        ApplyFullScreenToOpenScreen("TV");
+    }
+    
+    private void ApplyFullScreenToOpenScreen(string screenType)
+    {
+        // Get the main control panel form
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        if (controlPanel == null) return;
+        
+        // Apply full-screen state to the screen if it's open
+        switch (screenType)
+        {
+            case "Host":
+                controlPanel.ApplyFullScreenToHostScreen(
+                    chkFullScreenHostScreen.Checked, 
+                    GetSelectedMonitorIndex(cmbMonitorHost));
+                break;
+            case "Guest":
+                controlPanel.ApplyFullScreenToGuestScreen(
+                    chkFullScreenGuestScreen.Checked, 
+                    GetSelectedMonitorIndex(cmbMonitorGuest));
+                break;
+            case "TV":
+                controlPanel.ApplyFullScreenToTVScreen(
+                    chkFullScreenTVScreen.Checked, 
+                    GetSelectedMonitorIndex(cmbMonitorTV));
+                break;
+        }
+    }
+    
+    #endregion
 
     private void UpdateLifelineGroupStates()
     {
@@ -135,6 +222,11 @@ public partial class OptionsDialog : Form
         _settings.FullScreenHostScreenEnable = chkFullScreenHostScreen.Checked;
         _settings.FullScreenGuestScreenEnable = chkFullScreenGuestScreen.Checked;
         _settings.FullScreenTVScreenEnable = chkFullScreenTVScreen.Checked;
+        
+        // Monitor selections
+        _settings.FullScreenHostScreenMonitor = GetSelectedMonitorIndex(cmbMonitorHost);
+        _settings.FullScreenGuestScreenMonitor = GetSelectedMonitorIndex(cmbMonitorGuest);
+        _settings.FullScreenTVScreenMonitor = GetSelectedMonitorIndex(cmbMonitorTV);
 
         // Lifeline settings
         _settings.TotalLifelines = (int)numTotalLifelines.Value;
@@ -1136,4 +1228,193 @@ public partial class OptionsDialog : Form
         // Save to file
         _moneyTreeService.SaveSettings();
     }
+
+    #region Monitor Management
+
+    private void PopulateMonitorDropdowns()
+    {
+        var screens = Screen.AllScreens;
+        
+        // Clear existing items
+        cmbMonitorHost.Items.Clear();
+        cmbMonitorGuest.Items.Clear();
+        cmbMonitorTV.Items.Clear();
+        
+        // Add each monitor to the dropdowns
+        for (int i = 0; i < screens.Length; i++)
+        {
+            var screen = screens[i];
+            var (manufacturer, modelName) = GetMonitorModelName(screen);
+            string displayText = $"{i + 1}:{manufacturer}:{modelName} ({screen.Bounds.Width}x{screen.Bounds.Height})";
+            
+            cmbMonitorHost.Items.Add(displayText);
+            cmbMonitorGuest.Items.Add(displayText);
+            cmbMonitorTV.Items.Add(displayText);
+        }
+        
+        // Select first item by default if available
+        if (cmbMonitorHost.Items.Count > 0)
+        {
+            cmbMonitorHost.SelectedIndex = 0;
+            cmbMonitorGuest.SelectedIndex = 0;
+            cmbMonitorTV.SelectedIndex = 0;
+        }
+    }
+
+    private (string manufacturer, string modelName) GetMonitorModelName(Screen screen)
+    {
+        try
+        {
+            // Try to get monitor friendly name from WMI
+            var scope = new System.Management.ManagementScope("\\\\.\\root\\wmi");
+            var query = new System.Management.ObjectQuery("SELECT * FROM WmiMonitorID");
+            using (var searcher = new System.Management.ManagementObjectSearcher(scope, query))
+            {
+                var monitors = searcher.Get().Cast<System.Management.ManagementObject>().ToList();
+                
+                if (monitors.Count > 0)
+                {
+                    // Get the device index from the screen device name
+                    var deviceName = screen.DeviceName.Replace("\\\\.\\DISPLAY", "");
+                    if (int.TryParse(deviceName, out int displayIndex) && displayIndex > 0 && displayIndex <= monitors.Count)
+                    {
+                        var monitor = monitors[displayIndex - 1];
+                        
+                        string manufacturer = "";
+                        string modelName = "";
+                        
+                        // Get ManufacturerName
+                        var manufacturerNameData = monitor["ManufacturerName"] as ushort[];
+                        if (manufacturerNameData != null && manufacturerNameData.Length > 0)
+                        {
+                            manufacturer = new string(manufacturerNameData.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                        }
+                        
+                        // Get UserFriendlyName (model)
+                        var userFriendlyName = monitor["UserFriendlyName"] as ushort[];
+                        if (userFriendlyName != null && userFriendlyName.Length > 0)
+                        {
+                            modelName = new string(userFriendlyName.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                        }
+                        
+                        // If we have at least one value, return it
+                        if (!string.IsNullOrEmpty(manufacturer) || !string.IsNullOrEmpty(modelName))
+                        {
+                            return (manufacturer, modelName);
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // If WMI fails, fall back to device name
+        }
+        
+        // Default fallback: use device name
+        string fallbackName = screen.Primary ? "Primary Monitor" : screen.DeviceName.Replace("\\\\.\\DISPLAY", "Display ");
+        return ("", fallbackName);
+    }
+
+    private void SelectMonitorIndex(ComboBox comboBox, int monitorIndex)
+    {
+        if (monitorIndex >= 0 && monitorIndex < comboBox.Items.Count)
+        {
+            comboBox.SelectedIndex = monitorIndex;
+        }
+        else if (comboBox.Items.Count > 0)
+        {
+            comboBox.SelectedIndex = 0;
+        }
+    }
+
+    private int GetSelectedMonitorIndex(ComboBox comboBox)
+    {
+        return comboBox.SelectedIndex >= 0 ? comboBox.SelectedIndex : 0;
+    }
+
+    private void btnIdentifyMonitors_Click(object? sender, EventArgs e)
+    {
+        var screens = Screen.AllScreens;
+        var identifyForms = new List<Form>();
+        
+        try
+        {
+            // Create identification form for each screen
+            for (int i = 0; i < screens.Length; i++)
+            {
+                var screen = screens[i];
+                var form = new Form
+                {
+                    FormBorderStyle = FormBorderStyle.None,
+                    BackColor = Color.Black,
+                    Opacity = 0.8,
+                    StartPosition = FormStartPosition.Manual,
+                    Location = screen.Bounds.Location,
+                    Size = screen.Bounds.Size,
+                    TopMost = true,
+                    ShowInTaskbar = false
+                };
+                
+                var label = new Label
+                {
+                    Text = $"{i + 1}",
+                    Font = new Font("Segoe UI", 200, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                
+                var infoLabel = new Label
+                {
+                    Text = $"{screen.DeviceName}\n{screen.Bounds.Width} x {screen.Bounds.Height}" +
+                           (screen.Primary ? "\n[Primary Monitor]" : ""),
+                    Font = new Font("Segoe UI", 20, FontStyle.Regular),
+                    ForeColor = Color.White,
+                    AutoSize = false,
+                    Dock = DockStyle.Bottom,
+                    Height = 150,
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+                
+                form.Controls.Add(infoLabel);
+                form.Controls.Add(label);
+                
+                // Close on click
+                form.Click += (s, args) => { foreach (var f in identifyForms) f.Close(); };
+                label.Click += (s, args) => { foreach (var f in identifyForms) f.Close(); };
+                infoLabel.Click += (s, args) => { foreach (var f in identifyForms) f.Close(); };
+                
+                identifyForms.Add(form);
+                form.Show();
+            }
+            
+            // Auto-close after 5 seconds
+            var timer = new System.Windows.Forms.Timer { Interval = 5000 };
+            timer.Tick += (s, args) =>
+            {
+                timer.Stop();
+                timer.Dispose();
+                foreach (var form in identifyForms)
+                {
+                    form.Close();
+                }
+            };
+            timer.Start();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error identifying monitors: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            
+            // Cleanup any opened forms
+            foreach (var form in identifyForms)
+            {
+                form.Close();
+            }
+        }
+    }
+
+    #endregion
 }

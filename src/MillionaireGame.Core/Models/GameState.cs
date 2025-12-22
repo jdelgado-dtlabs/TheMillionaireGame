@@ -13,6 +13,7 @@ public class GameState
     public bool ShowTree { get; set; } = false;
     public bool FreeSafetyNetSet { get; set; } = false;
     public int FreeSafetyNetAt { get; set; } = 0;
+    public bool GameWin { get; set; } = false; // True when Q15 is answered correctly
 
     // Money values
     public string CurrentValue { get; set; } = "0";

@@ -24,10 +24,15 @@ namespace MillionaireGame.Forms.Options
             chkFullScreenHostScreen = new CheckBox();
             chkAutoShowGuestScreen = new CheckBox();
             chkAutoShowHostScreen = new CheckBox();
-            tabBroadcast = new TabPage();
-            grpBroadcast = new GroupBox();
+            cmbMonitorHost = new ComboBox();
+            cmbMonitorGuest = new ComboBox();
+            grpTVScreen = new GroupBox();
             chkFullScreenTVScreen = new CheckBox();
             chkAutoShowTVScreen = new CheckBox();
+            cmbMonitorTV = new ComboBox();
+            btnIdentifyMonitors = new Button();
+            tabBroadcast = new TabPage();
+            grpBroadcast = new GroupBox();
             tabLifelines = new TabPage();
             tabMoneyTree = new TabPage();
             grpPrizeValues = new GroupBox();
@@ -118,6 +123,8 @@ namespace MillionaireGame.Forms.Options
             // 
             // tabGeneral
             // 
+            tabGeneral.Controls.Add(btnIdentifyMonitors);
+            tabGeneral.Controls.Add(grpTVScreen);
             tabGeneral.Controls.Add(grpScreens);
             tabGeneral.Location = new Point(4, 24);
             tabGeneral.Name = "tabGeneral";
@@ -129,13 +136,15 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpScreens
             // 
+            grpScreens.Controls.Add(cmbMonitorGuest);
+            grpScreens.Controls.Add(cmbMonitorHost);
             grpScreens.Controls.Add(chkFullScreenGuestScreen);
             grpScreens.Controls.Add(chkFullScreenHostScreen);
             grpScreens.Controls.Add(chkAutoShowGuestScreen);
             grpScreens.Controls.Add(chkAutoShowHostScreen);
             grpScreens.Location = new Point(16, 16);
             grpScreens.Name = "grpScreens";
-            grpScreens.Size = new Size(300, 150);
+            grpScreens.Size = new Size(570, 180);
             grpScreens.TabIndex = 0;
             grpScreens.TabStop = false;
             grpScreens.Text = "Host and Guest Screens";
@@ -149,7 +158,7 @@ namespace MillionaireGame.Forms.Options
             chkFullScreenGuestScreen.TabIndex = 3;
             chkFullScreenGuestScreen.Text = "Full Screen Guest Screen";
             chkFullScreenGuestScreen.UseVisualStyleBackColor = true;
-            chkFullScreenGuestScreen.CheckedChanged += Control_Changed;
+            chkFullScreenGuestScreen.CheckedChanged += chkFullScreenGuest_CheckedChanged;
             // 
             // chkFullScreenHostScreen
             // 
@@ -160,7 +169,7 @@ namespace MillionaireGame.Forms.Options
             chkFullScreenHostScreen.TabIndex = 2;
             chkFullScreenHostScreen.Text = "Full Screen Host Screen";
             chkFullScreenHostScreen.UseVisualStyleBackColor = true;
-            chkFullScreenHostScreen.CheckedChanged += Control_Changed;
+            chkFullScreenHostScreen.CheckedChanged += chkFullScreenHost_CheckedChanged;
             // 
             // chkAutoShowGuestScreen
             // 
@@ -184,6 +193,58 @@ namespace MillionaireGame.Forms.Options
             chkAutoShowHostScreen.UseVisualStyleBackColor = true;
             chkAutoShowHostScreen.CheckedChanged += Control_Changed;
             // 
+            // cmbMonitorHost
+            // 
+            cmbMonitorHost.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbMonitorHost.FormattingEnabled = true;
+            cmbMonitorHost.Location = new Point(210, 68);
+            cmbMonitorHost.Name = "cmbMonitorHost";
+            cmbMonitorHost.Size = new Size(340, 23);
+            cmbMonitorHost.TabIndex = 4;
+            cmbMonitorHost.SelectedIndexChanged += Control_Changed;
+            // 
+            // cmbMonitorGuest
+            // 
+            cmbMonitorGuest.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbMonitorGuest.FormattingEnabled = true;
+            cmbMonitorGuest.Location = new Point(210, 98);
+            cmbMonitorGuest.Name = "cmbMonitorGuest";
+            cmbMonitorGuest.Size = new Size(340, 23);
+            cmbMonitorGuest.TabIndex = 5;
+            cmbMonitorGuest.SelectedIndexChanged += Control_Changed;
+            // 
+            // grpTVScreen
+            // 
+            grpTVScreen.Controls.Add(cmbMonitorTV);
+            grpTVScreen.Controls.Add(chkFullScreenTVScreen);
+            grpTVScreen.Controls.Add(chkAutoShowTVScreen);
+            grpTVScreen.Location = new Point(16, 210);
+            grpTVScreen.Name = "grpTVScreen";
+            grpTVScreen.Size = new Size(570, 120);
+            grpTVScreen.TabIndex = 1;
+            grpTVScreen.TabStop = false;
+            grpTVScreen.Text = "TV Screen";
+            // 
+            // cmbMonitorTV
+            // 
+            cmbMonitorTV.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbMonitorTV.FormattingEnabled = true;
+            cmbMonitorTV.Location = new Point(210, 68);
+            cmbMonitorTV.Name = "cmbMonitorTV";
+            cmbMonitorTV.Size = new Size(340, 23);
+            cmbMonitorTV.TabIndex = 2;
+            cmbMonitorTV.SelectedIndexChanged += Control_Changed;
+            // 
+            // btnIdentifyMonitors
+            // 
+            btnIdentifyMonitors.Location = new Point(16, 350);
+            btnIdentifyMonitors.Name = "btnIdentifyMonitors";
+            btnIdentifyMonitors.Size = new Size(150, 30);
+            btnIdentifyMonitors.TabIndex = 2;
+            btnIdentifyMonitors.Text = "Identify Monitors";
+            btnIdentifyMonitors.UseVisualStyleBackColor = true;
+            btnIdentifyMonitors.Click += btnIdentifyMonitors_Click;
+            // 
             // tabBroadcast
             // 
             tabBroadcast.Controls.Add(grpBroadcast);
@@ -197,25 +258,23 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpBroadcast
             // 
-            grpBroadcast.Controls.Add(chkFullScreenTVScreen);
-            grpBroadcast.Controls.Add(chkAutoShowTVScreen);
             grpBroadcast.Location = new Point(16, 16);
             grpBroadcast.Name = "grpBroadcast";
-            grpBroadcast.Size = new Size(300, 100);
+            grpBroadcast.Size = new Size(600, 400);
             grpBroadcast.TabIndex = 0;
             grpBroadcast.TabStop = false;
-            grpBroadcast.Text = "TV Screen (Broadcast)";
+            grpBroadcast.Text = "Broadcast Settings (Future Feature)";
             // 
             // chkFullScreenTVScreen
             // 
             chkFullScreenTVScreen.AutoSize = true;
-            chkFullScreenTVScreen.Location = new Point(20, 50);
+            chkFullScreenTVScreen.Location = new Point(20, 70);
             chkFullScreenTVScreen.Name = "chkFullScreenTVScreen";
             chkFullScreenTVScreen.Size = new Size(147, 19);
             chkFullScreenTVScreen.TabIndex = 1;
             chkFullScreenTVScreen.Text = "Full Screen TV Screen";
             chkFullScreenTVScreen.UseVisualStyleBackColor = true;
-            chkFullScreenTVScreen.CheckedChanged += Control_Changed;
+            chkFullScreenTVScreen.CheckedChanged += chkFullScreenTV_CheckedChanged;
             // 
             // chkAutoShowTVScreen
             // 
@@ -637,6 +696,11 @@ namespace MillionaireGame.Forms.Options
         private CheckBox chkFullScreenGuestScreen;
         private CheckBox chkFullScreenTVScreen;
         private Label lblTotalLifelines;
+        private ComboBox cmbMonitorHost;
+        private ComboBox cmbMonitorGuest;
+        private GroupBox grpTVScreen;
+        private ComboBox cmbMonitorTV;
+        private Button btnIdentifyMonitors;
         private NumericUpDown numTotalLifelines;
         private GroupBox grpLifeline1;
         private Label lblLifeline1;

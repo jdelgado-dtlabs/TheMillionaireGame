@@ -428,7 +428,7 @@ public class SoundService : IDisposable
     /// </summary>
     public void LoadSoundsFromSettings(Core.Settings.ApplicationSettings settings)
     {
-        // Try to load from selected sound pack
+        // Load from selected sound pack
         var packName = settings.SelectedSoundPack ?? "Default";
         var success = _soundPackManager.LoadSoundPack(packName);
         
@@ -451,11 +451,8 @@ public class SoundService : IDisposable
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] Warning: Could not load sound pack '{packName}', falling back to legacy loading");
+                Console.WriteLine($"[Sound] Error: Could not load sound pack '{packName}'");
             }
-            
-            // Fallback to legacy loading from settings
-            LoadSoundsFromSettingsLegacy(settings);
         }
     }
 
@@ -515,51 +512,6 @@ public class SoundService : IDisposable
         TryRegister(SoundEffect.LifelinePing2, "Lifeline2Ping", "lifeline_2_on");
         TryRegister(SoundEffect.LifelinePing3, "Lifeline3Ping", "lifeline_3_on");
         TryRegister(SoundEffect.LifelinePing4, "Lifeline4Ping", "lifeline_4_on");
-    }
-
-    /// <summary>
-    /// Legacy method: Load sound paths directly from settings (fallback)
-    /// </summary>
-    private void LoadSoundsFromSettingsLegacy(Core.Settings.ApplicationSettings settings)
-    {
-        // Broadcast flow sounds
-        RegisterSound(SoundEffect.HostEntrance, settings.SoundHostStart);
-        RegisterSound(SoundEffect.ExplainGame, settings.SoundExplainRules);
-        RegisterSound(SoundEffect.QuitSmall, settings.SoundQuitSmall);
-        RegisterSound(SoundEffect.QuitLarge, settings.SoundQuitLarge);
-        RegisterSound(SoundEffect.WalkAwaySmall, settings.SoundWalkAway1);
-        RegisterSound(SoundEffect.WalkAwayLarge, settings.SoundWalkAway2);
-        RegisterSound(SoundEffect.CloseTheme, settings.SoundCloseFinal);
-        RegisterSound(SoundEffect.CloseUnderscore, settings.SoundCloseStart);
-        
-        // Register common game sounds
-        RegisterSound(SoundEffect.LightsDown, settings.SoundQ1to5LightsDown);
-        RegisterSound(SoundEffect.QuestionCue, settings.SoundQ1to5Bed);
-        RegisterSound(SoundEffect.FinalAnswer, settings.SoundATAVoting); // Placeholder
-        RegisterSound(SoundEffect.CorrectAnswer, settings.SoundQ1to5Bed); // Placeholder
-        RegisterSound(SoundEffect.WrongAnswer, settings.SoundGameOver);
-        RegisterSound(SoundEffect.WalkAway, settings.SoundWalkAway1);
-        
-        // Lifelines
-        RegisterSound(SoundEffect.Lifeline5050, settings.Sound5050);
-        RegisterSound(SoundEffect.LifelinePhone, "paf_start.mp3");
-        RegisterSound(SoundEffect.LifelinePAFStart, settings.SoundLifelinePAFStart ?? "paf_start.mp3");
-        RegisterSound(SoundEffect.LifelinePAFCountdown, settings.SoundLifelinePAFCountdown ?? "paf_countdown.mp3");
-        RegisterSound(SoundEffect.LifelinePAFEndEarly, settings.SoundLifelinePAFEndEarly ?? "paf_end_call_early.mp3");
-        RegisterSound(SoundEffect.LifelineATA, settings.SoundATAStart);
-        RegisterSound(SoundEffect.LifelineATAStart, settings.SoundLifelineATAStart ?? "ata_start.mp3");
-        RegisterSound(SoundEffect.LifelineATAVote, settings.SoundLifelineATAVote ?? "ata_vote.mp3");
-        RegisterSound(SoundEffect.LifelineATAEnd, settings.SoundLifelineATAEnd ?? "ata_end.mp3");
-        RegisterSound(SoundEffect.LifelineSwitch, settings.SoundSwitchActivate);
-        
-        // Other
-        RegisterSound(SoundEffect.ToHotSeat, settings.SoundToHotSeat);
-        RegisterSound(SoundEffect.ExplainRules, settings.SoundExplainRules);
-        RegisterSound(SoundEffect.RiskMode, settings.SoundRiskModeActive);
-        RegisterSound(SoundEffect.LifelinePing1, settings.SoundLifeline1Ping);
-        RegisterSound(SoundEffect.LifelinePing2, settings.SoundLifeline2Ping);
-        RegisterSound(SoundEffect.LifelinePing3, settings.SoundLifeline3Ping);
-        RegisterSound(SoundEffect.LifelinePing4, settings.SoundLifeline4Ping);
     }
 
     public void Dispose()

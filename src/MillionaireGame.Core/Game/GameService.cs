@@ -71,6 +71,15 @@ public class GameService
     }
 
     /// <summary>
+    /// Refreshes money values based on current game state
+    /// Call this after changing GameWin flag to update displayed amounts
+    /// </summary>
+    public void RefreshMoneyValues()
+    {
+        UpdateMoneyValues();
+    }
+
+    /// <summary>
     /// Uses a lifeline
     /// </summary>
     public void UseLifeline(LifelineType lifelineType)
@@ -105,6 +114,7 @@ public class GameService
         _gameState.ShowTree = false;
         _gameState.FreeSafetyNetSet = false;
         _gameState.FreeSafetyNetAt = 0;
+        _gameState.GameWin = false; // Reset game win flag
 
         // Reset all lifelines
         foreach (var lifeline in _lifelines)
@@ -125,8 +135,11 @@ public class GameService
         var level = _gameState.CurrentLevel;
         var isRiskMode = _gameState.Mode == GameMode.Risk;
 
+        // Use GetDisplayLevel to show level 15 when game is won (even though CurrentLevel is 14)
+        var displayLevel = _moneyTreeService.GetDisplayLevel(level, _gameState.GameWin);
+        
         // Use MoneyTreeService to get formatted values
-        _gameState.CurrentValue = _moneyTreeService.GetFormattedValue(level);
+        _gameState.CurrentValue = _moneyTreeService.GetFormattedValue(displayLevel);
         _gameState.CorrectValue = _moneyTreeService.GetFormattedValue(level + 1);
         _gameState.WrongValue = _moneyTreeService.GetWrongValue(level, isRiskMode);
         _gameState.DropValue = _moneyTreeService.GetDropValue(level, isRiskMode);

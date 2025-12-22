@@ -232,6 +232,16 @@ public class MoneyTreeService
     }
 
     /// <summary>
+    /// Gets the display level for winnings and money tree, considering GameWin flag
+    /// If GameWin is true, always show level 15 (top prize)
+    /// Otherwise, show the current level
+    /// </summary>
+    public int GetDisplayLevel(int currentLevel, bool gameWin)
+    {
+        return gameWin ? 15 : currentLevel;
+    }
+
+    /// <summary>
     /// Updates safety net configuration
     /// </summary>
     public void UpdateSafetyNets(int safetyNet1, int safetyNet2, int riskModeSafetyNet, bool freeMode)

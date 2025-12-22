@@ -2,7 +2,6 @@ using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
-using MillionaireGame.Controls;
 using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Forms;
@@ -26,7 +25,6 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private bool _moneyTreeAnimating = false;
     private float _moneyTreeAnimationProgress = 0f; // 0.0 to 1.0
     private int _currentMoneyTreeLevel = 0;
-    private MoneyTreeControl? _moneyTreeControl;
     private MoneyTreeService? _moneyTreeService;
 
     // Design-time coordinates (based on 1920x1080, positioned in lower third)
@@ -220,11 +218,36 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
         if (treeBase == null) return;
 
-        // Calculate position - slide in from right during animation
-        float treeWidth = 1280;
-        float treeHeight = 720;
-        float targetX = (1920 - treeWidth) / 2; // Center horizontally
-        float targetY = (1080 - treeHeight) / 2; // Center vertically
+        // TV screen - scale from original 720p to 1080p
+        // Original VB.NET (720p): 630x720 canvas after crop, 399x599 overlay at (165, 100)
+        // New assets (1080p): 745x1080 background, 571x868 overlay
+        // Scale factors: width 745/630=1.182, height 1080/720=1.5
+        
+        float screenHeight = 1080f;
+        float padding = screenHeight * 0.005f; // 0.5% padding = ~5px (reduced from 1%)
+        
+        // Calculate scale factors from original 720p canvas to new 1080p
+        float widthScale = 745f / 630f;  // 1.182
+        float heightScale = 1080f / 720f; // 1.5
+        
+        // New overlay dimensions (from assets)
+        float overlayWidth = 571f;
+        float overlayHeight = 868f;
+        
+        // Available height for drawing
+        float availableHeight = screenHeight - (2 * padding);
+        
+        // Scale to fit screen (if needed)
+        float screenScale = availableHeight / screenHeight; // ~0.98
+        
+        // Background dimensions
+        float backgroundHeight = screenHeight; // Full height
+        float backgroundWidth = 745f * screenScale;
+        
+        // Position background on right edge, sliding in from right
+        float rightMargin = 0f; // No margin, flush to right edge
+        float targetX = 1920 - backgroundWidth - rightMargin;
+        float targetY = 0f; // Top of screen, no padding
         
         float currentX = targetX;
         if (_moneyTreeAnimating)
@@ -234,53 +257,75 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             currentX = offscreenX - (_moneyTreeAnimationProgress * (offscreenX - targetX));
         }
 
-        // Draw base tree image
-        DrawScaledImage(g, treeBase, currentX, targetY, treeWidth, treeHeight);
+        // Draw base tree image (background) - full height
+        DrawScaledImage(g, treeBase, currentX, targetY, backgroundWidth, backgroundHeight);
 
+        // Calculate overlay position with margin from right edge
+        // Background: 745px, Overlay: 571px, use 65px right margin
+        float rightMarginOverlay = 65f * screenScale;
+        float overlayXOffset = (745f - 571f - 65f) * screenScale; // 109px from left
+        
         // Draw position highlight overlay if level is set
         if (treePosition != null && _currentMoneyTreeLevel > 0)
         {
-            // Position overlay area (matches VB.NET coordinates)
-            float overlayX = currentX + 815 - (1280 - treeWidth) / 2;
-            float overlayY = targetY + 100 - (720 - treeHeight) / 2;
-            float overlayWidth = 399;
-            float overlayHeight = 599;
+            // Position overlay with right margin
+            float overlayX = currentX + overlayXOffset;
+            float overlayY = 106f * screenScale; // Vertically centered: (1080 - 868) / 2 = 106px
             
-            DrawScaledImage(g, treePosition, overlayX, overlayY, overlayWidth, overlayHeight);
+            // Overlay dimensions scaled to screen
+            float scaledOverlayWidth = overlayWidth * screenScale;
+            float scaledOverlayHeight = overlayHeight * screenScale;
+            
+            DrawScaledImage(g, treePosition, overlayX, overlayY, scaledOverlayWidth, scaledOverlayHeight);
         }
 
-        // Draw money values and question numbers (from MoneyTreeService)
+        // Draw money values and question numbers
         if (_moneyTreeService != null)
         {
-            DrawMoneyTreeText(g, currentX, targetY, treeWidth, treeHeight);
+            DrawMoneyTreeText(g, currentX, padding, screenScale, overlayXOffset);
         }
     }
 
-    private void DrawMoneyTreeText(System.Drawing.Graphics g, float baseX, float baseY, float width, float height)
+    private void DrawMoneyTreeText(System.Drawing.Graphics g, float baseX, float padding, float screenScale, float overlayXOffset)
     {
         var settings = _moneyTreeService!.Settings;
         
-        // Text positions (adjusted from VB.NET coordinates: 855/832 for qno_pos_X, 910 for money_pos_X)
-        float qnoBaseX = baseX + 855;
-        float moneyBaseX = baseX + 910;
+        // Text positions are now absolute from background left edge (not relative to overlay)
+        // This allows overlay to move independently without affecting text
+        // Moved left by 20px from previous positions (179, 164, 264)
+        float heightScale = 1080f / 720f; // 1.5
         
-        // Y positions for each level (from VB.NET: money_pos_Y array)
-        int[] yPositions = { 0, 662, 622, 582, 542, 502, 462, 422, 382, 342, 302, 262, 222, 182, 142, 102 };
+        float qnoBaseX_1to9 = baseX + (159f * screenScale);   // Absolute position: 159px from background left
+        float qnoBaseX_10to15 = baseX + (144f * screenScale); // Absolute position: 144px from background left
+        float moneyBaseX = baseX + (244f * screenScale);      // Absolute position: 244px from background left
         
-        for (int level = 1; level <= 15; level++)
+        // Vertical positioning: Text constrained to overlay height
+        // Overlay at 106px, Text starts at 109px (3px offset to center on strap)
+        // Text height matches overlay height exactly: 868px
+        float textStartY = 109f * screenScale;
+        float textHeight = 868f * screenScale;
+        float rowHeight = textHeight / 15f; // 15 levels, each gets 868/15 = 57.87px row height
+        
+        // Font size: reduced from 24pt to 22pt to prevent text drift
+        float baseFontSize = 22f * heightScale * screenScale;
+        
+        for (int level = 15; level >= 1; level--)
         {
-            float y = baseY + yPositions[level] - (720 - height) / 2;
-            float qnoX = (level >= 10) ? qnoBaseX - 23 : qnoBaseX; // Adjust for double digits
+            // Y position: each level occupies a row of fixed height
+            float y = textStartY + ((15 - level) * rowHeight);
+            
+            // Question number X position - varies by level (855 for 1-9, 832 for 10-15)
+            float qnoX = (level >= 10) ? qnoBaseX_10to15 : qnoBaseX_1to9;
             
             // Determine text color based on level state
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                textColor = Color.Black; // Current level
+                textColor = Color.Black; // Current level - highlighted by overlay
             }
             else if (level == 5 || level == 10 || level == 15)
             {
-                textColor = Color.White; // Safety nets and top prize
+                textColor = Color.White; // Milestone levels
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
@@ -291,16 +336,16 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 textColor = Color.Gold; // Regular levels
             }
             
-            using var font = new Font("Copperplate Gothic Bold", 24, FontStyle.Bold);
+            using var font = new Font("Copperplate Gothic Bold", baseFontSize, FontStyle.Bold);
             using var brush = new SolidBrush(textColor);
             using var format = new StringFormat { Alignment = StringAlignment.Near };
             
-            // Draw question number
-            DrawScaledText(g, level.ToString(), font, brush, qnoX, y, 50, 40, format);
+            // Draw question number - width scaled for double digits
+            DrawScaledText(g, level.ToString(), font, brush, qnoX, y, 80 * screenScale, 40 * heightScale * screenScale, format);
             
             // Draw money amount
             string formattedMoney = _moneyTreeService.GetFormattedValue(level);
-            DrawScaledText(g, formattedMoney, font, brush, moneyBaseX, y, 350, 40, format);
+            DrawScaledText(g, formattedMoney, font, brush, moneyBaseX, y, 350 * screenScale, 40 * heightScale * screenScale, format);
         }
     }
 
@@ -384,17 +429,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
-        _moneyTreeControl = new MoneyTreeControl(moneyTreeService);
-        _moneyTreeControl.Location = new Point(Width - 270, 20);
-        _moneyTreeControl.Size = new Size(250, 600);
-        _moneyTreeControl.Visible = false; // Initially hidden until Show button is clicked
-        Controls.Add(_moneyTreeControl);
     }
     
     public void UpdateMoneyTreeLevel(int level)
     {
         _currentMoneyTreeLevel = level;
-        _moneyTreeControl?.SetCurrentLevel(level);
         if (_showMoneyTree)
         {
             Invalidate(); // Redraw if money tree is currently visible
@@ -444,7 +483,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         Invalidate();
     }
 
-    public void ShowCorrectAnswerToHost(string correctAnswer)
+    public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         // TV screen doesn't show this
     }
@@ -471,7 +510,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         }
 
         // TV Screen: Clear all graphics and show money tree with animation
-        _currentMoneyTreeLevel = state.CurrentLevel;
+        // Use GetDisplayLevel to show level 15 when game is won
+        _currentMoneyTreeLevel = _moneyTreeService.GetDisplayLevel(state.CurrentLevel, state.GameWin);
         _showWinnings = false;
         _showQuestionAndAnswers = false;
         _showMoneyTree = true;
@@ -521,6 +561,38 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             return;
         }
 
+        // Start slide-out animation if money tree is showing
+        if (_showMoneyTree)
+        {
+            _ = AnimateMoneyTreeSlideOut();
+        }
+        else
+        {
+            // No animation needed, just hide
+            _currentAmount = null;
+            _showWinnings = false;
+            _showMoneyTree = false;
+            Invalidate();
+        }
+    }
+
+    private async Task AnimateMoneyTreeSlideOut()
+    {
+        _moneyTreeAnimating = true;
+        _moneyTreeAnimationProgress = 1f; // Start at fully visible
+
+        // Animate over ~500ms (slide to the right, off screen)
+        int steps = 30;
+        for (int i = 0; i <= steps; i++)
+        {
+            _moneyTreeAnimationProgress = 1f - (i / (float)steps); // Reverse: 1.0 -> 0.0
+            Invalidate();
+            await Task.Delay(16); // ~60 FPS
+        }
+
+        // Animation complete, hide everything
+        _moneyTreeAnimating = false;
+        _moneyTreeAnimationProgress = 0f;
         _currentAmount = null;
         _showWinnings = false;
         _showMoneyTree = false;
@@ -600,65 +672,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
     #endregion
     
-    #region Money Tree Show/Hide with Slide Animation
-    
-    /// <summary>
-    /// Shows the money tree with slide-in animation from the right
-    /// </summary>
-    public async Task ShowMoneyTreeAsync()
-    {
-        if (_moneyTreeControl == null || _moneyTreeControl.Visible)
-            return;
-        
-        // Position money tree off-screen to the right (1/3 of screen width = ~640px for 1920 width)
-        int targetX = ClientSize.Width - 270; // Final position (20px margin from right)
-        int startX = ClientSize.Width; // Start off-screen
-        
-        _moneyTreeControl.Location = new Point(startX, 50);
-        _moneyTreeControl.Visible = true;
-        
-        // Animate slide in (60 steps, ~500ms total)
-        int steps = 30;
-        int deltaX = (startX - targetX) / steps;
-        
-        for (int i = 0; i < steps; i++)
-        {
-            _moneyTreeControl.Location = new Point(startX - (deltaX * (i + 1)), 50);
-            await Task.Delay(16); // ~60 FPS
-        }
-        
-        // Ensure final position
-        _moneyTreeControl.Location = new Point(targetX, 50);
-    }
-    
-    /// <summary>
-    /// Hides the money tree with slide-out animation to the right
-    /// </summary>
-    public async Task HideMoneyTreeAsync()
-    {
-        if (_moneyTreeControl == null || !_moneyTreeControl.Visible)
-            return;
-        
-        int startX = _moneyTreeControl.Location.X;
-        int targetX = ClientSize.Width; // Slide off-screen to the right
-        
-        // Animate slide out
-        int steps = 30;
-        int deltaX = (targetX - startX) / steps;
-        
-        for (int i = 0; i < steps; i++)
-        {
-            _moneyTreeControl.Location = new Point(startX + (deltaX * (i + 1)), 50);
-            await Task.Delay(16); // ~60 FPS
-        }
-        
-        _moneyTreeControl.Visible = false;
-    }
-    
     public void ClearQuestionAndAnswerText()
     {
         // TV screen doesn't need this - it's only for host/guest screens
     }
-    
-    #endregion
 }

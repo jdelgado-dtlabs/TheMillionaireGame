@@ -48,6 +48,8 @@ namespace MillionaireGame.Forms
             btnWalk = new Button();
             btnClosing = new Button();
             btnStopAudio = new Button();
+            btnResetRound = new Button();
+            btnResetGame = new Button();
             
             // Money tree controls
             nmrLevel = new NumericUpDown();
@@ -434,13 +436,58 @@ namespace MillionaireGame.Forms
             btnStopAudio.FlatStyle = FlatStyle.Flat;
             btnStopAudio.ForeColor = Color.White;
             btnStopAudio.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnStopAudio.Location = new Point(580, 290);
+            btnStopAudio.Location = new Point(580, 245);
             btnStopAudio.Name = "btnStopAudio";
             btnStopAudio.Size = new Size(250, 45);
             btnStopAudio.TabIndex = 20;
             btnStopAudio.Text = "⏹ STOP ALL AUDIO";
             btnStopAudio.UseVisualStyleBackColor = false;
             btnStopAudio.Click += btnStopAudio_Click;
+            
+            // 
+            // btnResetRound
+            // 
+            InitializeStopImages();
+            btnResetRound.BackColor = Color.Gray;
+            btnResetRound.FlatAppearance.BorderColor = Color.Black;
+            btnResetRound.FlatAppearance.BorderSize = 2;
+            btnResetRound.FlatStyle = FlatStyle.Flat;
+            btnResetRound.ForeColor = Color.Black;
+            btnResetRound.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnResetRound.Location = new Point(580, 485);
+            btnResetRound.Name = "btnResetRound";
+            btnResetRound.Size = new Size(120, 45);
+            btnResetRound.TabIndex = 50;
+            btnResetRound.Text = "Round";
+            btnResetRound.TextAlign = ContentAlignment.MiddleCenter;
+            btnResetRound.ImageAlign = ContentAlignment.MiddleCenter;
+            btnResetRound.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnResetRound.Image = _stopImageWhite;
+            btnResetRound.UseVisualStyleBackColor = false;
+            btnResetRound.Enabled = false;
+            btnResetRound.Click += btnResetRound_Click;
+            
+            // 
+            // btnResetGame
+            // 
+            btnResetGame.BackColor = Color.Gray;
+            btnResetGame.FlatAppearance.BorderColor = Color.Black;
+            btnResetGame.FlatAppearance.BorderSize = 2;
+            btnResetGame.FlatStyle = FlatStyle.Flat;
+            btnResetGame.ForeColor = Color.Black;
+            btnResetGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnResetGame.Location = new Point(710, 485);
+            btnResetGame.Name = "btnResetGame";
+            btnResetGame.Size = new Size(120, 45);
+            btnResetGame.TabIndex = 51;
+            btnResetGame.Text = "Game";
+            btnResetGame.TextAlign = ContentAlignment.MiddleCenter;
+            btnResetGame.ImageAlign = ContentAlignment.MiddleCenter;
+            btnResetGame.TextImageRelation = TextImageRelation.ImageBeforeText;
+            btnResetGame.Image = _stopImageWhite;
+            btnResetGame.UseVisualStyleBackColor = false;
+            btnResetGame.Enabled = false;
+            btnResetGame.Click += btnResetGame_Click;
             
             // 
             // nmrLevel
@@ -608,7 +655,7 @@ namespace MillionaireGame.Forms
             btnLifeline1.FlatAppearance.BorderSize = 2;
             btnLifeline1.FlatStyle = FlatStyle.Flat;
             btnLifeline1.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btnLifeline1.Location = new Point(580, 345);
+            btnLifeline1.Location = new Point(580, 300);
             btnLifeline1.Name = "btnLifeline1";
             btnLifeline1.Size = new Size(120, 40);
             btnLifeline1.TabIndex = 36;
@@ -624,7 +671,7 @@ namespace MillionaireGame.Forms
             btnLifeline2.FlatAppearance.BorderSize = 2;
             btnLifeline2.FlatStyle = FlatStyle.Flat;
             btnLifeline2.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline2.Location = new Point(580, 390);
+            btnLifeline2.Location = new Point(580, 345);
             btnLifeline2.Name = "btnLifeline2";
             btnLifeline2.Size = new Size(120, 40);
             btnLifeline2.TabIndex = 37;
@@ -640,7 +687,7 @@ namespace MillionaireGame.Forms
             btnLifeline3.FlatAppearance.BorderSize = 2;
             btnLifeline3.FlatStyle = FlatStyle.Flat;
             btnLifeline3.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline3.Location = new Point(580, 435);
+            btnLifeline3.Location = new Point(580, 390);
             btnLifeline3.Name = "btnLifeline3";
             btnLifeline3.Size = new Size(120, 40);
             btnLifeline3.TabIndex = 38;
@@ -656,7 +703,7 @@ namespace MillionaireGame.Forms
             btnLifeline4.FlatAppearance.BorderSize = 2;
             btnLifeline4.FlatStyle = FlatStyle.Flat;
             btnLifeline4.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline4.Location = new Point(580, 480);
+            btnLifeline4.Location = new Point(580, 435);
             btnLifeline4.Name = "btnLifeline4";
             btnLifeline4.Size = new Size(120, 40);
             btnLifeline4.TabIndex = 39;
@@ -702,6 +749,7 @@ namespace MillionaireGame.Forms
             chkCorrectAnswer.TabIndex = 41;
             chkCorrectAnswer.Text = "Show Correct Answer to Host";
             chkCorrectAnswer.UseVisualStyleBackColor = true;
+            chkCorrectAnswer.CheckedChanged += chkCorrectAnswer_CheckedChanged;
             
             // 
             // btnShowMoneyTree
@@ -713,7 +761,7 @@ namespace MillionaireGame.Forms
             btnShowMoneyTree.FlatStyle = FlatStyle.Flat;
             btnShowMoneyTree.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnShowMoneyTree.ForeColor = Color.White;
-            btnShowMoneyTree.Location = new Point(710, 345);
+            btnShowMoneyTree.Location = new Point(710, 300);
             btnShowMoneyTree.Name = "btnShowMoneyTree";
             btnShowMoneyTree.Size = new Size(120, 85);
             btnShowMoneyTree.TabIndex = 42;
@@ -724,12 +772,13 @@ namespace MillionaireGame.Forms
             // 
             // btnActivateRiskMode
             // 
-            btnActivateRiskMode.BackColor = Color.Yellow;
+            btnActivateRiskMode.BackColor = Color.Gray;
+            btnActivateRiskMode.Enabled = false;
             btnActivateRiskMode.FlatAppearance.BorderColor = Color.Black;
             btnActivateRiskMode.FlatAppearance.BorderSize = 2;
             btnActivateRiskMode.FlatStyle = FlatStyle.Flat;
             btnActivateRiskMode.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btnActivateRiskMode.Location = new Point(710, 435);
+            btnActivateRiskMode.Location = new Point(710, 390);
             btnActivateRiskMode.Name = "btnActivateRiskMode";
             btnActivateRiskMode.Size = new Size(120, 85);
             btnActivateRiskMode.TabIndex = 43;
@@ -770,6 +819,8 @@ namespace MillionaireGame.Forms
             Controls.Add(lblCorrectAnswerLabel);
             Controls.Add(lblLevelLabel);
             Controls.Add(nmrLevel);
+            Controls.Add(btnResetRound);
+            Controls.Add(btnResetGame);
             Controls.Add(btnStopAudio);
             Controls.Add(btnClosing);
             Controls.Add(btnWalk);
@@ -838,6 +889,8 @@ namespace MillionaireGame.Forms
         private Button btnWalk;
         private Button btnClosing;
         private Button btnStopAudio;
+        private Button btnResetRound;
+        private Button btnResetGame;
         private Button btnA;
         private Button btnB;
         private Button btnC;
@@ -852,5 +905,84 @@ namespace MillionaireGame.Forms
         private CheckBox chkShowQuestion;
         private CheckBox chkShowWinnings;
         private CheckBox chkCorrectAnswer;
+        
+        private static Image? _stopImageNormal;
+        private static Image? _stopImageWhite;
+        
+        private static Image? LoadEmbeddedImage(string fileName)
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                string resourceName = $"MillionaireGame.lib.textures.{fileName}";
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    return Image.FromStream(stream);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine($"[ControlPanelForm] Error loading image '{fileName}': {ex.Message}");
+                }
+            }
+            return null;
+        }
+        
+        private static Image? CreateBlackImage(Image? source)
+        {
+            if (source == null) return null;
+            
+            var bitmap = new Bitmap(source.Width, source.Height);
+            using (var g = System.Drawing.Graphics.FromImage(bitmap))
+            {
+                // Create color matrix to convert to black
+                var colorMatrix = new System.Drawing.Imaging.ColorMatrix(new float[][]
+                {
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 0, 0},
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {0, 0, 0, 0, 1}
+                });
+                
+                var imageAttributes = new System.Drawing.Imaging.ImageAttributes();
+                imageAttributes.SetColorMatrix(colorMatrix);
+                
+                g.DrawImage(source,
+                    new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                    0, 0, source.Width, source.Height,
+                    GraphicsUnit.Pixel,
+                    imageAttributes);
+            }
+            return bitmap;
+        }
+        
+        private static Image? ResizeImage(Image? source, int width, int height)
+        {
+            if (source == null) return null;
+            
+            var bitmap = new Bitmap(width, height);
+            using (var g = System.Drawing.Graphics.FromImage(bitmap))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(source, 0, 0, width, height);
+            }
+            return bitmap;
+        }
+        
+        private static void InitializeStopImages()
+        {
+            if (_stopImageNormal == null)
+            {
+                var originalImage = LoadEmbeddedImage("stop.png");
+                // Resize to 20x20 for inline display
+                var resizedImage = ResizeImage(originalImage, 20, 20);
+                _stopImageNormal = resizedImage; // Keep original red color for disabled state
+                _stopImageWhite = CreateBlackImage(resizedImage); // Black for enabled state
+            }
+        }
     }
 }

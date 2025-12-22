@@ -92,7 +92,7 @@ public class ScreenUpdateService
     /// <summary>
     /// Show the correct answer to the host screen only
     /// </summary>
-    public void ShowCorrectAnswerToHost(string correctAnswer)
+    public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         foreach (var screen in _registeredScreens)
         {
@@ -214,7 +214,7 @@ public interface IGameScreen
     void SelectAnswer(string answer);
     void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect);
     void ShowAnswer(string answer);
-    void ShowCorrectAnswerToHost(string correctAnswer);
+    void ShowCorrectAnswerToHost(string? correctAnswer);
     void ShowQuestion(bool show);
     void ShowWinnings(GameState state);
     void HideWinnings();

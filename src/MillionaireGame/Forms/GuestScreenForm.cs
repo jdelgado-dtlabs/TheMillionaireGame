@@ -2,7 +2,6 @@ using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
-using MillionaireGame.Controls;
 using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Forms;
@@ -21,7 +20,6 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     private string? _currentAmount;
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
-    private MoneyTreeControl? _moneyTreeControl;
     private MoneyTreeService? _moneyTreeService;
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
@@ -61,18 +59,11 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
-
-        // Create money tree control at fixed position (right side)
-        _moneyTreeControl = new MoneyTreeControl(moneyTreeService);
-        _moneyTreeControl.Location = new Point(1640, 50);
-        _moneyTreeControl.Size = new Size(250, 900);
-        Controls.Add(_moneyTreeControl);
     }
 
     public void UpdateMoneyTreeLevel(int level)
     {
         _currentMoneyTreeLevel = level;
-        _moneyTreeControl?.SetCurrentLevel(level);
         Invalidate(); // Redraw to update money tree
     }
 
@@ -454,7 +445,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         Invalidate();
     }
 
-    public void ShowCorrectAnswerToHost(string correctAnswer)
+    public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         // Guest screen doesn't show correct answer to host
     }
