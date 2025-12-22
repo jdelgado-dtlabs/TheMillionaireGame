@@ -1,18 +1,51 @@
-# Lifeline System Refactoring Plan
-**Date**: December 20, 2025  
-**Version**: 0.3 (Planned)  
-**Goal**: Modularize lifeline system for better maintainability and dynamic configuration
+# Lifeline System Implementation Status
+**Date**: December 22, 2025  
+**Version**: 0.3 (Partially Complete)  
+**Status**: Core refactoring complete, UI polish pending
 
 ---
 
-## Overview
+## Implementation Status
 
-The current lifeline system is hardcoded with specific buttons (btn5050, btnPAF, btnATA, btnSTQ) and uses radio buttons for availability settings. This refactoring will:
+### ✅ Completed Features
 
-1. Replace radio buttons with ComboBoxes for cleaner UI
-2. Make the total lifelines selector functional
-3. Allow dynamic lifeline type assignment (e.g., make Lifeline 1 be PAF instead of 50:50)
-4. Modularize the system for easy addition of new lifelines in the future
+1. **Dynamic Lifeline Type Assignment**
+   - ✅ Settings-based lifeline configuration (ApplicationSettings.Lifeline1-4)
+   - ✅ GetLifelineTypeFromSettings() reads lifeline types from settings
+   - ✅ HandleLifelineClick() dynamically routes to correct lifeline handler
+   - ✅ Lifeline buttons can be assigned any lifeline type via settings
+
+2. **Lifeline Functionality**
+   - ✅ 50:50 fully implemented (removes two wrong answers)
+   - ✅ Phone-a-Friend (PAF) with 30-second timer
+   - ✅ Ask the Audience (ATA) with 2-minute explanation + 1-minute voting
+   - ✅ Lifeline state tracking with enums (PAFStage, ATAStage)
+   - ✅ Lifeline mode states (Inactive/Standby/Active)
+
+3. **Settings Storage**
+   - ✅ ApplicationSettings with Lifeline1-4 properties (string type identifiers)
+   - ✅ Lifeline availability settings per slot
+   - ✅ TotalLifelines setting functional
+
+### 🔄 Pending Improvements
+
+1. **UI Polish**
+   - ⏳ Lifeline image loading (TODO at line 202 in ControlPanelForm.cs)
+   - ⏳ Visual updates when lifeline used (TODO at line 445)
+   - ⏳ UpdateLifelineButtonLabels() implementation
+   - ⏳ Replace radio buttons with ComboBoxes for cleaner settings UI
+
+2. **Missing Lifelines**
+   - ⏳ Switch the Question (STQ) - not yet implemented
+   - ⏳ Double Dip - not yet implemented  
+   - ⏳ Ask the Host - not yet implemented
+   - ⏳ Plus One - partially referenced but not fully implemented
+
+---
+
+## Original Refactoring Goals
+
+The original goal was to modularize the lifeline system. This has been achieved through:
 
 ---
 

@@ -8,7 +8,32 @@
 
 ## Session Summary
 
-### Latest Session (v0.3-2512) - December 22, 2025
+### Latest Session (Repository Management) - December 22, 2025
+
+#### Sound Files Added to Repository
+- ✅ Default Soundpack Added
+  - 120 MP3 sound files for complete game audio
+  - soundpack.xml configuration file
+  - README.md with soundpack documentation
+  - Total: 123 files in src/MillionaireGame/lib/sounds/Default/
+  - Files now tracked as part of complete package distribution
+
+#### Repository Cleanup
+- ✅ .gitignore Optimization
+  - Removed .github/copilot-instructions.md from git tracking (keeping local file)
+  - Simplified src/.gitignore to only src-specific ignores
+  - src/.gitignore now only contains: config.xml, sql.xml (runtime configs)
+  - Removed redundant patterns already covered by root .gitignore
+  - Sound files, textures, and images now properly tracked
+
+#### Git Operations
+- ✅ Commits:
+  - 00e1ecb: Remove .github/copilot-instructions.md from tracking
+  - aa6f719: Add sound files to repository and clean up src/.gitignore
+- ✅ Pushed to remote: master-csharp branch
+- ✅ Total additions: 121 files, 211 insertions
+
+### Previous Session (Settings & Bug Fixes) - December 22, 2025
 
 #### Settings System Improvements
 - ✅ Monitor Selection Enhancement
@@ -577,6 +602,121 @@
 2. Game statistics and reporting
 3. Performance optimizations
 4. Comprehensive testing
+
+---
+
+## Future Planned Features (Post v1.0)
+
+### 1. Broadcasting Integration
+**Goal**: Enable streaming and broadcast platform compatibility
+- OBS Studio integration for scene management
+- Virtual camera output for streaming software
+- Direct streaming protocol support
+- Chroma key/green screen support for TV screen output
+- NDI (Network Device Interface) output support
+- Custom RTMP streaming capabilities
+
+**Use Cases**:
+- Live streaming to Twitch, YouTube, Facebook Gaming
+- Professional production with multi-camera setups
+- Recording and playback capabilities
+- Picture-in-picture contestant view
+
+### 2. Stream Deck Integration
+**Goal**: Hardware control panel for game show production
+- Elgato Stream Deck plugin development
+- Button mapping for core game functions:
+  - Question reveal (progressive A→B→C→D)
+  - Answer selection (A/B/C/D buttons)
+  - Lifeline activation
+  - Lights down / New question
+  - Show/hide screens
+- Custom button icons matching game branding
+- LED feedback for button states (active/disabled)
+- Profile switching for different game modes
+- Macro support for common sequences
+
+**Technical Requirements**:
+- Stream Deck SDK integration
+- WebSocket/HTTP API for external control
+- Real-time state synchronization
+- Button state feedback system
+
+### 3. Web-Based Mobile Integration
+**Goal**: Replace standalone FFF client with unified web-based system
+- Mobile-responsive web interface
+- Real-time WebSocket communication
+- Cross-platform support (iOS, Android, desktop browsers)
+
+**Features**:
+- **FFF (Fastest Finger First) Participant System**
+  - Mobile device registration via QR code or URL
+  - Real-time question display
+  - Answer submission with timing
+  - Results display
+  - Contestant queue management
+  
+- **ATA (Ask the Audience) Voting**
+  - Anonymous voting via mobile devices
+  - Real-time vote aggregation
+  - Results visualization
+  - Vote percentage display
+
+- **Game Control Dashboard**
+  - Web-based control panel alternative
+  - Read-only spectator view
+  - Admin controls via web interface
+
+**Architecture**:
+- ASP.NET Core web server
+- SignalR for real-time communication
+- Progressive Web App (PWA) capabilities
+- Offline-capable service workers
+- Mobile-first responsive design
+
+**Benefits**:
+- No client installation required
+- Unified codebase (deprecate separate FFF client)
+- Cross-platform compatibility (Mac, Linux, mobile)
+- Easier updates and maintenance
+- Lower barrier to entry for participants
+
+### 4. QR Code Display System
+**Goal**: Seamless audience participation via mobile devices
+- Dynamic QR code generation
+- TV screen display integration
+- Broadcast-safe QR code positioning
+
+**Features**:
+- **Context-Aware Display**
+  - Show during FFF mode: "Join Fastest Finger First"
+  - Show during ATA lifeline: "Vote Now - Ask the Audience"
+  - Auto-hide when not needed
+  
+- **Connection Management**
+  - Unique session codes for each game
+  - Device registration tracking
+  - Connection status indicators
+  - Automatic reconnection handling
+
+- **Display Options**
+  - Corner overlay on TV screen
+  - Full-screen display mode
+  - Customizable positioning and size
+  - Branding/styling options
+
+**Technical Implementation**:
+- QR code library integration (QRCoder or ZXing.Net)
+- Local network hosting (mDNS/Bonjour discovery)
+- Public URL support (ngrok, cloudflare tunnel)
+- SSL/TLS for secure connections
+- Session management and security
+
+**Integration Points**:
+- TVScreenForm overlay rendering
+- Broadcast output composition
+- Web server URL management
+- Network configuration UI
 
 ---
 

@@ -10,21 +10,33 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 
 ### 🔄 Current Status
 
-**Version 0.2-2512 Features:**
+**Version 0.3-2512 Features:**
 - ✅ Core models and data structures
-- ✅ Settings management
-- ✅ Database layer
+- ✅ Settings management with XML persistence
+- ✅ Database layer with question repository
 - ✅ Game logic services
 - ✅ Complete Control Panel UI
 - ✅ Progressive answer reveal system
-- ✅ Sound engine (Question-specific audio system)
+- ✅ Sound engine with soundpack system (123 audio files)
 - ✅ Audio transitions with 500ms timing
 - ✅ Lifeline implementations (50:50, Phone-a-Friend, Ask the Audience)
+- ✅ Dynamic lifeline assignment via settings
 - ✅ Host, Guest, and TV screen implementations
+- ✅ Money tree graphical display with animations
+- ✅ Dual currency support with per-level selection
 - ✅ Game state management
 - ✅ Question Editor with CSV import/export
+- ✅ Monitor selection with WMI metadata
+- ✅ Full-screen mode with auto-show capabilities
 - 🚧 Switch the Question lifeline (pending)
 - 🚧 FFF networking (pending)
+- 🚧 Lifeline image loading (pending)
+
+**Future Vision (Post v1.0):**
+- 🎯 OBS/Streaming platform integration
+- 🎯 Elgato Stream Deck plugin
+- 🎯 Web-based mobile interface (FFF/ATA)
+- 🎯 QR code display system for audience participation
 
 ## 🆕 What's New in the C# Version?
 

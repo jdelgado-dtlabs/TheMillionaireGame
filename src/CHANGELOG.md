@@ -2,6 +2,21 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [Unreleased] - 2025-12-22
+
+### Added
+- **Sound Files to Repository**
+  - Added Default soundpack with 123 sound files (120 MP3s + soundpack.xml + README.md)
+  - Complete audio package now included in repository distribution
+  - Sound files tracked in src/MillionaireGame/lib/sounds/Default/
+
+### Changed
+- **Repository Management**
+  - Simplified src/.gitignore to only contain src-specific ignores
+  - Removed .github/copilot-instructions.md from git tracking (keeping local file)
+  - Removed redundant ignore patterns already covered by root .gitignore
+  - src/.gitignore now only tracks: config.xml, sql.xml (runtime configs)
+
 ## [0.3-2512] - 2025-12-22
 
 ### Added
