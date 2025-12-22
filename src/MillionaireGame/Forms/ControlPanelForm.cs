@@ -868,10 +868,11 @@ public partial class ControlPanelForm : Form
     private async void btnWalk_Click(object? sender, EventArgs e)
     {
         // Capture winnings BEFORE modifying game state
-        var winnings = _gameService.State.CurrentValue;
+        // If final winnings already set (after wrong answer), use that; otherwise use current value
+        var winnings = _finalWinningsAmount ?? _gameService.State.CurrentValue;
         
         _gameService.State.WalkAway = true;
-        _gameOutcome = GameOutcome.Drop; // Track that player walked away
+        _gameOutcome = _finalWinningsAmount != null ? _gameOutcome : GameOutcome.Drop; // Preserve outcome if already set (Wrong), otherwise set to Drop
         _isAutomatedSequenceRunning = true;
         
         // Create cancellation token for this sequence
