@@ -3008,44 +3008,60 @@ public partial class ControlPanelForm : Form
             // Wait for lose sound to play a bit before showing dropped level
             await Task.Delay(2000);
             
-            // If dropped to a safety net level (Q5 or Q10), play lock-in animation
-            if (droppedLevel == 5 || droppedLevel == 10)
+            // Ensure we're back on the UI thread for the rest of the operations
+            if (InvokeRequired)
             {
-                // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
-                StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
-                
-                // Wait for animation to complete (12 flashes × 400ms = 4800ms + small buffer)
-                await Task.Delay(5000);
+                Invoke(() => ContinueWrongAnswerSequence(droppedLevel));
             }
             else
             {
-                // No safety net, just update to level 0 immediately
-                UpdateMoneyTreeOnScreens(droppedLevel);
+                ContinueWrongAnswerSequence(droppedLevel);
             }
-            
-            // Store the wrong value as final winnings for TV screen display
-            _finalWinningsAmount = _gameService.State.WrongValue;
-            
-            // Auto-show winnings after animation completes
-            if (!chkShowWinnings.Checked)
-            {
-                chkShowWinnings.Checked = true;
-            }
-            
-            // Disable Reveal button (grey)
-            btnReveal.Enabled = false;
-            btnReveal.BackColor = Color.Gray;
-            
-            // Disable Lights Down (grey)
-            btnLightsDown.Enabled = false;
-            btnLightsDown.BackColor = Color.Gray;
-            
-            // Enable Walk Away button (green) so host can manually trigger end-of-round sequence
-            // This gives the host and player time to talk about the loss before moving forward
-            btnWalk.Enabled = true;
-            btnWalk.BackColor = Color.LimeGreen;
-            btnWalk.ForeColor = Color.Black;
         }
+    }
+
+    /// <summary>
+    /// Continues the wrong answer sequence on the UI thread after the async delay
+    /// </summary>
+    private async void ContinueWrongAnswerSequence(int droppedLevel)
+    {
+        // If dropped to a safety net level (Q5 or Q10), play lock-in animation
+        if (droppedLevel == 5 || droppedLevel == 10)
+        {
+            // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
+            StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
+            
+            // Wait for animation to complete (12 flashes × 400ms = 4800ms + small buffer)
+            await Task.Delay(5000);
+        }
+        else
+        {
+            // No safety net, just update to level 0 immediately
+            UpdateMoneyTreeOnScreens(droppedLevel);
+        }
+        
+        // Store the wrong value as final winnings for TV screen display
+        _finalWinningsAmount = _gameService.State.WrongValue;
+        
+        // Auto-show winnings after animation completes
+        if (!chkShowWinnings.Checked)
+        {
+            chkShowWinnings.Checked = true;
+        }
+        
+        // Disable Reveal button (grey)
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
+        // Disable Lights Down (grey)
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        // Enable Walk Away button (green) so host can manually trigger end-of-round sequence
+        // This gives the host and player time to talk about the loss before moving forward
+        btnWalk.Enabled = true;
+        btnWalk.BackColor = Color.LimeGreen;
+        btnWalk.ForeColor = Color.Black;
     }
 
     private void UpdateMoneyDisplay()
