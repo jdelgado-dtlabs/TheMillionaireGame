@@ -2787,7 +2787,7 @@ public partial class ControlPanelForm : Form
         _currentLightsDownIdentifier = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
     }
 
-    private async void RevealAnswer(bool isCorrect)
+    private void RevealAnswer(bool isCorrect)
     {
         if (isCorrect)
         {
@@ -2870,104 +2870,28 @@ public partial class ControlPanelForm : Form
             if (currentQuestionNumber >= 1 && currentQuestionNumber <= 5 && _shouldRestartBedMusic)
             {
                 // Wait for correct answer sound to play a bit, then restart bed music
-                await Task.Delay(2000);
-                PlayQuestionBed();
-                _shouldRestartBedMusic = false; // Reset flag
+                var bedMusicTimer = new System.Windows.Forms.Timer();
+                bedMusicTimer.Interval = 2000;
+                bedMusicTimer.Tick += (s, e) =>
+                {
+                    bedMusicTimer.Stop();
+                    bedMusicTimer.Dispose();
+                    PlayQuestionBed();
+                    _shouldRestartBedMusic = false;
+                };
+                bedMusicTimer.Start();
             }
             
-            // Auto-show winnings after 2 seconds
-            await Task.Delay(2000);
-            if (!chkShowWinnings.Checked)
+            // Auto-show winnings after 2 seconds using a timer
+            var winningsTimer = new System.Windows.Forms.Timer();
+            winningsTimer.Interval = 2000;
+            winningsTimer.Tick += (s, e) =>
             {
-                chkShowWinnings.Checked = true;
-            }
-            
-            // Disable Reveal button (grey)
-            btnReveal.Enabled = false;
-            btnReveal.BackColor = Color.Gray;
-            
-            // If Q5 was just answered correctly, enable Lights Down for Q6
-            if (currentQuestionNumber == 5)
-            {
-                // Enable Lights Down (green) for Q6
-                btnLightsDown.Enabled = true;
-                btnLightsDown.BackColor = Color.LimeGreen;
-                btnLightsDown.ForeColor = Color.Black;
-                
-                // Re-enable question level selector (can now change for Q6+)
-                nmrLevel.Enabled = true;
-            }
-            // For Q1-Q4, re-enable Question button (green) for next question
-            else if (currentQuestionNumber >= 1 && currentQuestionNumber <= 4)
-            {
-                _answerRevealStep = 0; // Reset for next question
-                btnNewQuestion.Enabled = true;
-                btnNewQuestion.BackColor = Color.LimeGreen;
-                btnNewQuestion.ForeColor = Color.Black;
-                
-                // Disable Walk Away for Q1-Q4 (grey) - only available after milestones
-                btnWalk.Enabled = false;
-                btnWalk.BackColor = Color.Gray;
-            }
-            // For Q6-Q14, enable Lights Down (green)
-            else if (currentQuestionNumber >= 6 && currentQuestionNumber <= 14)
-            {
-                _answerRevealStep = 0; // Reset for next question
-                btnLightsDown.Enabled = true;
-                btnLightsDown.BackColor = Color.LimeGreen;
-                btnLightsDown.ForeColor = Color.Black;
-                
-                // Re-enable question level selector (can now change for next question)
-                nmrLevel.Enabled = true;
-                
-                // Disable Walk Away until next question is fully revealed (grey)
-                btnWalk.Enabled = false;
-                btnWalk.BackColor = Color.Gray;
-            }
-            // For Q15, enable Thanks for Playing (green)
-            else if (currentQuestionNumber == 15)
-            {
-                _gameService.State.GameWin = true; // Set flag immediately when Q15 is answered correctly
-                _gameService.RefreshMoneyValues(); // Update CurrentValue to show top prize
-                UpdateMoneyDisplay(); // Update control panel display to show $1,000,000
-                UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin)); // Update money tree to level 15
-                _gameOutcome = GameOutcome.Win; // Player won the game!
-                _isAutomatedSequenceRunning = true; // Mark sequence as automated
-                
-                // Stop final answer sound immediately (it was already stopped above but ensure it's stopped)
-                // This is needed because we're about to wait 25 seconds for Q15Correct to finish
-                if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
-                {
-                    _soundService.StopSound(_currentFinalAnswerKey);
-                    _currentFinalAnswerKey = null;
-                }
-                
-                // Create cancellation token for this sequence
-                _automatedSequenceCts?.Cancel();
-                _automatedSequenceCts?.Dispose();
-                _automatedSequenceCts = new CancellationTokenSource();
-                var token = _automatedSequenceCts.Token;
-                
-                // Disable Walk Away (grey)
-                btnWalk.Enabled = false;
-                btnWalk.BackColor = Color.Gray;
-                
-                // Disable Lights Down (grey)
-                btnLightsDown.Enabled = false;
-                btnLightsDown.BackColor = Color.Gray;
-                
-                // Wait for Q15 correct sound to finish (approximately 20-30 seconds)
-                try
-                {
-                    await Task.Delay(25000, token);
-                    // Auto-trigger end-of-round sequence
-                    await EndRoundSequence();
-                }
-                catch (OperationCanceledException)
-                {
-                    // Sequence was cancelled by reset
-                }
-            }
+                winningsTimer.Stop();
+                winningsTimer.Dispose();
+                ShowWinningsAndEnableButtons(currentQuestionNumber);
+            };
+            winningsTimer.Start();
         }
         else
         {
@@ -3005,23 +2929,130 @@ public partial class ControlPanelForm : Form
             // Calculate the dropped level based on wrong value (safety net level or 0)
             int droppedLevel = GetDroppedLevel(currentQuestionNumber);
             
-            // Wait for lose sound to play a bit before showing dropped level
-            await Task.Delay(2000);
-            
-            // Ensure we're back on the UI thread for the rest of the operations
-            if (InvokeRequired)
+            // Wait for lose sound to play using a timer (stays on UI thread)
+            var initialDelayTimer = new System.Windows.Forms.Timer();
+            initialDelayTimer.Interval = 2000; // 2 seconds
+            initialDelayTimer.Tick += (s, e) =>
             {
-                Invoke(() => ContinueWrongAnswerSequence(droppedLevel));
-            }
-            else
-            {
+                initialDelayTimer.Stop();
+                initialDelayTimer.Dispose();
                 ContinueWrongAnswerSequence(droppedLevel);
-            }
+            };
+            initialDelayTimer.Start();
         }
     }
 
     /// <summary>
-    /// Continues the wrong answer sequence on the UI thread after the async delay
+    /// Shows winnings and enables appropriate buttons after correct answer
+    /// </summary>
+    private void ShowWinningsAndEnableButtons(int currentQuestionNumber)
+    {
+        if (!chkShowWinnings.Checked)
+        {
+            chkShowWinnings.Checked = true;
+        }
+        
+        // Disable Reveal button (grey)
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
+        // If Q5 was just answered correctly, enable Lights Down for Q6
+        if (currentQuestionNumber == 5)
+        {
+            // Enable Lights Down (green) for Q6
+            btnLightsDown.Enabled = true;
+            btnLightsDown.BackColor = Color.LimeGreen;
+            btnLightsDown.ForeColor = Color.Black;
+            
+            // Re-enable question level selector (can now change for Q6+)
+            nmrLevel.Enabled = true;
+        }
+        // For Q1-Q4, re-enable Question button (green) for next question
+        else if (currentQuestionNumber >= 1 && currentQuestionNumber <= 4)
+        {
+            _answerRevealStep = 0; // Reset for next question
+            btnNewQuestion.Enabled = true;
+            btnNewQuestion.BackColor = Color.LimeGreen;
+            btnNewQuestion.ForeColor = Color.Black;
+            
+            // Disable Walk Away for Q1-Q4 (grey) - only available after milestones
+            btnWalk.Enabled = false;
+            btnWalk.BackColor = Color.Gray;
+        }
+        // For Q6-Q14, enable Lights Down (green)
+        else if (currentQuestionNumber >= 6 && currentQuestionNumber <= 14)
+        {
+            _answerRevealStep = 0; // Reset for next question
+            btnLightsDown.Enabled = true;
+            btnLightsDown.BackColor = Color.LimeGreen;
+            btnLightsDown.ForeColor = Color.Black;
+            
+            // Re-enable question level selector (can now change for next question)
+            nmrLevel.Enabled = true;
+            
+            // Disable Walk Away until next question is fully revealed (grey)
+            btnWalk.Enabled = false;
+            btnWalk.BackColor = Color.Gray;
+        }
+        // For Q15, enable Thanks for Playing (green)
+        else if (currentQuestionNumber == 15)
+        {
+            HandleQ15Win();
+        }
+    }
+
+    /// <summary>
+    /// Handles Q15 win sequence
+    /// </summary>
+    private void HandleQ15Win()
+    {
+        _gameService.State.GameWin = true; // Set flag immediately when Q15 is answered correctly
+        _gameService.RefreshMoneyValues(); // Update CurrentValue to show top prize
+        UpdateMoneyDisplay(); // Update control panel display to show $1,000,000
+        UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin)); // Update money tree to level 15
+        _gameOutcome = GameOutcome.Win; // Player won the game!
+        _isAutomatedSequenceRunning = true; // Mark sequence as automated
+        
+        // Stop final answer sound immediately (it was already stopped above but ensure it's stopped)
+        if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
+        {
+            _soundService.StopSound(_currentFinalAnswerKey);
+            _currentFinalAnswerKey = null;
+        }
+        
+        // Create cancellation token for this sequence
+        _automatedSequenceCts?.Cancel();
+        _automatedSequenceCts?.Dispose();
+        _automatedSequenceCts = new CancellationTokenSource();
+        
+        // Disable Walk Away (grey)
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
+        
+        // Disable Lights Down (grey)
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        // Wait for Q15 correct sound to finish (approximately 20-30 seconds) using a timer
+        var q15Timer = new System.Windows.Forms.Timer();
+        q15Timer.Interval = 25000;
+        q15Timer.Tick += async (s, e) =>
+        {
+            q15Timer.Stop();
+            q15Timer.Dispose();
+            
+            // Check if sequence was cancelled
+            if (_automatedSequenceCts != null && !_automatedSequenceCts.Token.IsCancellationRequested)
+            {
+                // Auto-trigger end-of-round sequence
+                await EndRoundSequence();
+            }
+        };
+        q15Timer.Start();
+    }
+
+    /// <summary>
+    /// Continues the wrong answer sequence on the UI thread after the initial delay
     /// </summary>
     private void ContinueWrongAnswerSequence(int droppedLevel)
     {
