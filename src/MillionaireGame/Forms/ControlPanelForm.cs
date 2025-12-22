@@ -3023,7 +3023,7 @@ public partial class ControlPanelForm : Form
     /// <summary>
     /// Continues the wrong answer sequence on the UI thread after the async delay
     /// </summary>
-    private async void ContinueWrongAnswerSequence(int droppedLevel)
+    private void ContinueWrongAnswerSequence(int droppedLevel)
     {
         // If dropped to a safety net level (Q5 or Q10), play lock-in animation
         if (droppedLevel == 5 || droppedLevel == 10)
@@ -3031,15 +3031,30 @@ public partial class ControlPanelForm : Form
             // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
             StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
             
-            // Wait for animation to complete (12 flashes × 400ms = 4800ms + small buffer)
-            await Task.Delay(5000);
+            // Wait for animation to complete using a timer (12 flashes × 400ms = 4800ms + small buffer)
+            var completionTimer = new System.Windows.Forms.Timer();
+            completionTimer.Interval = 5000;
+            completionTimer.Tick += (s, e) =>
+            {
+                completionTimer.Stop();
+                completionTimer.Dispose();
+                FinishWrongAnswerSequence();
+            };
+            completionTimer.Start();
         }
         else
         {
             // No safety net, just update to level 0 immediately
             UpdateMoneyTreeOnScreens(droppedLevel);
+            FinishWrongAnswerSequence();
         }
-        
+    }
+
+    /// <summary>
+    /// Finishes the wrong answer sequence after animation completes
+    /// </summary>
+    private void FinishWrongAnswerSequence()
+    {
         // Store the wrong value as final winnings for TV screen display
         _finalWinningsAmount = _gameService.State.WrongValue;
         
