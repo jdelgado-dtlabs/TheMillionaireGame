@@ -3,26 +3,16 @@ using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
-using System.Runtime.InteropServices;
+using MillionaireGame.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame;
 
 internal static class Program
 {
-    [DllImport("kernel32.dll")]
-    private static extern bool AllocConsole();
-
-    [DllImport("kernel32.dll")]
-    private static extern bool FreeConsole();
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetConsoleWindow();
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool SetConsoleTitle(string lpConsoleTitle);
-
     public static bool DebugMode { get; private set; }
+    
+    private static GameLogWindow? _gameLogWindow;
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
@@ -44,20 +34,7 @@ internal static class Program
         var appSettings = new ApplicationSettingsManager();
         appSettings.LoadSettings();
         
-        // Allocate console in debug mode or if ShowConsole is enabled in release mode
-        if (DebugMode || appSettings.Settings.ShowConsole)
-        {
-            // Allocate console window for debug output
-            AllocConsole();
-            SetConsoleTitle("MillionaireGame");
-            Console.WriteLine("===========================================");
-            Console.WriteLine("  THE MILLIONAIRE GAME - DEBUG MODE");
-            Console.WriteLine("===========================================");
-            Console.WriteLine($"Application starting at {DateTime.Now}");
-            Console.WriteLine();
-        }
-
-        // Initialize application
+        // Initialize application first (required before creating any Forms)
         Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
@@ -65,19 +42,6 @@ internal static class Program
         // Load settings
         var sqlSettings = new SqlSettingsManager();
         sqlSettings.LoadSettings();
-
-        if (DebugMode || appSettings.Settings.ShowConsole)
-        {
-            Console.WriteLine("Loading SQL settings...");
-            Console.WriteLine($"Connection string configured: {!string.IsNullOrEmpty(sqlSettings.Settings.GetConnectionString())}");
-            Console.WriteLine();
-        }
-
-        if (DebugMode || appSettings.Settings.ShowConsole)
-        {
-            Console.WriteLine("Application settings loaded from XML.");
-            Console.WriteLine();
-        }
 
         // Initialize database
         var dbContext = new GameDatabaseContext(sqlSettings.Settings.GetConnectionString());
@@ -140,6 +104,23 @@ internal static class Program
 
         // Create and run main control panel
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
+        
+        // Create and show game log window after the main form is shown
+        controlPanel.Shown += (s, e) =>
+        {
+            if (DebugMode || appSettings.Settings.ShowConsole)
+            {
+                _gameLogWindow = new GameLogWindow();
+                _gameLogWindow.Log("THE MILLIONAIRE GAME - Debug Console");
+                _gameLogWindow.Log($"Version: Debug Build");
+                _gameLogWindow.Log($"Started: {DateTime.Now}");
+                _gameLogWindow.LogSeparator();
+                _gameLogWindow.Log("Application initialized successfully.");
+                _gameLogWindow.Log("");
+                _gameLogWindow.Show();
+            }
+        };
+        
         Application.Run(controlPanel);
     }
 
@@ -152,28 +133,23 @@ internal static class Program
         // In debug mode, console is always visible
         return;
         #else
-        IntPtr consoleWindow = GetConsoleWindow();
-        
         if (showConsole)
         {
-            // Show console if it doesn't exist
-            if (consoleWindow == IntPtr.Zero)
+            // Show game log window if it doesn't exist
+            if (_gameLogWindow == null || _gameLogWindow.IsDisposed)
             {
-                AllocConsole();
-                Console.WriteLine("===========================================");
-                Console.WriteLine("  THE MILLIONAIRE GAME - CONSOLE");
-                Console.WriteLine("===========================================");
-                Console.WriteLine($"Console opened at {DateTime.Now}");
-                Console.WriteLine();
+                _gameLogWindow = new GameLogWindow();
+            }
+            
+            if (!_gameLogWindow.Visible)
+            {
+                _gameLogWindow.Show();
             }
         }
         else
         {
-            // Hide console by freeing it
-            if (consoleWindow != IntPtr.Zero)
-            {
-                FreeConsole();
-            }
+            // Hide game log window
+            _gameLogWindow?.Hide();
         }
         #endif
     }

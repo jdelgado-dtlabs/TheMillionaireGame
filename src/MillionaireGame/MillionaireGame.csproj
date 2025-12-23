@@ -43,6 +43,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Copy image files to output directory -->
+    <None Include="lib\image\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Copy web server files to output directory -->
     <None Include="..\MillionaireGame.Web\wwwroot\**\*.*" LinkBase="wwwroot\" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -1,81 +1,57 @@
 using System.Runtime.InteropServices;
+using MillionaireGame.Forms;
 
 namespace MillionaireGame.Utilities;
 
 /// <summary>
-/// Manages a separate console window for web server logging
+/// Manages a separate window for web server logging
 /// </summary>
 public static class WebServiceConsole
 {
-    [DllImport("kernel32.dll")]
-    private static extern bool AllocConsole();
-
-    [DllImport("kernel32.dll")]
-    private static extern bool FreeConsole();
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetConsoleWindow();
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool SetConsoleTitle(string lpConsoleTitle);
-
-    private static bool _isAllocated = false;
+    private static WebServerLogWindow? _logWindow;
     private static readonly object _lock = new object();
 
     /// <summary>
-    /// Gets whether the console is currently allocated
+    /// Gets whether the console window is currently visible
     /// </summary>
-    public static bool IsAllocated => _isAllocated;
+    public static bool IsAllocated => _logWindow != null && _logWindow.Visible;
 
     /// <summary>
-    /// Allocates and shows the web service console
+    /// Shows the web service log window
     /// </summary>
     public static void Show()
     {
         lock (_lock)
         {
-            if (_isAllocated)
-                return;
+            if (_logWindow == null || _logWindow.IsDisposed)
+            {
+                _logWindow = new WebServerLogWindow();
+            }
 
-            AllocConsole();
-            SetConsoleTitle("WebService");
-            
-            Console.WriteLine("===========================================");
-            Console.WriteLine("  WEB-BASED AUDIENCE PARTICIPATION");
-            Console.WriteLine("  Service Console");
-            Console.WriteLine("===========================================");
-            Console.WriteLine($"Started at {DateTime.Now}");
-            Console.WriteLine();
-
-            _isAllocated = true;
+            if (!_logWindow.Visible)
+            {
+                _logWindow.Show();
+            }
         }
     }
 
     /// <summary>
-    /// Hides and frees the web service console
+    /// Hides the web service log window
     /// </summary>
     public static void Hide()
     {
         lock (_lock)
         {
-            if (!_isAllocated)
-                return;
-
-            FreeConsole();
-            _isAllocated = false;
+            _logWindow?.Hide();
         }
     }
 
     /// <summary>
-    /// Logs a message to the web service console
+    /// Logs a message to the web service window
     /// </summary>
     public static void Log(string message)
     {
-        if (!_isAllocated)
-            return;
-
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        Console.WriteLine($"[{timestamp}] {message}");
+        _logWindow?.Log(message);
     }
 
     /// <summary>
@@ -83,11 +59,7 @@ public static class WebServiceConsole
     /// </summary>
     public static void Log(string format, params object[] args)
     {
-        if (!_isAllocated)
-            return;
-
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        Console.WriteLine($"[{timestamp}] {string.Format(format, args)}");
+        _logWindow?.Log(format, args);
     }
 
     /// <summary>
@@ -95,9 +67,6 @@ public static class WebServiceConsole
     /// </summary>
     public static void LogSeparator()
     {
-        if (!_isAllocated)
-            return;
-
-        Console.WriteLine("-------------------------------------------");
+        _logWindow?.LogSeparator();
     }
 }
