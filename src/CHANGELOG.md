@@ -2,6 +2,20 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [Unreleased] - 2025-12-23
+
+### Added
+- **Phone a Friend (PAF) Timer Visual Display**
+  - Visual timer window on all screens showing PAF countdown
+  - Three display states: "Calling..." (intro), countdown (30→0), hidden (completed)
+  - ShowPAFTimer(int secondsRemaining, string stage) added to IGameScreen interface
+  - Semi-transparent timer box in upper-left corner (300x150)
+  - Color-coded border: Blue during "Calling...", Red during countdown
+  - Large centered text: "Calling..." (28pt) or countdown number (60pt)
+  - Real-time updates every second during 30-second countdown
+  - Implemented in HostScreenForm, GuestScreenForm, TVScreenFormScalable
+  - Timer hides automatically on completion or screen reset
+
 ## [Unreleased] - 2025-12-22
 
 ### Added

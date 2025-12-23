@@ -1,5 +1,5 @@
 # Development Checkpoint - v0.3-2512
-**Date**: December 22, 2025  
+**Date**: December 23, 2025  
 **Version**: 0.3-2512  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
@@ -8,7 +8,46 @@
 
 ## Session Summary
 
-### Latest Session (Lifeline Implementation - ATH, DD, 50:50) - December 22, 2025
+### Latest Session (PAF Timer Display) - December 23, 2025
+
+#### Phone a Friend (PAF) Timer Visual Display
+- ✅ **Full Implementation**
+  - Visual timer window on all screens showing PAF countdown
+  - Three display states: "Calling..." (intro), countdown (30→0), hidden (completed)
+  - ShowPAFTimer(int secondsRemaining, string stage) added to IGameScreen interface
+  - Stage parameter: "Calling", "Countdown", "Completed"
+  - Broadcasts timer updates every second during countdown
+  
+- ✅ **Visual Design**
+  - Location: Upper-left corner (50, 50) - avoids question/answer overlap
+  - Size: 300x150 design units
+  - Semi-transparent black background (200 alpha)
+  - Color-coded border:
+    * Blue (DodgerBlue) during "Calling..." stage
+    * Red (OrangeRed) during countdown stage
+  - Text display:
+    * "Calling..." (28pt Arial Bold) during intro
+    * Countdown number (60pt Arial Bold) during timer
+    * White color, centered
+  
+- ✅ **Integration Points**
+  - LifelineManager.ExecutePhoneFriendAsync(): Shows "Calling..." (0, "Calling")
+  - LifelineManager.HandlePAFStageClick(): Shows initial 30-second countdown (30, "Countdown")
+  - LifelineManager.PAFTimer_Tick(): Updates every second during countdown
+  - LifelineManager.CompletePAF(): Hides timer (0, "Completed")
+  
+- ✅ **Screen Implementations**
+  - HostScreenForm: Full visual display with DrawPAFTimer() method
+  - GuestScreenForm: Full visual display with DrawPAFTimer() method
+  - TVScreenFormScalable: Full visual display with DrawPAFTimer() method
+  - TVScreenForm: No-op implementation (legacy form being phased out)
+  - All screens hide timer on ResetScreen()
+  
+- ✅ **ScreenUpdateService Enhancement**
+  - ShowPAFTimer() broadcast method loops through all registered screens
+  - Consistent with existing screen update pattern (RemoveAnswer, ShowATAResults, etc.)
+
+### Previous Session (Lifeline Implementation - ATH, DD, 50:50) - December 22, 2025
 
 #### Ask the Host (ATH) Lifeline
 - ✅ **Full Implementation**

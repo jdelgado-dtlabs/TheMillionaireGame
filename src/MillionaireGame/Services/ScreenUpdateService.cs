@@ -112,6 +112,17 @@ public class ScreenUpdateService
     }
 
     /// <summary>
+    /// Show PAF timer on all screens
+    /// </summary>
+    public void ShowPAFTimer(int secondsRemaining, string stage)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowPAFTimer(secondsRemaining, stage);
+        }
+    }
+
+    /// <summary>
     /// Show or hide the question on all screens
     /// </summary>
     public void ShowQuestion(bool show)
@@ -234,6 +245,7 @@ public interface IGameScreen
     void ActivateLifeline(Lifeline lifeline);
     void ResetScreen();
     void ClearQuestionAndAnswerText();
+    void ShowPAFTimer(int secondsRemaining, string stage);
 }
 
 #region Event Args

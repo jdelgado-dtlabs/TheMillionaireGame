@@ -22,6 +22,11 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
+    
+    // PAF timer display
+    private bool _showPAFTimer = false;
+    private int _pafSecondsRemaining = 0;
+    private string _pafStage = "";
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
     // Question in upper part of lower third
@@ -126,6 +131,12 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         if (_showATA)
         {
             DrawATAResults(g);
+        }
+
+        // Draw PAF timer if active
+        if (_showPAFTimer)
+        {
+            DrawPAFTimer(g);
         }
     }
 
@@ -464,6 +475,37 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             bounds.X, bounds.Y, bounds.Width, bounds.Height);
     }
 
+    private void DrawPAFTimer(System.Drawing.Graphics g)
+    {
+        // Define timer display bounds - upper left area to avoid overlap
+        var designTimerBounds = new RectangleF(50, 50, 300, 150);
+        
+        // Scale to actual screen coordinates
+        var actualBounds = new RectangleF(
+            designTimerBounds.X * ScaleX,
+            designTimerBounds.Y * ScaleY,
+            designTimerBounds.Width * ScaleX,
+            designTimerBounds.Height * ScaleY
+        );
+        
+        // Background box
+        using var bgBrush = new SolidBrush(Color.FromArgb(200, 0, 0, 0)); // Semi-transparent black
+        g.FillRectangle(bgBrush, actualBounds);
+        
+        // Border
+        using var borderPen = new Pen(_pafStage == "Calling" ? Color.DodgerBlue : Color.OrangeRed, 3);
+        g.DrawRectangle(borderPen, actualBounds.X, actualBounds.Y, actualBounds.Width, actualBounds.Height);
+        
+        // Text content
+        string displayText = _pafStage == "Calling" ? "Calling..." : $"{_pafSecondsRemaining}";
+        using var font = new Font("Arial", _pafStage == "Calling" ? 28 : 60, FontStyle.Bold);
+        using var textBrush = new SolidBrush(Color.White);
+        
+        // Center text in bounds
+        DrawScaledText(g, displayText, font, textBrush,
+            designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
+    }
+
     // IGameScreen implementation
     public void UpdateQuestion(Question question)
     {
@@ -626,7 +668,22 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         _ataVotes.Clear();
         _currentAmount = null;
         _visibleAnswers.Clear();
+        _showPAFTimer = false; // Hide PAF timer on reset
         // Straps remain always visible
+        Invalidate();
+    }
+
+    public void ShowPAFTimer(int secondsRemaining, string stage)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowPAFTimer(secondsRemaining, stage)));
+            return;
+        }
+
+        _pafSecondsRemaining = secondsRemaining;
+        _pafStage = stage;
+        _showPAFTimer = stage != "Completed"; // Hide when completed
         Invalidate();
     }
 

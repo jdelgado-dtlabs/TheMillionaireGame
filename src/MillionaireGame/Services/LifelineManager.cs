@@ -177,6 +177,9 @@ public class LifelineManager
         
         _screenService.ActivateLifeline(lifeline);
         
+        // Show "Calling..." on screens
+        _screenService.ShowPAFTimer(0, "Calling");
+        
         LogMessage?.Invoke("[Lifeline] PAF intro sound playing (looped) - waiting for host to start countdown");
     }
     
@@ -194,6 +197,10 @@ public class LifelineManager
                 _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
                 
                 _pafSecondsRemaining = 30;
+                
+                // Show initial countdown on screens
+                _screenService.ShowPAFTimer(_pafSecondsRemaining, "Countdown");
+                
                 _pafTimer = new System.Windows.Forms.Timer();
                 _pafTimer.Interval = 1000;
                 _pafTimer.Tick += PAFTimer_Tick;
@@ -213,6 +220,9 @@ public class LifelineManager
     private void PAFTimer_Tick(object? sender, EventArgs e)
     {
         _pafSecondsRemaining--;
+        
+        // Update screens with current countdown
+        _screenService.ShowPAFTimer(_pafSecondsRemaining, "Countdown");
         
         LogMessage?.Invoke($"[PAF] Countdown: {_pafSecondsRemaining} seconds remaining");
         
@@ -244,6 +254,9 @@ public class LifelineManager
         ButtonStateChanged?.Invoke(_pafLifelineButtonNumber, Color.Gray, false);
         
         _pafStage = PAFStage.Completed;
+        
+        // Hide PAF timer on screens
+        _screenService.ShowPAFTimer(0, "Completed");
         
         LogMessage?.Invoke("[Lifeline] PAF completed and marked as used");
     }

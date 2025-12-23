@@ -254,6 +254,13 @@ public partial class TVScreenForm : Form, IGameScreen
         // TV screen doesn't need this - it's only for host/guest screens
     }
 
+    public void ShowPAFTimer(int secondsRemaining, string stage)
+    {
+        // PAF timer not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+        // No-op implementation to satisfy interface
+    }
+
     #endregion
 
     #region Flash Animation
