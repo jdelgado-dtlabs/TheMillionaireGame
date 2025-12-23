@@ -1914,6 +1914,12 @@ public partial class ControlPanelForm : Form
 
     private async Task ExecuteSwitchQuestion(Core.Models.Lifeline lifeline, Button button)
     {
+        // Show activation on screens first (visual feedback)
+        _screenService.ActivateLifeline(lifeline);
+        
+        // Play sound cue WITHOUT stopping bed music
+        _soundService.PlaySound(SoundEffect.LifelineSwitch);
+        
         var result = MessageBox.Show(
             "Are you sure you want to switch to a new question?",
             "Switch Question",
@@ -1926,13 +1932,8 @@ public partial class ControlPanelForm : Form
             button.Enabled = false;
             button.BackColor = Color.Gray;
 
-            // Play lifeline sound (stops background audio, waits 500ms, then plays)
-            await PlayLifelineSoundAsync(SoundEffect.LifelineSwitch);
-
             // Load a new question
             await LoadNewQuestion();
-
-            _screenService.ActivateLifeline(lifeline);
         }
     }
 
