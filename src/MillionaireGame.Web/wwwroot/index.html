@@ -126,6 +126,68 @@
         .screen.active {
             display: block;
         }
+        .vote-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #FFD700;
+            color: white;
+            padding: 20px;
+            margin: 10px 0;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .vote-button:hover:not(:disabled) {
+            background: rgba(255, 215, 0, 0.3);
+            transform: scale(1.02);
+        }
+        .vote-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+        }
+        .vote-button.selected {
+            background: rgba(0, 255, 0, 0.3);
+            border-color: #00ff00;
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            text-align: center;
+            margin: 20px 0;
+            animation: pulse 1s infinite;
+        }
+        .timer.warning {
+            color: #ff6666;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .results-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin: 10px 0;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .results-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.6));
+            transition: width 0.5s ease;
+            border-radius: 8px;
+        }
+        .results-text {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +234,55 @@
                 • If you refresh or disconnect, you'll reconnect with the same ID<br>
                 • Duplicate votes/answers are prevented server-side<br>
                 • Your progress in FFF is maintained
+            </div>
+        </div>
+        
+        <!-- ATA Voting Screen -->
+        <div id="ataVotingScreen" class="screen">
+            <div class="status connected">📊 Ask The Audience</div>
+            
+            <h2 id="ataQuestionText" style="color: #FFD700; margin: 20px 0;"></h2>
+            
+            <div id="ataTimer" class="timer">
+                <span id="timerSeconds">30</span>s
+            </div>
+            
+            <div id="ataVoteButtons" style="margin: 20px 0;">
+                <button id="btnVoteA" class="vote-button" data-option="A">
+                    <strong>A:</strong> <span id="optionAText"></span>
+                </button>
+                <button id="btnVoteB" class="vote-button" data-option="B">
+                    <strong>B:</strong> <span id="optionBText"></span>
+                </button>
+                <button id="btnVoteC" class="vote-button" data-option="C">
+                    <strong>C:</strong> <span id="optionCText"></span>
+                </button>
+                <button id="btnVoteD" class="vote-button" data-option="D">
+                    <strong>D:</strong> <span id="optionDText"></span>
+                </button>
+            </div>
+            
+            <div id="ataMessage" class="info" style="display: none;"></div>
+            
+            <div id="ataResults" style="margin-top: 30px; display: none;">
+                <h3 style="color: #FFD700;">Results:</h3>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillA" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextA">A: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillB" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextB">B: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillC" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextC">C: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillD" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextD">D: 0%</div>
+                </div>
+                <p id="totalVotes" style="text-align: center; color: #FFD700; margin-top: 10px;">Total votes: 0</p>
             </div>
         </div>
     </div>
@@ -257,6 +368,72 @@
                     console.log("Answer received:", data);
                     if (!data.success) {
                         alert(data.error || "Answer submission failed");
+                    }
+                });
+
+                // ATA SignalR Event Handlers
+                connection.on('VotingStarted', (data) => {
+                    console.log("ATA Voting Started:", data);
+                    
+                    // Reset voting state
+                    ataHasVoted = false;
+                    hideATAMessage();
+                    
+                    // Set question and options
+                    document.getElementById('ataQuestionText').textContent = data.questionText;
+                    document.getElementById('optionAText').textContent = data.optionA;
+                    document.getElementById('optionBText').textContent = data.optionB;
+                    document.getElementById('optionCText').textContent = data.optionC;
+                    document.getElementById('optionDText').textContent = data.optionD;
+                    
+                    // Enable vote buttons
+                    document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.remove('selected');
+                    });
+                    
+                    // Hide results initially
+                    document.getElementById('ataResults').style.display = 'none';
+                    
+                    // Start timer
+                    updateATATimer(data.timeLimit || 30);
+                    startATATimerCountdown();
+                    
+                    // Show ATA screen
+                    showScreen('ataVotingScreen');
+                });
+
+                connection.on('VotesUpdated', (data) => {
+                    console.log("Votes Updated:", data);
+                    updateATAResults(data.results, data.totalVotes);
+                });
+
+                connection.on('VotingEnded', (data) => {
+                    console.log("Voting Ended:", data);
+                    
+                    stopATATimer();
+                    
+                    // Disable vote buttons
+                    document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
+                        btn.disabled = true;
+                    });
+                    
+                    // Show final results
+                    updateATAResults(data.results, data.totalVotes);
+                    showATAMessage("Voting has ended", false);
+                    
+                    // Return to connected screen after 5 seconds
+                    setTimeout(() => {
+                        showScreen('connectedScreen');
+                    }, 5000);
+                });
+
+                connection.on('VoteReceived', (data) => {
+                    console.log("Vote Received:", data);
+                    if (data.success) {
+                        showATAMessage("✓ Your vote has been recorded!", false);
+                    } else {
+                        showATAMessage(data.message || "Vote failed", true);
                     }
                 });
 
@@ -385,6 +562,120 @@
             currentDisplayName = null;
             showScreen('joinScreen');
         });
+
+        // ATA Voting State
+        let ataTimerInterval = null;
+        let ataTimeRemaining = 0;
+        let ataHasVoted = false;
+
+        // ATA Vote Button Handlers
+        document.querySelectorAll('#ataVoteButtons .vote-button').forEach(button => {
+            button.addEventListener('click', async function() {
+                const option = this.dataset.option;
+                await submitATAVote(option);
+            });
+        });
+
+        // Submit ATA Vote
+        async function submitATAVote(option) {
+            if (!connection || !currentSessionId || !currentParticipantId) {
+                showATAMessage("Error: Not connected", true);
+                return;
+            }
+
+            if (ataHasVoted) {
+                showATAMessage("You have already voted", true);
+                return;
+            }
+
+            try {
+                console.log(`Submitting vote: ${option}`);
+                await connection.invoke('SubmitVote', currentSessionId, currentParticipantId, option);
+                
+                ataHasVoted = true;
+                
+                // Disable all vote buttons
+                document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.dataset.option === option) {
+                        btn.classList.add('selected');
+                    }
+                });
+
+                showATAMessage("✓ Your vote has been recorded!", false);
+
+            } catch (err) {
+                console.error("Vote failed:", err);
+                showATAMessage("Failed to submit vote: " + err.toString(), true);
+            }
+        }
+
+        // Show ATA message
+        function showATAMessage(message, isError) {
+            const messageDiv = document.getElementById('ataMessage');
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = isError ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)';
+            messageDiv.style.borderColor = isError ? '#ff6666' : '#00ff00';
+        }
+
+        // Hide ATA message
+        function hideATAMessage() {
+            document.getElementById('ataMessage').style.display = 'none';
+        }
+
+        // Update ATA Timer
+        function updateATATimer(seconds) {
+            ataTimeRemaining = seconds;
+            const timerDiv = document.getElementById('ataTimer');
+            const timerSeconds = document.getElementById('timerSeconds');
+            
+            timerSeconds.textContent = seconds;
+            
+            if (seconds <= 10) {
+                timerDiv.classList.add('warning');
+            } else {
+                timerDiv.classList.remove('warning');
+            }
+        }
+
+        // Start ATA Timer Countdown
+        function startATATimerCountdown() {
+            if (ataTimerInterval) {
+                clearInterval(ataTimerInterval);
+            }
+
+            ataTimerInterval = setInterval(() => {
+                ataTimeRemaining--;
+                updateATATimer(ataTimeRemaining);
+
+                if (ataTimeRemaining <= 0) {
+                    clearInterval(ataTimerInterval);
+                    ataTimerInterval = null;
+                }
+            }, 1000);
+        }
+
+        // Stop ATA Timer
+        function stopATATimer() {
+            if (ataTimerInterval) {
+                clearInterval(ataTimerInterval);
+                ataTimerInterval = null;
+            }
+        }
+
+        // Update ATA Results Display
+        function updateATAResults(results, totalVotes) {
+            document.getElementById('ataResults').style.display = 'block';
+
+            ['A', 'B', 'C', 'D'].forEach(option => {
+                const percentage = results[option] || 0;
+                document.getElementById(`resultsFill${option}`).style.width = percentage + '%';
+                document.getElementById(`resultsText${option}`).textContent = `${option}: ${percentage.toFixed(1)}%`;
+            });
+
+            document.getElementById('totalVotes').textContent = `Total votes: ${totalVotes || 0}`;
+        }
     </script>
 </body>
 </html>

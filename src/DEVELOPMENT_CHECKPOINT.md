@@ -1,16 +1,159 @@
-# Development Checkpoint - v0.5-2512
+# Development Checkpoint - v0.6-2512
 **Date**: December 23, 2025  
-**Version**: 0.5-2512 (WAPS Phase 2.5)  
+**Version**: 0.6-2512 (WAPS Phase 3)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
 
-## 🆕 Latest Session: WAPS Phase 2.5 - Enhanced Game Flow ✅ COMPLETE
+## 🆕 Latest Session: WAPS Phase 3 - Complete ATA Implementation ✅ COMPLETE
+
+### Phase 3: Complete ATA Implementation - December 23, 2025
+
+**Status**: ✅ **PRODUCTION READY**  
+**Server**: Running on http://localhost:5278  
+**Build**: Success (warnings only)
+
+#### Components Implemented
+
+**1. Enhanced ATAHub** ✅ (Hubs/ATAHub.cs - ~268 lines)
+- **Timer Management**:
+  - Static `_votingTimers` dictionary (CancellationTokenSource per session)
+  - Auto-end voting after time limit (default 30s)
+  - Proper cancellation and disposal
+  
+- **Question Tracking**:
+  - Static `_currentQuestions` dictionary (question text per session)
+  - No complex state management needed
+  
+- **Enhanced Methods**:
+  - `JoinSession`: Returns CanVote status (checks HasUsedATA)
+  - `StartVoting`: Stores question, creates auto-end timer, broadcasts details
+  - `SubmitVote`: Validates eligibility, saves vote, broadcasts real-time results
+  - `EndVoting`: Cancels timer, marks voters, broadcasts final results
+  - `GetVotingStatus`: Returns current voting state
+  
+- **Once-Per-Round Restriction**:
+  - Checks `participant.HasUsedATA` before accepting votes
+  - Automatically marks all voters after voting ends
+  - Clear error messages for ineligible voters
+
+**2. SessionService Extensions** ✅ (Services/SessionService.cs - +40 lines)
+- **New Methods**:
+  - `GetATAVoteCountAsync(sessionId)`: Returns vote count from last 5 minutes
+  - `MarkATAUsedForVotersAsync(sessionId)`: Sets HasUsedATA=true for all recent voters
+- **5-Minute Window Logic**:
+  - Simple, effective "current question" tracking
+  - No complex state management
+
+**3. ATA Voting UI** ✅ (wwwroot/index.html - +300 lines)
+- **HTML Structure**:
+  - New `ataVotingScreen` div with question display
+  - Four vote buttons (A, B, C, D) with option text
+  - Countdown timer display
+  - Results visualization with percentage bars
+  - Message area for feedback
+  
+- **CSS Styling**:
+  - `.vote-button`: Gold borders, hover effects, scale animation
+  - `.vote-button:disabled`: Grayed out after voting
+  - `.vote-button.selected`: Green highlight for user's choice
+  - `.timer`: 48px gold text with pulse animation
+  - `.timer.warning`: Red color when ≤10 seconds
+  - `.results-bar`: Animated percentage bars with smooth transitions
+  
+- **JavaScript Features**:
+  - `submitATAVote(option)`: Validates and submits vote
+  - `startATATimerCountdown()`: Updates timer every second
+  - `updateATAResults(results, totalVotes)`: Animates result bars
+  - `showATAMessage(message, isError)`: Shows feedback
+  
+- **SignalR Event Handlers**:
+  - `VotingStarted`: Resets state, shows question, enables buttons, starts timer
+  - `VotesUpdated`: Updates result bars with new percentages
+  - `VotingEnded`: Stops timer, shows final results, returns to lobby after 5s
+  - `VoteReceived`: Shows confirmation message
+
+**4. Visual Features** ✅
+- **Countdown Timer**:
+  - Large 48px display
+  - Pulse animation
+  - Warning color at ≤10 seconds
+  - Auto-stops at 0
+  
+- **Result Visualization**:
+  - Percentage bars for each option
+  - Smooth width transitions (0.5s ease)
+  - Total vote count display
+  - Gold gradient fills
+  
+- **User Feedback**:
+  - Vote confirmation: "✓ Your vote has been recorded!"
+  - Error messages: "You have already used ATA this round"
+  - Voting end message
+  - Auto-return to lobby after results
+
+#### Technical Architecture
+
+**Timer Management**:
+```csharp
+// Store timer per session
+_votingTimers[sessionId] = new CancellationTokenSource();
+
+// Auto-end after timeLimit
+_ = Task.Run(async () => {
+    await Task.Delay(timeLimit * 1000, token);
+    if (!token.IsCancellationRequested) {
+        await EndVoting(sessionId);
+    }
+}, token);
+```
+
+**Once-Per-Round Enforcement**:
+```csharp
+// Check before accepting vote
+if (participant.HasUsedATA) {
+    return new { success = false, message = "You have already used ATA this round" };
+}
+
+// Mark all voters after voting ends
+await _sessionService.MarkATAUsedForVotersAsync(sessionId);
+```
+
+**Real-Time Broadcasting**:
+```csharp
+// Broadcast vote updates
+await Clients.Group(sessionId).SendAsync("VotesUpdated", new {
+    results = percentages,
+    totalVotes = voteCount
+});
+```
+
+#### Files Modified
+- `Hubs/ATAHub.cs` (~268 lines, complete rewrite)
+- `Services/SessionService.cs` (+40 lines, 2 new methods)
+- `wwwroot/index.html` (+300 lines, UI + JS handlers)
+
+#### Testing Completed
+- ✅ Basic voting flow
+- ✅ Timer functionality (30s countdown, auto-end)
+- ✅ Once-per-round restriction
+- ✅ Real-time results updates
+- ✅ Edge cases (simultaneous votes, disconnects)
+
+#### Build & Deployment
+- **Build Status**: ✅ Success
+- **Server**: Running on http://localhost:5278
+- **Health Check**: ✅ Responding
+- **UI**: ✅ Responsive and functional
+
+---
+
+## ✅ Previous Session: WAPS Phase 2.5 - Enhanced Game Flow (COMMITTED)
 
 ### Phase 2.5: Enhanced Game Flow Implementation - December 23, 2025
 
-**Status**: ✅ **PRODUCTION READY**  
+**Status**: ✅ **COMMITTED** (Commits: 9a21e36, 06eb67d)  
 **Server**: Running on http://localhost:5278  
 **Build**: Success (warnings only)
 

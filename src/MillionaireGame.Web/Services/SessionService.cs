@@ -632,5 +632,43 @@ public class SessionService
                         p.State == ParticipantState.HasPlayedFFF))
             .ToListAsync();
     }
+
+    /// <summary>
+    /// Get total vote count for current ATA question
+    /// </summary>
+    public async Task<int> GetATAVoteCountAsync(string sessionId)
+    {
+        var recentVoteCutoff = DateTime.UtcNow.AddMinutes(-5);
+        return await _context.ATAVotes
+            .Where(v => v.SessionId == sessionId && v.SubmittedAt > recentVoteCutoff)
+            .CountAsync();
+    }
+
+    /// <summary>
+    /// Mark all participants who voted as having used ATA for this round
+    /// </summary>
+    public async Task MarkATAUsedForVotersAsync(string sessionId)
+    {
+        var recentVoteCutoff = DateTime.UtcNow.AddMinutes(-5);
+        var voterIds = await _context.ATAVotes
+            .Where(v => v.SessionId == sessionId && v.SubmittedAt > recentVoteCutoff)
+            .Select(v => v.ParticipantId)
+            .Distinct()
+            .ToListAsync();
+
+        var voters = await _context.Participants
+            .Where(p => voterIds.Contains(p.Id))
+            .ToListAsync();
+
+        foreach (var voter in voters)
+        {
+            voter.HasUsedATA = true;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Marked {Count} participants as having used ATA in session {SessionId}", 
+            voters.Count, sessionId);
+    }
 }
 
