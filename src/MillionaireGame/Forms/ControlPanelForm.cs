@@ -1474,6 +1474,50 @@ public partial class ControlPanelForm : Form
         // Button 4
         btnLifeline4.Text = label4;
         btnLifeline4.Visible = totalLifelines >= 4;
+        
+        // Disable "Show Correct Answer to Host" checkbox if ATH lifeline is enabled
+        // This prevents the host from seeing the correct answer when ATH is available
+        bool athEnabled = IsAskTheHostEnabled();
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[Lifelines] ATH enabled check: {athEnabled}");
+            Console.WriteLine($"  Lifeline1: {_appSettings.Settings.Lifeline1}");
+            Console.WriteLine($"  Lifeline2: {_appSettings.Settings.Lifeline2}");
+            Console.WriteLine($"  Lifeline3: {_appSettings.Settings.Lifeline3}");
+            Console.WriteLine($"  Lifeline4: {_appSettings.Settings.Lifeline4}");
+        }
+        
+        // If ATH is enabled, disable and uncheck the checkbox
+        if (athEnabled)
+        {
+            chkCorrectAnswer.Checked = false; // Uncheck first
+            chkCorrectAnswer.Enabled = false; // Then disable
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Lifelines] ATH is enabled - 'Show Correct Answer to Host' checkbox disabled");
+            }
+        }
+        else
+        {
+            chkCorrectAnswer.Enabled = true; // Enable if ATH is not configured
+            chkCorrectAnswer.Checked = false; // But still start unchecked
+            if (Program.DebugMode)
+            {
+                Console.WriteLine("[Lifelines] ATH is NOT enabled - 'Show Correct Answer to Host' checkbox enabled");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Checks if Ask the Host lifeline is configured and enabled
+    /// </summary>
+    private bool IsAskTheHostEnabled()
+    {
+        return _appSettings.Settings.Lifeline1?.Equals("ath", StringComparison.OrdinalIgnoreCase) == true ||
+               _appSettings.Settings.Lifeline2?.Equals("ath", StringComparison.OrdinalIgnoreCase) == true ||
+               _appSettings.Settings.Lifeline3?.Equals("ath", StringComparison.OrdinalIgnoreCase) == true ||
+               _appSettings.Settings.Lifeline4?.Equals("ath", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     /// <summary>

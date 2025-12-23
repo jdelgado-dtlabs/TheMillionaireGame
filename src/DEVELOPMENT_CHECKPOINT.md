@@ -8,7 +8,62 @@
 
 ## Session Summary
 
-### Latest Session (STQ Lifeline Implementation) - December 22, 2025
+### Latest Session (Lifeline Implementation - ATH, DD, 50:50) - December 22, 2025
+
+#### Ask the Host (ATH) Lifeline
+- ✅ **Full Implementation**
+  - ATH lifeline flow: Click button → disable (blue), play host_bed.mp3 (looped) → player selects answer → stop bed, play host_end.mp3, mark used
+  - ATHStage enum: NotStarted, Active, Completed
+  - HandleAskTheHostAnswerAsync() integrated into SelectAnswer flow
+  - Returns true when ATH is active to allow answer selection
+  - Sound effect: host_bed.mp3 (looped), host_end.mp3
+  - "Show Correct Answer to Host" checkbox disabled when ATH is configured
+  - Checkbox detection uses case-insensitive comparison for "ath" lifeline value
+  - Checkbox automatically updates when settings are changed and saved
+
+#### Double Dip (DD) Lifeline
+- ✅ **Full Implementation**
+  - DD flow: Click → blue button, doubledip_start plays → first answer → Reveal button
+  - First wrong answer: show red, play doubledip_final1, remove from screens, disable control panel button (grey)
+  - First wrong answer re-enables remaining answer buttons for second selection
+  - Second answer: Click → Reveal → normal game flow
+  - DoubleDipStage enum: NotStarted, FirstAttempt, SecondAttempt, Completed
+  - DoubleDipRevealResult enum: NotActive, FirstAttemptWrong, SecondAttempt
+  - HandleDoubleDipRevealAsync() called from RevealAnswer (not SelectAnswer)
+  - Sound: doubledip_start.mp3 (bed), doubledip_final1.mp3 (first wrong)
+  - Removed doubledip_final2.mp3 from system (deprecated)
+  - CompleteDoubleDip() stops both dd_start and dd_first sounds
+  - Dramatic reveal flow using Reveal button for suspense
+
+#### 50:50 Lifeline Fix
+- ✅ **Fixed Answer Removal Location**
+  - Previously: Removed answers from control panel text boxes (wrong)
+  - Now: Disables/greys control panel buttons, removes answers from screens (correct)
+  - ExecuteFiftyFiftyAsync() now calls _screenService.RemoveAnswer() for each removed answer
+  - OnLifelineRequestAnswerRemoval() disables buttons and sets to grey color
+  - Control panel text remains visible, buttons are disabled
+  - TV/Host/Guest screens properly hide/remove the two wrong answers
+  - Sound: Plays 5050 sound effect without stopping bed music (no StopAllSounds call)
+
+#### Screen System Enhancement
+- ✅ **RemoveAnswer Method**
+  - Added RemoveAnswer(string answer) to IGameScreen interface
+  - Implemented in all screen types: TVScreenForm, TVScreenFormScalable, HostScreenForm, GuestScreenForm
+  - TVScreenForm: Hides lblAnswerA/B/C/D, ResetScreen restores visibility
+  - Scalable screens: Removes from _visibleAnswers list, calls Invalidate()
+  - ScreenUpdateService.RemoveAnswer() broadcasts to all registered screens
+  - Used by both DD (first wrong answer) and 50:50 (two wrong answers)
+
+#### Host Correct Answer Control
+- ✅ **ATH Integration**
+  - "Show Correct Answer to Host" checkbox disabled when ATH lifeline is configured
+  - Prevents host from seeing correct answer when ATH is available
+  - IsAskTheHostEnabled() checks all 4 lifeline slots with case-insensitive comparison
+  - InitializeLifelineButtons() updates checkbox state on load and settings save
+  - Checkbox always starts unchecked (never on by default)
+  - Checkbox re-enabled when ATH is not configured
+
+### Previous Session (STQ Lifeline Implementation) - December 22, 2025
 
 #### Switch the Question Lifeline
 - ✅ **Full Implementation**
