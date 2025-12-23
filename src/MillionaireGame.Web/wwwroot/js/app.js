@@ -1,7 +1,7 @@
 /**
  * Who Wants to be a Millionaire
  * Audience Participation System
- * Version: 0.6.2-2512 (Privacy & Session Management)
+ * Version: 0.6.3-2512 (Device Telemetry & Privacy)
  */
 
 // ============================================================================
@@ -22,6 +22,113 @@ const SESSION_CONFIG = {
     warningBeforeExpiry: 15 * 60 * 1000,    // 15 minutes warning
     checkInterval: 60 * 1000                 // Check every minute
 };
+
+// ============================================================================
+// Device Telemetry Functions
+// ============================================================================
+
+/**
+ * Detect device type (Mobile, Tablet, Desktop)
+ */
+function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        return "Tablet";
+    }
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        return "Mobile";
+    }
+    return "Desktop";
+}
+
+/**
+ * Detect OS type and version
+ */
+function getOSInfo() {
+    const ua = navigator.userAgent;
+    let osType = "Unknown";
+    let osVersion = "Unknown";
+    
+    if (/Windows NT 10/i.test(ua)) { osType = "Windows"; osVersion = "10/11"; }
+    else if (/Windows NT 6.3/i.test(ua)) { osType = "Windows"; osVersion = "8.1"; }
+    else if (/Windows NT 6.2/i.test(ua)) { osType = "Windows"; osVersion = "8"; }
+    else if (/Windows NT 6.1/i.test(ua)) { osType = "Windows"; osVersion = "7"; }
+    else if (/Mac OS X ([\d_]+)/i.test(ua)) {
+        osType = "macOS";
+        const match = ua.match(/Mac OS X ([\d_]+)/i);
+        osVersion = match ? match[1].replace(/_/g, '.') : "Unknown";
+    }
+    else if (/Android ([\d.]+)/i.test(ua)) {
+        osType = "Android";
+        const match = ua.match(/Android ([\d.]+)/i);
+        osVersion = match ? match[1] : "Unknown";
+    }
+    else if (/iPhone OS ([\d_]+)/i.test(ua)) {
+        osType = "iOS";
+        const match = ua.match(/iPhone OS ([\d_]+)/i);
+        osVersion = match ? match[1].replace(/_/g, '.') : "Unknown";
+    }
+    else if (/iPad.*OS ([\d_]+)/i.test(ua)) {
+        osType = "iOS";
+        const match = ua.match(/OS ([\d_]+)/i);
+        osVersion = match ? match[1].replace(/_/g, '.') : "Unknown";
+    }
+    else if (/Linux/i.test(ua)) { osType = "Linux"; }
+    
+    return { osType, osVersion };
+}
+
+/**
+ * Detect browser type and version
+ */
+function getBrowserInfo() {
+    const ua = navigator.userAgent;
+    let browserType = "Unknown";
+    let browserVersion = "Unknown";
+    
+    if (/Edg\/([\d.]+)/.test(ua)) {
+        browserType = "Edge";
+        const match = ua.match(/Edg\/([\d.]+)/);
+        browserVersion = match ? match[1] : "Unknown";
+    }
+    else if (/Chrome\/([\d.]+)/.test(ua) && !/Edg/.test(ua)) {
+        browserType = "Chrome";
+        const match = ua.match(/Chrome\/([\d.]+)/);
+        browserVersion = match ? match[1] : "Unknown";
+    }
+    else if (/Safari\/([\d.]+)/.test(ua) && !/Chrome/.test(ua)) {
+        browserType = "Safari";
+        const match = ua.match(/Version\/([\d.]+)/);
+        browserVersion = match ? match[1] : "Unknown";
+    }
+    else if (/Firefox\/([\d.]+)/.test(ua)) {
+        browserType = "Firefox";
+        const match = ua.match(/Firefox\/([\d.]+)/);
+        browserVersion = match ? match[1] : "Unknown";
+    }
+    else if (/MSIE|Trident/.test(ua)) {
+        browserType = "IE";
+    }
+    
+    return { browserType, browserVersion };
+}
+
+/**
+ * Collect all device telemetry
+ */
+function collectDeviceTelemetry() {
+    const { osType, osVersion } = getOSInfo();
+    const { browserType, browserVersion } = getBrowserInfo();
+    
+    return {
+        deviceType: getDeviceType(),
+        osType,
+        osVersion,
+        browserType,
+        browserVersion,
+        hasAgreedToPrivacy: true // Set by clicking Join button
+    };
+}
 
 // ============================================================================
 // State Management
@@ -110,6 +217,10 @@ async function joinSession(sessionId, displayName, participantId = null) {
     try {
         hideError();
 
+        // Collect device telemetry (anonymous, for statistics only)
+        const telemetry = collectDeviceTelemetry();
+        console.log("Device telemetry collected:", telemetry);
+
         // Create SignalR connection
         connection = new signalR.HubConnectionBuilder()
             .withUrl(`/hubs/fff`)
@@ -135,8 +246,8 @@ async function joinSession(sessionId, displayName, participantId = null) {
         await connection.start();
         console.log("SignalR connected");
 
-        // Join the session
-        const result = await connection.invoke("JoinSession", sessionId, displayName, participantId);
+        // Join the session with telemetry data
+        const result = await connection.invoke("JoinSession", sessionId, displayName, participantId, telemetry);
         console.log("Join result:", result);
 
         // Check if validation failed

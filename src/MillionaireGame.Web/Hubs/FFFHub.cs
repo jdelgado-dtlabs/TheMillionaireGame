@@ -26,7 +26,7 @@ public class FFFHub : Hub
     /// <summary>
     /// Join a game session with persistent participant ID
     /// </summary>
-    public async Task<object> JoinSession(string sessionId, string displayName, string? participantId = null)
+    public async Task<object> JoinSession(string sessionId, string displayName, string? participantId = null, DeviceTelemetry? telemetry = null)
     {
         // Validate name (only for new participants, not reconnections)
         if (string.IsNullOrEmpty(participantId))
@@ -64,10 +64,10 @@ public class FFFHub : Hub
         
         // Check if this is a reconnection
         var participant = await _sessionService.GetOrCreateParticipantAsync(
-            sessionId, displayName, Context.ConnectionId, participantId);
+            sessionId, displayName, Context.ConnectionId, participantId, telemetry);
         
-        _logger.LogInformation("Participant {DisplayName} ({ParticipantId}) joined session {SessionId} (Reconnect: {IsReconnect})", 
-            displayName, participant.Id, sessionId, participantId != null);
+        _logger.LogInformation("Participant {DisplayName} ({ParticipantId}) joined session {SessionId} (Reconnect: {IsReconnect}, Device: {Device}/{OS})", 
+            displayName, participant.Id, sessionId, participantId != null, telemetry?.DeviceType, telemetry?.OSType);
         
         // Notify all clients in the session about the participant
         await Clients.Group(sessionId).SendAsync("ParticipantJoined", new

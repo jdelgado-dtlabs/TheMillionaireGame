@@ -68,7 +68,7 @@ public class SessionService
     /// <summary>
     /// Get existing participant or create new one (supports reconnection)
     /// </summary>
-    public async Task<Participant> GetOrCreateParticipantAsync(string sessionId, string displayName, string connectionId, string? participantId = null)
+    public async Task<Participant> GetOrCreateParticipantAsync(string sessionId, string displayName, string connectionId, string? participantId = null, DeviceTelemetry? telemetry = null)
     {
         // First, ensure the session exists (auto-create if needed for demo/testing)
         var session = await _context.Sessions.FindAsync(sessionId);
@@ -100,6 +100,17 @@ public class SessionService
                 participant.ConnectionId = connectionId;
                 participant.LastSeenAt = DateTime.UtcNow;
                 participant.IsActive = true;
+                
+                // Update telemetry if provided (user might have changed device)
+                if (telemetry != null)
+                {
+                    participant.DeviceType = telemetry.DeviceType;
+                    participant.OSType = telemetry.OSType;
+                    participant.OSVersion = telemetry.OSVersion;
+                    participant.BrowserType = telemetry.BrowserType;
+                    participant.BrowserVersion = telemetry.BrowserVersion;
+                }
+                
                 await _context.SaveChangesAsync();
                 
                 _logger.LogInformation("Participant {ParticipantId} reconnected to session {SessionId} with new connection {ConnectionId}",
@@ -109,7 +120,7 @@ public class SessionService
             }
         }
 
-        // Create new participant
+        // Create new participant with telemetry
         participant = new Participant
         {
             SessionId = sessionId,
@@ -117,14 +128,20 @@ public class SessionService
             ConnectionId = connectionId,
             JoinedAt = DateTime.UtcNow,
             LastSeenAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            DeviceType = telemetry?.DeviceType,
+            OSType = telemetry?.OSType,
+            OSVersion = telemetry?.OSVersion,
+            BrowserType = telemetry?.BrowserType,
+            BrowserVersion = telemetry?.BrowserVersion,
+            HasAgreedToPrivacy = telemetry?.HasAgreedToPrivacy ?? false
         };
 
         _context.Participants.Add(participant);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("New participant {DisplayName} ({ParticipantId}) added to session {SessionId}",
-            displayName, participant.Id, sessionId);
+        _logger.LogInformation("New participant {DisplayName} ({ParticipantId}) added to session {SessionId} with device {DeviceType}/{OSType}",
+            displayName, participant.Id, sessionId, telemetry?.DeviceType, telemetry?.OSType);
 
         return participant;
     }
@@ -257,6 +274,7 @@ public class SessionService
         if (participant != null)
         {
             participant.LastSeenAt = DateTime.UtcNow;
+            participant.DisconnectedAt = DateTime.UtcNow; // Track when they left for play duration
             // Keep IsActive = true so they can reconnect
             await _context.SaveChangesAsync();
 

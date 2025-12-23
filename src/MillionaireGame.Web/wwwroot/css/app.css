@@ -140,6 +140,23 @@ button:disabled {
     color: #FFD700;
 }
 
+/* === Privacy Notice === */
+.privacy-notice {
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid #FFD700;
+    border-radius: 5px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.privacy-notice strong {
+    color: #FFD700;
+    display: block;
+    margin-bottom: 5px;
+}
+
 /* === Screen Management === */
 .screen {
     display: none;

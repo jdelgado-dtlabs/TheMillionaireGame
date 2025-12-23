@@ -1,19 +1,163 @@
-# Development Checkpoint - v0.6.2-2512
+# Development Checkpoint - v0.6.3-2512
 **Date**: December 23, 2025  
-**Version**: 0.6.2-2512 (Privacy-First Session Management)  
+**Version**: 0.6.3-2512 (Device Telemetry & Privacy Notice)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
 
-## 🆕 Latest Session: Privacy-First Session Management ✅ COMPLETE
+## 🆕 Latest Session: Phase 4.5 - Device Telemetry & Privacy Notice ✅ COMPLETE
 
-### Phase 4: Ephemeral Sessions - December 23, 2025
+### Device Telemetry & Privacy - December 23, 2025
 
 **Status**: ✅ **PRODUCTION READY**  
 **Server**: Running on http://localhost:5278  
-**Build**: Success  
-**Documentation**: `PHASE_4_PRIVACY_SESSION_MANAGEMENT.md`
+**Build**: Success
+
+#### Implementation Summary
+
+**Privacy Notice** - Clear, concise notification on login screen:
+- Positioned under name requirements
+- States data collection purpose (statistics only)
+- Lists what's collected (device, OS, browser, play duration)
+- Affirms deletion of identifying information
+- Clicking "Join Session" indicates agreement
+
+**Device Telemetry Collection**:
+- Device Type (Mobile, Tablet, Desktop)
+- OS Type & Version (iOS 17.1, Android 14, Windows 11, etc.)
+- Browser Type & Version (Chrome 120.0, Safari 17.2, etc.)
+- Play Duration (calculated from join to disconnect)
+- Privacy agreement flag
+
+**Database Updates**:
+- Added telemetry fields to Participant model
+- Fields: DeviceType, OSType, OSVersion, BrowserType, BrowserVersion
+- Added DisconnectedAt for play duration calculation
+- Added HasAgreedToPrivacy flag
+
+**CSV Export Changes**:
+- **Removed**: Participant names and GUIDs from exports
+- **Added**: Anonymized telemetry section
+- **Includes**: Device/OS/Browser info, play duration, activity flags
+- **Privacy Compliant**: No PII in exported statistics
+
+#### Changes Implemented
+
+**1. Frontend Updates** ✅
+- Privacy notice added to [index.html](src/MillionaireGame.Web/wwwroot/index.html)
+- CSS styling for `.privacy-notice` in [app.css](src/MillionaireGame.Web/wwwroot/css/app.css)
+- Device detection functions in [app.js](src/MillionaireGame.Web/wwwroot/js/app.js):
+  - `getDeviceType()` - Mobile/Tablet/Desktop detection
+  - `getOSInfo()` - OS type and version parsing
+  - `getBrowserInfo()` - Browser type and version detection
+  - `collectDeviceTelemetry()` - Aggregates all telemetry
+- Updated `joinSession()` to send telemetry with join request
+
+**2. Backend Models** ✅
+- Created [DeviceTelemetry.cs](src/MillionaireGame.Web/Models/DeviceTelemetry.cs) model
+- Updated [Participant.cs](src/MillionaireGame.Web/Models/Participant.cs) with telemetry fields:
+  - 6 new telemetry properties
+  - DisconnectedAt timestamp
+  - HasAgreedToPrivacy boolean
+
+**3. SignalR Hub Updates** ✅
+- Updated [FFFHub.cs](src/MillionaireGame.Web/Hubs/FFFHub.cs):
+  - `JoinSession()` accepts optional telemetry parameter
+  - Logs device info for monitoring
+  - Passes telemetry to SessionService
+
+**4. Service Layer Updates** ✅
+- Updated [SessionService.cs](src/MillionaireGame.Web/Services/SessionService.cs):
+  - `GetOrCreateParticipantAsync()` accepts and stores telemetry
+  - Updates telemetry on reconnection (device might change)
+  - `MarkParticipantDisconnectedAsync()` sets DisconnectedAt timestamp
+
+**5. Statistics & Export** ✅
+- Updated [StatisticsService.cs](src/MillionaireGame.Web/Services/StatisticsService.cs):
+  - Removed participant names from CSV export
+  - Removed participant IDs/GUIDs from CSV export
+  - Added "DEVICE & USAGE TELEMETRY (ANONYMIZED)" section
+  - Calculates play duration from JoinedAt to DisconnectedAt/EndedAt
+  - Uses participant index numbers instead of names in FFF statistics
+
+#### Privacy Notice Text
+
+```
+🔒 Privacy Notice:
+We collect anonymous usage data (device type, OS version, browser, play duration) 
+for statistics. Your name and all identifying information are deleted after the show. 
+By clicking "Join Session", you agree to these terms.
+```
+
+#### Device Detection Details
+
+**Device Types Detected**:
+- Mobile (phones)
+- Tablet (iPads, Android tablets)
+- Desktop (PCs, Macs)
+
+**Operating Systems Detected**:
+- iOS (with version: 17.1, 16.5, etc.)
+- Android (with version: 14, 13, etc.)
+- Windows (10/11, 8.1, 7)
+- macOS (with version: 14.2, 13.6, etc.)
+- Linux
+
+**Browsers Detected**:
+- Chrome (with version)
+- Safari (with version)
+- Edge (with version)
+- Firefox (with version)
+- IE (legacy)
+
+#### CSV Export Sample (Anonymized)
+
+```csv
+=== DEVICE & USAGE TELEMETRY (ANONYMIZED) ===
+Device Type,OS Type,OS Version,Browser Type,Browser Version,Play Duration (minutes),Played FFF,Used ATA,Final State
+Mobile,iOS,17.1,Safari,17.2,45.32,True,True,HasPlayedFFF
+Desktop,Windows,10/11,Chrome,120.0,52.18,True,True,Winner
+Tablet,Android,14,Chrome,119.0,38.45,False,True,Lobby
+```
+
+**Privacy Compliance**:
+- ✅ No names in export
+- ✅ No GUIDs/participant IDs in export
+- ✅ Only non-identifying technical data
+- ✅ Aggregated for statistical analysis
+- ✅ GDPR/privacy regulation friendly
+
+#### Benefits
+
+**For Producers**:
+- Understand audience device distribution
+- Optimize for most-used platforms
+- Track engagement duration
+- Statistical insights for improvements
+- Privacy-compliant data collection
+
+**For Participants**:
+- Transparent data collection
+- Clear privacy notice
+- Only anonymous technical data collected
+- Names/IDs deleted after show
+- Informed consent via Join button
+
+**For Development**:
+- Platform-specific optimization insights
+- Browser compatibility feedback
+- Performance tuning based on real usage
+- Session length analysis
+
+---
+
+## Previous Session: Privacy-First Session Management ✅ COMMITTED
+
+### Phase 4: Ephemeral Sessions - December 23, 2025
+
+**Status**: ✅ **COMMITTED (a999b9b)**  
+**Version**: 0.6.2-2512
 
 #### Implementation Philosophy
 

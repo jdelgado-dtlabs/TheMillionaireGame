@@ -53,38 +53,62 @@ public class StatisticsService
         csv.AppendLine($"Total Participants,{session.Participants.Count}");
         csv.AppendLine();
 
-        // Participant Statistics
+        // Participant Statistics (Names removed for privacy)
         csv.AppendLine("=== PARTICIPANT STATISTICS ===");
-        csv.AppendLine("Display Name,Joined At,State,Played FFF,Used ATA,Selected At,Winner At,Active");
+        csv.AppendLine("Note: Display names and participant IDs removed for privacy compliance");
+        csv.AppendLine();
+        
+        // Anonymized Telemetry Statistics
+        csv.AppendLine("=== DEVICE & USAGE TELEMETRY (ANONYMIZED) ===");
+        csv.AppendLine("Device Type,OS Type,OS Version,Browser Type,Browser Version,Play Duration (minutes),Played FFF,Used ATA,Final State");
         
         foreach (var participant in session.Participants.OrderBy(p => p.JoinedAt))
         {
-            csv.AppendLine($"\"{participant.DisplayName}\"," +
-                          $"{participant.JoinedAt:yyyy-MM-dd HH:mm:ss UTC}," +
-                          $"{participant.State}," +
+            var playDuration = 0.0;
+            if (participant.DisconnectedAt.HasValue)
+            {
+                playDuration = (participant.DisconnectedAt.Value - participant.JoinedAt).TotalMinutes;
+            }
+            else if (session.EndedAt.HasValue)
+            {
+                playDuration = (session.EndedAt.Value - participant.JoinedAt).TotalMinutes;
+            }
+            
+            csv.AppendLine($"{participant.DeviceType ?? "Unknown"}," +
+                          $"{participant.OSType ?? "Unknown"}," +
+                          $"{participant.OSVersion ?? "Unknown"}," +
+                          $"{participant.BrowserType ?? "Unknown"}," +
+                          $"{participant.BrowserVersion ?? "Unknown"}," +
+                          $"{playDuration:F2}," +
                           $"{participant.HasPlayedFFF}," +
                           $"{participant.HasUsedATA}," +
-                          $"{participant.SelectedForFFFAt?.ToString("yyyy-MM-dd HH:mm:ss UTC") ?? "N/A"}," +
-                          $"{participant.BecameWinnerAt?.ToString("yyyy-MM-dd HH:mm:ss UTC") ?? "N/A"}," +
-                          $"{participant.IsActive}");
+                          $"{participant.State}");
         }
         csv.AppendLine();
 
-        // FFF Statistics
+        // FFF Statistics (Anonymized)
         if (session.FFFAnswers.Any())
         {
-            csv.AppendLine("=== FASTEST FINGER FIRST STATISTICS ===");
-            csv.AppendLine("Question ID,Participant Name,Answer,Time Elapsed (ms),Submitted At,Is Correct");
+            csv.AppendLine("=== FASTEST FINGER FIRST STATISTICS (ANONYMIZED) ===");
+            csv.AppendLine("Note: Participant names removed for privacy compliance");
+            csv.AppendLine("Question ID,Participant Index,Answer,Time Elapsed (ms),Submitted At,Is Correct");
             
             var fffAnswers = session.FFFAnswers
                 .OrderBy(a => a.QuestionId)
                 .ThenBy(a => a.TimeElapsed);
             
+            var participantIndex = 1;
+            var participantIndexMap = new Dictionary<string, int>();
+            
             foreach (var answer in fffAnswers)
             {
-                var participant = session.Participants.FirstOrDefault(p => p.Id == answer.ParticipantId);
+                if (!participantIndexMap.ContainsKey(answer.ParticipantId))
+                {
+                    participantIndexMap[answer.ParticipantId] = participantIndex++;
+                }
+                
                 csv.AppendLine($"{answer.QuestionId}," +
-                              $"\"{participant?.DisplayName ?? "Unknown"}\"," +
+                              $"Participant {participantIndexMap[answer.ParticipantId]}," +
                               $"\"{answer.AnswerSequence}\"," +
                               $"{answer.TimeElapsed}," +
                               $"{answer.SubmittedAt:yyyy-MM-dd HH:mm:ss UTC}," +
