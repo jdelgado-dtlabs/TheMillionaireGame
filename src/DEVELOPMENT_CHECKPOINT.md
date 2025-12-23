@@ -130,8 +130,73 @@
 - ✅ Debug logging cleaned up for production use
 - ✅ Extensive testing completed with rapid clicks and edge cases
 
-#### Next Steps
-- System complete and production-ready for live gameplay
+---
+
+## 🎯 Pre-v1.0 TODO List
+
+### Critical - Core Gameplay
+1. **Fastest Finger First (FFF) System** 🔴
+   - FFF Server implementation (contestant selection)
+   - FFF Guest client networking
+   - FFF question display and timing
+   - Network communication between server/guests
+
+### Important - Core Features
+2. **Hotkey Mapping for Lifelines** 🟡
+   - F8-F11 keys need to be mapped to lifeline buttons 1-4
+   - Currently marked as TODO in HotkeyHandler.cs
+
+3. **Real ATA Voting System** 🟠
+   - Replace placeholder 100% results with real voting
+   - Database/API integration for audience votes
+   - Mobile device connectivity for voting
+
+### Nice to Have - Quality of Life
+4. **Question Editor CSV Features** 🟢
+   - CSV Import implementation (ImportQuestionsForm.cs)
+   - CSV Export implementation (ExportQuestionsForm.cs)
+
+5. **Sound Pack Management** 🟢
+   - "Remove Sound Pack" functionality
+   - Needs implementation in SoundPackManager
+
+6. **Database Schema Enhancement** 🟢
+   - Column renaming to support randomized answer order (Answer1-4)
+   - Optional feature for future flexibility
+
+### Pre-v1.0 Advanced Features
+7. **OBS/Streaming Integration** 🔵
+   - Browser source compatibility
+   - Scene switching automation
+   - Overlay support
+
+8. **Elgato Stream Deck Plugin** 🔵
+   - Custom button actions for game control
+   - Visual feedback on deck
+   - Profile templates
+
+9. **Web-Based Mobile Interface** 🔵
+   - Mobile-friendly FFF client
+   - Web-based ATA voting
+   - QR code connectivity
+
+10. **Enhanced Audience Participation** 🔵
+    - QR code display system
+    - Real-time vote aggregation
+    - Results visualization
+
+**Eliminated Items:**
+- ~~Lifeline button images~~ - Text labels are sufficient
+- ~~Screen dimming ("Lights Down")~~ - Effect is unnecessary
+
+**Priority Legend:**
+- 🔴 Critical - Blocks core gameplay
+- 🟡 Important - Affects user experience
+- 🟠 Enhanced - Improves functionality
+- 🟢 Nice to have - Quality of life
+- 🔵 Advanced - Pre-v1.0 stretch goals
+
+---
 
 ### Previous Session (ATA Enhanced + Screen Sync) - December 23, 2025
 
