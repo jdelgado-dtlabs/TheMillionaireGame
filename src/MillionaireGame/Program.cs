@@ -19,6 +19,9 @@ internal static class Program
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetConsoleWindow();
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SetConsoleTitle(string lpConsoleTitle);
+
     public static bool DebugMode { get; private set; }
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
@@ -46,6 +49,7 @@ internal static class Program
         {
             // Allocate console window for debug output
             AllocConsole();
+            SetConsoleTitle("MillionaireGame");
             Console.WriteLine("===========================================");
             Console.WriteLine("  THE MILLIONAIRE GAME - DEBUG MODE");
             Console.WriteLine("===========================================");

@@ -12,6 +12,20 @@ namespace MillionaireGame.Forms
                 _gameService.ModeChanged -= OnModeChanged;
                 _gameService.LifelineUsed -= OnLifelineUsed;
 
+                // Stop and dispose web server
+                if (_webServerHost != null)
+                {
+                    try
+                    {
+                        _webServerHost.StopAsync().Wait(TimeSpan.FromSeconds(5));
+                        _webServerHost.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore errors during shutdown
+                    }
+                }
+
                 if (components != null)
                 {
                     components.Dispose();

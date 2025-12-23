@@ -98,6 +98,23 @@ public class FFFService
 
         _logger.LogInformation("Rankings calculated: {CorrectCount} correct answers out of {TotalCount} submissions",
             correctSubmissions.Count, submissions.Count);
+        
+        // WebService console logging for contestant selection
+        try 
+        {
+            var winner = correctSubmissions.FirstOrDefault();
+            if (winner != null)
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                    logMethod?.Invoke(null, new object[] { $"Player {winner.ParticipantId} selected for FFF" });
+                    logMethod?.Invoke(null, new object[] { $"Player {winner.ParticipantId} is the next contestant" });
+                }
+            }
+        }
+        catch { /* WebService console not available - ignore */ }
 
         return new FFFResults
         {

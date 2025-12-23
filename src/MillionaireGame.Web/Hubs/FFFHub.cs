@@ -69,6 +69,18 @@ public class FFFHub : Hub
         _logger.LogInformation("Participant {DisplayName} ({ParticipantId}) joined session {SessionId} (Reconnect: {IsReconnect}, Device: {Device}/{OS})", 
             displayName, participant.Id, sessionId, participantId != null, telemetry?.DeviceType, telemetry?.OSType);
         
+        // WebService console logging
+        try 
+        {
+            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+            if (consoleType != null)
+            {
+                var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                logMethod?.Invoke(null, new object[] { $"Player {participant.Id} joined FFF session" });
+            }
+        }
+        catch { /* WebService console not available - ignore */ }
+        
         // Notify all clients in the session about the participant
         await Clients.Group(sessionId).SendAsync("ParticipantJoined", new
         {

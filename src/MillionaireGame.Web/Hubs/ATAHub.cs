@@ -181,6 +181,21 @@ public class ATAHub : Hub
             // Calculate and broadcast updated percentages in real-time
             var percentages = await _sessionService.CalculateATAPercentagesAsync(sessionId);
             var totalVotes = await _sessionService.GetATAVoteCountAsync(sessionId);
+            var activeParticipants = await _sessionService.GetActiveParticipantsAsync(sessionId);
+            var activeCount = activeParticipants.Count();
+            
+            // WebService console logging
+            try 
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                    logMethod?.Invoke(null, new object[] { $"Player {participantId} voted in ATA" });
+                    logMethod?.Invoke(null, new object[] { $"ATA Progress: {totalVotes} of {activeCount} players voted" });
+                }
+            }
+            catch { /* WebService console not available - ignore */ }
             
             await Clients.Group(sessionId).SendAsync("VotesUpdated", new
             {
@@ -245,6 +260,23 @@ public class ATAHub : Hub
             });
             
             _logger.LogInformation("ATA voting ended - Session: {SessionId}, Total Votes: {TotalVotes}", sessionId, totalVotes);
+            
+            // WebService console logging
+            try 
+            {
+                var activeParticipants = await _sessionService.GetActiveParticipantsAsync(sessionId);
+                var activeCount = activeParticipants.Count();
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var logSeparatorMethod = consoleType.GetMethod("LogSeparator");
+                    var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                    logSeparatorMethod?.Invoke(null, null);
+                    logMethod?.Invoke(null, new object[] { $"ATA voting complete: {totalVotes} of {activeCount} players voted" });
+                    logSeparatorMethod?.Invoke(null, null);
+                }
+            }
+            catch { /* WebService console not available - ignore */ }
         }
         catch (Exception ex)
         {

@@ -60,6 +60,12 @@ public class ApplicationSettings
 
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;
+    public bool ShowWebServiceConsole { get; set; } = false;
+
+    // Web Server / Audience Participation Settings
+    public string AudienceServerIP { get; set; } = "127.0.0.1";
+    public int AudienceServerPort { get; set; } = 5278;
+    public bool AudienceServerAutoStart { get; set; } = false;
 }
 
 /// <summary>

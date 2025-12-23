@@ -4,6 +4,8 @@ using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
+using MillionaireGame.Hosting;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -108,6 +110,10 @@ public partial class ControlPanelForm : Form
     private IGameScreen? _tvScreen;
     private PreviewScreenForm? _previewScreen;
     private PreviewOrientation _lastPreviewOrientation = PreviewOrientation.Vertical;
+    
+    // Web server for audience participation
+    private WebServerHost? _webServerHost;
+    public WebServerHost? WebServerHost => _webServerHost;
 
     // Helper methods to access stop images from Designer
     private static Image? GetRedStopImage()
@@ -305,6 +311,42 @@ public partial class ControlPanelForm : Form
         {
             PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
         }
+        
+        // Initialize web server host
+        InitializeWebServer();
+        
+        // Initialize WebService console if enabled
+#if DEBUG
+        // Always show in debug mode
+        WebServiceConsole.Show();
+#else
+        if (_appSettings.Settings.ShowWebServiceConsole)
+        {
+            WebServiceConsole.Show();
+        }
+#endif
+        
+        // Auto-start web server if enabled in settings
+        if (_appSettings.Settings.AudienceServerAutoStart)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var ip = _appSettings.Settings.AudienceServerIP;
+                    var port = _appSettings.Settings.AudienceServerPort;
+                    await StartWebServerAsync(ip, port);
+                }
+                catch (Exception ex)
+                {
+                    this.Invoke(() =>
+                    {
+                        MessageBox.Show($"Failed to auto-start web server: {ex.Message}",
+                            "Web Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    });
+                }
+            });
+        }
     }
     
     /// <summary>
@@ -409,6 +451,112 @@ public partial class ControlPanelForm : Form
         }
     }
     
+    #endregion
+
+    #region Web Server / Audience Participation
+
+    private void InitializeWebServer()
+    {
+        try
+        {
+            // Get the SQL connection string from settings
+            var connectionString = _sqlSettings.Settings.GetConnectionString("dbMillionaire");
+            
+            // Create web server host
+            _webServerHost = new WebServerHost(connectionString);
+            
+            // Subscribe to server events
+            _webServerHost.ServerStarted += OnWebServerStarted;
+            _webServerHost.ServerStopped += OnWebServerStopped;
+            _webServerHost.ServerError += OnWebServerError;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to initialize web server: {ex.Message}",
+                "Web Server Initialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    public async Task StartWebServerAsync(string ipAddress, int port)
+    {
+        if (_webServerHost == null)
+        {
+            InitializeWebServer();
+        }
+        
+        if (_webServerHost == null)
+        {
+            throw new InvalidOperationException("Web server host is not initialized.");
+        }
+        
+        if (_webServerHost.IsRunning)
+        {
+            throw new InvalidOperationException("Web server is already running.");
+        }
+        
+        await _webServerHost.StartAsync(ipAddress, port);
+    }
+
+    public async Task StopWebServerAsync()
+    {
+        if (_webServerHost == null || !_webServerHost.IsRunning)
+        {
+            return;
+        }
+        
+        await _webServerHost.StopAsync();
+    }
+
+    private void OnWebServerStarted(object? sender, string baseUrl)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => OnWebServerStarted(sender, baseUrl)));
+            return;
+        }
+        
+        // Log to WebService console
+        WebServiceConsole.LogSeparator();
+        WebServiceConsole.Log("✓ Server started successfully");
+        WebServiceConsole.Log($"URL: {baseUrl}");
+        WebServiceConsole.LogSeparator();
+        
+        // Log to console or status bar if available
+        Text = $"The Millionaire Game - Control Panel [Web Server: {baseUrl}]";
+    }
+
+    private void OnWebServerStopped(object? sender, EventArgs e)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => OnWebServerStopped(sender, e)));
+            return;
+        }
+        
+        // Log to WebService console
+        WebServiceConsole.LogSeparator();
+        WebServiceConsole.Log("Server stopped");
+        WebServiceConsole.LogSeparator();
+        
+        // Reset title
+        Text = "The Millionaire Game - Control Panel";
+    }
+
+    private void OnWebServerError(object? sender, Exception ex)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => OnWebServerError(sender, ex)));
+            return;
+        }
+        
+        // Log to WebService console
+        WebServiceConsole.Log($"❌ Error: {ex.Message}");
+        
+        MessageBox.Show($"Web server error: {ex.Message}",
+            "Web Server Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+
     #endregion
 
     #region Event Handlers

@@ -26,18 +26,24 @@
   <ItemGroup>
     <ProjectReference Include="..\MillionaireGame.Core\MillionaireGame.Core.csproj" />
     <ProjectReference Include="..\MillionaireGame.QuestionEditor\MillionaireGame.QuestionEditor.csproj" />
+    <ProjectReference Include="..\MillionaireGame.Web\MillionaireGame.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Copy sound files to output directory -->
     <None Include="lib\sounds\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy web server files to output directory -->
+    <None Include="..\MillionaireGame.Web\wwwroot\**\*.*" LinkBase="wwwroot\" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

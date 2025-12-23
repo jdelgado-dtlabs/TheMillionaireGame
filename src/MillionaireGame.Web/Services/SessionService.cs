@@ -116,6 +116,20 @@ public class SessionService
                 _logger.LogInformation("Participant {ParticipantId} reconnected to session {SessionId} with new connection {ConnectionId}",
                     participantId, sessionId, connectionId);
                 
+                // WebService console logging
+                try 
+                {
+                    var activeCount = await _context.Participants.CountAsync(p => p.SessionId == sessionId && p.IsActive);
+                    var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                    if (consoleType != null)
+                    {
+                        var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                        logMethod?.Invoke(null, new object[] { $"Player {participantId} reconnected" });
+                        logMethod?.Invoke(null, new object[] { $"Total: {activeCount} players on APS" });
+                    }
+                }
+                catch { /* WebService console not available - ignore */ }
+                
                 return participant;
             }
         }
@@ -142,6 +156,21 @@ public class SessionService
 
         _logger.LogInformation("New participant {DisplayName} ({ParticipantId}) added to session {SessionId} with device {DeviceType}/{OSType}",
             displayName, participant.Id, sessionId, telemetry?.DeviceType, telemetry?.OSType);
+        
+        // WebService console logging
+        try 
+        {
+            var activeCount = await _context.Participants.CountAsync(p => p.SessionId == sessionId && p.IsActive);
+            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+            if (consoleType != null)
+            {
+                var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                logMethod?.Invoke(null, new object[] { $"Player {participant.Id} registered" });
+                logMethod?.Invoke(null, new object[] { $"Player {participant.Id} connected" });
+                logMethod?.Invoke(null, new object[] { $"Total: {activeCount} players on APS" });
+            }
+        }
+        catch { /* WebService console not available - ignore */ }
 
         return participant;
     }
@@ -280,6 +309,20 @@ public class SessionService
 
             _logger.LogInformation("Participant {ParticipantId} disconnected (connection {ConnectionId})",
                 participant.Id, connectionId);
+            
+            // WebService console logging
+            try 
+            {
+                var activeCount = await _context.Participants.CountAsync(p => p.SessionId == participant.SessionId && p.IsActive);
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
+                    logMethod?.Invoke(null, new object[] { $"Player {participant.Id} disconnected" });
+                    logMethod?.Invoke(null, new object[] { $"Total: {activeCount} players on APS" });
+                }
+            }
+            catch { /* WebService console not available - ignore */ }
         }
     }
 

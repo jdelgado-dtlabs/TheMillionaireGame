@@ -24,6 +24,19 @@ namespace MillionaireGame.Forms.Options
             cmbPreviewOrientation = new ComboBox();
             lblPreviewOrientation = new Label();
             grpMultipleMonitorControl = new GroupBox();
+            tabAudience = new TabPage();
+            grpAudienceServer = new GroupBox();
+            lblServerIP = new Label();
+            cmbServerIP = new ComboBox();
+            lblServerPort = new Label();
+            txtServerPort = new TextBox();
+            btnCheckPort = new Button();
+            lblPortStatus = new Label();
+            chkAutoStart = new CheckBox();
+            btnStartServer = new Button();
+            btnStopServer = new Button();
+            lblServerStatus = new Label();
+            lblAudienceInfo = new Label();
             lblMonitorCount = new Label();
             lblDebugMode = new Label();
             chkFullScreenGuestScreen = new CheckBox();
@@ -35,6 +48,7 @@ namespace MillionaireGame.Forms.Options
             btnIdentifyMonitors = new Button();
             grpConsole = new GroupBox();
             chkShowConsole = new CheckBox();
+            chkShowWebServiceConsole = new CheckBox();
             tabBroadcast = new TabPage();
             grpBroadcast = new GroupBox();
             tabLifelines = new TabPage();
@@ -111,6 +125,8 @@ namespace MillionaireGame.Forms.Options
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
             grpSoundPack.SuspendLayout();
+            tabAudience.SuspendLayout();
+            grpAudienceServer.SuspendLayout();
             SuspendLayout();
             // 
             // tabControl
@@ -121,6 +137,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Controls.Add(tabLifelines);
             tabControl.Controls.Add(tabMoneyTree);
             tabControl.Controls.Add(tabSounds);
+            tabControl.Controls.Add(tabAudience);
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
             tabControl.SelectedIndex = 0;
@@ -318,8 +335,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpConsole
             // 
-            grpConsole.Controls.Add(chkShowConsole);
-            grpConsole.Location = new Point(16, 370);
+            grpConsole.Controls.Add(chkShowConsole);            grpConsole.Controls.Add(chkShowWebServiceConsole);            grpConsole.Location = new Point(16, 370);
             grpConsole.Name = "grpConsole";
             grpConsole.Size = new Size(570, 60);
             grpConsole.TabIndex = 2;
@@ -335,8 +351,17 @@ namespace MillionaireGame.Forms.Options
             chkShowConsole.TabIndex = 0;
             chkShowConsole.Text = "Show Console";
             chkShowConsole.UseVisualStyleBackColor = true;
-            chkShowConsole.CheckedChanged += Control_Changed;
+            chkShowConsole.CheckedChanged += Control_Changed;            // 
+            // chkShowWebServiceConsole
             // 
+            chkShowWebServiceConsole.AutoSize = true;
+            chkShowWebServiceConsole.Location = new Point(20, 55);
+            chkShowWebServiceConsole.Name = "chkShowWebServiceConsole";
+            chkShowWebServiceConsole.Size = new Size(200, 19);
+            chkShowWebServiceConsole.TabIndex = 1;
+            chkShowWebServiceConsole.Text = "Show Web Service Console";
+            chkShowWebServiceConsole.UseVisualStyleBackColor = true;
+            chkShowWebServiceConsole.CheckedChanged += chkShowWebServiceConsole_CheckedChanged;            // 
             // tabBroadcast
             // 
             tabBroadcast.Controls.Add(grpBroadcast);
@@ -656,6 +681,150 @@ namespace MillionaireGame.Forms.Options
             lstSoundPackInfo.SelectionMode = SelectionMode.None;
             lstSoundPackInfo.Size = new Size(588, 345);
             lstSoundPackInfo.TabIndex = 5;
+            // 
+            // tabAudience
+            // 
+            tabAudience.AutoScroll = true;
+            tabAudience.Controls.Add(grpAudienceServer);
+            tabAudience.Controls.Add(lblAudienceInfo);
+            tabAudience.Location = new Point(4, 24);
+            tabAudience.Name = "tabAudience";
+            tabAudience.Padding = new Padding(3);
+            tabAudience.Size = new Size(652, 459);
+            tabAudience.TabIndex = 5;
+            tabAudience.Text = "Audience";
+            tabAudience.UseVisualStyleBackColor = true;
+            // 
+            // grpAudienceServer
+            // 
+            grpAudienceServer.Controls.Add(lblServerIP);
+            grpAudienceServer.Controls.Add(cmbServerIP);
+            grpAudienceServer.Controls.Add(lblServerPort);
+            grpAudienceServer.Controls.Add(txtServerPort);
+            grpAudienceServer.Controls.Add(btnCheckPort);
+            grpAudienceServer.Controls.Add(lblPortStatus);
+            grpAudienceServer.Controls.Add(chkAutoStart);
+            grpAudienceServer.Controls.Add(btnStartServer);
+            grpAudienceServer.Controls.Add(btnStopServer);
+            grpAudienceServer.Controls.Add(lblServerStatus);
+            grpAudienceServer.Location = new Point(16, 16);
+            grpAudienceServer.Name = "grpAudienceServer";
+            grpAudienceServer.Size = new Size(620, 260);
+            grpAudienceServer.TabIndex = 0;
+            grpAudienceServer.TabStop = false;
+            grpAudienceServer.Text = "Web Server Configuration";
+            // 
+            // lblServerIP
+            // 
+            lblServerIP.AutoSize = true;
+            lblServerIP.Location = new Point(20, 30);
+            lblServerIP.Name = "lblServerIP";
+            lblServerIP.Size = new Size(70, 15);
+            lblServerIP.TabIndex = 0;
+            lblServerIP.Text = "IP Address:";
+            // 
+            // cmbServerIP
+            // 
+            cmbServerIP.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbServerIP.FormattingEnabled = true;
+            cmbServerIP.Location = new Point(140, 27);
+            cmbServerIP.Name = "cmbServerIP";
+            cmbServerIP.Size = new Size(400, 23);
+            cmbServerIP.TabIndex = 1;
+            cmbServerIP.SelectedIndexChanged += Control_Changed;
+            // 
+            // lblServerPort
+            // 
+            lblServerPort.AutoSize = true;
+            lblServerPort.Location = new Point(20, 65);
+            lblServerPort.Name = "lblServerPort";
+            lblServerPort.Size = new Size(32, 15);
+            lblServerPort.TabIndex = 2;
+            lblServerPort.Text = "Port:";
+            // 
+            // txtServerPort
+            // 
+            txtServerPort.Location = new Point(140, 62);
+            txtServerPort.Name = "txtServerPort";
+            txtServerPort.Size = new Size(100, 23);
+            txtServerPort.TabIndex = 3;
+            txtServerPort.TextChanged += Control_Changed;
+            // 
+            // btnCheckPort
+            // 
+            btnCheckPort.Location = new Point(250, 61);
+            btnCheckPort.Name = "btnCheckPort";
+            btnCheckPort.Size = new Size(100, 25);
+            btnCheckPort.TabIndex = 4;
+            btnCheckPort.Text = "Check in use";
+            btnCheckPort.UseVisualStyleBackColor = true;
+            btnCheckPort.Click += btnCheckPort_Click;
+            // 
+            // lblPortStatus
+            // 
+            lblPortStatus.AutoSize = true;
+            lblPortStatus.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lblPortStatus.Location = new Point(360, 63);
+            lblPortStatus.Name = "lblPortStatus";
+            lblPortStatus.Size = new Size(0, 21);
+            lblPortStatus.TabIndex = 5;
+            // 
+            // chkAutoStart
+            // 
+            chkAutoStart.AutoSize = true;
+            chkAutoStart.Location = new Point(20, 105);
+            chkAutoStart.Name = "chkAutoStart";
+            chkAutoStart.Size = new Size(260, 19);
+            chkAutoStart.TabIndex = 6;
+            chkAutoStart.Text = "Start server automatically on application startup";
+            chkAutoStart.UseVisualStyleBackColor = true;
+            chkAutoStart.CheckedChanged += chkAutoStart_CheckedChanged;
+            // 
+            // btnStartServer
+            // 
+            btnStartServer.Location = new Point(20, 145);
+            btnStartServer.Name = "btnStartServer";
+            btnStartServer.Size = new Size(120, 35);
+            btnStartServer.TabIndex = 7;
+            btnStartServer.Text = "Start Server";
+            btnStartServer.UseVisualStyleBackColor = true;
+            btnStartServer.Click += btnStartServer_Click;
+            // 
+            // btnStopServer
+            // 
+            btnStopServer.Enabled = false;
+            btnStopServer.Location = new Point(150, 145);
+            btnStopServer.Name = "btnStopServer";
+            btnStopServer.Size = new Size(120, 35);
+            btnStopServer.TabIndex = 8;
+            btnStopServer.Text = "Stop Server";
+            btnStopServer.UseVisualStyleBackColor = true;
+            btnStopServer.Click += btnStopServer_Click;
+            // 
+            // lblServerStatus
+            // 
+            lblServerStatus.AutoSize = true;
+            lblServerStatus.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblServerStatus.ForeColor = SystemColors.ControlDarkDark;
+            lblServerStatus.Location = new Point(20, 195);
+            lblServerStatus.Name = "lblServerStatus";
+            lblServerStatus.Size = new Size(101, 15);
+            lblServerStatus.TabIndex = 9;
+            lblServerStatus.Text = "Server Stopped";
+            // 
+            // lblAudienceInfo
+            // 
+            lblAudienceInfo.Location = new Point(16, 290);
+            lblAudienceInfo.Name = "lblAudienceInfo";
+            lblAudienceInfo.Size = new Size(620, 150);
+            lblAudienceInfo.TabIndex = 1;
+            lblAudienceInfo.Text = @"Information:
+• Audience members connect via web browser to participate
+• Use QR code or URL to join FFF and Ask The Audience sessions
+• Port must be open on firewall for external network access
+• Localhost (127.0.0.1) restricts connections to this computer only
+• 0.0.0.0 allows connections from all network interfaces
+• Local IP addresses restrict to specific network subnets";
             // // btnOK
             // 
             btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -719,6 +888,9 @@ namespace MillionaireGame.Forms.Options
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).EndInit();
             tabSounds.ResumeLayout(false);
             grpSoundPack.ResumeLayout(false);
+            tabAudience.ResumeLayout(false);
+            grpAudienceServer.ResumeLayout(false);
+            grpAudienceServer.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -730,6 +902,7 @@ namespace MillionaireGame.Forms.Options
         private TabPage tabLifelines;
         private TabPage tabMoneyTree;
         private TabPage tabSounds;
+        private TabPage tabAudience;
         private GroupBox grpPrizeValues;
         private NumericUpDown numLevel01;
         private NumericUpDown numLevel02;
@@ -803,6 +976,19 @@ namespace MillionaireGame.Forms.Options
         private ListBox lstSoundPackInfo;
         private GroupBox grpConsole;
         private CheckBox chkShowConsole;
+        private CheckBox chkShowWebServiceConsole;
+        private GroupBox grpAudienceServer;
+        private Label lblServerIP;
+        private ComboBox cmbServerIP;
+        private Label lblServerPort;
+        private TextBox txtServerPort;
+        private Button btnCheckPort;
+        private Label lblPortStatus;
+        private CheckBox chkAutoStart;
+        private Button btnStartServer;
+        private Button btnStopServer;
+        private Label lblServerStatus;
+        private Label lblAudienceInfo;
     }
 }
 

@@ -1,6 +1,8 @@
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Core.Services;
+using MillionaireGame.Utilities;
+using MillionaireGame.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Management;
 
@@ -98,17 +100,25 @@ public partial class OptionsDialog : Form
         
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
+        chkShowWebServiceConsole.Checked = _settings.ShowWebServiceConsole;
 #if DEBUG
         // In debug mode, always show console and disable checkbox
         chkShowConsole.Checked = true;
         chkShowConsole.Enabled = false;
+        // In debug mode, always show web service console and disable checkbox
+        chkShowWebServiceConsole.Checked = true;
+        chkShowWebServiceConsole.Enabled = false;
 #else
         // In release mode, allow user control
         chkShowConsole.Enabled = true;
+        chkShowWebServiceConsole.Enabled = true;
 #endif
         
         // Load money tree settings
         LoadMoneyTreeSettings();
+        
+        // Load audience/web server settings
+        LoadAudienceSettings();
         
         // Update dropdown enabled states based on full-screen checkboxes
         UpdateDropdownEnabledStates();
@@ -277,10 +287,14 @@ public partial class OptionsDialog : Form
         // Console settings (only save in release mode, debug is always true)
 #if !DEBUG
         _settings.ShowConsole = chkShowConsole.Checked;
+        _settings.ShowWebServiceConsole = chkShowWebServiceConsole.Checked;
 #endif
 
         // Save money tree settings
         SaveMoneyTreeSettings();
+        
+        // Save audience/web server settings
+        SaveAudienceSettings();
 
         // Save settings through the manager
         _settingsManager.SaveSettings();
@@ -442,6 +456,238 @@ public partial class OptionsDialog : Form
     private void numTotalLifelines_ValueChanged(object sender, EventArgs e)
     {
         UpdateLifelineGroupBoxStates();
+        MarkChanged();
+    }
+
+    #region Audience/Web Server Settings
+
+    private void LoadAudienceSettings()
+    {
+        // Populate IP address dropdown
+        PopulateIPAddresses();
+        
+        // Load port
+        txtServerPort.Text = _settings.AudienceServerPort.ToString();
+        
+        // Load auto-start checkbox
+        chkAutoStart.Checked = _settings.AudienceServerAutoStart;
+        
+        // Update control states based on auto-start and server status
+        UpdateAudienceControlStates();
+        
+        // Update server status label
+        UpdateServerStatusLabel();
+    }
+
+    private void SaveAudienceSettings()
+    {
+        // Save IP address
+        if (cmbServerIP.SelectedItem != null)
+        {
+            var selectedItem = cmbServerIP.SelectedItem.ToString() ?? "127.0.0.1";
+            // Extract just the IP address (before the dash separator if present)
+            var parts = selectedItem.Split(new[] { " - " }, StringSplitOptions.None);
+            _settings.AudienceServerIP = parts[0].Trim();
+        }
+        
+        // Save port (with validation)
+        if (int.TryParse(txtServerPort.Text, out var port) && NetworkHelper.IsValidPort(port))
+        {
+            _settings.AudienceServerPort = port;
+        }
+        
+        // Save auto-start
+        _settings.AudienceServerAutoStart = chkAutoStart.Checked;
+    }
+
+    private void PopulateIPAddresses()
+    {
+        cmbServerIP.Items.Clear();
+        
+        // Add all interfaces option
+        cmbServerIP.Items.Add("0.0.0.0 - All Interfaces (Open to All)");
+        
+        // Add local IP addresses
+        var localIPs = NetworkHelper.GetLocalIPAddresses();
+        foreach (var ip in localIPs)
+        {
+            cmbServerIP.Items.Add($"{ip} - Local Network");
+        }
+        
+        // Add localhost option
+        cmbServerIP.Items.Add("127.0.0.1 - Localhost Only");
+        
+        // Select the current setting
+        var currentIP = _settings.AudienceServerIP;
+        for (int i = 0; i < cmbServerIP.Items.Count; i++)
+        {
+            var item = cmbServerIP.Items[i].ToString() ?? "";
+            if (item.StartsWith(currentIP))
+            {
+                cmbServerIP.SelectedIndex = i;
+                return;
+            }
+        }
+        
+        // Default to localhost if not found
+        cmbServerIP.SelectedIndex = cmbServerIP.Items.Count - 1;
+    }
+
+    private void UpdateAudienceControlStates()
+    {
+        bool isServerRunning = GetWebServerHost()?.IsRunning ?? false;
+        bool autoStartEnabled = chkAutoStart.Checked;
+        
+        // IP and Port controls: Disabled if auto-start is on OR server is running
+        cmbServerIP.Enabled = !autoStartEnabled && !isServerRunning;
+        txtServerPort.Enabled = !autoStartEnabled && !isServerRunning;
+        btnCheckPort.Enabled = !autoStartEnabled && !isServerRunning;
+        
+        // Auto-start checkbox: Disabled if server is running
+        chkAutoStart.Enabled = !isServerRunning;
+        
+        // Server control buttons
+        btnStartServer.Enabled = !isServerRunning;
+        btnStopServer.Enabled = isServerRunning;
+    }
+
+    private void UpdateServerStatusLabel()
+    {
+        var webServerHost = GetWebServerHost();
+        if (webServerHost != null && webServerHost.IsRunning)
+        {
+            lblServerStatus.Text = $"Server started at {webServerHost.BaseUrl}";
+            lblServerStatus.ForeColor = Color.Green;
+        }
+        else
+        {
+            lblServerStatus.Text = "Server Stopped";
+            lblServerStatus.ForeColor = SystemColors.ControlDarkDark;
+        }
+    }
+
+    private WebServerHost? GetWebServerHost()
+    {
+        // Get the main control panel form and retrieve the web server host
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        return controlPanel?.WebServerHost;
+    }
+
+    private void btnCheckPort_Click(object sender, EventArgs e)
+    {
+        if (!int.TryParse(txtServerPort.Text, out var port))
+        {
+            lblPortStatus.Text = "❌";
+            lblPortStatus.ForeColor = Color.Red;
+            MessageBox.Show("Invalid port number. Please enter a number between 1 and 65535.", 
+                "Invalid Port", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        if (!NetworkHelper.IsValidPort(port))
+        {
+            lblPortStatus.Text = "❌";
+            lblPortStatus.ForeColor = Color.Red;
+            MessageBox.Show("Port number must be between 1 and 65535.", 
+                "Invalid Port", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        bool isAvailable = NetworkHelper.IsPortAvailable(port);
+        
+        if (isAvailable)
+        {
+            lblPortStatus.Text = "✓";
+            lblPortStatus.ForeColor = Color.Green;
+        }
+        else
+        {
+            lblPortStatus.Text = "❌";
+            lblPortStatus.ForeColor = Color.Red;
+            MessageBox.Show($"Port {port} is already in use.", 
+                "Port In Use", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void chkAutoStart_CheckedChanged(object sender, EventArgs e)
+    {
+        UpdateAudienceControlStates();
+        MarkChanged();
+    }
+
+    private async void btnStartServer_Click(object sender, EventArgs e)
+    {
+        // Validate port
+        if (!int.TryParse(txtServerPort.Text, out var port) || !NetworkHelper.IsValidPort(port))
+        {
+            MessageBox.Show("Invalid port number. Please enter a valid port between 1 and 65535.", 
+                "Invalid Port", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        // Get IP address
+        var selectedItem = cmbServerIP.SelectedItem?.ToString() ?? "";
+        var parts = selectedItem.Split(new[] { " - " }, StringSplitOptions.None);
+        var ipAddress = parts[0].Trim();
+        
+        // Get web server host from control panel
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        if (controlPanel == null)
+        {
+            MessageBox.Show("Cannot start server: Control Panel not found.", 
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        try
+        {
+            await controlPanel.StartWebServerAsync(ipAddress, port);
+            UpdateServerStatusLabel();
+            UpdateAudienceControlStates();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to start server: {ex.Message}", 
+                "Server Start Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void btnStopServer_Click(object sender, EventArgs e)
+    {
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        if (controlPanel == null)
+        {
+            MessageBox.Show("Cannot stop server: Control Panel not found.", 
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        
+        try
+        {
+            await controlPanel.StopWebServerAsync();
+            UpdateServerStatusLabel();
+            UpdateAudienceControlStates();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to stop server: {ex.Message}", 
+                "Server Stop Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    #endregion
+
+    private void chkShowWebServiceConsole_CheckedChanged(object sender, EventArgs e)
+    {
+        // Update WebService console visibility immediately
+        if (chkShowWebServiceConsole.Checked)
+        {
+            WebServiceConsole.Show();
+        }
+        else
+        {
+            WebServiceConsole.Hide();
+        }
         MarkChanged();
     }
 
