@@ -1,16 +1,74 @@
-# Development Checkpoint - v0.6-2512
+# Development Checkpoint - v0.6.1-2512
 **Date**: December 23, 2025  
-**Version**: 0.6-2512 (WAPS Phase 3)  
+**Version**: 0.6.1-2512 (Code Refactoring & Database Fix)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
 
-## 🆕 Latest Session: WAPS Phase 3 - Complete ATA Implementation ✅ COMPLETE
+## 🆕 Latest Session: Code Refactoring & Modularization ✅ COMPLETE
+
+### Code Refactoring - December 23, 2025
+
+**Status**: ✅ **PRODUCTION READY**  
+**Server**: Running on http://localhost:5278  
+**Build**: Success
+
+#### Changes Implemented
+
+**1. Frontend Modularization** ✅
+- **Separated CSS**: Created `/css/app.css` (241 lines)
+  - All styles moved from inline to external file
+  - Organized by component/feature
+  - Theme-ready structure
+  - Responsive design included
+  
+- **Separated JavaScript**: Created `/js/app.js` (473 lines)
+  - All logic moved from inline to external file
+  - JSDoc comments for all functions
+  - Organized into logical sections
+  - Easy to test and maintain
+  
+- **Clean HTML**: Reduced `index.html` to 123 lines
+  - Pure structure and content
+  - External CSS/JS references
+  - Third-party libraries clearly marked
+  
+- **Backup Created**: Original `index.html.backup` preserved
+
+**2. Branding Updates** ✅
+- Changed page title from "WAPS" to "Who Wants to be a Millionaire"
+- Updated all file headers to reference "Audience Participation System"
+- Internal code keeps `waps_` prefix for backward compatibility
+
+**3. Database Schema Fix** ✅
+- Deleted outdated SQLite database
+- EF Core recreated with Phase 2.5/3 columns
+- All participant fields now available
+- No more `BecameWinnerAt` errors
+
+#### Benefits Achieved
+- ✅ Easier debugging (separate files, clear error locations)
+- ✅ Theme support ready (CSS is modular)
+- ✅ Better caching (static assets)
+- ✅ Cleaner code organization
+- ✅ Third-party vs app code clearly separated
+- ✅ Future enhancements simplified
+
+#### Files Modified
+- `wwwroot/index.html` (refactored to 123 lines)
+- `wwwroot/css/app.css` (new, 241 lines)
+- `wwwroot/js/app.js` (new, 473 lines)
+- `waps.db` (deleted and recreated)
+
+---
+
+## ✅ Phase 3: Complete ATA Implementation (COMMITTED - 39aa253)
 
 ### Phase 3: Complete ATA Implementation - December 23, 2025
 
-**Status**: ✅ **PRODUCTION READY**  
+**Status**: ✅ **COMMITTED**  
+**Commit**: 39aa253  
 **Server**: Running on http://localhost:5278  
 **Build**: Success (warnings only)
 
