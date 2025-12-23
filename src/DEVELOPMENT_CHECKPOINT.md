@@ -1,14 +1,159 @@
-# Development Checkpoint - v0.4-2512
+# Development Checkpoint - v0.5-2512
 **Date**: December 23, 2025  
-**Version**: 0.4-2512  
+**Version**: 0.5-2512 (WAPS Phase 2.5)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
 
+## 🆕 Latest Session: WAPS Phase 2.5 - Enhanced Game Flow ✅ COMPLETE
+
+### Phase 2.5: Enhanced Game Flow Implementation - December 23, 2025
+
+**Status**: ✅ **PRODUCTION READY**  
+**Server**: Running on http://localhost:5278  
+**Build**: Success (warnings only)
+
+#### Components Implemented
+
+**1. Data Models Extended** ✅
+- **Participant Model** (Models/Participant.cs)
+  - Added `ParticipantState` enum (7 states: Lobby, SelectedForFFF, PlayingFFF, HasPlayedFFF, Winner, Eliminated, Disconnected)
+  - New fields: `State`, `HasPlayedFFF`, `HasUsedATA`, `SelectedForFFFAt`, `BecameWinnerAt`
+  
+- **Session Model** (Models/Session.cs)
+  - Expanded `SessionStatus` enum (10 states: PreGame, Lobby, FFFSelection, FFFActive, MainGame, ATAActive, GameOver + legacy states)
+  - Complete game flow state machine implemented
+
+**2. Name Validation Service** ✅ (Services/NameValidationService.cs)
+- **Validation Rules**:
+  - Length: 1-35 characters (enforced)
+  - No emojis or Unicode symbols beyond basic Latin
+  - Profanity filter with leetspeak detection (e.g., "d4mn" → blocked)
+  - Valid characters: letters, numbers, spaces, basic punctuation (`.`, `-`, `_`, `'`)
+  - Uniqueness check within session
+  - Whitespace normalization
+- **Features**:
+  - Basic profanity list (~23 words)
+  - Pattern-based leetspeak matching (`CreateLeetspeakPattern`)
+  - Returns `NameValidationResult` with sanitized name or error
+  - `IsNameUnique()` helper for session-level checking
+
+**3. Statistics Service** ✅ (Services/StatisticsService.cs)
+- **CSV Export** (`GenerateSessionStatisticsCsvAsync`):
+  - Session summary (duration, participant count, status)
+  - Participant statistics (joined time, state, played FFF, used ATA)
+  - FFF statistics (submissions by question, correctness, times)
+  - FFF round summaries (winners, tallies, fastest times)
+  - ATA voting statistics (votes by question text, option tallies)
+  - Trend analysis (participation rates, averages)
+- **Quick Stats** (`GetSessionStatisticsAsync`):
+  - Returns `SessionStatistics` model for real-time queries
+  - FFF/ATA rounds played, participation rates, duration
+
+**4. Session Service Extended** ✅ (Services/SessionService.cs)
+- **Host Control Methods**:
+  - `StartGameAsync()` - PreGame → Lobby transition
+  - `SelectFFFPlayersAsync(count=8)` - Random selection from lobby with state updates
+  - `SelectRandomPlayerAsync()` - Direct winner selection (bypass FFF)
+  - `SetWinnerAsync()` - Mark FFF winner, eliminate losers
+  - `ReturnEliminatedToLobbyAsync()` - Reset for next round
+  - `EndGameAsync()` - CSV generation + GameOver transition
+  - `CleanupSessionAsync()` - Database cleanup after export
+  - `GetLobbyParticipantsAsync()` - Query eligible participants
+  - `GetATAEligibleParticipantsAsync()` - Query ATA-eligible participants
+
+**5. Host Controller API** ✅ (Controllers/HostController.cs)
+- **Endpoints**:
+  - `POST /api/host/session/{id}/start` - Start game
+  - `POST /api/host/session/{id}/selectFFFPlayers?count=8` - Select FFF players
+  - `POST /api/host/session/{id}/selectRandomPlayer` - Random winner
+  - `POST /api/host/session/{id}/returnToLobby` - Reset eliminated
+  - `POST /api/host/session/{id}/ata/start` - Start ATA with question
+  - `POST /api/host/session/{id}/end?cleanup=false` - End game, download CSV
+  - `GET /api/host/session/{id}/status` - Session status with statistics
+  - `GET /api/host/session/{id}/lobby` - Lobby participants list
+- **Features**:
+  - SignalR notifications to all participants on state changes
+  - Individual notifications for selected players
+  - Broadcast events for game flow transitions
+  - CSV file download support for statistics
+
+**6. SignalR Hub Enhanced** ✅ (Hubs/FFFHub.cs)
+- **Name Validation Integration**:
+  - `JoinSession()` validates names before allowing registration
+  - Returns `Success: false` with error message on validation failure
+  - Checks profanity, emojis, length, and uniqueness
+  - Uses sanitized names after validation
+- **New SignalR Events**:
+  - `GameStarted` - Game begins notification
+  - `SelectedForFFF` - Individual selection for FFF
+  - `FFFPlayersSelected` - Broadcast with all selected players
+  - `SelectedAsWinner` - Individual winner notification
+  - `PlayerSelected` - Broadcast when random player chosen
+  - `PlayersReturnedToLobby` - Reset notification
+  - `ATAStarted` - ATA round begins with question details
+  - `GameEnded` - Game complete notification
+- **Join Response Enhanced**:
+  - Returns `Success` flag
+  - Includes participant `State` (Lobby, Winner, etc.)
+  - Provides sanitized `DisplayName`
+
+**7. Registration UI Updated** ✅ (wwwroot/index.html)
+- **Error Handling**:
+  - Error display div with red background
+  - Input field red border on validation error
+  - Clear error feedback with `showError()` / `hideError()`
+- **Name Requirements Display**:
+  - Info box with validation rules
+  - 35-character maxlength attribute on input
+  - Requirements: length, no emojis, no profanity, uniqueness
+- **Validation Integration**:
+  - Checks `result.success` from JoinSession
+  - Displays `result.error` message
+  - Stops connection on validation failure
+
+#### Game Flow Support ✅
+
+**Complete 9-Step Participant Journey**:
+1. ✅ Pre-game QR code registration
+2. ✅ Name validation (profanity, emojis, length, uniqueness)
+3. ✅ Lobby state for waiting participants
+4. ✅ Host controls: Select 8 for FFF OR select 1 random
+5. ✅ FFF winner flagged as PLAYED, losers eliminated
+6. ✅ Losers can be returned to lobby for next round
+7. ✅ Multiple FFF rounds supported
+8. ✅ ATA once per player round (tracked with `HasUsedATA`)
+9. ✅ Game end → CSV export with timestamps → optional DB cleanup
+
+#### Technical Achievements
+
+**Production Ready**:
+- ✅ Nginx reverse proxy configuration (nginx.conf.example)
+- ✅ SSL/TLS support via ForwardedHeaders middleware
+- ✅ WebSocket support for SignalR through proxy
+- ✅ Complete deployment documentation (DEPLOYMENT.md)
+- ✅ SystemD service configuration
+- ✅ Security headers and rate limiting
+
+**Testing Status**:
+- ✅ Build: Success (resolved all compilation errors)
+- ✅ Server: Running on http://localhost:5278
+- ✅ Health Check: Responding
+- ✅ Swagger UI: All Phase 2.5 endpoints documented
+- ✅ Name validation: Tested with emojis, profanity, length
+- ✅ Host API: All endpoints operational
+
+**Files Changed** (Phase 2.5):
+- Created: NameValidationService.cs, StatisticsService.cs, HostController.cs, PHASE_2.5_COMPLETE.md
+- Modified: Participant.cs, Session.cs, SessionService.cs, FFFHub.cs, Program.cs, index.html
+- Total: ~1,200 lines added
+
+---
+
 ## Session Summary
 
-### Latest Session (Lifeline Icon System) - December 23, 2025 ✅ FEATURE COMPLETE
+### Previous Session (Lifeline Icon System) - December 23, 2025 ✅ FEATURE COMPLETE
 
 #### Lifeline Icon Visual Display System
 - ✅ **LifelineIcons Helper Class** (MillionaireGame.Core/Graphics/LifelineIcons.cs)
@@ -135,7 +280,7 @@
 ## 🎯 Pre-v1.0 TODO List
 
 ### Critical - Core Gameplay
-1. **Modern Web-Based Audience Participation System** 🔴
+1. **Modern Web-Based Audience Participation System (WAPS)** 🔴
    - **Unified platform replacing old FFF TCP/IP system**
    - **FFF (Fastest Finger First)**:
      - Mobile device registration via QR code

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAPS - Audience Participation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #000033, #001155);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('logo.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 50%;
+            opacity: 0.25;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .logo {
+            height: 50px;
+            width: auto;
+        }
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .status.connected {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        .status.disconnected {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+        input, button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+        input {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+        input.error {
+            border: 2px solid #ff0000;
+            background: rgba(255, 200, 200, 0.9);
+        }
+        .error-message {
+            color: #ff6666;
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        button {
+            background: #FFD700;
+            color: #000033;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .info strong {
+            color: #FFD700;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <img src="logo.png" alt="Logo" class="logo">
+            Millionaire Game Audience
+        </h1>
+        
+        <!-- Join Screen -->
+        <div id="joinScreen" class="screen active">
+            <div class="status disconnected">Not Connected</div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <input type="text" id="displayName" placeholder="Enter your name" maxlength="35" />
+            <input type="text" id="sessionCode" placeholder="Session code (or from URL)" style="display: none;" />
+            <button id="btnJoin">Join Session</button>
+            
+            <div class="info">
+                <strong>✨ Name Requirements:</strong><br>
+                • 1-35 characters<br>
+                • No emojis or special symbols<br>
+                • No inappropriate language<br>
+                • Must be unique in the session
+            </div>
+        </div>
+        
+        <!-- Connected Screen -->
+        <div id="connectedScreen" class="screen">
+            <div class="status connected">✓ Connected to Session</div>
+            
+            <div class="info">
+                <strong>Session:</strong> <span id="displaySessionId"></span><br>
+                <strong>Your Name:</strong> <span id="displayName"></span><br>
+                <strong>Participant ID:</strong> <span id="displayParticipantId"></span><br>
+                <strong>Connection ID:</strong> <span id="displayConnectionId"></span>
+            </div>
+            
+            <button id="btnTestReconnect">🔄 Test Reconnect (Disconnect & Reconnect)</button>
+            <button id="btnLeave">Leave Session</button>
+            
+            <div class="info" style="margin-top: 20px; background: rgba(0, 255, 0, 0.1);">
+                <strong>✓ Protected Features:</strong><br>
+                • Your participant ID is saved in localStorage<br>
+                • If you refresh or disconnect, you'll reconnect with the same ID<br>
+                • Duplicate votes/answers are prevented server-side<br>
+                • Your progress in FFF is maintained
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        // Persistent storage keys
+        const STORAGE_KEYS = {
+            PARTICIPANT_ID: 'waps_participant_id',
+            SESSION_ID: 'waps_session_id',
+            DISPLAY_NAME: 'waps_display_name',
+            AUTO_SESSION_ID: 'waps_auto_session_id'
+        };
+
+        // Generate or retrieve auto session ID for troubleshooting
+        function getAutoSessionId() {
+            let autoSessionId = localStorage.getItem(STORAGE_KEYS.AUTO_SESSION_ID);
+            if (!autoSessionId) {
+                autoSessionId = 'AUTO_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem(STORAGE_KEYS.AUTO_SESSION_ID, autoSessionId);
+            }
+            return autoSessionId;
+        }
+
+        let connection = null;
+        let currentSessionId = null;
+        let currentParticipantId = null;
+        let currentDisplayName = null;
+
+        // Get session code from URL or auto-generate
+        function getSessionCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlSessionCode = urlParams.get('session');
+            if (urlSessionCode) {
+                return urlSessionCode;
+            }
+            // Use auto-generated session ID for tracking
+            return getAutoSessionId();
+        }
+
+        // Get stored participant ID
+        function getStoredParticipantId() {
+            return localStorage.getItem(STORAGE_KEYS.PARTICIPANT_ID);
+        }
+
+        // Get stored display name
+        function getStoredDisplayName() {
+            return localStorage.getItem(STORAGE_KEYS.DISPLAY_NAME);
+        }
+
+        // Save session info to localStorage
+        function saveSessionInfo(sessionId, participantId, displayName) {
+            localStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
+            localStorage.setItem(STORAGE_KEYS.PARTICIPANT_ID, participantId);
+            localStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, displayName);
+        }
+
+        // Clear session info
+        function clearSessionInfo() {
+            localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
+            localStorage.removeItem(STORAGE_KEYS.PARTICIPANT_ID);
+            localStorage.removeItem(STORAGE_KEYS.DISPLAY_NAME);
+        }
+
+        // Join session
+        async function joinSession(sessionId, displayName, participantId = null) {
+            try {
+                // Hide any previous errors
+                hideError();
+
+                // Create SignalR connection
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl(`/hubs/fff`)
+                    .withAutomaticReconnect()
+                    .build();
+
+                // Setup event handlers
+                connection.on("ParticipantJoined", (data) => {
+                    console.log("Participant joined:", data);
+                });
+
+                connection.on("AnswerReceived", (data) => {
+                    console.log("Answer received:", data);
+                    if (!data.success) {
+                        alert(data.error || "Answer submission failed");
+                    }
+                });
+
+                // Start connection
+                await connection.start();
+                console.log("SignalR connected");
+
+                // Join the session
+                const result = await connection.invoke("JoinSession", sessionId, displayName, participantId);
+                console.log("Join result:", result);
+
+                // Check if validation failed
+                if (result.success === false) {
+                    showError(result.error || "Failed to join session");
+                    await connection.stop();
+                    connection = null;
+                    return;
+                }
+
+                // Save session info
+                currentSessionId = result.sessionId;
+                currentParticipantId = result.participantId;
+                currentDisplayName = result.displayName;
+                saveSessionInfo(currentSessionId, currentParticipantId, currentDisplayName);
+
+                // Update UI
+                document.getElementById('displaySessionId').textContent = currentSessionId;
+                document.getElementById('displayName').textContent = currentDisplayName;
+                document.getElementById('displayParticipantId').textContent = currentParticipantId;
+                document.getElementById('displayConnectionId').textContent = connection.connectionId;
+
+                showScreen('connectedScreen');
+
+            } catch (err) {
+                console.error("Join failed:", err);
+                showError("Failed to join session: " + err.toString());
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const nameInput = document.getElementById('displayName');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            nameInput.classList.add('error');
+        }
+
+        // Hide error message
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            const nameInput = document.getElementById('displayName');
+            errorDiv.style.display = 'none';
+            nameInput.classList.remove('error');
+        }
+
+        // Show screen
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Pre-fill session code (hidden field) with auto-generated ID
+            const sessionCode = getSessionCode();
+            document.getElementById('sessionCode').value = sessionCode;
+
+            // Pre-fill display name if stored
+            const storedName = getStoredDisplayName();
+            if (storedName) {
+                document.getElementById('displayName').value = storedName;
+            }
+
+            // Auto-reconnect if we have stored session info
+            const storedParticipantId = getStoredParticipantId();
+            if (sessionCode && storedName && storedParticipantId) {
+                console.log("Auto-reconnecting with stored participant ID:", storedParticipantId);
+                joinSession(sessionCode, storedName, storedParticipantId);
+            }
+        });
+
+        // Join button
+        document.getElementById('btnJoin').addEventListener('click', async () => {
+            const displayName = document.getElementById('displayName').value.trim();
+            const sessionCode = document.getElementById('sessionCode').value.trim();
+
+            if (!displayName) {
+                alert("Please enter your name");
+                return;
+            }
+
+            // Check if reconnecting with existing participant ID
+            const existingParticipantId = getStoredParticipantId();
+            await joinSession(sessionCode, displayName, existingParticipantId);
+        });
+
+        // Allow Enter key to join session
+        document.getElementById('displayName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('btnJoin').click();
+            }
+        });
+
+        // Test reconnect button
+        document.getElementById('btnTestReconnect').addEventListener('click', async () => {
+            if (connection) {
+                console.log("Testing reconnect - stopping connection...");
+                await connection.stop();
+                
+                setTimeout(async () => {
+                    console.log("Reconnecting with stored participant ID:", currentParticipantId);
+                    await joinSession(currentSessionId, currentDisplayName, currentParticipantId);
+                }, 1000);
+            }
+        });
+
+        // Leave button
+        document.getElementById('btnLeave').addEventListener('click', async () => {
+            if (connection) {
+                await connection.stop();
+            }
+            clearSessionInfo();
+            currentSessionId = null;
+            currentParticipantId = null;
+            currentDisplayName = null;
+            showScreen('joinScreen');
+        });
+    </script>
+</body>
+</html>
