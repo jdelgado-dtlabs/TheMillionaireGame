@@ -1586,6 +1586,11 @@ public partial class ControlPanelForm : Form
 
     private async void ExecuteFiftyFifty(Core.Models.Lifeline lifeline, Button button)
     {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] 50:50 activated");
+        }
+        
         _gameService.UseLifeline(lifeline.Type);
         button.Enabled = false;
         button.BackColor = Color.Gray;
@@ -1601,11 +1606,13 @@ public partial class ControlPanelForm : Form
 
         // Randomly select 2 wrong answers to remove
         var random = new Random();
+        var removedAnswers = new List<string>();
         for (int i = 0; i < 2; i++)
         {
             var indexToRemove = random.Next(wrongAnswers.Count);
             var answerToRemove = wrongAnswers[indexToRemove];
             wrongAnswers.RemoveAt(indexToRemove);
+            removedAnswers.Add(answerToRemove);
 
             // Clear the answer text
             switch (answerToRemove)
@@ -1616,12 +1623,28 @@ public partial class ControlPanelForm : Form
                 case "D": txtD.Text = ""; break;
             }
         }
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[Lifeline] 50:50 removed answers: {string.Join(", ", removedAnswers)}");
+            Console.WriteLine($"[Lifeline] 50:50 correct answer is: {lblAnswer.Text}");
+        }
 
         _screenService.ActivateLifeline(lifeline);
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] 50:50 completed and displayed on screens");
+        }
     }
 
     private async void ExecutePhoneFriend(Core.Models.Lifeline lifeline, Button button)
     {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] Phone a Friend (PAF) activated - Stage 1: Calling intro");
+        }
+        
         // Stage 1: Start intro/calling sequence
         _pafStage = PAFStage.CallingIntro;
         button.BackColor = Color.Blue;
@@ -1630,6 +1653,11 @@ public partial class ControlPanelForm : Form
         await PlayLifelineSoundAsync(SoundEffect.LifelinePAFStart, "paf_intro", loop: true);
         
         _screenService.ActivateLifeline(lifeline);
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] PAF intro sound playing (looped) - waiting for host to start countdown");
+        }
     }
     
     private void HandlePAFStageClick(Button button)
@@ -1637,6 +1665,11 @@ public partial class ControlPanelForm : Form
         switch (_pafStage)
         {
             case PAFStage.CallingIntro:
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine("[Lifeline] PAF Stage 2: Starting 30-second countdown");
+                }
+                
                 // Stage 2: Stop intro, start countdown
                 _soundService.StopSound("paf_intro");
                 _pafStage = PAFStage.CountingDown;
@@ -1655,6 +1688,10 @@ public partial class ControlPanelForm : Form
                 
             case PAFStage.CountingDown:
                 // Stage 3b: Early end
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine("[Lifeline] PAF ending early (manual)");
+                }
                 EndPAFEarly(button);
                 break;
                 
@@ -1716,6 +1753,11 @@ public partial class ControlPanelForm : Form
         }
         
         _pafStage = PAFStage.Completed;
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] PAF completed and marked as used");
+        }
     }
     
     private Button? GetPAFButton()
@@ -1751,6 +1793,11 @@ public partial class ControlPanelForm : Form
 
     private async void ExecuteAskAudience(Core.Models.Lifeline lifeline, Button button)
     {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] Ask the Audience (ATA) activated - Stage 1: Intro (120 seconds)");
+        }
+        
         // Stage 1: Start intro/explanation (2 minutes)
         _ataStage = ATAStage.Intro;
         button.BackColor = Color.Blue;
@@ -1766,6 +1813,11 @@ public partial class ControlPanelForm : Form
         _ataTimer.Start();
         
         _screenService.ActivateLifeline(lifeline);
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] ATA displayed on screens - intro timer started");
+        }
     }
     
     private void HandleATAStageClick(Button button)
@@ -1914,6 +1966,13 @@ public partial class ControlPanelForm : Form
 
     private async Task ExecuteSwitchQuestion(Core.Models.Lifeline lifeline, Button button)
     {
+        var currentQuestionNumber = (int)nmrLevel.Value + 1;
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[Lifeline] Switch the Question (STQ) activated at Q{currentQuestionNumber}");
+        }
+        
         // Show activation on screens immediately (visual feedback)
         _screenService.ActivateLifeline(lifeline);
         
@@ -1924,9 +1983,19 @@ public partial class ControlPanelForm : Form
         _gameService.UseLifeline(lifeline.Type);
         button.Enabled = false;
         button.BackColor = Color.Gray;
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine($"[Lifeline] STQ loading new question at same difficulty level (Q{currentQuestionNumber})");
+        }
 
         // Load a new question at same difficulty level
         await LoadNewQuestion();
+        
+        if (Program.DebugMode)
+        {
+            Console.WriteLine("[Lifeline] STQ completed - new question loaded");
+        }
     }
 
     private async void btnHostIntro_Click(object? sender, EventArgs e)
