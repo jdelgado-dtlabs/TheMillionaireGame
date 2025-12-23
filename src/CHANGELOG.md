@@ -4,6 +4,15 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [Unreleased] - 2025-12-22
 
+### Added
+- **Switch the Question (STQ) Lifeline**
+  - Fully functional STQ lifeline implementation
+  - Confirmation dialog before switching questions
+  - Loads new random question at same difficulty level
+  - Marks lifeline as used and updates button state (grey/disabled)
+  - Sound effect integration with stq_start.mp3
+  - Configurable via Settings: Lifeline slots can be set to "switch" type
+
 ### Fixed
 - **Threading Issues in Answer Reveal**
   - Fixed persistent cross-thread exceptions during answer reveal sequences

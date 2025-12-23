@@ -8,7 +8,37 @@
 
 ## Session Summary
 
-### Latest Session (Threading Fix - RevealAnswer Refactor) - December 22, 2025
+### Latest Session (STQ Lifeline Implementation) - December 22, 2025
+
+#### Switch the Question Lifeline
+- ✅ **Full Implementation**
+  - STQ lifeline already implemented and functional
+  - Confirmation dialog before switching questions
+  - Loads new question at same difficulty level when activated
+  - Marks lifeline as used after confirmation
+  - Button changes to grey and disabled state after use
+  - Sound effect: SoundEffect.LifelineSwitch (stq_start.mp3)
+  
+- ✅ **Integration**
+  - ExecuteSwitchQuestion() method in ControlPanelForm.cs (line 1915-1935)
+  - Integrated with HandleLifelineClickAsync() routing
+  - Uses existing LoadNewQuestion() logic for seamless question switching
+  - PlayLifelineSoundAsync() stops background audio and plays STQ sound
+  - ScreenUpdateService.ActivateLifeline() broadcasts to all screens
+  
+- ✅ **Sound Support**
+  - SoundEffect.LifelineSwitch mapped to "SwitchActivate" key
+  - Sound file: stq_start.mp3 in Default soundpack
+  - Additional STQ sounds available but not used yet:
+    * stq_reveal_correct_answer.mp3
+    * stq_new_question_flip.mp3
+  
+- ✅ **Build Verification**
+  - Solution builds successfully with no errors
+  - STQ fully functional and ready for testing
+  - Configuration via Settings: Lifeline 1-4 can be set to "switch" type
+
+### Previous Session (Threading Fix - RevealAnswer Refactor) - December 22, 2025
 
 #### Complete async/await Elimination in RevealAnswer
 - ✅ **Threading Issue Resolution**
@@ -568,24 +598,24 @@
 ### High Priority
 
 #### 1. Switch the Question (STQ) Lifeline
-**Status**: Not implemented  
+**Status**: ✅ COMPLETED (December 22, 2025)  
 **Original VB.NET Location**: `Het DJG Toernooi/Source_Scripts/Lifelines/`  
-**Implementation Plan**:
-- Add `SwitchQuestion` button to Control Panel lifeline area
-- Load new question at same level when activated
-- Maintain same lifeline availability settings
-- Play appropriate sound effect
-- Update all screens to show new question
-- Mark old question as "skipped" in database (optional tracking)
+**Implementation Summary**:
+- ExecuteSwitchQuestion() method implemented in ControlPanelForm.cs (lines 1915-1935)
+- Confirmation dialog before switching questions
+- Loads new question at same difficulty level using existing LoadNewQuestion() logic
+- Marks lifeline as used and updates button state (grey/disabled)
+- Sound effect integration: SoundEffect.LifelineSwitch (stq_start.mp3)
+- Fully integrated with HandleLifelineClickAsync() routing
+- Build verified: Compiles successfully with no errors
+- Ready for testing and use
 
-**Required Changes**:
-- `ControlPanelForm.cs`: Add STQ button handler
-- `GameService.cs`: Add `SwitchQuestion()` method
-- `QuestionRepository.cs`: Ensure proper random question selection (exclude previously used)
-- `ScreenUpdateService.cs`: Handle question switch updates
-- Sound files: Add STQ sound effect
-
-**Estimated Complexity**: Medium (3-4 hours)
+**Configuration**:
+- Settings: Lifeline 1-4 slots can be set to "switch" type
+- Sound files available in Default soundpack:
+  * stq_start.mp3 (primary sound - implemented)
+  * stq_reveal_correct_answer.mp3 (available)
+  * stq_new_question_flip.mp3 (available)
 
 #### 2. Fastest Finger First (FFF) Networking
 **Status**: Partial (guest client exists, networking not implemented)  
