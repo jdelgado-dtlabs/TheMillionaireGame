@@ -199,6 +199,17 @@ public partial class ControlPanelForm : Form
         Task.Run(async () =>
         {
             await LoadNewQuestion();
+            
+            // After STQ loads new question, set up for progressive answer reveal
+            // This ensures the Question button is enabled to reveal answers one by one
+            this.Invoke(() =>
+            {
+                _answerRevealStep = 1; // Question loaded, ready to reveal answers
+                chkShowQuestion.Checked = true;
+                btnNewQuestion.Enabled = true;
+                btnNewQuestion.BackColor = Color.LimeGreen;
+                btnNewQuestion.Text = "Question";
+            });
         });
     }
     
