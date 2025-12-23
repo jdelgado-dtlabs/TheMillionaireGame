@@ -330,6 +330,65 @@ public class ScreenUpdateService
             screen.ClearLifelineIcons();
         }
     }
+    
+    #region FFF Display Methods
+    
+    /// <summary>
+    /// Show a single FFF contestant on TV screen
+    /// </summary>
+    public void ShowFFFContestant(int index, string name)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowFFFContestant(index, name);
+        }
+    }
+    
+    /// <summary>
+    /// Show all FFF contestants with straps on TV screen
+    /// </summary>
+    public void ShowAllFFFContestants(List<string> names)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowAllFFFContestants(names);
+        }
+    }
+    
+    /// <summary>
+    /// Highlight a specific FFF contestant during animation
+    /// </summary>
+    public void HighlightFFFContestant(int index, bool isWinner = false)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.HighlightFFFContestant(index, isWinner);
+        }
+    }
+    
+    /// <summary>
+    /// Show the FFF winner
+    /// </summary>
+    public void ShowFFFWinner(string name)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowFFFWinner(name);
+        }
+    }
+    
+    /// <summary>
+    /// Clear FFF display from all screens
+    /// </summary>
+    public void ClearFFFDisplay()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ClearFFFDisplay();
+        }
+    }
+    
+    #endregion
 }
 
 /// <summary>
@@ -357,6 +416,13 @@ public interface IGameScreen
     void HideLifelineIcons();
     void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state);
     void ClearLifelineIcons();
+    
+    // FFF display methods
+    void ShowFFFContestant(int index, string name);
+    void ShowAllFFFContestants(List<string> names);
+    void HighlightFFFContestant(int index, bool isWinner = false);
+    void ShowFFFWinner(string name);
+    void ClearFFFDisplay();
 }
 
 #region Event Args

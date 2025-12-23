@@ -308,6 +308,36 @@ public partial class TVScreenForm : Form, IGameScreen
         // Lifeline icons not implemented for the old TVScreenForm
         // This form is being phased out in favor of TVScreenFormScalable
     }
+    
+    public void ShowFFFContestant(int index, string name)
+    {
+        // FFF display not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void ShowAllFFFContestants(List<string> names)
+    {
+        // FFF display not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void HighlightFFFContestant(int index, bool isWinner = false)
+    {
+        // FFF display not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void ShowFFFWinner(string name)
+    {
+        // FFF display not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void ClearFFFDisplay()
+    {
+        // FFF display not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
 
     #endregion
 

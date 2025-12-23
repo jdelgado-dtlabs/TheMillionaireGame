@@ -511,6 +511,20 @@ public class SoundService : IDisposable
         // Safety Net
         TryRegister(SoundEffect.SetSafetyNet, "SetSafetyNet", "set_safety_net");
         
+        // FFF Sounds
+        TryRegister(SoundEffect.FFFLightsDown, "FFFLightsDown", "fastest_finger_lights_down");
+        TryRegister(SoundEffect.FFFMeet2, "FFFMeet2", "fastest_finger_contestants_2");
+        TryRegister(SoundEffect.FFFMeet3, "FFFMeet3", "fastest_finger_contestants_3");
+        TryRegister(SoundEffect.FFFMeet4, "FFFMeet4", "fastest_finger_contestants_4");
+        TryRegister(SoundEffect.FFFMeet5, "FFFMeet5", "fastest_finger_contestants_5");
+        TryRegister(SoundEffect.FFFMeet6, "FFFMeet6", "fastest_finger_contestants_6");
+        TryRegister(SoundEffect.FFFMeet7, "FFFMeet7", "fastest_finger_contestants_7");
+        TryRegister(SoundEffect.FFFMeet8, "FFFMeet8", "fastest_finger_contestants_8");
+        TryRegister(SoundEffect.FFFThreeNotes, "FFFThreeNotes", "fastest_finger_3_stabs");
+        TryRegister(SoundEffect.FFFRandomPicker, "FFFRandomPicker", "pick_random_contestant");
+        TryRegister(SoundEffect.FFFThinking, "FFFThinking", "fastest_finger_think");
+        TryRegister(SoundEffect.FFFWinner, "FFFWinner", "fastest_finger_winner");
+        
         // Other
         TryRegister(SoundEffect.ToHotSeat, "ToHotSeat", "to_hotseat");
         TryRegister(SoundEffect.ExplainRules, "ExplainRules", "explain_rules");
@@ -572,5 +586,17 @@ public enum SoundEffect
     LifelineATHEnd,
     LifelineDoubleDipStart,
     LifelineDoubleDipFirst,
-    SetSafetyNet
+    SetSafetyNet,
+    FFFLightsDown,
+    FFFMeet2,
+    FFFMeet3,
+    FFFMeet4,
+    FFFMeet5,
+    FFFMeet6,
+    FFFMeet7,
+    FFFMeet8,
+    FFFThreeNotes,
+    FFFRandomPicker,
+    FFFThinking,
+    FFFWinner
 }

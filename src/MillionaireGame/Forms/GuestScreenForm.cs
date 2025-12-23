@@ -831,4 +831,10 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         _showLifelineIcons = false;
         Invalidate();
     }
+    
+    public void ShowFFFContestant(int index, string name) { }
+    public void ShowAllFFFContestants(List<string> names) { }
+    public void HighlightFFFContestant(int index, bool isWinner = false) { }
+    public void ShowFFFWinner(string name) { }
+    public void ClearFFFDisplay() { }
 }

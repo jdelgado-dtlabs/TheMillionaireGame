@@ -1811,7 +1811,19 @@ public partial class ControlPanelForm : Form
                 ? _webServerHost.BaseUrl
                 : $"http://{_appSettings.Settings.AudienceServerIP}:{_appSettings.Settings.AudienceServerPort}";
             
-            _fffWindow = new FFFWindow(serverUrl);
+            // Check if web server is actually running
+            bool isWebServerRunning = _webServerHost != null && _webServerHost.IsRunning;
+            
+            _fffWindow = new FFFWindow(serverUrl, isWebServerRunning, _screenService as ScreenUpdateService, _soundService);
+        }
+        
+        // Check if no more players available (offline mode only)
+        bool webServerRunning = _webServerHost != null && _webServerHost.IsRunning;
+        if (!webServerRunning && _fffWindow.NoMorePlayers)
+        {
+            MessageBox.Show("No more players available! Please reset the game to start a new session.",
+                "No Players Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
         }
         
         // Show the window (or bring to front if already visible)
@@ -1846,12 +1858,21 @@ public partial class ControlPanelForm : Form
         btnActivateRiskMode.ForeColor = Color.Black;
         
         // Enable Reset Round button (grey with red border/symbol and black text)
-        btnResetRound.Enabled = true;
-        btnResetRound.BackColor = Color.Gray;
-        btnResetRound.FlatAppearance.BorderColor = Color.Red;
-        btnResetRound.FlatAppearance.BorderSize = 3;
-        btnResetRound.ForeColor = Color.Black;
-        btnResetRound.Image = GetRedStopImage();
+        // UNLESS no more players are available in offline mode
+        if (!webServerRunning && _fffWindow.NoMorePlayers)
+        {
+            btnResetRound.Enabled = false;
+            btnResetRound.BackColor = Color.DarkGray;
+        }
+        else
+        {
+            btnResetRound.Enabled = true;
+            btnResetRound.BackColor = Color.Gray;
+            btnResetRound.FlatAppearance.BorderColor = Color.Red;
+            btnResetRound.FlatAppearance.BorderSize = 3;
+            btnResetRound.ForeColor = Color.Black;
+            btnResetRound.Image = GetRedStopImage();
+        }
         
         // Enable question level selector - allow setting before first lights down
         nmrLevel.Enabled = true;
@@ -2199,8 +2220,8 @@ public partial class ControlPanelForm : Form
         // Reset game service
         _gameService.ResetGame();
         
-        // Reset all controls
-        ResetAllControls();
+        // Reset all controls but preserve FFF window player state
+        ResetAllControls(resetFFFWindow: false);
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -3055,7 +3076,7 @@ public partial class ControlPanelForm : Form
         txtQLeft.Text = state.QuestionsLeft;
     }
 
-    private void ResetAllControls()
+    private void ResetAllControls(bool resetFFFWindow = true)
     {
         txtQuestion.Clear();
         txtA.Clear();
@@ -3071,6 +3092,12 @@ public partial class ControlPanelForm : Form
         _gameOutcome = GameOutcome.InProgress; // Reset game outcome
         nmrLevel.Value = 0;
         nmrLevel.Enabled = false; // Disable until Pick a Player is clicked
+        
+        // Reset FFF Window state (offline mode only) - only if requested
+        if (resetFFFWindow && _fffWindow != null && !_fffWindow.IsDisposed)
+        {
+            _fffWindow.ResetLocalPlayerState();
+        }
         
         // Disable answer buttons until a question is loaded and set to grey
         btnA.Enabled = false;

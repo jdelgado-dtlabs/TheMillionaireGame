@@ -39,6 +39,13 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private int _ataSecondsRemaining = 0;
     private string _ataStage = "";
     
+    // FFF display
+    private bool _showFFF = false;
+    private List<string> _fffContestants = new();
+    private int _fffHighlightedIndex = -1;
+    private bool _fffShowWinner = false;
+    private string? _fffWinnerName = null;
+    
     // Lifeline icon display
     private bool _showLifelineIcons = false;
     private Dictionary<int, LifelineIconState> _lifelineStates = new();
@@ -93,6 +100,13 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
     protected override void RenderScreen(System.Drawing.Graphics g)
     {
+        // If FFF is showing, render FFF display (takes over entire screen)
+        if (_showFFF)
+        {
+            DrawFFFDisplay(g);
+            return;
+        }
+        
         // If money tree is showing, render it (takes over entire screen)
         if (_showMoneyTree)
         {
@@ -524,6 +538,92 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // Center text in bounds
         DrawScaledText(g, displayText, font, textBrush,
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
+    }
+    
+    private void DrawFFFDisplay(System.Drawing.Graphics g)
+    {
+        // Clear background
+        g.Clear(Color.FromArgb(0, 0, 51)); // Dark blue background
+        
+        // Show winner with large text
+        if (_fffShowWinner && !string.IsNullOrEmpty(_fffWinnerName))
+        {
+            // Draw winner text centered on screen
+            var designBounds = new RectangleF(200, 400, 1520, 280);
+            using var font = new Font("Arial", 120, FontStyle.Bold);
+            using var brush = new SolidBrush(Color.Gold);
+            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            
+            DrawScaledText(g, _fffWinnerName, font, brush,
+                designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
+            
+            // Draw "WINNER!" above
+            using var titleFont = new Font("Arial", 80, FontStyle.Bold);
+            using var titleBrush = new SolidBrush(Color.White);
+            var titleBounds = new RectangleF(200, 280, 1520, 100);
+            DrawScaledText(g, "WINNER!", titleFont, titleBrush,
+                titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, format);
+            return;
+        }
+        
+        // Draw contestant straps
+        if (_fffContestants.Count > 0)
+        {
+            // Layout contestants vertically
+            float startY = 200;
+            float strapHeight = 80;
+            float spacing = 20;
+            float totalHeight = (_fffContestants.Count * strapHeight) + ((_fffContestants.Count - 1) * spacing);
+            float currentY = (1080 - totalHeight) / 2; // Center vertically
+            
+            for (int i = 0; i < _fffContestants.Count; i++)
+            {
+                var name = _fffContestants[i];
+                bool isHighlighted = i == _fffHighlightedIndex;
+                
+                // Design-time bounds for strap
+                var designBounds = new RectangleF(400, currentY, 1120, strapHeight);
+                
+                // Background color
+                Color bgColor;
+                if (isHighlighted && _fffShowWinner)
+                {
+                    bgColor = Color.Gold;
+                }
+                else if (isHighlighted)
+                {
+                    bgColor = Color.Yellow;
+                }
+                else
+                {
+                    bgColor = Color.FromArgb(0, 0, 102); // Dark blue
+                }
+                
+                // Draw background
+                var scaledBounds = ScaleRect(designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height);
+                using (var bgBrush = new SolidBrush(bgColor))
+                {
+                    g.FillRectangle(bgBrush, scaledBounds);
+                }
+                
+                // Draw border
+                using (var borderPen = new Pen(Color.White, 3))
+                {
+                    g.DrawRectangle(borderPen, scaledBounds.X, scaledBounds.Y, scaledBounds.Width, scaledBounds.Height);
+                }
+                
+                // Draw contestant name
+                using var font = new Font("Arial", 48, FontStyle.Bold);
+                Color textColor = (isHighlighted && !_fffShowWinner) ? Color.Black : Color.White;
+                using var brush = new SolidBrush(textColor);
+                using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
+                
+                DrawScaledText(g, name, font, brush,
+                    designBounds.X + 20, designBounds.Y, designBounds.Width - 40, designBounds.Height, format);
+                
+                currentY += strapHeight + spacing;
+            }
+        }
     }
     
     private void DrawLifelineIcons(System.Drawing.Graphics g)
@@ -961,5 +1061,83 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _showLifelineIcons = false;
         Invalidate();
     }
+    
+    #region FFF Display Methods
+    
+    public void ShowFFFContestant(int index, string name)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowFFFContestant(index, name)));
+            return;
+        }
+        
+        _showFFF = true;
+        _fffShowWinner = false;
+        if (_fffContestants.Count <= index)
+        {
+            _fffContestants.Add(name);
+        }
+        Invalidate();
+    }
+    
+    public void ShowAllFFFContestants(List<string> names)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowAllFFFContestants(names)));
+            return;
+        }
+        
+        _showFFF = true;
+        _fffContestants = new List<string>(names);
+        _fffHighlightedIndex = -1;
+        _fffShowWinner = false;
+        Invalidate();
+    }
+    
+    public void HighlightFFFContestant(int index, bool isWinner = false)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => HighlightFFFContestant(index, isWinner)));
+            return;
+        }
+        
+        _fffHighlightedIndex = index;
+        _fffShowWinner = isWinner;
+        Invalidate();
+    }
+    
+    public void ShowFFFWinner(string name)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowFFFWinner(name)));
+            return;
+        }
+        
+        _fffShowWinner = true;
+        _fffWinnerName = name;
+        Invalidate();
+    }
+    
+    public void ClearFFFDisplay()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ClearFFFDisplay));
+            return;
+        }
+        
+        _showFFF = false;
+        _fffContestants.Clear();
+        _fffHighlightedIndex = -1;
+        _fffShowWinner = false;
+        _fffWinnerName = null;
+        Invalidate();
+    }
+    
+    #endregion
 }
 

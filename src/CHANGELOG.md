@@ -2,6 +2,53 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.5-2512] - 2025-12-23
+
+### Added
+- **FFF Offline Mode - Complete Implementation** ✅ FEATURE COMPLETE
+  - **Player Elimination System**: Winner automatically removed from contestant pool
+    * RemovePlayerAndShift() removes winner and renumbers remaining players
+    * NoMorePlayers flag tracks when ≤ 2 contestants remain
+    * Player names and state persist between rounds
+  - **Window State Management**: Preserve player data across rounds
+    * Changed from Close() to Hide() to maintain window instance
+    * Player list, names, and elimination state preserved
+    * ResetLocalPlayerState() only called on game reset
+  - **Control Panel Integration**:
+    * NoMorePlayers validation before opening FFF window
+    * Reset Round preserves player state (resetFFFWindow: false)
+    * Reset Game/Closing fully resets to 8 players
+  - **UI Optimizations**:
+    * Button sizes: 340x50 to match Control Panel design
+    * Player panel width: 580px (was 500px) for better name display
+    * Fixed panel height: 340px to prevent visual bugs
+    * Default player count: 8 (was 2)
+    * Disabled auto-scroll on player panel
+  - **Sound Timing Improvements**:
+    * Player introduction sound plays once (not per player)
+    * Random selection uses 5-second timer matching FFFRandomPicker cue length
+    * Silent message box (MessageBoxIcon.None) for winner dialog
+  - **FFF Texture Assets**: Copied 9 FFF graphics from VB.NET project
+    * Theme-specific backgrounds (01_FFF, 02_FFF, 04_FFF, 05_FFF)
+    * Contestant strap states (idle, correct, fastest/winner)
+    * Ready for future graphics implementation
+  - **Button State Machine**: Consistent three-state system (Green/Blue/Grey)
+  - **Visual Bug Fixes**:
+    * Fixed orphaned Player 8 label with 7 players
+    * Fixed panel shrinking during elimination
+    * Proper cleanup of textbox and label pairs
+
+### Changed
+- **FFF Window Lifecycle**: Hide() instead of Close() to preserve state
+- **ResetAllControls()**: Added optional resetFFFWindow parameter
+- **Sound Playback**: Reverted to fixed 5-second timer for reliability
+
+### Fixed
+- Player state resetting to 8 players after each round
+- Player names not persisting between rounds
+- Visual bugs with panel height and orphaned labels
+- System beep sound on winner dialog
+
 ## [v0.4-2512] - 2025-12-23
 
 ### Added

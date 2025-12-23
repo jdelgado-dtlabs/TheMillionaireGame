@@ -20,15 +20,17 @@
     <Sound Key="SetSafetyNet" File="set_safety_net.mp3" />
     
     <!-- Fastest Finger First Sounds -->
-    <Sound Key="FFFMeet2" File="fastest_finger_contestants.mp3" />
-    <Sound Key="FFFMeet3" File="fastest_finger_contestants_2.mp3" />
-    <Sound Key="FFFMeet4" File="fastest_finger_contestants_3.mp3" />
-    <Sound Key="FFFMeet5" File="fastest_finger_contestants_4.mp3" />
-    <Sound Key="FFFMeet6" File="fastest_finger_contestants_5.mp3" />
-    <Sound Key="FFFMeet7" File="fastest_finger_contestants_6.mp3" />
-    <Sound Key="FFFMeet8" File="fastest_finger_contestants_7.mp3" />
+    <Sound Key="FFFLightsDown" File="fastest_finger_lights_down.mp3" />
+    <Sound Key="FFFMeet2" File="fastest_finger_contestants_2.mp3" />
+    <Sound Key="FFFMeet3" File="fastest_finger_contestants_3.mp3" />
+    <Sound Key="FFFMeet4" File="fastest_finger_contestants_4.mp3" />
+    <Sound Key="FFFMeet5" File="fastest_finger_contestants_5.mp3" />
+    <Sound Key="FFFMeet6" File="fastest_finger_contestants_6.mp3" />
+    <Sound Key="FFFMeet7" File="fastest_finger_contestants_7.mp3" />
+    <Sound Key="FFFMeet8" File="fastest_finger_contestants_8.mp3" />
     <Sound Key="FFFReadQuestion" File="fastest_finger_read_question.mp3" />
     <Sound Key="FFFThreeNotes" File="fastest_finger_3_stabs.mp3" />
+    <Sound Key="FFFRandomPicker" File="pick_random_contestant.mp3" />
     <Sound Key="FFFThinking" File="fastest_finger_think.mp3" />
     <Sound Key="FFFReadCorrectOrder" File="fastest_finger_read_answer_order.mp3" />
     <Sound Key="FFFOrder1" File="fastest_finger_answer_correct_1.mp3" />
