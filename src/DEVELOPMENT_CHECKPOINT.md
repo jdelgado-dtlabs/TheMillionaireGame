@@ -8,7 +8,69 @@
 
 ## Session Summary
 
-### Latest Session (ATA Enhanced + Screen Sync) - December 23, 2025
+### Latest Session (Lifeline Icon System) - December 23, 2025
+
+#### Lifeline Icon Visual Display System
+- ✅ **LifelineIcons Helper Class** (MillionaireGame.Core/Graphics/LifelineIcons.cs)
+  - LoadIconFromEmbeddedResource() loads from MillionaireGame.lib.textures namespace
+  - GetLifelineIcon(LifelineType, LifelineIconState) returns appropriate icon
+  - GetIconBaseName() maps lifeline types to icon filenames
+  - GetStateSuffix() handles state suffixes: "" (Normal), "_glint" (Bling), "_used" (Used)
+  - Icon caching for performance optimization
+  - 18 embedded icon resources: ll_audience, ll_5050, ll_phone, ll_switch, ll_host, ll_double
+
+- ✅ **LifelineIconState Enum**
+  - Hidden: Icon not shown
+  - Normal: Lifeline available (black/normal state)
+  - Bling: During ping animation or activation (yellow/glint)
+  - Used: Lifeline consumed (red X)
+
+- ✅ **Screen Integration**
+  - DrawLifelineIcons() method added to all screen forms
+  - Screen-specific positioning (design-time 1920x1080):
+    * HostScreenForm: (849, 18), spacing 138px, size 129x78
+    * GuestScreenForm: (566, 12), spacing 92px, size 86x52
+    * TVScreenFormScalable: (846, 36), spacing 82px, size 72x44
+  - Fields: _showLifelineIcons, _lifelineStates, _lifelineTypes dictionaries
+  - Public methods: ShowLifelineIcons(), HideLifelineIcons(), SetLifelineIcon(), ClearLifelineIcons()
+
+- ✅ **Ping Animation System** (LifelineManager)
+  - PingLifelineIcon(int lifelineNumber, LifelineType type) method
+  - Sets icon to Bling state immediately
+  - Plays LifelinePing1-4 sound effects
+  - 2-second timer (PingTimer_Tick) returns to Normal state
+  - Tracks _currentPingLifelineNumber and _currentPingLifelineType
+
+- ✅ **IGameScreen Interface Updates**
+  - ShowLifelineIcons(): Make icons visible
+  - HideLifelineIcons(): Hide all icons
+  - SetLifelineIcon(int number, LifelineType type, LifelineIconState state): Update individual icon
+  - ClearLifelineIcons(): Remove all icons and reset state
+
+- ✅ **ScreenUpdateService Enhancements**
+  - Broadcast methods for lifeline icon control
+  - Automatic visibility tied to game flow:
+    * ShowQuestion(true) → ShowLifelineIcons()
+    * ShowQuestion(false) → HideLifelineIcons()
+    * ShowWinnings() → HideLifelineIcons()
+    * ResetAllScreens() → ClearLifelineIcons()
+
+- ✅ **Resource Management**
+  - Moved 18 lifeline icons from VB.NET Resources to src/MillionaireGame/lib/textures
+  - Icons embedded as resources via .csproj wildcard: `<EmbeddedResource Include="lib\textures\*.png" />`
+  - Resources accessible via MillionaireGame.lib.textures namespace
+
+#### Files Modified
+- MillionaireGame.Core/Graphics/LifelineIcons.cs (NEW)
+- MillionaireGame/Forms/HostScreenForm.cs
+- MillionaireGame/Forms/GuestScreenForm.cs
+- MillionaireGame/Forms/TVScreenFormScalable.cs
+- MillionaireGame/Forms/TVScreenForm.cs (stub implementations)
+- MillionaireGame/Services/ScreenUpdateService.cs
+- MillionaireGame/Services/LifelineManager.cs
+- 18 lifeline icon PNG files moved to lib/textures
+
+### Previous Session (ATA Enhanced + Screen Sync) - December 23, 2025
 
 #### Ask the Audience (ATA) Complete Visual System
 - ✅ **Timer Implementation**

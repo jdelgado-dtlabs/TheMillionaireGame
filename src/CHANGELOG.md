@@ -5,6 +5,30 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2025-12-23
 
 ### Added
+- **Lifeline Icon Display System**
+  - **Visual Icons**: Three-state icon display on all screens
+    * Normal state (black): Lifeline available
+    * Bling state (yellow/glint): During ping animation or activation
+    * Used state (red X): Lifeline consumed
+  - **Icon Positioning**: Screen-specific placement above question strap
+    * HostScreen: (849, 18) with 138px spacing, Size: 129x78
+    * GuestScreen: (566, 12) with 92px spacing, Size: 86x52
+    * TVScreenFormScalable: (846, 36) with 82px spacing, Size: 72x44
+  - **Ping Animation System**: 2-second yellow→black transition
+    * PingLifelineIcon(int lifelineNumber, LifelineType type) method
+    * Plays LifelinePing1-4 sounds during animation
+    * Automatic timer-based state transition
+  - **Automatic Visibility Control**: Icons tied to game flow
+    * Show when question/answer strap visible
+    * Hide during winning strap display
+    * Clear on game reset
+  - **Architecture**:
+    * LifelineIcons helper class loads icons from embedded resources
+    * LifelineIconState enum (Hidden, Normal, Bling, Used)
+    * IGameScreen interface methods: ShowLifelineIcons(), HideLifelineIcons(), SetLifelineIcon(), ClearLifelineIcons()
+    * ScreenUpdateService broadcasts icon state changes to all screens
+    * 18 embedded icon resources in lib/textures (6 types × 3 states)
+
 - **Ask the Audience (ATA) Enhanced Visual System**
   - **Timer Display**: Two-phase visual timer on all screens
     * Intro phase: 2 minutes (blue border, MM:SS format)
