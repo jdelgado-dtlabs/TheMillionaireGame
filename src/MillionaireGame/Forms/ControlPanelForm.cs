@@ -1328,19 +1328,19 @@ public partial class ControlPanelForm : Form
     }
     */
 
-    private void btnLifeline1_Click(object? sender, EventArgs e)
+    private async void btnLifeline1_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(1, btnLifeline1);
+        await HandleLifelineClickAsync(1, btnLifeline1);
     }
 
-    private void btnLifeline2_Click(object? sender, EventArgs e)
+    private async void btnLifeline2_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(2, btnLifeline2);
+        await HandleLifelineClickAsync(2, btnLifeline2);
     }
 
-    private void btnLifeline3_Click(object? sender, EventArgs e)
+    private async void btnLifeline3_Click(object? sender, EventArgs e)
     {
-        HandleLifelineClick(3, btnLifeline3);
+        await HandleLifelineClickAsync(3, btnLifeline3);
     }
 
     private async void btnLifeline4_Click(object? sender, EventArgs e)
