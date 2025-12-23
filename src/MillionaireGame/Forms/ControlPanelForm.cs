@@ -1914,27 +1914,19 @@ public partial class ControlPanelForm : Form
 
     private async Task ExecuteSwitchQuestion(Core.Models.Lifeline lifeline, Button button)
     {
-        // Show activation on screens first (visual feedback)
+        // Show activation on screens immediately (visual feedback)
         _screenService.ActivateLifeline(lifeline);
         
-        // Play sound cue WITHOUT stopping bed music
-        _soundService.PlaySound(SoundEffect.LifelineSwitch);
+        // No dialog box (host asks "Is that your final answer?" before user clicks)
+        // No lifeline sound (will use correct/loss sound for question level)
         
-        var result = MessageBox.Show(
-            "Are you sure you want to switch to a new question?",
-            "Switch Question",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question);
+        // Mark lifeline as used and disable button
+        _gameService.UseLifeline(lifeline.Type);
+        button.Enabled = false;
+        button.BackColor = Color.Gray;
 
-        if (result == DialogResult.Yes)
-        {
-            _gameService.UseLifeline(lifeline.Type);
-            button.Enabled = false;
-            button.BackColor = Color.Gray;
-
-            // Load a new question
-            await LoadNewQuestion();
-        }
+        // Load a new question at same difficulty level
+        await LoadNewQuestion();
     }
 
     private async void btnHostIntro_Click(object? sender, EventArgs e)
@@ -3290,25 +3282,65 @@ public partial class ControlPanelForm : Form
                 // Green - active mode (clickable)
                 // Only apply to visible buttons that are in standby (orange)
                 // Grey/disabled buttons (used lifelines) are left alone
+                // Check if Q15 - if so, disable STQ lifeline
+                var currentQuestionNumber = (int)nmrLevel.Value + 1;
+                var isQ15 = (currentQuestionNumber == 15);
+                
                 if (btnLifeline1.Visible && btnLifeline1.BackColor == Color.Orange)
                 {
-                    btnLifeline1.BackColor = Color.LimeGreen;
-                    btnLifeline1.Enabled = true;
+                    // Check if this is STQ lifeline at Q15
+                    if (isQ15 && GetLifelineTypeFromSettings(1) == Core.Models.LifelineType.SwitchQuestion)
+                    {
+                        btnLifeline1.BackColor = Color.Gray;
+                        btnLifeline1.Enabled = false;
+                    }
+                    else
+                    {
+                        btnLifeline1.BackColor = Color.LimeGreen;
+                        btnLifeline1.Enabled = true;
+                    }
                 }
                 if (btnLifeline2.Visible && btnLifeline2.BackColor == Color.Orange)
                 {
-                    btnLifeline2.BackColor = Color.LimeGreen;
-                    btnLifeline2.Enabled = true;
+                    // Check if this is STQ lifeline at Q15
+                    if (isQ15 && GetLifelineTypeFromSettings(2) == Core.Models.LifelineType.SwitchQuestion)
+                    {
+                        btnLifeline2.BackColor = Color.Gray;
+                        btnLifeline2.Enabled = false;
+                    }
+                    else
+                    {
+                        btnLifeline2.BackColor = Color.LimeGreen;
+                        btnLifeline2.Enabled = true;
+                    }
                 }
                 if (btnLifeline3.Visible && btnLifeline3.BackColor == Color.Orange)
                 {
-                    btnLifeline3.BackColor = Color.LimeGreen;
-                    btnLifeline3.Enabled = true;
+                    // Check if this is STQ lifeline at Q15
+                    if (isQ15 && GetLifelineTypeFromSettings(3) == Core.Models.LifelineType.SwitchQuestion)
+                    {
+                        btnLifeline3.BackColor = Color.Gray;
+                        btnLifeline3.Enabled = false;
+                    }
+                    else
+                    {
+                        btnLifeline3.BackColor = Color.LimeGreen;
+                        btnLifeline3.Enabled = true;
+                    }
                 }
                 if (btnLifeline4.Visible && btnLifeline4.BackColor == Color.Orange)
                 {
-                    btnLifeline4.BackColor = Color.LimeGreen;
-                    btnLifeline4.Enabled = true;
+                    // Check if this is STQ lifeline at Q15
+                    if (isQ15 && GetLifelineTypeFromSettings(4) == Core.Models.LifelineType.SwitchQuestion)
+                    {
+                        btnLifeline4.BackColor = Color.Gray;
+                        btnLifeline4.Enabled = false;
+                    }
+                    else
+                    {
+                        btnLifeline4.BackColor = Color.LimeGreen;
+                        btnLifeline4.Enabled = true;
+                    }
                 }
                 break;
         }
