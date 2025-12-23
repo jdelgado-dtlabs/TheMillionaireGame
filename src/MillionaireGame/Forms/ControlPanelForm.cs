@@ -141,6 +141,7 @@ public partial class ControlPanelForm : Form
         _lifelineManager.RequestAsyncOperation += OnLifelineRequestAsyncOperation;
         _lifelineManager.RequestAnswerRemoval += OnLifelineRequestAnswerRemoval;
         _lifelineManager.LogMessage += OnLifelineLogMessage;
+        _lifelineManager.RequestBedMusicRestart += OnLifelineBedMusicRestart;
         
         // Sounds are already loaded in Program.cs during initialization
         
@@ -231,6 +232,12 @@ public partial class ControlPanelForm : Form
         {
             Console.WriteLine(message);
         }
+    }
+    
+    private void OnLifelineBedMusicRestart()
+    {
+        // Lifeline was used on Q1-5, so bed music should restart after correct answer
+        _shouldRestartBedMusic = true;
     }
     
     #endregion
@@ -2436,9 +2443,15 @@ public partial class ControlPanelForm : Form
                 Console.WriteLine($"[SafetyNetAnimation] Q{currentQuestionNumber} - isSafetyNet={isSafetyNet}, disabled={_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(currentQuestionNumber, _gameService.State.Mode)}, mode={_gameService.State.Mode}");
             }
             
-            // For Q1-5, restart bed music after correct answer if it was stopped by a lifeline
-            if (currentQuestionNumber >= 1 && currentQuestionNumber <= 5 && _shouldRestartBedMusic)
+            // For Q1-4, restart bed music after correct answer if it was stopped by a lifeline
+            // Not needed for Q5 (milestone) or any lose action
+            if (currentQuestionNumber >= 1 && currentQuestionNumber <= 4 && _shouldRestartBedMusic)
             {
+                if (Program.DebugMode)
+                {
+                    Console.WriteLine($"[BedMusic] Q{currentQuestionNumber} correct after lifeline - will restart bed music after 2 seconds");
+                }
+                
                 // Wait for correct answer sound to play a bit, then restart bed music
                 var bedMusicTimer = new System.Windows.Forms.Timer();
                 bedMusicTimer.Interval = 2000;

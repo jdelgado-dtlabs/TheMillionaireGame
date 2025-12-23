@@ -31,6 +31,7 @@ public class LifelineManager
     public event Action<Func<Task>>? RequestAsyncOperation; // For operations that need to await
     public event Action<string, string>? RequestAnswerRemoval; // For 50:50 answer removal
     public event Action<string>? LogMessage; // For debug logging
+    public event Action? RequestBedMusicRestart; // For Q1-5 bed music restart after lifeline
     
     public LifelineManager(GameService gameService, SoundService soundService, ScreenUpdateService screenService)
     {
@@ -366,6 +367,15 @@ public class LifelineManager
     
     private async Task PlayLifelineSoundAsync(SoundEffect effect, string? key = null, bool loop = false)
     {
+        // For Q1-4, notify UI that bed music should restart after correct answer reveal
+        // Not needed for Q5 (milestone) - bed music won't be playing anyway
+        var questionNumber = _gameService.State.CurrentLevel + 1;
+        if (questionNumber >= 1 && questionNumber <= 4)
+        {
+            RequestBedMusicRestart?.Invoke();
+            LogMessage?.Invoke($"[BedMusic] Q{questionNumber} lifeline will trigger bed music restart after correct answer");
+        }
+        
         // Stop all sounds
         _soundService.StopAllSounds();
         
