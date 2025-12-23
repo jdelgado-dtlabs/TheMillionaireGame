@@ -198,9 +198,213 @@
 
 ---
 
-### Previous Session (ATA Enhanced + Screen Sync) - December 23, 2025
+## Historical Sessions Archive
 
-#### Ask the Audience (ATA) Complete Visual System
+For detailed session logs from v0.2-2512 and v0.3-2512 development (December 20-23, 2025), including implementation details for all lifelines, money tree system, screen synchronization, and settings improvements, see [ARCHIVE.md](ARCHIVE.md).
+
+---
+
+## Key Design Decisions
+
+### Lifeline Icon System Architecture (v0.4-2512)
+- **Four-State Display Pattern**
+  - Hidden: Not visible (before game start or when disabled)
+  - Normal: White icon (available for use)
+  - Bling: Yellow glint animation (during activation)
+  - Used: Red X overlay (after use, persists across questions)
+  
+- **Screen-Specific Positioning**
+  - Host/Guest: Horizontal layout at (680, 18)
+  - TV: Vertical layout at (1770, 36)
+  - Consistent sizing: 120×120 pixels per icon
+  
+- **Dual Animation Modes**
+  - PingLifelineIcon: Demo with sound (Explain Game, testing)
+  - ActivateLifelineIcon: Silent execution (actual gameplay)
+  - Independent ping timers per lifeline type
+  
+- **Multi-Stage Protection System**
+  - Click cooldown: 1000ms delay prevents rapid clicking
+  - Standby mode: Orange buttons when multi-stage lifeline active
+  - Timer guards: Early exit if stage already completed
+  - Prevents UI conflicts and timer race conditions
+
+### Progressive Answer Reveal System
+- State machine approach with `_answerRevealStep` (0-5)
+- Question button acts as "Next" during reveal sequence
+- Textboxes on control panel populate progressively to match screen behavior
+- "Show Correct Answer to Host" only visible after all answers shown
+
+### Game Outcome Tracking
+- `GameOutcome` enum distinguishes Win/Drop/Wrong for proper winnings calculation
+- Milestone checks use `>=` instead of `>` (Q5+ and Q10+)
+- Thanks for Playing uses outcome to display correct final amount
+
+### Cancellation Token Pattern
+- Auto-reset after Thanks for Playing can be cancelled
+- Closing button acts as "final task" - cancels all timers
+- Proper cleanup in finally blocks
+
+### Mutual Exclusivity Pattern
+- Show Question and Show Winnings checkboxes cannot both be checked
+- CheckedChanged event handlers enforce exclusivity
+- Auto-show winnings respects exclusivity rules
+
+### Screen Coordination
+- `ScreenUpdateService` broadcasts to all screens via interfaces
+- Event-driven updates prevent tight coupling
+- Screens implement `IGameScreen` interface for consistency
+
+### Money Tree Graphics Architecture
+- **TextureManager Singleton Pattern**
+  - Centralized texture loading and caching
+  - Embedded resource management from lib/textures/
+  - ElementType enum for texture categories
+  - GetMoneyTreePosition(int level) for level-specific overlays
+  
+- **VB.NET Coordinate Translation**
+  - Original graphics had 650px blank space on left
+  - User manually cropped images to 630×720 (removed blank space)
+  - Code adjusted coordinates: money_pos_X (910→260), qno_pos_X (855→205/832→182)
+  - Proportional scaling maintains aspect ratio (650px display height)
+  
+- **Demo Animation System**
+  - Timer-based progression (System.Windows.Forms.Timer, 500ms interval)
+  - Levels 1-15 displayed sequentially
+  - UpdateMoneyTreeOnScreens(level) synchronizes all screens
+  - Explain Game flag prevents audio restart issues
+
+---
+
+## Important Files Reference
+
+### Core Project Files
+- `MillionaireGame.Core/Game/GameService.cs` - Main game logic
+- `MillionaireGame.Core/Database/QuestionRepository.cs` - Database access
+- `MillionaireGame.Core/Settings/ApplicationSettings.cs` - Config management
+- `MillionaireGame.Core/Models/GameState.cs` - Game state model
+- `MillionaireGame.Core/Graphics/LifelineIcons.cs` - Icon loading and caching (120 lines)
+
+### Main Application Files
+- `MillionaireGame/Forms/ControlPanelForm.cs` - Main control panel (~3517 lines)
+  - Lines 141: SetOtherButtonsToStandby event subscription
+  - Lines 195-217: OnSetOtherButtonsToStandby() handler for standby mode
+  - Lines 1563-1574: HandleLifelineClickAsync() with cooldown protection
+  
+- `MillionaireGame/Forms/HostScreenForm.cs` - Host screen (~888 lines)
+  - Lines 247-336: Graphical money tree rendering with VB.NET coordinates
+  - Lines 457-463: DrawATAResults() at position (635, 150)
+  - Lines 571-599: DrawLifelineIcons() for icon display
+  
+- `MillionaireGame/Forms/GuestScreenForm.cs` - Guest screen (~833 lines)
+  - Lines 228-324: Money tree implementation matching Host
+  - Lines 413-419: DrawATAResults() at position (635, 150)
+  
+- `MillionaireGame/Forms/TVScreenFormScalable.cs` - TV screen (graphical, ~668 lines)
+  - Lines 213-322: Graphical money tree with slide-in animation
+  
+- `MillionaireGame/Services/LifelineManager.cs` - Lifeline execution (~900 lines)
+  - Lines 232-240: PAFTimer_Tick() with guard check
+  - Lines 324-332: ATATimer_Tick() with guard check
+  - Lines 524-531: ExecuteDoubleDipAsync() with ActivateLifelineIcon call
+  - Lines 645-665: CompleteDoubleDip() with standby reset
+  - Lines 680-704: HandleAskTheHostAnswerAsync() with standby reset
+  
+- `MillionaireGame/Services/ScreenUpdateService.cs` - Screen coordination (~406 lines)
+  - Lines 155-177: ShowQuestion() with screen-specific icon visibility logic
+  
+- `MillionaireGame/Graphics/TextureManager.cs` - Texture loading system (187 lines)
+- `MillionaireGame/Graphics/ScalableScreenBase.cs` - Base class for scalable screens (215 lines)
+- `MillionaireGame/Services/SoundService.cs` - Audio playback
+- `MillionaireGame/Helpers/IconHelper.cs` - UI resource loading
+
+### Configuration Files
+- `MillionaireGame/lib/config.xml` - Application settings
+- `MillionaireGame/lib/sql.xml` - Database connection settings
+- `MillionaireGame/lib/tree.xml` - Money tree configuration
+
+### Documentation
+- `src/README.md` - Main documentation
+- `src/CHANGELOG.md` - Version history
+- `src/DEVELOPMENT_CHECKPOINT.md` - This file
+- `src/ARCHIVE.md` - Historical session details (v0.2-v0.3)
+
+---
+
+## Notes for Future Developer (or Future Me)
+
+### Code Style Conventions
+- Use async/await for all I/O operations
+- Prefer nullable reference types (enable warnings)
+- Use event-driven patterns for UI updates
+- Keep business logic in Core library
+- XML documentation for public APIs
+
+### Testing Strategies
+- Manual testing with debug mode enabled (`--debug` flag)
+- Console.WriteLine statements for debugging (wrapped in Program.DebugMode checks)
+- Test with actual database and sound files
+- Verify all screen states simultaneously
+
+### Common Pitfalls
+- Remember to reset `_answerRevealStep` for Q6+ Lights Down
+- Milestone checks need `>=` not `>` (Q5 is level 4, Q10 is level 9)
+- Audio file paths are relative to executable directory
+- Closing button must cancel all active timers
+- Timer guards essential for multi-stage lifelines (PAF, ATA)
+- Always check cooldown before processing lifeline clicks
+
+### VB.NET → C# Translation Tips
+- VB `Handles` → C# event subscription in constructor
+- VB `Dim` → C# `var` or explicit type
+- VB `Module` → C# `static class`
+- VB `Optional` parameters → C# default parameters
+- VB `ByRef` → C# `ref` or `out`
+
+---
+
+## Migration Strategy from VB.NET
+
+### Completed Migrations (v0.4-2512)
+1. ✅ Core models and game logic
+2. ✅ All 6 lifelines with complete icon system (50:50, PAF, ATA, STQ, DD, ATH)
+3. ✅ Settings management and persistence
+4. ✅ Database layer and Question Editor
+5. ✅ Control Panel UI with full game flow
+6. ✅ All screen implementations (Host, Guest, TV, Preview)
+7. ✅ Sound engine and audio playback
+8. ✅ Money Tree graphical rendering system
+9. ✅ Safety Net lock-in animation
+10. ✅ Screen synchronization and coordination
+11. ✅ Console management system
+
+### Remaining VB.NET Features to Migrate
+See **Pre-v1.0 TODO List** above for prioritized remaining work.
+
+---
+
+## Resources
+
+### Documentation
+- [Original VB.NET README](../README.md)
+- [C# README](README.md)
+- [CHANGELOG](CHANGELOG.md)
+- [ARCHIVE](ARCHIVE.md) - Historical session details
+
+### External Dependencies
+- .NET 8.0 SDK
+- NAudio 2.2.1 (audio playback)
+- System.Data.SqlClient 4.8.6 (database)
+
+### Useful Links
+- **C# Repository** (Current): https://github.com/Macronair/TheMillionaireGame
+  - Branch: master-csharp
+- **Original VB.NET Repository**: https://github.com/Macronair/TheMillionaireGame
+  - Branch: master (VB.NET version)
+
+---
+
+**End of Checkpoint - v0.4-2512**
 - ✅ **Timer Implementation**
   - Two-phase timer: Intro (120 seconds), Voting (60 seconds)
   - Position: Upper-left below PAF (50, 220), Size: 300x150
