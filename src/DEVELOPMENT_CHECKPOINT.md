@@ -595,7 +595,59 @@
 
 ## Next Steps (Immediate Priority)
 
-### Screen Money Tree Visualization
+### PAF and ATA Screen Visual Effects
+**Status**: IN PROGRESS - Current Session Target  
+**Priority**: Immediate  
+**Goal**: Implement visual timer and results display for PAF and ATA lifelines on all screens
+
+**Implementation Plan**:
+
+1. **Phone a Friend (PAF) Visual System**
+   - Add ShowPAFTimer(int secondsRemaining, PAFStage stage) to IGameScreen interface
+   - Display "Calling..." text during CallingIntro stage
+   - Show 30-second countdown timer during CountingDown stage
+   - Format: "XX" large digital display
+   - Color coding: Blue (intro), Red (countdown), Grey (completed)
+   - Position: Center or top-center of screen
+   
+2. **Ask the Audience (ATA) Visual System**
+   - Add ShowATATimer(int secondsRemaining, ATAStage stage) to IGameScreen interface
+   - Display timer for intro (120s) and voting (60s) stages
+   - Add ShowATAResults(Dictionary<string, int> percentages) to IGameScreen interface
+   - Animated horizontal bar chart showing A/B/C/D percentages
+   - Color coding per answer: A (red), B (blue), C (orange), D (green)
+   - Smooth animation when results update
+   
+3. **ScreenUpdateService Integration**
+   - Add UpdatePAFTimer(int seconds, PAFStage stage) broadcast method
+   - Add UpdateATATimer(int seconds, ATAStage stage) broadcast method
+   - Add UpdateATAResults(Dictionary<string, int> percentages) broadcast method
+   - Coordinate with LifelineManager timer tick events
+   
+4. **LifelineManager Event Integration**
+   - PAF timer tick: Broadcast seconds remaining to all screens
+   - ATA timer tick: Broadcast seconds remaining to all screens
+   - ATA results: Broadcast percentage data when available
+   - Stage transitions: Update screen displays appropriately
+
+**Files to Modify**:
+- `Services/ScreenUpdateService.cs` - Add new broadcast methods and interface methods
+- `Services/LifelineManager.cs` - Add screen update calls during timer ticks
+- `Forms/HostScreenForm.cs` - Implement PAF/ATA visual rendering
+- `Forms/GuestScreenForm.cs` - Implement PAF/ATA visual rendering
+- `Forms/TVScreenForm.cs` - Implement PAF/ATA visual rendering
+- `Forms/TVScreenFormScalable.cs` - Implement PAF/ATA visual rendering
+
+**Testing Checklist**:
+- [ ] PAF timer displays correctly on all screens
+- [ ] PAF stage transitions (blue → red → grey) work correctly
+- [ ] ATA timer displays correctly for both intro and voting stages
+- [ ] ATA results bar chart displays with correct percentages
+- [ ] All screens synchronized (Host, Guest, TV, Preview)
+- [ ] Visual elements don't overlap with question/answers
+- [ ] Timer countdown smooth without flicker
+
+### Money Tree Remaining Animations
 **Status**: ✅ COMPLETED (December 21, 2025)  
 **Priority**: High  
 **Implementation Summary**:
@@ -650,6 +702,33 @@
 
 ## Future Enhancements
 
+### Immediate Priority (Next 1-2 Sessions)
+
+#### PAF and ATA Screen Visual Effects
+**Status**: Pending  
+**Priority**: Immediate (Current Session Target)  
+**Implementation Plan**:
+- **Phone a Friend (PAF)**:
+  - Display countdown timer on all screens
+  - Show "Calling..." status during intro
+  - Visual countdown (30 seconds) with progress indicator
+  - Sound synchronized with visual state changes
+  
+- **Ask the Audience (ATA)**:
+  - Display timer on all screens (2min intro, 1min voting)
+  - Show voting results as percentage bars (A/B/C/D)
+  - Animated bar chart display
+  - Real-time result updates (if voting system integrated)
+
+**Required Changes**:
+- Add timer display methods to IGameScreen interface
+- Implement DrawPAFTimer() and DrawATAResults() in all screen forms
+- Update ScreenUpdateService with new broadcast methods
+- Coordinate with LifelineManager timer events
+- Test visual synchronization across all screens
+
+**Estimated Complexity**: Medium (3-4 hours)
+
 ### High Priority
 
 #### 1. Switch the Question (STQ) Lifeline
@@ -694,59 +773,62 @@
 ### Medium Priority
 
 #### 3. Double Dip Lifeline
-**Status**: Not implemented  
+**Status**: ✅ COMPLETED (December 22, 2025)  
 **Original VB.NET Location**: `Het DJG Toernooi/Source_Scripts/Lifelines/`  
-**Implementation Plan**:
-- Allow two answer attempts for current question
-- First wrong answer doesn't end game
-- Second wrong answer follows normal wrong answer logic
-- Disable other lifelines during Double Dip
-- Visual indicator showing "attempts remaining"
+**Implementation Summary**:
+- ✅ Two answer attempts for current question
+- ✅ First wrong answer: Shows red, plays sound, removes from screens, disables button
+- ✅ First wrong answer re-enables remaining buttons for second selection
+- ✅ Second wrong answer follows normal wrong answer logic
+- ✅ DoubleDipStage enum tracking: NotStarted, FirstAttempt, SecondAttempt, Completed
+- ✅ HandleDoubleDipRevealAsync() integrated with RevealAnswer
+- ✅ Sound: doubledip_start.mp3 (bed), doubledip_final1.mp3 (first wrong)
+- ✅ Dramatic reveal flow using Reveal button for suspense
 
-**Required Changes**:
-- `ControlPanelForm.cs`: Add Double Dip button and logic
-- `GameService.cs`: Track Double Dip state and attempt count
-- Answer selection logic: Check if first or second attempt
-- Screen updates: Show attempt indicator
-
-**Estimated Complexity**: Medium (3-4 hours)
+**Files Modified**:
+- `Services/LifelineManager.cs`: ExecuteDoubleDipAsync, HandleDoubleDipRevealAsync
+- `Forms/ControlPanelForm.cs`: DD logic in SelectAnswer and RevealAnswer
+- `Services/SoundService.cs`: DD sound effects
+- All screen implementations: RemoveAnswer method
 
 #### 4. Ask the Host Lifeline
-**Status**: Not implemented  
+**Status**: ✅ COMPLETED (December 22, 2025)  
 **Original VB.NET Location**: `Het DJG Toernooi/Source_Scripts/Lifelines/`  
-**Implementation Plan**:
-- Host gives their opinion on correct answer
-- Free-form text input or answer selection
-- Display host's choice to contestant
-- No time limit (host controls when to reveal)
+**Implementation Summary**:
+- ✅ ATH lifeline flow: Click button → disable (blue), play host_bed.mp3 (looped)
+- ✅ Player selects answer → stop bed, play host_end.mp3, mark used
+- ✅ ATHStage enum: NotStarted, Active, Completed
+- ✅ HandleAskTheHostAnswerAsync() integrated into SelectAnswer flow
+- ✅ "Show Correct Answer to Host" checkbox disabled when ATH is configured
+- ✅ Sound effect: host_bed.mp3 (looped), host_end.mp3
 
-**Required Changes**:
-- `ControlPanelForm.cs`: Add Ask Host button and input dialog
-- `ScreenUpdateService.cs`: Show host's opinion on screens
-- Sound effect for Ask the Host activation
-
-**Estimated Complexity**: Low (2-3 hours)
+**Files Modified**:
+- `Services/LifelineManager.cs`: ExecuteAskTheHostAsync, HandleAskTheHostAnswerAsync
+- `Forms/ControlPanelForm.cs`: ATH integration, checkbox control
+- `Services/SoundService.cs`: ATH sound effects
 
 #### 5. Enhanced Screen Transitions
-**Status**: Basic implementation exists, needs polish  
+**Status**: ✅ COMPLETED (December 21-22, 2025)  
 **Original VB.NET Location**: Various screen forms  
-**Implementation Plan**:
-- Fade in/out effects for question changes
-- Animated prize ladder highlights
-- Lifeline activation animations
-- Winner celebration effects
+**Implementation Summary**:
+- ✅ Progressive answer reveal animations
+- ✅ Money tree graphical overlay system with position highlights
+- ✅ Money tree demo animation (500ms intervals, 15 levels)
+- ✅ Safety net lock-in flash animation (400ms, 6 flashes, with sound)
+- ✅ Lifeline activation visual feedback (button color changes)
+- ✅ Timer-based animation system using Windows Forms Timer
+- ✅ Synchronized updates across all screens via ScreenUpdateService
 
-**Required Changes**:
-- WinForms animation helpers
-- Timer-based fade effects
-- Image/color transition utilities
+**Remaining**:
+- ⚠️ Wrong answer fall animation
+- ⚠️ Walk away highlight animation  
+- ⚠️ Win Q15 celebration animation
 
-**Estimated Complexity**: Medium (4-5 hours)
-
-### Low Priority
+### Low Priority (Pre-v1.0)
 
 #### 6. Game Statistics and Reporting
 **Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
 **Implementation Plan**:
 - Track game history (winners, walkaways, wrong answers)
 - Question usage statistics
@@ -763,6 +845,7 @@
 
 #### 7. Customizable Themes
 **Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
 **Implementation Plan**:
 - Multiple color schemes
 - Custom background images
@@ -776,6 +859,133 @@
 - Persist theme settings in config.xml
 
 **Estimated Complexity**: Medium-High (6-8 hours)
+
+#### 8. Broadcasting Integration
+**Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
+**Goal**: Enable streaming and broadcast platform compatibility
+- OBS Studio integration for scene management
+- Virtual camera output for streaming software
+- Direct streaming protocol support
+- Chroma key/green screen support for TV screen output
+- NDI (Network Device Interface) output support
+- Custom RTMP streaming capabilities
+
+**Use Cases**:
+- Live streaming to Twitch, YouTube, Facebook Gaming
+- Professional production with multi-camera setups
+- Recording and playback capabilities
+- Picture-in-picture contestant view
+
+**Estimated Complexity**: High (10-15 hours)
+
+#### 9. Stream Deck Integration
+**Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
+**Goal**: Hardware control panel for game show production
+- Elgato Stream Deck plugin development
+- Button mapping for core game functions:
+  - Question reveal (progressive A→B→C→D)
+  - Answer selection (A/B/C/D buttons)
+  - Lifeline activation
+  - Lights down / New question
+  - Show/hide screens
+- Custom button icons matching game branding
+- LED feedback for button states (active/disabled)
+- Profile switching for different game modes
+- Macro support for common sequences
+
+**Technical Requirements**:
+- Stream Deck SDK integration
+- WebSocket/HTTP API for external control
+- Real-time state synchronization
+- Button state feedback system
+
+**Estimated Complexity**: High (12-16 hours)
+
+#### 10. Web-Based Mobile Integration
+**Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
+**Goal**: Replace standalone FFF client with unified web-based system
+- Mobile-responsive web interface
+- Real-time WebSocket communication
+- Cross-platform support (iOS, Android, desktop browsers)
+
+**Features**:
+- **FFF (Fastest Finger First) Participant System**
+  - Mobile device registration via QR code or URL
+  - Real-time question display
+  - Answer submission with timing
+  - Results display
+  - Contestant queue management
+  
+- **ATA (Ask the Audience) Voting**
+  - Anonymous voting via mobile devices
+  - Real-time vote aggregation
+  - Results visualization
+  - Vote percentage display
+
+- **Game Control Dashboard**
+  - Web-based control panel alternative
+  - Read-only spectator view
+  - Admin controls via web interface
+
+**Architecture**:
+- ASP.NET Core web server
+- SignalR for real-time communication
+- Progressive Web App (PWA) capabilities
+- Offline-capable service workers
+- Mobile-first responsive design
+
+**Benefits**:
+- No client installation required
+- Unified codebase (deprecate separate FFF client)
+- Cross-platform compatibility (Mac, Linux, mobile)
+- Easier updates and maintenance
+- Lower barrier to entry for participants
+
+**Estimated Complexity**: Very High (20-30 hours)
+
+#### 11. QR Code Display System
+**Status**: Not implemented  
+**Priority**: Pre-v1.0 Feature  
+**Goal**: Seamless audience participation via mobile devices
+- Dynamic QR code generation
+- TV screen display integration
+- Broadcast-safe QR code positioning
+
+**Features**:
+- **Context-Aware Display**
+  - Show during FFF mode: "Join Fastest Finger First"
+  - Show during ATA lifeline: "Vote Now - Ask the Audience"
+  - Auto-hide when not needed
+  
+- **Connection Management**
+  - Unique session codes for each game
+  - Device registration tracking
+  - Connection status indicators
+  - Automatic reconnection handling
+
+- **Display Options**:
+  - Corner overlay on TV screen
+  - Full-screen display mode
+  - Customizable positioning and size
+  - Branding/styling options
+
+**Technical Implementation**:
+- QR code library integration (QRCoder or ZXing.Net)
+- Local network hosting (mDNS/Bonjour discovery)
+- Public URL support (ngrok, cloudflare tunnel)
+- SSL/TLS for secure connections
+- Session management and security
+
+**Integration Points**:
+- TVScreenForm overlay rendering
+- Broadcast output composition
+- Web server URL management
+- Network configuration UI
+
+**Estimated Complexity**: Medium-High (8-12 hours)
 
 ---
 
@@ -807,11 +1017,14 @@
 ## Technical Debt & Known Issues
 
 ### Current Limitations
-1. **STQ Lifeline**: Not yet implemented
+1. **PAF/ATA Screen Effects**: Timer display and visual effects not yet implemented on screens
 2. **FFF Networking**: Guest client exists but no server implementation
-3. **Double Dip/Ask Host**: Not implemented
-4. **Screen animations**: Basic, could be enhanced
-5. **Error handling**: Could be more robust in some areas
+3. **Wrong answer animations**: Fall animation not yet implemented
+4. **Walk away animation**: Highlight animation not yet implemented  
+5. **Win Q15 animation**: Celebration animation not yet implemented
+6. **Broadcasting**: No OBS/streaming integration yet
+7. **Mobile web interface**: Not yet implemented
+8. **Stream Deck**: Hardware control not yet implemented
 
 ### Performance Considerations
 - Sound file loading is synchronous (could be optimized with caching)
@@ -839,22 +1052,36 @@
 6. ✅ Screen implementations (Host, Guest, TV)
 7. ✅ Sound engine (SoundService)
 8. ✅ Question Editor (QuestionEditorMainForm)
-9. ✅ Three lifelines: 50:50, PAF, ATA
+9. ✅ Six lifelines: 50:50, PAF, ATA, STQ, Double Dip, Ask the Host
+10. ✅ Money Tree graphical rendering system
+11. ✅ Safety Net lock-in animation
+12. ✅ Screen synchronization (ScreenUpdateService)
+13. ✅ Settings dialog with full configuration
+14. ✅ Preview screen system
+15. ✅ Console management system
 
 ### Remaining VB.NET Files to Review
 
 #### High Priority
-- `Source_Scripts/Lifelines/` - STQ, Double Dip, Ask Host implementations
-- `Windows/Fastest Finger First/` - FFF server and networking logic
+- `Windows/Fastest Finger First/` - FFF server and networking logic (not yet implemented)
 
 #### Medium Priority
 - `Source_Scripts/Classes/` - Any utility classes not yet ported
-- `Windows/General/` - Additional dialogs and utilities
-- `Source_Scripts/DatabaseAndSettings/` - Any missing database utilities
+- `Windows/General/` - Additional dialogs and utilities (most core features migrated)
+- `Source_Scripts/DatabaseAndSettings/` - Database utilities (mostly migrated)
 
 #### Low Priority
-- `Resources/` - Additional resource files
+- `Resources/` - Additional resource files (graphics/sounds mostly migrated)
 - `Test/` - Test forms and utilities
+
+#### Completed VB.NET Migrations
+- ✅ `Source_Scripts/Lifelines/` - All lifeline implementations (50:50, PAF, ATA, STQ, DD, ATH)
+- ✅ Core gameplay flow and game state management
+- ✅ Screen rendering system (Host, Guest, TV)
+- ✅ Sound engine and audio playback
+- ✅ Question database and editor
+- ✅ Settings management and persistence
+- ✅ Money tree graphical system
 
 ### Migration Approach
 1. **Identify**: Review VB.NET source for specific feature
