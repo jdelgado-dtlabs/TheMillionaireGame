@@ -111,6 +111,32 @@ public partial class TVScreenForm : Form, IGameScreen
         // For now, this is a no-op as answers are shown by default on TV screen
     }
 
+    public void RemoveAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => RemoveAnswer(answer)));
+            return;
+        }
+
+        // Hide the specified answer - used for Double Dip first wrong attempt
+        switch (answer)
+        {
+            case "A":
+                lblAnswerA.Visible = false;
+                break;
+            case "B":
+                lblAnswerB.Visible = false;
+                break;
+            case "C":
+                lblAnswerC.Visible = false;
+                break;
+            case "D":
+                lblAnswerD.Visible = false;
+                break;
+        }
+    }
+
     public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         // TV screen does nothing - this is host-only
@@ -215,6 +241,12 @@ public partial class TVScreenForm : Form, IGameScreen
         pnlATA.Visible = false;
         ResetAnswerColors();
         StopFlashing();
+        
+        // Restore all answer visibility (for Double Dip)
+        lblAnswerA.Visible = true;
+        lblAnswerB.Visible = true;
+        lblAnswerC.Visible = true;
+        lblAnswerD.Visible = true;
     }
 
     public void ClearQuestionAndAnswerText()

@@ -507,7 +507,6 @@ public class SoundService : IDisposable
         TryRegister(SoundEffect.LifelineATHEnd, "ATHEnd", "host_end");
         TryRegister(SoundEffect.LifelineDoubleDipStart, "DoubleDipStart", "doubledip_start");
         TryRegister(SoundEffect.LifelineDoubleDipFirst, "DoubleDipFirst", "doubledip_first");
-        TryRegister(SoundEffect.LifelineDoubleDipSecond, "DoubleDipSecond", "doubledip_second");
         
         // Safety Net
         TryRegister(SoundEffect.SetSafetyNet, "SetSafetyNet", "set_safety_net");
@@ -573,6 +572,5 @@ public enum SoundEffect
     LifelineATHEnd,
     LifelineDoubleDipStart,
     LifelineDoubleDipFirst,
-    LifelineDoubleDipSecond,
     SetSafetyNet
 }

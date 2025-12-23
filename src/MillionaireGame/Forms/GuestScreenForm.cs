@@ -478,6 +478,19 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         Invalidate();
     }
 
+    public void RemoveAnswer(string answer)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => RemoveAnswer(answer)));
+            return;
+        }
+
+        // Remove the answer from visible list - used for Double Dip first wrong attempt
+        _visibleAnswers.Remove(answer);
+        Invalidate();
+    }
+
     public void ShowCorrectAnswerToHost(string? correctAnswer)
     {
         // Guest screen doesn't show correct answer to host

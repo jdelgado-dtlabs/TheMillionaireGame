@@ -57,7 +57,6 @@
     <Sound Key="ATHEnd" File="host_end.mp3" />
     <Sound Key="DoubleDipStart" File="doubledip_start.mp3" />
     <Sound Key="DoubleDipFirst" File="doubledip_final1.mp3" />
-    <Sound Key="DoubleDipSecond" File="doubledip_final2.mp3" />
     
     <!-- Question Lights Down Sounds -->
     <Sound Key="Q01to05LightsDown" File="q1_to_q5_lights_down.mp3" />

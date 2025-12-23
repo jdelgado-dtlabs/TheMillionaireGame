@@ -90,6 +90,17 @@ public class ScreenUpdateService
     }
 
     /// <summary>
+    /// Remove (hide) an answer from all screens - used for Double Dip wrong first attempt
+    /// </summary>
+    public void RemoveAnswer(string answer)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.RemoveAnswer(answer);
+        }
+    }
+
+    /// <summary>
     /// Show the correct answer to the host screen only
     /// </summary>
     public void ShowCorrectAnswerToHost(string? correctAnswer)
@@ -214,6 +225,7 @@ public interface IGameScreen
     void SelectAnswer(string answer);
     void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect);
     void ShowAnswer(string answer);
+    void RemoveAnswer(string answer);
     void ShowCorrectAnswerToHost(string? correctAnswer);
     void ShowQuestion(bool show);
     void ShowWinnings(GameState state);

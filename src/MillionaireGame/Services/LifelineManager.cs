@@ -125,8 +125,9 @@ public class LifelineManager
         _gameService.UseLifeline(lifeline.Type);
         ButtonStateChanged?.Invoke(buttonNumber, Color.Gray, false);
         
-        // Play lifeline sound
-        await PlayLifelineSoundAsync(SoundEffect.Lifeline5050);
+        // Play lifeline sound without stopping bed music
+        _soundService.PlaySound(SoundEffect.Lifeline5050);
+        await Task.Delay(100); // Small delay for sound to register
         
         // Remove two wrong answers
         if (string.IsNullOrEmpty(correctAnswer)) return;
@@ -144,8 +145,11 @@ public class LifelineManager
             wrongAnswers.RemoveAt(indexToRemove);
             removedAnswers.Add(answerToRemove);
             
-            // Request answer removal via event
+            // Request button disable on control panel
             RequestAnswerRemoval?.Invoke(answerToRemove, "");
+            
+            // Remove answer from all screens
+            _screenService.RemoveAnswer(answerToRemove);
         }
         
         LogMessage?.Invoke($"[Lifeline] 50:50 removed answers: {string.Join(", ", removedAnswers)}");
@@ -435,75 +439,64 @@ public class LifelineManager
     }
     
     /// <summary>
-    /// Handle answer selection during Double Dip
+    /// Handle reveal during Double Dip - called by RevealAnswer
     /// </summary>
-    public async Task<bool> HandleDoubleDipAnswerAsync(string answer, string correctAnswer)
+    public async Task<DoubleDipRevealResult> HandleDoubleDipRevealAsync(string answer, string correctAnswer, bool isCorrect)
     {
         if (_doubleDipStage == DoubleDipStage.NotStarted)
-            return false; // Not in DD mode
+            return DoubleDipRevealResult.NotActive; // Not in DD mode
         
         if (_doubleDipStage == DoubleDipStage.FirstAttempt)
         {
             _doubleDipFirstAnswer = answer;
             
-            if (answer == correctAnswer)
+            if (isCorrect)
             {
-                // First answer correct!
+                // First answer correct! Complete DD and proceed normally
                 LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is CORRECT!");
-                await CompleteDoubleDip(true);
-                return true; // Answer is correct, proceed with reveal
+                await CompleteDoubleDip();
+                return DoubleDipRevealResult.NotActive; // Proceed with normal reveal
             }
             else
             {
-                // First answer wrong, allow second attempt
-                LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is WRONG - second attempt allowed");
+                // First answer wrong - transition to second attempt
+                LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is WRONG - allowing second attempt");
                 _doubleDipStage = DoubleDipStage.SecondAttempt;
                 
-                // Play first attempt sound
+                // Stop DD start sound
                 _soundService.StopSound("dd_start");
-                _soundService.PlaySound(SoundEffect.LifelineDoubleDipFirst, "dd_first");
                 
                 LogMessage?.Invoke("[Lifeline] DD - Select your second answer");
-                return false; // Don't reveal yet, allow second attempt
+                return DoubleDipRevealResult.FirstAttemptWrong; // Special handling in RevealAnswer
             }
         }
         else if (_doubleDipStage == DoubleDipStage.SecondAttempt)
         {
-            if (answer == correctAnswer)
-            {
-                // Second answer correct!
-                LogMessage?.Invoke($"[Lifeline] DD Second answer '{answer}' is CORRECT!");
-                await CompleteDoubleDip(true);
-                return true; // Answer is correct, proceed with reveal
-            }
-            else
-            {
-                // Second answer also wrong - game over
-                LogMessage?.Invoke($"[Lifeline] DD Second answer '{answer}' is WRONG - both attempts failed!");
-                await CompleteDoubleDip(false);
-                return true; // Reveal wrong answer
-            }
+            // Second attempt - complete DD regardless of correct/wrong
+            LogMessage?.Invoke($"[Lifeline] DD Second answer '{answer}' - {(isCorrect ? "CORRECT" : "WRONG")}");
+            await CompleteDoubleDip();
+            return DoubleDipRevealResult.NotActive; // Proceed with normal reveal (correct or wrong)
         }
         
-        return false;
+        return DoubleDipRevealResult.NotActive;
     }
     
-    private async Task CompleteDoubleDip(bool success)
+    private async Task CompleteDoubleDip()
     {
-        // Play second attempt sound
+        // Stop DD sounds
+        _soundService.StopSound("dd_start");
         _soundService.StopSound("dd_first");
         await Task.Delay(100);
-        _soundService.PlaySound(SoundEffect.LifelineDoubleDipSecond);
         
         // Mark as used
         _gameService.UseLifeline(LifelineType.DoubleDip);
         
-        // Disable button
+        // Disable button (grey)
         ButtonStateChanged?.Invoke(_doubleDipLifelineButtonNumber, Color.Gray, false);
         
         _doubleDipStage = DoubleDipStage.Completed;
         
-        LogMessage?.Invoke($"[Lifeline] DD completed - {(success ? "SUCCESS" : "FAILED")}");
+        LogMessage?.Invoke("[Lifeline] DD completed");
     }
     
     /// <summary>
@@ -643,6 +636,16 @@ public enum DoubleDipStage
     FirstAttempt,
     SecondAttempt,
     Completed
+}
+
+/// <summary>
+/// Result of Double Dip reveal handling
+/// </summary>
+public enum DoubleDipRevealResult
+{
+    NotActive,
+    FirstAttemptWrong,
+    SecondAttempt
 }
 
 /// <summary>

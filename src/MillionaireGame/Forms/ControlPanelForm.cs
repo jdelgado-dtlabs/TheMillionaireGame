@@ -216,13 +216,25 @@ public partial class ControlPanelForm : Form
     
     private void OnLifelineRequestAnswerRemoval(string answer, string unused)
     {
-        // Remove answer text for 50:50
+        // Disable and grey out button on control panel for 50:50
         switch (answer)
         {
-            case "A": txtA.Text = ""; break;
-            case "B": txtB.Text = ""; break;
-            case "C": txtC.Text = ""; break;
-            case "D": txtD.Text = ""; break;
+            case "A":
+                btnA.Enabled = false;
+                btnA.BackColor = Color.Gray;
+                break;
+            case "B":
+                btnB.Enabled = false;
+                btnB.BackColor = Color.Gray;
+                break;
+            case "C":
+                btnC.Enabled = false;
+                btnC.BackColor = Color.Gray;
+                break;
+            case "D":
+                btnD.Enabled = false;
+                btnD.BackColor = Color.Gray;
+                break;
         }
     }
     
@@ -720,12 +732,20 @@ public partial class ControlPanelForm : Form
             // Enable answer buttons now that a question is loaded and set to orange
             btnA.Enabled = true;
             btnA.BackColor = Color.DarkOrange;
+            btnA.Visible = true;
+            txtA.Visible = true;
             btnB.Enabled = true;
             btnB.BackColor = Color.DarkOrange;
+            btnB.Visible = true;
+            txtB.Visible = true;
             btnC.Enabled = true;
             btnC.BackColor = Color.DarkOrange;
+            btnC.Visible = true;
+            txtC.Visible = true;
             btnD.Enabled = true;
             btnD.BackColor = Color.DarkOrange;
+            btnD.Visible = true;
+            txtD.Visible = true;
 
             // Mark question as used
             await _questionRepository.MarkQuestionAsUsedAsync(question.Id);
@@ -2046,32 +2066,7 @@ public partial class ControlPanelForm : Form
             }
         }
         
-        // Check if Double Dip is active
-        if (_lifelineManager != null)
-        {
-            bool ddHandled = await _lifelineManager.HandleDoubleDipAnswerAsync(answer, lblAnswer.Text);
-            if (ddHandled)
-            {
-                // DD handled this answer (either correct or second wrong attempt)
-                // Continue with normal answer selection flow
-            }
-            else
-            {
-                // DD is in first attempt and answer was wrong - don't lock in yet
-                // Just highlight the wrong answer and wait for second attempt
-                ResetAnswerColors();
-                switch (answer)
-                {
-                    case "A": txtA.BackColor = Color.Red; break;
-                    case "B": txtB.BackColor = Color.Red; break;
-                    case "C": txtC.BackColor = Color.Red; break;
-                    case "D": txtD.BackColor = Color.Red; break;
-                }
-                
-                // Keep answer buttons enabled for second attempt
-                return; // Don't proceed with final answer logic
-            }
-        }
+        // For Double Dip, just proceed with normal selection - DD logic handled in Reveal
         
         ResetAnswerColors();
         _currentAnswer = answer;
@@ -2408,8 +2403,91 @@ public partial class ControlPanelForm : Form
         _currentLightsDownIdentifier = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
     }
 
-    private void RevealAnswer(bool isCorrect)
+    private async void RevealAnswer(bool isCorrect)
     {
+        // Check if Double Dip is active - handle DD logic before normal reveal
+        if (_lifelineManager != null)
+        {
+            var ddResult = await _lifelineManager.HandleDoubleDipRevealAsync(_currentAnswer, lblAnswer.Text, isCorrect);
+            if (ddResult == DoubleDipRevealResult.FirstAttemptWrong)
+            {
+                // First DD attempt was wrong - remove from screens, disable button, wait for second
+                // Show wrong answer on control panel briefly
+                switch (_currentAnswer)
+                {
+                    case "A": txtA.BackColor = Color.Red; break;
+                    case "B": txtB.BackColor = Color.Red; break;
+                    case "C": txtC.BackColor = Color.Red; break;
+                    case "D": txtD.BackColor = Color.Red; break;
+                }
+                
+                // Play DD first wrong attempt sound
+                _soundService.PlaySound(SoundEffect.LifelineDoubleDipFirst, "dd_first");
+                
+                // Remove from screens (not control panel)
+                _screenService.RemoveAnswer(_currentAnswer);
+                
+                // Wait a moment for dramatic effect
+                await Task.Delay(1500);
+                
+                // Disable the wrong answer button on control panel
+                switch (_currentAnswer)
+                {
+                    case "A": 
+                        btnA.Enabled = false;
+                        btnA.BackColor = Color.Gray;
+                        break;
+                    case "B": 
+                        btnB.Enabled = false;
+                        btnB.BackColor = Color.Gray;
+                        break;
+                    case "C": 
+                        btnC.Enabled = false;
+                        btnC.BackColor = Color.Gray;
+                        break;
+                    case "D": 
+                        btnD.Enabled = false;
+                        btnD.BackColor = Color.Gray;
+                        break;
+                }
+                
+                // Reset answer colors for second attempt
+                ResetAnswerColors();
+                
+                // Re-enable remaining answer buttons for second attempt (that aren't the wrong one)
+                if (_currentAnswer != "A" && !btnA.Enabled) 
+                { 
+                    btnA.Enabled = true;
+                    btnA.BackColor = Color.DarkOrange; 
+                }
+                if (_currentAnswer != "B" && !btnB.Enabled) 
+                { 
+                    btnB.Enabled = true;
+                    btnB.BackColor = Color.DarkOrange; 
+                }
+                if (_currentAnswer != "C" && !btnC.Enabled) 
+                { 
+                    btnC.Enabled = true;
+                    btnC.BackColor = Color.DarkOrange; 
+                }
+                if (_currentAnswer != "D" && !btnD.Enabled) 
+                { 
+                    btnD.Enabled = true;
+                    btnD.BackColor = Color.DarkOrange; 
+                }
+                
+                // Disable Reveal button - wait for second answer
+                btnReveal.Enabled = false;
+                btnReveal.BackColor = Color.Gray;
+                
+                // Clear current answer for second attempt
+                _currentAnswer = string.Empty;
+                
+                return; // Don't proceed with normal reveal
+            }
+            // If ddResult is SecondAttempt or NotActive, proceed with normal reveal
+        }
+        
         if (isCorrect)
         {
             // Correct answer
