@@ -3,6 +3,7 @@ using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Controls;
 using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Graphics;
 
 namespace MillionaireGame.Forms;
 
@@ -282,6 +283,30 @@ public partial class TVScreenForm : Form, IGameScreen
         // ATA timer not implemented for the old TVScreenForm
         // This form is being phased out in favor of TVScreenFormScalable
         // No-op implementation to satisfy interface
+    }
+    
+    public void ShowLifelineIcons()
+    {
+        // Lifeline icons not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void HideLifelineIcons()
+    {
+        // Lifeline icons not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state)
+    {
+        // Lifeline icons not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+    }
+    
+    public void ClearLifelineIcons()
+    {
+        // Lifeline icons not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
     }
 
     #endregion

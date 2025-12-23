@@ -3,6 +3,7 @@ using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Graphics;
 
 namespace MillionaireGame.Forms;
 
@@ -37,6 +38,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private bool _showATATimer = false;
     private int _ataSecondsRemaining = 0;
     private string _ataStage = "";
+    
+    // Lifeline icon display
+    private bool _showLifelineIcons = false;
+    private Dictionary<int, LifelineIconState> _lifelineStates = new();
+    private Dictionary<int, LifelineType> _lifelineTypes = new();
 
     // Design-time coordinates (based on 1920x1080, positioned in lower third)
     // Backgrounds are fully edge-to-edge (0 margins)
@@ -138,6 +144,12 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         if (_showATATimer)
         {
             DrawATATimer(g);
+        }
+        
+        // Draw lifeline icons if visible
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
         }
     }
 
@@ -509,6 +521,37 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         DrawScaledText(g, displayText, font, textBrush,
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
     }
+    
+    private void DrawLifelineIcons(System.Drawing.Graphics g)
+    {
+        // Design-time coordinates (1920x1080)
+        // Position: Above question strap (846, 36), spacing 82px
+        float baseX = 846;
+        float baseY = 36;
+        float spacing = 82;
+        float iconWidth = 72;  // Slightly smaller for TV screen
+        float iconHeight = 44;
+        
+        // Draw up to 4 lifeline icons
+        for (int i = 1; i <= 4; i++)
+        {
+            if (!_lifelineTypes.ContainsKey(i) || !_lifelineStates.ContainsKey(i))
+                continue;
+                
+            var type = _lifelineTypes[i];
+            var state = _lifelineStates[i];
+            
+            if (state == LifelineIconState.Hidden)
+                continue;
+            
+            var icon = LifelineIcons.GetLifelineIcon(type, state);
+            if (icon != null)
+            {
+                float x = baseX + ((i - 1) * spacing);
+                DrawScaledImage(g, icon, x, baseY, iconWidth, iconHeight);
+            }
+        }
+    }
 
     /// <summary>
     /// Draw text with automatic wrapping to specified max lines and auto-scaling if text is too large
@@ -862,4 +905,56 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         // TV screen doesn't need this - it's only for host/guest screens
     }
+    
+    public void ShowLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ShowLifelineIcons));
+            return;
+        }
+        
+        _showLifelineIcons = true;
+        Invalidate();
+    }
+    
+    public void HideLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(HideLifelineIcons));
+            return;
+        }
+        
+        _showLifelineIcons = false;
+        Invalidate();
+    }
+    
+    public void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
+            return;
+        }
+        
+        _lifelineTypes[lifelineNumber] = type;
+        _lifelineStates[lifelineNumber] = state;
+        Invalidate();
+    }
+    
+    public void ClearLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ClearLifelineIcons));
+            return;
+        }
+        
+        _lifelineTypes.Clear();
+        _lifelineStates.Clear();
+        _showLifelineIcons = false;
+        Invalidate();
+    }
 }
+

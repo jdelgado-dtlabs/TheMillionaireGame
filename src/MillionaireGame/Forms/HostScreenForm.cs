@@ -3,6 +3,7 @@ using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Graphics;
 
 namespace MillionaireGame.Forms;
 
@@ -32,6 +33,11 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private bool _showATATimer = false;
     private int _ataSecondsRemaining = 0;
     private string _ataStage = "";
+    
+    // Lifeline icon display
+    private bool _showLifelineIcons = false;
+    private Dictionary<int, LifelineIconState> _lifelineStates = new();
+    private Dictionary<int, LifelineType> _lifelineTypes = new();
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
     // Question in upper part of lower third
@@ -148,6 +154,12 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         if (_showATATimer)
         {
             DrawATATimer(g);
+        }
+        
+        // Draw lifeline icons if visible
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
         }
     }
 
@@ -550,6 +562,37 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         DrawScaledText(g, displayText, font, textBrush,
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
     }
+    
+    private void DrawLifelineIcons(System.Drawing.Graphics g)
+    {
+        // Design-time coordinates (1920x1080)
+        // Position: Upper right area (849, 18), spacing 138px, size 129x78
+        float baseX = 849;
+        float baseY = 18;
+        float spacing = 138;
+        float iconWidth = 129;
+        float iconHeight = 78;
+        
+        // Draw up to 4 lifeline icons
+        for (int i = 1; i <= 4; i++)
+        {
+            if (!_lifelineTypes.ContainsKey(i) || !_lifelineStates.ContainsKey(i))
+                continue;
+                
+            var type = _lifelineTypes[i];
+            var state = _lifelineStates[i];
+            
+            if (state == LifelineIconState.Hidden)
+                continue;
+            
+            var icon = LifelineIcons.GetLifelineIcon(type, state);
+            if (icon != null)
+            {
+                float x = baseX + ((i - 1) * spacing);
+                DrawScaledImage(g, icon, x, baseY, iconWidth, iconHeight);
+            }
+        }
+    }
 
     // IGameScreen implementation
     public void UpdateQuestion(Question question)
@@ -782,4 +825,56 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         _visibleAnswers.Clear();
         Invalidate();
     }
+    
+    public void ShowLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ShowLifelineIcons));
+            return;
+        }
+        
+        _showLifelineIcons = true;
+        Invalidate();
+    }
+    
+    public void HideLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(HideLifelineIcons));
+            return;
+        }
+        
+        _showLifelineIcons = false;
+        Invalidate();
+    }
+    
+    public void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
+            return;
+        }
+        
+        _lifelineTypes[lifelineNumber] = type;
+        _lifelineStates[lifelineNumber] = state;
+        Invalidate();
+    }
+    
+    public void ClearLifelineIcons()
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(ClearLifelineIcons));
+            return;
+        }
+        
+        _lifelineTypes.Clear();
+        _lifelineStates.Clear();
+        _showLifelineIcons = false;
+        Invalidate();
+    }
 }
+

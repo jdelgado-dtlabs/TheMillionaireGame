@@ -1,6 +1,7 @@
 using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Graphics;
 using System.Drawing;
 
 namespace MillionaireGame.Services;
@@ -36,6 +37,11 @@ public class LifelineManager
     // Ask the Host state tracking
     private ATHStage _athStage = ATHStage.NotStarted;
     private int _athLifelineButtonNumber = 0;
+    
+    // Lifeline icon ping animation state
+    private System.Windows.Forms.Timer? _pingTimer;
+    private int _currentPingLifelineNumber = 0;
+    private LifelineType _currentPingLifelineType = LifelineType.None;
     
     // Events for UI updates
     public event Action<int, Color, bool>? ButtonStateChanged; // buttonNumber, color, enabled
@@ -682,6 +688,55 @@ public class LifelineManager
         _doubleDipFirstAnswer = "";
         _athStage = ATHStage.NotStarted;
         _athLifelineButtonNumber = 0;
+    }
+    
+    #endregion
+    
+    #region Lifeline Icon Ping Animation
+    
+    /// <summary>
+    /// Ping a lifeline icon (turn yellow/bling for 2 seconds)
+    /// </summary>
+    public void PingLifelineIcon(int lifelineNumber, LifelineType type)
+    {
+        LogMessage?.Invoke($"[LifelineManager] Pinging lifeline {lifelineNumber} ({type})");
+        
+        // Set icon to bling state
+        _screenService.SetLifelineIcon(lifelineNumber, type, LifelineIconState.Bling);
+        
+        // Start timer to return to normal after 2 seconds
+        _currentPingLifelineNumber = lifelineNumber;
+        _currentPingLifelineType = type;
+        _pingTimer?.Stop();
+        _pingTimer = new System.Windows.Forms.Timer();
+        _pingTimer.Interval = 2000; // 2 seconds
+        _pingTimer.Tick += PingTimer_Tick;
+        _pingTimer.Start();
+        
+        // Play ping sound based on lifeline number
+        SoundEffect soundEffect = lifelineNumber switch
+        {
+            1 => SoundEffect.LifelinePing1,
+            2 => SoundEffect.LifelinePing2,
+            3 => SoundEffect.LifelinePing3,
+            4 => SoundEffect.LifelinePing4,
+            _ => SoundEffect.LifelinePing1
+        };
+        _soundService.PlaySound(soundEffect);
+    }
+    
+    private void PingTimer_Tick(object? sender, EventArgs e)
+    {
+        _pingTimer?.Stop();
+        
+        // Return icon to normal state
+        if (_currentPingLifelineNumber > 0 && _currentPingLifelineType != LifelineType.None)
+        {
+            _screenService.SetLifelineIcon(_currentPingLifelineNumber, _currentPingLifelineType, LifelineIconState.Normal);
+        }
+        
+        _currentPingLifelineNumber = 0;
+        _currentPingLifelineType = LifelineType.None;
     }
     
     #endregion

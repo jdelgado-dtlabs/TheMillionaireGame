@@ -1,5 +1,6 @@
 using MillionaireGame.Core.Models;
 using MillionaireGame.Forms;
+using MillionaireGame.Core.Graphics;
 
 namespace MillionaireGame.Services;
 
@@ -157,6 +158,16 @@ public class ScreenUpdateService
         {
             screen.ShowQuestion(show);
         }
+        
+        // Show lifeline icons when question is shown, hide when question is hidden
+        if (show)
+        {
+            ShowLifelineIcons();
+        }
+        else
+        {
+            HideLifelineIcons();
+        }
     }
 
     /// <summary>
@@ -168,6 +179,9 @@ public class ScreenUpdateService
         {
             screen.ShowWinnings(state);
         }
+        
+        // Hide lifeline icons when winnings are shown
+        HideLifelineIcons();
     }
 
     /// <summary>
@@ -187,6 +201,9 @@ public class ScreenUpdateService
                 screen.ShowWinnings(new GameState { CurrentValue = amount });
             }
         }
+        
+        // Hide lifeline icons when winnings are shown
+        HideLifelineIcons();
     }
 
     /// <summary>
@@ -239,6 +256,9 @@ public class ScreenUpdateService
         {
             screen.ResetScreen();
         }
+        
+        // Clear lifeline icons on reset
+        ClearLifelineIcons();
     }
 
     /// <summary>
@@ -249,6 +269,50 @@ public class ScreenUpdateService
         foreach (var screen in _registeredScreens)
         {
             screen.ClearQuestionAndAnswerText();
+        }
+    }
+    
+    /// <summary>
+    /// Show lifeline icons on all screens
+    /// </summary>
+    public void ShowLifelineIcons()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowLifelineIcons();
+        }
+    }
+    
+    /// <summary>
+    /// Hide lifeline icons on all screens
+    /// </summary>
+    public void HideLifelineIcons()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.HideLifelineIcons();
+        }
+    }
+    
+    /// <summary>
+    /// Set a lifeline icon state on all screens
+    /// </summary>
+    public void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.SetLifelineIcon(lifelineNumber, type, state);
+        }
+    }
+    
+    /// <summary>
+    /// Clear all lifeline icons on all screens
+    /// </summary>
+    public void ClearLifelineIcons()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ClearLifelineIcons();
         }
     }
 }
@@ -274,6 +338,10 @@ public interface IGameScreen
     void ShowPAFTimer(int secondsRemaining, string stage);
     void ShowATATimer(int secondsRemaining, string stage);
     void ShowATAResults(Dictionary<string, int> votes);
+    void ShowLifelineIcons();
+    void HideLifelineIcons();
+    void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state);
+    void ClearLifelineIcons();
 }
 
 #region Event Args
