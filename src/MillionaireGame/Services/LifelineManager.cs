@@ -375,7 +375,7 @@ public class LifelineManager
         // Play the lifeline sound
         if (loop && key != null)
         {
-            _soundService.PlaySoundLooped(effect, key);
+            _soundService.PlaySound(effect, key, loop: true);
         }
         else if (key != null)
         {
@@ -396,6 +396,28 @@ public class LifelineManager
         _pafTimer?.Dispose();
         _ataTimer?.Stop();
         _ataTimer?.Dispose();
+    }
+    
+    /// <summary>
+    /// Resets all lifeline state to initial values
+    /// </summary>
+    public void Reset()
+    {
+        // Stop and dispose timers
+        _pafTimer?.Stop();
+        _pafTimer?.Dispose();
+        _pafTimer = null;
+        _ataTimer?.Stop();
+        _ataTimer?.Dispose();
+        _ataTimer = null;
+        
+        // Reset state fields
+        _pafStage = PAFStage.NotStarted;
+        _pafLifelineButtonNumber = 0;
+        _pafSecondsRemaining = 30;
+        _ataStage = ATAStage.NotStarted;
+        _ataLifelineButtonNumber = 0;
+        _ataSecondsRemaining = 120;
     }
     
     #endregion

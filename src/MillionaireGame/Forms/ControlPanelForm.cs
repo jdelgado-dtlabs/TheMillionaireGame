@@ -1298,13 +1298,7 @@ public partial class ControlPanelForm : Form
             _soundService.StopAllSounds();
             
             // Clean up all timers
-            _pafTimer?.Stop();
-            _pafTimer?.Dispose();
-            _pafTimer = null;
-            
-            _ataTimer?.Stop();
-            _ataTimer?.Dispose();
-            _ataTimer = null;
+            _lifelineManager?.Reset();
             
             _closingTimer?.Stop();
             _closingTimer?.Dispose();
@@ -1327,21 +1321,8 @@ public partial class ControlPanelForm : Form
         {
             _soundService.StopAllSounds();
             
-            // Reset PAF state
-            _pafTimer?.Stop();
-            _pafTimer?.Dispose();
-            _pafTimer = null;
-            _pafStage = PAFStage.NotStarted;
-            _pafLifelineNumber = 0;
-            _pafSecondsRemaining = 30;
-            
-            // Reset ATA state
-            _ataTimer?.Stop();
-            _ataTimer?.Dispose();
-            _ataTimer = null;
-            _ataStage = ATAStage.NotStarted;
-            _ataLifelineNumber = 0;
-            _ataSecondsRemaining = 120;
+            // Reset lifeline state
+            _lifelineManager?.Reset();
             
             // Reset closing timer
             _closingTimer?.Stop();
@@ -1483,76 +1464,6 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    private void HandleLifelineClick(int lifelineNumber, Button button)
-    {
-        // Demo mode - just show on screens and play numbered ping
-        if (_lifelineMode == LifelineMode.Demo)
-        {
-            var pingSound = lifelineNumber switch
-            {
-                1 => SoundEffect.LifelinePing1,
-                2 => SoundEffect.LifelinePing2,
-                3 => SoundEffect.LifelinePing3,
-                4 => SoundEffect.LifelinePing4,
-                _ => SoundEffect.LifelinePing1
-            };
-            _soundService.PlaySound(pingSound);
-            
-            var lifelineTypeName = GetLifelineTypeFromSettings(lifelineNumber) switch
-            {
-                Core.Models.LifelineType.FiftyFifty => "50:50",
-                Core.Models.LifelineType.PlusOne => "Phone a Friend",
-                Core.Models.LifelineType.AskTheAudience => "Ask the Audience",
-                Core.Models.LifelineType.SwitchQuestion => "Switch Question",
-                _ => "Unknown"
-            };
-            
-            MessageBox.Show($"Lifeline {lifelineNumber} ({lifelineTypeName}) demonstrated on screens", "Demo Mode", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        // Active mode - check if this is PAF or ATA and handle multi-stage behavior
-        var type = GetLifelineTypeFromSettings(lifelineNumber);
-        
-        if (type == Core.Models.LifelineType.PlusOne && _pafStage != PAFStage.NotStarted)
-        {
-            HandlePAFStageClick(button);
-            return;
-        }
-        
-        if (type == Core.Models.LifelineType.AskTheAudience && _ataStage != ATAStage.NotStarted)
-        {
-            HandleATAStageClick(button);
-            return;
-        }
-        
-        var lifeline = _gameService.State.GetLifeline(type);
-        
-        if (lifeline == null || lifeline.IsUsed)
-        {
-            MessageBox.Show($"This lifeline has already been used!", "Lifeline Used", 
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        // Execute lifeline based on type
-        switch (type)
-        {
-            case Core.Models.LifelineType.FiftyFifty:
-                ExecuteFiftyFifty(lifeline, button);
-                break;
-            case Core.Models.LifelineType.PlusOne:
-                _pafLifelineNumber = lifelineNumber;
-                ExecutePhoneFriend(lifeline, button);
-                break;
-            case Core.Models.LifelineType.AskTheAudience:
-                _ataLifelineNumber = lifelineNumber;
-                ExecuteAskAudience(lifeline, button);
-                break;
-        }
-    }
-
     private async Task HandleLifelineClickAsync(int lifelineNumber, Button button)
     {
         if (_lifelineManager == null) return;
@@ -1605,420 +1516,6 @@ public partial class ControlPanelForm : Form
 
         // Execute lifeline via manager
         await _lifelineManager.ExecuteLifelineAsync(type, lifelineNumber, lblAnswer.Text);
-    }
-
-    private async void ExecuteFiftyFifty(Core.Models.Lifeline lifeline, Button button)
-    {
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] 50:50 activated");
-        }
-        
-        _gameService.UseLifeline(lifeline.Type);
-        button.Enabled = false;
-        button.BackColor = Color.Gray;
-
-        // Play lifeline sound (stops background audio, waits 500ms, then plays)
-        await PlayLifelineSoundAsync(SoundEffect.Lifeline5050);
-
-        // Remove two wrong answers
-        if (string.IsNullOrEmpty(lblAnswer.Text)) return;
-
-        var wrongAnswers = new List<string> { "A", "B", "C", "D" };
-        wrongAnswers.Remove(lblAnswer.Text);
-
-        // Randomly select 2 wrong answers to remove
-        var random = new Random();
-        var removedAnswers = new List<string>();
-        for (int i = 0; i < 2; i++)
-        {
-            var indexToRemove = random.Next(wrongAnswers.Count);
-            var answerToRemove = wrongAnswers[indexToRemove];
-            wrongAnswers.RemoveAt(indexToRemove);
-            removedAnswers.Add(answerToRemove);
-
-            // Clear the answer text
-            switch (answerToRemove)
-            {
-                case "A": txtA.Text = ""; break;
-                case "B": txtB.Text = ""; break;
-                case "C": txtC.Text = ""; break;
-                case "D": txtD.Text = ""; break;
-            }
-        }
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine($"[Lifeline] 50:50 removed answers: {string.Join(", ", removedAnswers)}");
-            Console.WriteLine($"[Lifeline] 50:50 correct answer is: {lblAnswer.Text}");
-        }
-
-        _screenService.ActivateLifeline(lifeline);
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] 50:50 completed and displayed on screens");
-        }
-    }
-
-    private async void ExecutePhoneFriend(Core.Models.Lifeline lifeline, Button button)
-    {
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] Phone a Friend (PAF) activated - Stage 1: Calling intro");
-        }
-        
-        // Stage 1: Start intro/calling sequence
-        _pafStage = PAFStage.CallingIntro;
-        button.BackColor = Color.Blue;
-        
-        // Play intro sound on loop (stops background audio, waits 500ms, then plays)
-        await PlayLifelineSoundAsync(SoundEffect.LifelinePAFStart, "paf_intro", loop: true);
-        
-        _screenService.ActivateLifeline(lifeline);
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] PAF intro sound playing (looped) - waiting for host to start countdown");
-        }
-    }
-    
-    private void HandlePAFStageClick(Button button)
-    {
-        switch (_pafStage)
-        {
-            case PAFStage.CallingIntro:
-                if (Program.DebugMode)
-                {
-                    Console.WriteLine("[Lifeline] PAF Stage 2: Starting 30-second countdown");
-                }
-                
-                // Stage 2: Stop intro, start countdown
-                _soundService.StopSound("paf_intro");
-                _pafStage = PAFStage.CountingDown;
-                button.BackColor = Color.Red;
-                
-                // Play countdown sound once
-                _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
-                
-                // Start 30-second timer
-                _pafSecondsRemaining = 30;
-                _pafTimer = new System.Windows.Forms.Timer();
-                _pafTimer.Interval = 1000; // 1 second
-                _pafTimer.Tick += PAFTimer_Tick;
-                _pafTimer.Start();
-                break;
-                
-            case PAFStage.CountingDown:
-                // Stage 3b: Early end
-                if (Program.DebugMode)
-                {
-                    Console.WriteLine("[Lifeline] PAF ending early (manual)");
-                }
-                EndPAFEarly(button);
-                break;
-                
-            case PAFStage.Completed:
-                // Already complete, do nothing
-                break;
-        }
-    }
-    
-    private void PAFTimer_Tick(object? sender, EventArgs e)
-    {
-        _pafSecondsRemaining--;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine($"[PAF] Countdown: {_pafSecondsRemaining} seconds remaining");
-        }
-        
-        if (_pafSecondsRemaining <= 0)
-        {
-            // Stage 3a: Time's up - complete PAF
-            CompletePAF();
-        }
-    }
-    
-    private void EndPAFEarly(Button button)
-    {
-        // Stop countdown timer
-        _pafTimer?.Stop();
-        _pafTimer?.Dispose();
-        _pafTimer = null;
-        
-        // Stop countdown sound if still playing
-        _soundService.StopSound("paf_countdown");
-        
-        // Play early end sound
-        _soundService.PlaySound(SoundEffect.LifelinePAFEndEarly);
-        
-        // Mark as completed
-        CompletePAF();
-    }
-    
-    private void CompletePAF()
-    {
-        // Stop timer if running
-        _pafTimer?.Stop();
-        _pafTimer?.Dispose();
-        _pafTimer = null;
-        
-        // Mark PAF as used in game state
-        _gameService.UseLifeline(Core.Models.LifelineType.PlusOne);
-        
-        // Update button state
-        var button = GetPAFButton();
-        if (button != null)
-        {
-            button.BackColor = Color.Gray;
-            button.Enabled = false;
-        }
-        
-        _pafStage = PAFStage.Completed;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] PAF completed and marked as used");
-        }
-    }
-    
-    private Button? GetPAFButton()
-    {
-        return _pafLifelineNumber switch
-        {
-            1 => btnLifeline1,
-            2 => btnLifeline2,
-            3 => btnLifeline3,
-            4 => btnLifeline4,
-            _ => null
-        };
-    }
-
-    private void OldExecutePhoneFriend_Unused(Core.Models.Lifeline lifeline, Button button)
-    {
-        _gameService.UseLifeline(lifeline.Type);
-        button.Enabled = false;
-        button.BackColor = Color.Gray;
-
-        // Play lifeline sound
-        _soundService.PlaySound(SoundEffect.LifelinePhone);
-
-        // Show a simple dialog for phone a friend
-        MessageBox.Show(
-            $"Your friend suggests answer: {lblAnswer.Text}\n\nThey are fairly confident about this.",
-            "Phone a Friend",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
-
-        _screenService.ActivateLifeline(lifeline);
-    }
-
-    private async void ExecuteAskAudience(Core.Models.Lifeline lifeline, Button button)
-    {
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] Ask the Audience (ATA) activated - Stage 1: Intro (120 seconds)");
-        }
-        
-        // Stage 1: Start intro/explanation (2 minutes)
-        _ataStage = ATAStage.Intro;
-        button.BackColor = Color.Blue;
-        
-        // Play intro sound (stops background audio, waits 500ms, then plays)
-        await PlayLifelineSoundAsync(SoundEffect.LifelineATAStart, "ata_intro");
-        
-        // Start 2-minute timer
-        _ataSecondsRemaining = 120;
-        _ataTimer = new System.Windows.Forms.Timer();
-        _ataTimer.Interval = 1000; // 1 second
-        _ataTimer.Tick += ATATimer_Tick;
-        _ataTimer.Start();
-        
-        _screenService.ActivateLifeline(lifeline);
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] ATA displayed on screens - intro timer started");
-        }
-    }
-    
-    private void HandleATAStageClick(Button button)
-    {
-        switch (_ataStage)
-        {
-            case ATAStage.Intro:
-                // Stage 2: Start voting (1 minute)
-                StartATAVoting(button);
-                break;
-                
-            case ATAStage.Voting:
-                // End voting early
-                CompleteATA();
-                break;
-                
-            case ATAStage.Completed:
-                // Already complete, do nothing
-                break;
-        }
-    }
-    
-    private void ATATimer_Tick(object? sender, EventArgs e)
-    {
-        _ataSecondsRemaining--;
-        
-        if (Program.DebugMode)
-        {
-            var stageName = _ataStage == ATAStage.Intro ? "Intro" : "Voting";
-            Console.WriteLine($"[ATA] {stageName} Countdown: {_ataSecondsRemaining} seconds remaining");
-        }
-        
-        if (_ataSecondsRemaining <= 0)
-        {
-            if (_ataStage == ATAStage.Intro)
-            {
-                // Intro time elapsed - auto-start voting
-                var button = GetATAButton();
-                if (button != null)
-                {
-                    StartATAVoting(button);
-                }
-            }
-            else if (_ataStage == ATAStage.Voting)
-            {
-                // Voting complete
-                CompleteATA();
-            }
-        }
-    }
-    
-    private async void StartATAVoting(Button button)
-    {
-        // Stop and dispose the 2-minute intro timer
-        _ataTimer?.Stop();
-        _ataTimer?.Dispose();
-        _ataTimer = null;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[ATA] Intro stage ended, starting voting stage");
-        }
-        
-        // Change to voting stage
-        _ataStage = ATAStage.Voting;
-        button.BackColor = Color.Red;
-        button.Enabled = true; // Keep clickable to end vote early
-        
-        // Play voting sound once with identifier, wait 500ms for overlap, then stop intro
-        _soundService.PlaySound(SoundEffect.LifelineATAVote, "ata_vote");
-        await Task.Delay(500);
-        _soundService.StopSound("ata_intro");
-        
-        // Start 1-minute voting timer
-        _ataSecondsRemaining = 60;
-        _ataTimer = new System.Windows.Forms.Timer();
-        _ataTimer.Interval = 1000;
-        _ataTimer.Tick += ATATimer_Tick;
-        _ataTimer.Start();
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[ATA] Voting timer started - 60 seconds");
-        }
-    }
-    
-    private async void CompleteATA()
-    {
-        // Stop timer
-        _ataTimer?.Stop();
-        _ataTimer?.Dispose();
-        _ataTimer = null;
-        
-        // Play end sound, wait 500ms for overlap, then stop any playing ATA sounds
-        _soundService.PlaySound(SoundEffect.LifelineATAEnd);
-        await Task.Delay(500);
-        _soundService.StopSound("ata_intro");
-        _soundService.StopSound("ata_vote");
-        
-        // Mark as used
-        _gameService.UseLifeline(Core.Models.LifelineType.AskTheAudience);
-        
-        // Update button to grey and disabled
-        var button = GetATAButton();
-        if (button != null)
-        {
-            button.BackColor = Color.Gray;
-            button.Enabled = false;
-        }
-        
-        _ataStage = ATAStage.Completed;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[ATA] Completed and marked as used");
-        }
-    }
-    
-    private Button? GetATAButton()
-    {
-        return _ataLifelineNumber switch
-        {
-            1 => btnLifeline1,
-            2 => btnLifeline2,
-            3 => btnLifeline3,
-            4 => btnLifeline4,
-            _ => null
-        };
-    }
-
-    private void OldExecuteAskAudience_Unused(Core.Models.Lifeline lifeline, Button button)
-    {
-        _gameService.UseLifeline(lifeline.Type);
-        button.Enabled = false;
-        button.BackColor = Color.Gray;
-
-        // Play lifeline sound
-        _soundService.PlaySound(SoundEffect.LifelineATA);
-
-        // Broadcast to screens to show ATA results
-        _screenService.ActivateLifeline(lifeline);
-
-        MessageBox.Show("Ask the Audience results are now displayed on the screens.",
-            "Ask the Audience", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    private async Task ExecuteSwitchQuestion(Core.Models.Lifeline lifeline, Button button)
-    {
-        var currentQuestionNumber = (int)nmrLevel.Value + 1;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine($"[Lifeline] Switch the Question (STQ) activated at Q{currentQuestionNumber}");
-        }
-        
-        // Show activation on screens immediately (visual feedback)
-        _screenService.ActivateLifeline(lifeline);
-        
-        // No dialog box (host asks "Is that your final answer?" before user clicks)
-        // No lifeline sound (will use correct/loss sound for question level)
-        
-        // Mark lifeline as used and disable button
-        _gameService.UseLifeline(lifeline.Type);
-        button.Enabled = false;
-        button.BackColor = Color.Gray;
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine($"[Lifeline] STQ loading new question at same difficulty level (Q{currentQuestionNumber})");
-        }
-
-        // Load a new question at same difficulty level
-        await LoadNewQuestion();
-        
-        if (Program.DebugMode)
-        {
-            Console.WriteLine("[Lifeline] STQ completed - new question loaded");
-        }
     }
 
     private async void btnHostIntro_Click(object? sender, EventArgs e)
@@ -2338,12 +1835,7 @@ public partial class ControlPanelForm : Form
         _soundService.StopAllSounds();
         
         // Stop and dispose all timers
-        _pafTimer?.Stop();
-        _pafTimer?.Dispose();
-        _pafTimer = null;
-        _ataTimer?.Stop();
-        _ataTimer?.Dispose();
-        _ataTimer = null;
+        _lifelineManager?.Reset();
         _moneyTreeDemoTimer?.Stop();
         _moneyTreeDemoTimer?.Dispose();
         _moneyTreeDemoTimer = null;
@@ -2355,12 +1847,6 @@ public partial class ControlPanelForm : Form
         _closingTimer = null;
         
         // Reset all state
-        _pafStage = PAFStage.NotStarted;
-        _pafLifelineNumber = 0;
-        _pafSecondsRemaining = 30;
-        _ataStage = ATAStage.NotStarted;
-        _ataLifelineNumber = 0;
-        _ataSecondsRemaining = 120;
         _isMoneyTreeDemoActive = false;
         _moneyTreeDemoLevel = 0;
         _isExplainGameActive = false;
@@ -2420,12 +1906,7 @@ public partial class ControlPanelForm : Form
         _soundService.StopAllSounds();
         
         // Stop and dispose all timers
-        _pafTimer?.Stop();
-        _pafTimer?.Dispose();
-        _pafTimer = null;
-        _ataTimer?.Stop();
-        _ataTimer?.Dispose();
-        _ataTimer = null;
+        _lifelineManager?.Reset();
         _moneyTreeDemoTimer?.Stop();
         _moneyTreeDemoTimer?.Dispose();
         _moneyTreeDemoTimer = null;
@@ -2434,12 +1915,6 @@ public partial class ControlPanelForm : Form
         _safetyNetAnimationTimer = null;
         
         // Reset round state
-        _pafStage = PAFStage.NotStarted;
-        _pafLifelineNumber = 0;
-        _pafSecondsRemaining = 30;
-        _ataStage = ATAStage.NotStarted;
-        _ataLifelineNumber = 0;
-        _ataSecondsRemaining = 120;
         _isMoneyTreeDemoActive = false;
         _moneyTreeDemoLevel = 0;
         _isExplainGameActive = false;
