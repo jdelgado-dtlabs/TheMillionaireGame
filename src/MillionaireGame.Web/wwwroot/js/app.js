@@ -1,7 +1,7 @@
 /**
  * Who Wants to be a Millionaire
  * Audience Participation System
- * Version: 0.6-2512
+ * Version: 0.6.2-2512 (Privacy & Session Management)
  */
 
 // ============================================================================
@@ -12,7 +12,15 @@ const STORAGE_KEYS = {
     PARTICIPANT_ID: 'waps_participant_id',
     SESSION_ID: 'waps_session_id',
     DISPLAY_NAME: 'waps_display_name',
-    AUTO_SESSION_ID: 'waps_auto_session_id'
+    AUTO_SESSION_ID: 'waps_auto_session_id',
+    SESSION_TIMESTAMP: 'waps_session_timestamp'
+};
+
+// Session Management Configuration
+const SESSION_CONFIG = {
+    maxSessionDuration: 4 * 60 * 60 * 1000, // 4 hours (typical show duration)
+    warningBeforeExpiry: 15 * 60 * 1000,    // 15 minutes warning
+    checkInterval: 60 * 1000                 // Check every minute
 };
 
 // ============================================================================
@@ -23,6 +31,8 @@ let connection = null;
 let currentSessionId = null;
 let currentParticipantId = null;
 let currentDisplayName = null;
+let sessionExpiryTimer = null;
+let sessionWarningShown = false;
 
 // ATA Voting State
 let ataTimerInterval = null;
@@ -142,6 +152,9 @@ async function joinSession(sessionId, displayName, participantId = null) {
         currentParticipantId = result.participantId;
         currentDisplayName = result.displayName;
         saveSessionInfo(currentSessionId, currentParticipantId, currentDisplayName);
+
+        // Start session expiry timer for privacy/security
+        startSessionExpiryTimer();
 
         // Update UI
         document.getElementById('displaySessionId').textContent = currentSessionId;
@@ -451,10 +464,7 @@ function setupEventListeners() {
         if (connection) {
             await connection.stop();
         }
-        clearSessionInfo();
-        currentSessionId = null;
-        currentParticipantId = null;
-        currentDisplayName = null;
+        clearSessionData();
         showScreen('joinScreen');
     });
 
@@ -466,3 +476,139 @@ function setupEventListeners() {
         });
     });
 }
+
+// ============================================================================
+// Privacy & Session Management
+// ============================================================================
+
+/**
+ * Clear all session data and cached information for privacy
+ */
+function clearSessionData() {
+    console.log("Clearing all session data for privacy...");
+    
+    // Clear state variables
+    currentSessionId = null;
+    currentParticipantId = null;
+    currentDisplayName = null;
+    sessionWarningShown = false;
+    
+    // Clear all localStorage
+    Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+    });
+    
+    // Clear session storage as well
+    sessionStorage.clear();
+    
+    // Stop session expiry timer
+    if (sessionExpiryTimer) {
+        clearInterval(sessionExpiryTimer);
+        sessionExpiryTimer = null;
+    }
+    
+    console.log("✓ All session data cleared");
+}
+
+/**
+ * Start session expiry timer
+ */
+function startSessionExpiryTimer() {
+    // Clear any existing timer
+    if (sessionExpiryTimer) {
+        clearInterval(sessionExpiryTimer);
+    }
+    
+    // Store session start timestamp
+    const now = Date.now();
+    localStorage.setItem(STORAGE_KEYS.SESSION_TIMESTAMP, now.toString());
+    sessionWarningShown = false;
+    
+    // Check session expiry every minute
+    sessionExpiryTimer = setInterval(() => {
+        const sessionStart = parseInt(localStorage.getItem(STORAGE_KEYS.SESSION_TIMESTAMP) || '0');
+        const elapsed = Date.now() - sessionStart;
+        const remaining = SESSION_CONFIG.maxSessionDuration - elapsed;
+        
+        // Show warning 15 minutes before expiry
+        if (remaining <= SESSION_CONFIG.warningBeforeExpiry && !sessionWarningShown) {
+            sessionWarningShown = true;
+            const minutesLeft = Math.ceil(remaining / 60000);
+            showError(`Session will expire in ${minutesLeft} minutes. The show will end soon.`, 'warning');
+        }
+        
+        // Session expired - auto cleanup
+        if (remaining <= 0) {
+            console.log("Session expired - auto cleanup triggered");
+            clearInterval(sessionExpiryTimer);
+            sessionExpiryTimer = null;
+            
+            if (connection) {
+                connection.stop().catch(err => console.error("Error stopping connection:", err));
+            }
+            
+            showError('Your session has expired. Thank you for participating!', 'info');
+            
+            // Clear all data after 3 seconds
+            setTimeout(() => {
+                clearSessionData();
+                showScreen('joinScreen');
+            }, 3000);
+        }
+    }, SESSION_CONFIG.checkInterval);
+    
+    console.log(`Session expiry timer started (${SESSION_CONFIG.maxSessionDuration / 3600000} hours)`);
+}
+
+/**
+ * Clear cache and session data when window is closed/reloaded
+ */
+function setupCleanupHandlers() {
+    // Clear data on page unload
+    window.addEventListener('beforeunload', () => {
+        // If we're leaving the page (not just refreshing during active session),
+        // clear everything for privacy
+        if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+            clearSessionData();
+        }
+    });
+    
+    // Handle visibility change (user switches tabs/minimizes)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            console.log("Page hidden - maintaining session but ready for cleanup");
+        }
+    });
+    
+    // Handle page cache (bfcache) - force fresh load
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            console.log("Page restored from cache - forcing reload for fresh session");
+            window.location.reload();
+        }
+    });
+}
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+/**
+ * Initialize application on page load
+ */
+window.addEventListener('DOMContentLoaded', () => {
+    // Setup cleanup handlers for privacy/security
+    setupCleanupHandlers();
+    
+    // Pre-fill session code (hidden field) with auto-generated ID
+    const sessionCode = getSessionCode();
+    document.getElementById('sessionCode').value = sessionCode;
+
+    // Pre-fill display name if stored
+    const storedName = getStoredDisplayName();
+    if (storedName) {
+        document.getElementById('displayName').value = storedName;
+    }
+
+    // Auto-reconnect if we have stored session info
+    const storedParticipantId = getStoredParticipantId();

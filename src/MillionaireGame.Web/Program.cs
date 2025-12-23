@@ -73,6 +73,20 @@ app.UseForwardedHeaders();
 
 app.UseCors("AllowAll");
 
+// Add cache prevention headers for privacy/security
+app.Use(async (context, next) =>
+{
+    // Prevent caching of HTML, JS, and CSS files for ephemeral sessions
+    var path = context.Request.Path.Value?.ToLowerInvariant();
+    if (path != null && (path.EndsWith(".html") || path.EndsWith(".js") || path.EndsWith(".css") || path == "/"))
+    {
+        context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+    }
+    await next();
+});
+
 // Serve static files (wwwroot) - order matters!
 app.UseDefaultFiles();  // Must be before UseStaticFiles
 app.UseStaticFiles();
