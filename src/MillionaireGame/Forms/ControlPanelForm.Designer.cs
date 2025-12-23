@@ -659,7 +659,7 @@ namespace MillionaireGame.Forms
             btnLifeline1.FlatAppearance.BorderColor = Color.Black;
             btnLifeline1.FlatAppearance.BorderSize = 2;
             btnLifeline1.FlatStyle = FlatStyle.Flat;
-            btnLifeline1.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnLifeline1.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnLifeline1.Location = new Point(580, 300);
             btnLifeline1.Name = "btnLifeline1";
             btnLifeline1.Size = new Size(120, 40);

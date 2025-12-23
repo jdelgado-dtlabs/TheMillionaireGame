@@ -222,6 +222,8 @@ public partial class OptionsDialog : Form
             "plusone" => 1,
             "ata" => 2,
             "switch" => 3,
+            "ath" => 4,
+            "dd" => 5,
             _ => 0
         };
     }
@@ -234,6 +236,8 @@ public partial class OptionsDialog : Form
             1 => "plusone",
             2 => "ata",
             3 => "switch",
+            4 => "ath",
+            5 => "dd",
             _ => "5050"
         };
     }

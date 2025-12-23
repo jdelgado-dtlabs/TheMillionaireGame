@@ -503,6 +503,11 @@ public class SoundService : IDisposable
         TryRegister(SoundEffect.LifelineATAVote, "ATAVote", "ata_vote");
         TryRegister(SoundEffect.LifelineATAEnd, "ATAEnd", "ata_end");
         TryRegister(SoundEffect.LifelineSwitch, "SwitchActivate", "stq_start", "switch_activate");
+        TryRegister(SoundEffect.LifelineATHBed, "ATHBed", "host_bed");
+        TryRegister(SoundEffect.LifelineATHEnd, "ATHEnd", "host_end");
+        TryRegister(SoundEffect.LifelineDoubleDipStart, "DoubleDipStart", "doubledip_start");
+        TryRegister(SoundEffect.LifelineDoubleDipFirst, "DoubleDipFirst", "doubledip_first");
+        TryRegister(SoundEffect.LifelineDoubleDipSecond, "DoubleDipSecond", "doubledip_second");
         
         // Safety Net
         TryRegister(SoundEffect.SetSafetyNet, "SetSafetyNet", "set_safety_net");
@@ -564,5 +569,10 @@ public enum SoundEffect
     LifelineATAStart,
     LifelineATAVote,
     LifelineATAEnd,
+    LifelineATHBed,
+    LifelineATHEnd,
+    LifelineDoubleDipStart,
+    LifelineDoubleDipFirst,
+    LifelineDoubleDipSecond,
     SetSafetyNet
 }

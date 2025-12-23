@@ -30,12 +30,14 @@ public class GameService
 
     private void InitializeLifelines()
     {
-        // Initialize with default 4 lifelines
+        // Initialize with all 6 lifelines
         _lifelines.Clear();
         _lifelines.Add(new Lifeline { Type = LifelineType.FiftyFifty, Availability = LifelineAvailability.Always });
         _lifelines.Add(new Lifeline { Type = LifelineType.PlusOne, Availability = LifelineAvailability.Always });
         _lifelines.Add(new Lifeline { Type = LifelineType.AskTheAudience, Availability = LifelineAvailability.Always });
         _lifelines.Add(new Lifeline { Type = LifelineType.SwitchQuestion, Availability = LifelineAvailability.Always });
+        _lifelines.Add(new Lifeline { Type = LifelineType.AskTheHost, Availability = LifelineAvailability.Always });
+        _lifelines.Add(new Lifeline { Type = LifelineType.DoubleDip, Availability = LifelineAvailability.Always });
     }
 
     /// <summary>

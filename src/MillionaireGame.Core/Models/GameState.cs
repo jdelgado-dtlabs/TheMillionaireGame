@@ -34,6 +34,8 @@ public class GameState
         _lifelines[LifelineType.PlusOne] = new Lifeline { Type = LifelineType.PlusOne };
         _lifelines[LifelineType.AskTheAudience] = new Lifeline { Type = LifelineType.AskTheAudience };
         _lifelines[LifelineType.SwitchQuestion] = new Lifeline { Type = LifelineType.SwitchQuestion };
+        _lifelines[LifelineType.AskTheHost] = new Lifeline { Type = LifelineType.AskTheHost };
+        _lifelines[LifelineType.DoubleDip] = new Lifeline { Type = LifelineType.DoubleDip };
     }
 
     public Lifeline? GetLifeline(LifelineType type)

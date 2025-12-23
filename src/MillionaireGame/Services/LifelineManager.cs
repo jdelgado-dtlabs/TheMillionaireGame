@@ -26,6 +26,15 @@ public class LifelineManager
     private System.Windows.Forms.Timer? _ataTimer;
     private int _ataSecondsRemaining = 120;
     
+    // Double Dip state tracking
+    private DoubleDipStage _doubleDipStage = DoubleDipStage.NotStarted;
+    private int _doubleDipLifelineButtonNumber = 0;
+    private string _doubleDipFirstAnswer = "";
+    
+    // Ask the Host state tracking
+    private ATHStage _athStage = ATHStage.NotStarted;
+    private int _athLifelineButtonNumber = 0;
+    
     // Events for UI updates
     public event Action<int, Color, bool>? ButtonStateChanged; // buttonNumber, color, enabled
     public event Action<Func<Task>>? RequestAsyncOperation; // For operations that need to await
@@ -65,11 +74,17 @@ public class LifelineManager
             case LifelineType.SwitchQuestion:
                 await ExecuteSwitchQuestionAsync(lifeline, buttonNumber);
                 break;
+            case LifelineType.AskTheHost:
+                await ExecuteAskTheHostAsync(lifeline, buttonNumber, correctAnswer);
+                break;
+            case LifelineType.DoubleDip:
+                await ExecuteDoubleDipAsync(lifeline, buttonNumber);
+                break;
         }
     }
     
     /// <summary>
-    /// Handle multi-stage lifeline button clicks (PAF/ATA)
+    /// Handle multi-stage lifeline button clicks (PAF/ATA/DD/ATH)
     /// </summary>
     public void HandleMultiStageClick(LifelineType type, int buttonNumber)
     {
@@ -80,6 +95,9 @@ public class LifelineManager
                 break;
             case LifelineType.AskTheAudience when _ataStage != ATAStage.NotStarted:
                 HandleATAStageClick(buttonNumber);
+                break;
+            case LifelineType.DoubleDip when _doubleDipStage != DoubleDipStage.NotStarted:
+                HandleDoubleDipStageClick(buttonNumber);
                 break;
         }
     }
@@ -93,6 +111,7 @@ public class LifelineManager
         {
             LifelineType.PlusOne => _pafStage != PAFStage.NotStarted,
             LifelineType.AskTheAudience => _ataStage != ATAStage.NotStarted,
+            LifelineType.DoubleDip => _doubleDipStage != DoubleDipStage.NotStarted,
             _ => false
         };
     }
@@ -361,6 +380,161 @@ public class LifelineManager
         LogMessage?.Invoke("[Lifeline] STQ completed - new question loaded");
     }
     
+    private async Task ExecuteAskTheHostAsync(Lifeline lifeline, int buttonNumber, string correctAnswer)
+    {
+        var currentQuestionNumber = _gameService.State.CurrentLevel + 1;
+        
+        LogMessage?.Invoke($"[Lifeline] Ask the Host (ATH) activated at Q{currentQuestionNumber}");
+        
+        _athStage = ATHStage.Active;
+        _athLifelineButtonNumber = buttonNumber;
+        
+        // Play host bed music (looped)
+        await PlayLifelineSoundAsync(SoundEffect.LifelineATHBed, "ath_bed", loop: true);
+        
+        _screenService.ActivateLifeline(lifeline);
+        
+        // Disable button - ATH is now active until player selects an answer
+        ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, false);
+        
+        // Don't reveal the answer - let the host speak in the real game
+        LogMessage?.Invoke($"[Lifeline] ATH - Waiting for host response...");
+        LogMessage?.Invoke($"[Lifeline] ATH - Active, waiting for answer selection");
+        
+        // In real game, host would speak here
+        // When answer is selected, host_end will play and ATH completes
+    }
+    
+
+    
+    private async Task ExecuteDoubleDipAsync(Lifeline lifeline, int buttonNumber)
+    {
+        var currentQuestionNumber = _gameService.State.CurrentLevel + 1;
+        
+        LogMessage?.Invoke($"[Lifeline] Double Dip (DD) activated at Q{currentQuestionNumber}");
+        
+        _doubleDipStage = DoubleDipStage.FirstAttempt;
+        _doubleDipLifelineButtonNumber = buttonNumber;
+        
+        // Play double dip start sound
+        await PlayLifelineSoundAsync(SoundEffect.LifelineDoubleDipStart, "dd_start");
+        
+        _screenService.ActivateLifeline(lifeline);
+        
+        // Keep button enabled but change color to indicate active
+        ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
+        
+        LogMessage?.Invoke("[Lifeline] DD - Select your first answer");
+    }
+    
+    private void HandleDoubleDipStageClick(int buttonNumber)
+    {
+        // This is called when the DD button is clicked during an active DD session
+        // Not typically used - DD works through answer selection
+        LogMessage?.Invoke("[Lifeline] DD button clicked during active session");
+    }
+    
+    /// <summary>
+    /// Handle answer selection during Double Dip
+    /// </summary>
+    public async Task<bool> HandleDoubleDipAnswerAsync(string answer, string correctAnswer)
+    {
+        if (_doubleDipStage == DoubleDipStage.NotStarted)
+            return false; // Not in DD mode
+        
+        if (_doubleDipStage == DoubleDipStage.FirstAttempt)
+        {
+            _doubleDipFirstAnswer = answer;
+            
+            if (answer == correctAnswer)
+            {
+                // First answer correct!
+                LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is CORRECT!");
+                await CompleteDoubleDip(true);
+                return true; // Answer is correct, proceed with reveal
+            }
+            else
+            {
+                // First answer wrong, allow second attempt
+                LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is WRONG - second attempt allowed");
+                _doubleDipStage = DoubleDipStage.SecondAttempt;
+                
+                // Play first attempt sound
+                _soundService.StopSound("dd_start");
+                _soundService.PlaySound(SoundEffect.LifelineDoubleDipFirst, "dd_first");
+                
+                LogMessage?.Invoke("[Lifeline] DD - Select your second answer");
+                return false; // Don't reveal yet, allow second attempt
+            }
+        }
+        else if (_doubleDipStage == DoubleDipStage.SecondAttempt)
+        {
+            if (answer == correctAnswer)
+            {
+                // Second answer correct!
+                LogMessage?.Invoke($"[Lifeline] DD Second answer '{answer}' is CORRECT!");
+                await CompleteDoubleDip(true);
+                return true; // Answer is correct, proceed with reveal
+            }
+            else
+            {
+                // Second answer also wrong - game over
+                LogMessage?.Invoke($"[Lifeline] DD Second answer '{answer}' is WRONG - both attempts failed!");
+                await CompleteDoubleDip(false);
+                return true; // Reveal wrong answer
+            }
+        }
+        
+        return false;
+    }
+    
+    private async Task CompleteDoubleDip(bool success)
+    {
+        // Play second attempt sound
+        _soundService.StopSound("dd_first");
+        await Task.Delay(100);
+        _soundService.PlaySound(SoundEffect.LifelineDoubleDipSecond);
+        
+        // Mark as used
+        _gameService.UseLifeline(LifelineType.DoubleDip);
+        
+        // Disable button
+        ButtonStateChanged?.Invoke(_doubleDipLifelineButtonNumber, Color.Gray, false);
+        
+        _doubleDipStage = DoubleDipStage.Completed;
+        
+        LogMessage?.Invoke($"[Lifeline] DD completed - {(success ? "SUCCESS" : "FAILED")}");
+    }
+    
+    /// <summary>
+    /// Check if ATH is active, and if so, complete it when answer is selected
+    /// </summary>
+    public async Task<bool> HandleAskTheHostAnswerAsync()
+    {
+        if (_athStage == ATHStage.Active)
+        {
+            LogMessage?.Invoke("[Lifeline] ATH answer selected - completing ATH");
+            
+            // Stop bed music
+            _soundService.StopSound("ath_bed");
+            
+            // Play end sound
+            await Task.Delay(100);
+            _soundService.PlaySound(SoundEffect.LifelineATHEnd);
+            
+            // Mark as used
+            _gameService.UseLifeline(LifelineType.AskTheHost);
+            
+            // Button already disabled, just mark as completed
+            _athStage = ATHStage.Completed;
+            
+            LogMessage?.Invoke("[Lifeline] ATH completed");
+            return true;
+        }
+        
+        return false;
+    }
+
     #endregion
     
     #region Helper Methods
@@ -428,6 +602,11 @@ public class LifelineManager
         _ataStage = ATAStage.NotStarted;
         _ataLifelineButtonNumber = 0;
         _ataSecondsRemaining = 120;
+        _doubleDipStage = DoubleDipStage.NotStarted;
+        _doubleDipLifelineButtonNumber = 0;
+        _doubleDipFirstAnswer = "";
+        _athStage = ATHStage.NotStarted;
+        _athLifelineButtonNumber = 0;
     }
     
     #endregion
@@ -452,5 +631,26 @@ public enum ATAStage
     NotStarted,
     Intro,
     Voting,
+    Completed
+}
+
+/// <summary>
+/// Double Dip lifeline stages
+/// </summary>
+public enum DoubleDipStage
+{
+    NotStarted,
+    FirstAttempt,
+    SecondAttempt,
+    Completed
+}
+
+/// <summary>
+/// Ask the Host lifeline stages
+/// </summary>
+public enum ATHStage
+{
+    NotStarted,
+    Active,
     Completed
 }

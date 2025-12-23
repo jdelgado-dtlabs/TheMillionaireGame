@@ -1391,6 +1391,8 @@ public partial class ControlPanelForm : Form
             "plusone" => Core.Models.LifelineType.PlusOne,
             "ata" => Core.Models.LifelineType.AskTheAudience,
             "switch" => Core.Models.LifelineType.SwitchQuestion,
+            "ath" => Core.Models.LifelineType.AskTheHost,
+            "dd" => Core.Models.LifelineType.DoubleDip,
             _ => Core.Models.LifelineType.FiftyFifty
         };
     }
@@ -1404,6 +1406,8 @@ public partial class ControlPanelForm : Form
             Core.Models.LifelineType.PlusOne => "PAF",
             Core.Models.LifelineType.AskTheAudience => "ATA",
             Core.Models.LifelineType.SwitchQuestion => "Switch",
+            Core.Models.LifelineType.AskTheHost => "AskHost",
+            Core.Models.LifelineType.DoubleDip => "Double",
             _ => $"LL{lifelineNumber}"
         };
     }
@@ -1505,6 +1509,8 @@ public partial class ControlPanelForm : Form
                 Core.Models.LifelineType.PlusOne => "Phone a Friend",
                 Core.Models.LifelineType.AskTheAudience => "Ask the Audience",
                 Core.Models.LifelineType.SwitchQuestion => "Switch Question",
+                Core.Models.LifelineType.AskTheHost => "Ask the Host",
+                Core.Models.LifelineType.DoubleDip => "Double Dip",
                 _ => "Unknown"
             };
             
@@ -2029,6 +2035,44 @@ public partial class ControlPanelForm : Form
 
     private async void SelectAnswer(string answer)
     {
+        // Check if Ask the Host is active
+        if (_lifelineManager != null)
+        {
+            bool athActive = await _lifelineManager.HandleAskTheHostAnswerAsync();
+            if (athActive)
+            {
+                // ATH was active and is now completed
+                // Continue with normal answer selection
+            }
+        }
+        
+        // Check if Double Dip is active
+        if (_lifelineManager != null)
+        {
+            bool ddHandled = await _lifelineManager.HandleDoubleDipAnswerAsync(answer, lblAnswer.Text);
+            if (ddHandled)
+            {
+                // DD handled this answer (either correct or second wrong attempt)
+                // Continue with normal answer selection flow
+            }
+            else
+            {
+                // DD is in first attempt and answer was wrong - don't lock in yet
+                // Just highlight the wrong answer and wait for second attempt
+                ResetAnswerColors();
+                switch (answer)
+                {
+                    case "A": txtA.BackColor = Color.Red; break;
+                    case "B": txtB.BackColor = Color.Red; break;
+                    case "C": txtC.BackColor = Color.Red; break;
+                    case "D": txtD.BackColor = Color.Red; break;
+                }
+                
+                // Keep answer buttons enabled for second attempt
+                return; // Don't proceed with final answer logic
+            }
+        }
+        
         ResetAnswerColors();
         _currentAnswer = answer;
 

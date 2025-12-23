@@ -411,7 +411,7 @@ namespace MillionaireGame.Forms.Options
             // 
             cmbLifeline4Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLifeline4Type.FormattingEnabled = true;
-            cmbLifeline4Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question" });
+            cmbLifeline4Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
             cmbLifeline4Type.Location = new Point(80, 25);
             cmbLifeline4Type.Name = "cmbLifeline4Type";
             cmbLifeline4Type.Size = new Size(200, 23);
@@ -455,7 +455,7 @@ namespace MillionaireGame.Forms.Options
             // 
             cmbLifeline3Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLifeline3Type.FormattingEnabled = true;
-            cmbLifeline3Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question" });
+            cmbLifeline3Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
             cmbLifeline3Type.Location = new Point(80, 25);
             cmbLifeline3Type.Name = "cmbLifeline3Type";
             cmbLifeline3Type.Size = new Size(200, 23);
@@ -499,7 +499,7 @@ namespace MillionaireGame.Forms.Options
             // 
             cmbLifeline2Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLifeline2Type.FormattingEnabled = true;
-            cmbLifeline2Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question" });
+            cmbLifeline2Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
             cmbLifeline2Type.Location = new Point(80, 25);
             cmbLifeline2Type.Name = "cmbLifeline2Type";
             cmbLifeline2Type.Size = new Size(200, 23);
@@ -543,7 +543,7 @@ namespace MillionaireGame.Forms.Options
             // 
             cmbLifeline1Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLifeline1Type.FormattingEnabled = true;
-            cmbLifeline1Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question" });
+            cmbLifeline1Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
             cmbLifeline1Type.Location = new Point(80, 25);
             cmbLifeline1Type.Name = "cmbLifeline1Type";
             cmbLifeline1Type.Size = new Size(200, 23);
