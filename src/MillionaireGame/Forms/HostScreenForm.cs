@@ -440,7 +440,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     {
         if (_ataVotes.Count == 0) return;
 
-        var overlayBounds = new RectangleF(600, 500, 720, 400);
+        var overlayBounds = new RectangleF(100, 100, 650, 400);
         var scaledBounds = ScaleRect(overlayBounds.X, overlayBounds.Y, overlayBounds.Width, overlayBounds.Height);
 
         // Semi-transparent background
@@ -519,8 +519,8 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawATATimer(System.Drawing.Graphics g)
     {
-        // Define timer display bounds - upper right area (opposite side from PAF)
-        var designTimerBounds = new RectangleF(1570, 50, 300, 150);
+        // Define timer display bounds - upper left area below PAF timer
+        var designTimerBounds = new RectangleF(50, 220, 300, 150);
         
         // Scale to actual screen coordinates
         var actualBounds = new RectangleF(
@@ -594,6 +594,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         _selectedAnswer = selectedAnswer;
         _correctAnswer = correctAnswer;
         _isRevealing = true;
+        _showATA = false; // Hide ATA results when revealing answer
         Invalidate();
     }
 
@@ -695,6 +696,13 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 Invalidate();
             }
         }
+    }
+    
+    public void ShowATAResults(Dictionary<string, int> votes)
+    {
+        _showATA = true;
+        _ataVotes = votes;
+        Invalidate();
     }
 
     public void ResetScreen()

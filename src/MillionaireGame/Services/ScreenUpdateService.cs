@@ -9,6 +9,7 @@ namespace MillionaireGame.Services;
 public class ScreenUpdateService
 {
     private readonly List<IGameScreen> _registeredScreens = new();
+    private Question? _currentQuestion;
 
     public event EventHandler<QuestionUpdatedEventArgs>? QuestionUpdated;
     public event EventHandler<AnswerSelectedEventArgs>? AnswerSelected;
@@ -16,6 +17,8 @@ public class ScreenUpdateService
     public event EventHandler<LifelineActivatedEventArgs>? LifelineActivated;
     public event EventHandler<MoneyUpdatedEventArgs>? MoneyUpdated;
     public event EventHandler<EventArgs>? GameReset;
+    
+    public string GetCorrectAnswer() => _currentQuestion?.CorrectAnswer ?? "A";
 
     /// <summary>
     /// Register a screen to receive updates
@@ -41,6 +44,7 @@ public class ScreenUpdateService
     /// </summary>
     public void UpdateQuestion(Question question)
     {
+        _currentQuestion = question;
         var args = new QuestionUpdatedEventArgs(question);
         QuestionUpdated?.Invoke(this, args);
 
@@ -130,6 +134,17 @@ public class ScreenUpdateService
         foreach (var screen in _registeredScreens)
         {
             screen.ShowATATimer(secondsRemaining, stage);
+        }
+    }
+    
+    /// <summary>
+    /// Show ATA voting results on all screens
+    /// </summary>
+    public void ShowATAResults(Dictionary<string, int> votes)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowATAResults(votes);
         }
     }
 
@@ -258,6 +273,7 @@ public interface IGameScreen
     void ClearQuestionAndAnswerText();
     void ShowPAFTimer(int secondsRemaining, string stage);
     void ShowATATimer(int secondsRemaining, string stage);
+    void ShowATAResults(Dictionary<string, int> votes);
 }
 
 #region Event Args

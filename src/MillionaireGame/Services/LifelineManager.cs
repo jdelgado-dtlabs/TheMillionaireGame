@@ -25,6 +25,8 @@ public class LifelineManager
     private int _ataLifelineButtonNumber = 0;
     private System.Windows.Forms.Timer? _ataTimer;
     private int _ataSecondsRemaining = 120;
+    private string _ataCorrectAnswer = "";
+    private Random _random = new Random();
     
     // Double Dip state tracking
     private DoubleDipStage _doubleDipStage = DoubleDipStage.NotStarted;
@@ -271,6 +273,7 @@ public class LifelineManager
         
         _ataStage = ATAStage.Intro;
         _ataLifelineButtonNumber = buttonNumber;
+        _ataCorrectAnswer = _screenService.GetCorrectAnswer();
         ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
         
         await PlayLifelineSoundAsync(SoundEffect.LifelineATAStart, "ata_intro");
@@ -310,6 +313,13 @@ public class LifelineManager
         LogMessage?.Invoke($"[ATA] {stageName} Countdown: {_ataSecondsRemaining} seconds remaining");
         
         _screenService.ShowATATimer(_ataSecondsRemaining, stageName);
+        
+        // Show random percentages during voting stage
+        if (_ataStage == ATAStage.Voting)
+        {
+            var randomVotes = GenerateRandomATAPercentages();
+            _screenService.ShowATAResults(randomVotes);
+        }
         
         if (_ataSecondsRemaining <= 0)
         {
@@ -361,6 +371,10 @@ public class LifelineManager
         _soundService.StopSound("ata_intro");
         _soundService.StopSound("ata_vote");
         
+        // Generate placeholder results: 100% on correct answer
+        var finalResults = GeneratePlaceholderResults();
+        _screenService.ShowATAResults(finalResults);
+        
         _gameService.UseLifeline(LifelineType.AskTheAudience);
         ButtonStateChanged?.Invoke(_ataLifelineButtonNumber, Color.Gray, false);
         
@@ -368,6 +382,55 @@ public class LifelineManager
         _screenService.ShowATATimer(0, "Completed");
         
         LogMessage?.Invoke("[ATA] Completed and marked as used");
+    }
+    
+    private Dictionary<string, int> GenerateRandomATAPercentages()
+    {
+        var votes = new Dictionary<string, int>();
+        var answers = new[] { "A", "B", "C", "D" };
+        
+        // Generate random percentages that sum to 100
+        var percentages = new int[4];
+        var remaining = 100;
+        
+        for (int i = 0; i < 3; i++)
+        {
+            percentages[i] = _random.Next(0, remaining + 1);
+            remaining -= percentages[i];
+        }
+        percentages[3] = remaining;
+        
+        // Shuffle the percentages
+        for (int i = 3; i > 0; i--)
+        {
+            int j = _random.Next(i + 1);
+            (percentages[i], percentages[j]) = (percentages[j], percentages[i]);
+        }
+        
+        for (int i = 0; i < 4; i++)
+        {
+            votes[answers[i]] = percentages[i];
+        }
+        
+        return votes;
+    }
+    
+    private Dictionary<string, int> GeneratePlaceholderResults()
+    {
+        // Placeholder: 100% on correct answer
+        // TODO: Replace with real voting results from database/API
+        var votes = new Dictionary<string, int>
+        {
+            { "A", 0 },
+            { "B", 0 },
+            { "C", 0 },
+            { "D", 0 }
+        };
+        
+        votes[_ataCorrectAnswer] = 100;
+        
+        LogMessage?.Invoke($"[ATA] Placeholder results: 100% on answer {_ataCorrectAnswer}");
+        return votes;
     }
     
     #endregion

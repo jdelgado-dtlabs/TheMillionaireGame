@@ -396,34 +396,52 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
     private void DrawATAResults(System.Drawing.Graphics g)
     {
-        // Simple ATA display for now
-        float barWidth = 150;
-        float barSpacing = 200;
-        float barY = 500;
-        float maxBarHeight = 300;
+        if (_ataVotes.Count == 0) return;
 
-        var answers = new[] { "A", "B", "C", "D" };
-        for (int i = 0; i < answers.Length; i++)
+        // TV Screen: Top center position for audience viewing after voting completes
+        // Position: 585, 50 (centered horizontally in 1920 width), Size: 750x450
+        var overlayBounds = new RectangleF(585, 50, 750, 450);
+        var scaledBounds = ScaleRect(overlayBounds.X, overlayBounds.Y, overlayBounds.Width, overlayBounds.Height);
+
+        // Semi-transparent background
+        using var bgBrush = new SolidBrush(Color.FromArgb(200, 0, 0, 0));
+        g.FillRectangle(bgBrush, scaledBounds);
+
+        // Draw title
+        var titleBounds = new RectangleF(overlayBounds.X, overlayBounds.Y + 20, overlayBounds.Width, 60);
+        using var titleFont = new Font("Arial", 32, FontStyle.Bold);
+        using var titleBrush = new SolidBrush(Color.Yellow);
+        using var titleFormat = CreateCenteredFormat();
+        DrawScaledText(g, "Ask the Audience", titleFont, titleBrush,
+            titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, titleFormat);
+
+        // Draw vote bars
+        float yOffset = 100;
+        float barWidth = 650;
+        float barHeight = 60;
+
+        foreach (var kvp in _ataVotes.OrderBy(x => x.Key))
         {
-            var answer = answers[i];
-            var votes = _ataVotes.ContainsKey(answer) ? _ataVotes[answer] : 0;
-            var barHeight = (votes / 100f) * maxBarHeight;
+            var barBounds = new RectangleF(overlayBounds.X + 50, overlayBounds.Y + yOffset, barWidth, barHeight);
+            var scaledBarBounds = ScaleRect(barBounds.X, barBounds.Y, barBounds.Width, barBounds.Height);
             
-            var barX = 400 + (i * barSpacing);
-            var barRect = ScaleRect(barX, barY + maxBarHeight - barHeight, barWidth, barHeight);
+            // Background
+            using var barBgBrush = new SolidBrush(Color.FromArgb(100, 100, 100));
+            g.FillRectangle(barBgBrush, scaledBarBounds);
             
-            using var barBrush = new SolidBrush(Color.FromArgb(0, 150, 255));
-            g.FillRectangle(barBrush, barRect);
+            // Percentage bar
+            float fillWidth = scaledBarBounds.Width * (kvp.Value / 100f);
+            using var barBrush = new SolidBrush(Color.FromArgb(0, 120, 215));
+            g.FillRectangle(barBrush, scaledBarBounds.X, scaledBarBounds.Y, fillWidth, scaledBarBounds.Height);
             
-            // Draw percentage
-            using var font = new Font("Arial", 24, FontStyle.Bold);
-            using var brush = new SolidBrush(Color.White);
-            using var format = CreateCenteredFormat();
+            // Text
+            var text = $"{kvp.Key}: {kvp.Value}%";
+            using var font = new Font("Arial", 26, FontStyle.Bold);
+            using var textBrush = new SolidBrush(Color.White);
+            DrawScaledText(g, text, font, textBrush,
+                barBounds.X, barBounds.Y, barBounds.Width, barBounds.Height);
             
-            DrawScaledText(g, $"{votes}%", font, brush,
-                barX, barY + maxBarHeight + 20,
-                barWidth, 40,
-                format);
+            yOffset += 80;
         }
     }
 
@@ -460,8 +478,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
     private void DrawATATimer(System.Drawing.Graphics g)
     {
-        // Define timer display bounds - upper right area (opposite side from PAF)
-        var designTimerBounds = new RectangleF(1570, 50, 300, 150);
+        // Define timer display bounds - upper left area below PAF timer
+        var designTimerBounds = new RectangleF(50, 220, 300, 150);
         
         // Scale to actual screen coordinates
         var actualBounds = new RectangleF(
@@ -747,6 +765,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _selectedAnswer = selectedAnswer;
         _correctAnswer = correctAnswer;
         _isRevealing = true;
+        _showATA = false; // Hide ATA results when revealing answer
         Invalidate();
     }
 

@@ -5,28 +5,43 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2025-12-23
 
 ### Added
-- **Ask the Audience (ATA) Timer Visual Display**
-  - Visual timer window on all screens showing ATA countdown
-  - Two-phase timer: Intro (2 minutes) and Voting (1 minute)
-  - ShowATATimer(int secondsRemaining, string stage) added to IGameScreen interface
-  - Semi-transparent timer box in upper-right corner (300x150)
-  - Color-coded border: Blue during "Intro", Red during "Voting"
-  - Large centered MM:SS format countdown (60pt Arial Bold)
-  - Real-time updates every second during both phases
-  - Implemented in HostScreenForm, GuestScreenForm, TVScreenFormScalable
-  - Timer hides automatically on completion or screen reset
-  - Positioned opposite side from PAF timer (1570, 50)
+- **Ask the Audience (ATA) Enhanced Visual System**
+  - **Timer Display**: Two-phase visual timer on all screens
+    * Intro phase: 2 minutes (blue border, MM:SS format)
+    * Voting phase: 1 minute (red border, MM:SS format)
+    * Position: Upper-left below PAF (50, 220), Size: 300x150
+    * Real-time updates every second
+  - **Animated Voting Results**: Random percentages during voting
+    * Generates random A/B/C/D percentages summing to 100%
+    * Updates every second during 60-second voting phase
+    * Creates dramatic visual feedback for audience
+  - **Results Display**: Post-voting placeholder results
+    * Shows 100% on correct answer when voting completes
+    * TODO comment for future real voting system integration
+    * Upper-left quadrant on Host/Guest (100, 100, 650x400)
+    * Top-center on TV screen for audience view (585, 50, 750x450)
+  - **Architecture Enhancements**:
+    * ShowATATimer() and ShowATAResults() in IGameScreen interface
+    * ScreenUpdateService tracks current question for correct answer access
+    * GetCorrectAnswer() method for lifeline access to question data
+    * Helper methods: GenerateRandomATAPercentages(), GeneratePlaceholderResults()
 
 - **Phone a Friend (PAF) Timer Visual Display**
   - Visual timer window on all screens showing PAF countdown
   - Three display states: "Calling..." (intro), countdown (30→0), hidden (completed)
   - ShowPAFTimer(int secondsRemaining, string stage) added to IGameScreen interface
-  - Semi-transparent timer box in upper-left corner (300x150)
+  - Semi-transparent timer box in upper-left corner (50, 50, 300x150)
   - Color-coded border: Blue during "Calling...", Red during countdown
   - Large centered text: "Calling..." (28pt) or countdown number (60pt)
   - Real-time updates every second during 30-second countdown
   - Implemented in HostScreenForm, GuestScreenForm, TVScreenFormScalable
   - Timer hides automatically on completion or screen reset
+
+- **Screen Synchronization Verification**
+  - All TV screens (actual and preview) confirmed synchronized via ScreenUpdateService
+  - Both use TVScreenFormScalable and register for broadcasts
+  - Preview Screen shows live rendering of all three screens (Host, Guest, TV)
+  - Control panel can monitor TV display through Preview Screen feature
 
 ## [Unreleased] - 2025-12-22
 

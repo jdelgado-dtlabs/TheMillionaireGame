@@ -223,6 +223,22 @@ public partial class TVScreenForm : Form, IGameScreen
             lblATA_D.Text = $"D: {_currentQuestion.ATAPercentageD ?? 0}%";
         }
     }
+    
+    public void ShowATAResults(Dictionary<string, int> votes)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action<Dictionary<string, int>>(ShowATAResults), votes);
+            return;
+        }
+        
+        // Update ATA panel with voting results
+        pnlATA.Visible = true;
+        lblATA_A.Text = $"A: {(votes.ContainsKey("A") ? votes["A"] : 0)}%";
+        lblATA_B.Text = $"B: {(votes.ContainsKey("B") ? votes["B"] : 0)}%";
+        lblATA_C.Text = $"C: {(votes.ContainsKey("C") ? votes["C"] : 0)}%";
+        lblATA_D.Text = $"D: {(votes.ContainsKey("D") ? votes["D"] : 0)}%";
+    }
 
     public void ResetScreen()
     {
