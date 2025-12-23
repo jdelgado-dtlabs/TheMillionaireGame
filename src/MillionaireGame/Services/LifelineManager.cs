@@ -282,6 +282,7 @@ public class LifelineManager
         _ataTimer.Start();
         
         _screenService.ActivateLifeline(lifeline);
+        _screenService.ShowATATimer(_ataSecondsRemaining, "Intro");
         
         LogMessage?.Invoke("[Lifeline] ATA displayed on screens - intro timer started");
     }
@@ -307,6 +308,8 @@ public class LifelineManager
         
         var stageName = _ataStage == ATAStage.Intro ? "Intro" : "Voting";
         LogMessage?.Invoke($"[ATA] {stageName} Countdown: {_ataSecondsRemaining} seconds remaining");
+        
+        _screenService.ShowATATimer(_ataSecondsRemaining, stageName);
         
         if (_ataSecondsRemaining <= 0)
         {
@@ -342,6 +345,8 @@ public class LifelineManager
         _ataTimer.Tick += ATATimer_Tick;
         _ataTimer.Start();
         
+        _screenService.ShowATATimer(_ataSecondsRemaining, "Voting");
+        
         LogMessage?.Invoke("[ATA] Voting timer started - 60 seconds");
     }
     
@@ -360,6 +365,7 @@ public class LifelineManager
         ButtonStateChanged?.Invoke(_ataLifelineButtonNumber, Color.Gray, false);
         
         _ataStage = ATAStage.Completed;
+        _screenService.ShowATATimer(0, "Completed");
         
         LogMessage?.Invoke("[ATA] Completed and marked as used");
     }

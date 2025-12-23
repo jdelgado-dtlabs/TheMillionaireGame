@@ -5,6 +5,18 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2025-12-23
 
 ### Added
+- **Ask the Audience (ATA) Timer Visual Display**
+  - Visual timer window on all screens showing ATA countdown
+  - Two-phase timer: Intro (2 minutes) and Voting (1 minute)
+  - ShowATATimer(int secondsRemaining, string stage) added to IGameScreen interface
+  - Semi-transparent timer box in upper-right corner (300x150)
+  - Color-coded border: Blue during "Intro", Red during "Voting"
+  - Large centered MM:SS format countdown (60pt Arial Bold)
+  - Real-time updates every second during both phases
+  - Implemented in HostScreenForm, GuestScreenForm, TVScreenFormScalable
+  - Timer hides automatically on completion or screen reset
+  - Positioned opposite side from PAF timer (1570, 50)
+
 - **Phone a Friend (PAF) Timer Visual Display**
   - Visual timer window on all screens showing PAF countdown
   - Three display states: "Calling..." (intro), countdown (30→0), hidden (completed)

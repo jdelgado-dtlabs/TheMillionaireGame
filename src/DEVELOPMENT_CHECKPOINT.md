@@ -8,7 +8,43 @@
 
 ## Session Summary
 
-### Latest Session (PAF Timer Display) - December 23, 2025
+### Latest Session (PAF and ATA Timer Display) - December 23, 2025
+
+#### Ask the Audience (ATA) Timer Visual Display
+- ✅ **Full Implementation**
+  - Visual timer window on all screens showing ATA countdown
+  - Two-phase timer system: Intro (120 seconds), Voting (60 seconds)
+  - ShowATATimer(int secondsRemaining, string stage) added to IGameScreen interface
+  - Stage parameter: "Intro", "Voting", "Completed"
+  - Broadcasts timer updates every second during both phases
+  
+- ✅ **Visual Design**
+  - Location: Upper-right corner (1570, 50) - opposite side from PAF timer
+  - Size: 300x150 design units
+  - Semi-transparent black background (200 alpha)
+  - Color-coded border:
+    * Blue (DodgerBlue) during "Intro" stage
+    * Red (OrangeRed) during "Voting" stage
+  - Text display:
+    * MM:SS format countdown (60pt Arial Bold)
+    * White color, centered
+  
+- ✅ **Integration Points**
+  - LifelineManager.ExecuteAskAudienceAsync(): Shows intro timer (120, "Intro")
+  - LifelineManager.StartATAVoting(): Shows voting timer (60, "Voting")
+  - LifelineManager.ATATimer_Tick(): Updates every second during countdown
+  - LifelineManager.CompleteATA(): Hides timer (0, "Completed")
+  
+- ✅ **Screen Implementations**
+  - HostScreenForm: Full visual display with DrawATATimer() method
+  - GuestScreenForm: Full visual display with DrawATATimer() method
+  - TVScreenFormScalable: Full visual display with DrawATATimer() method
+  - TVScreenForm: No-op implementation (legacy form being phased out)
+  - All screens hide timer on ResetScreen()
+  
+- ✅ **ScreenUpdateService Enhancement**
+  - ShowATATimer() broadcast method loops through all registered screens
+  - Consistent with existing screen update pattern (PAF timer, RemoveAnswer, etc.)
 
 #### Phone a Friend (PAF) Timer Visual Display
 - ✅ **Full Implementation**

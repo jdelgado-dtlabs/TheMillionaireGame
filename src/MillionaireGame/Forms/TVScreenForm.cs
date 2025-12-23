@@ -261,6 +261,13 @@ public partial class TVScreenForm : Form, IGameScreen
         // No-op implementation to satisfy interface
     }
 
+    public void ShowATATimer(int secondsRemaining, string stage)
+    {
+        // ATA timer not implemented for the old TVScreenForm
+        // This form is being phased out in favor of TVScreenFormScalable
+        // No-op implementation to satisfy interface
+    }
+
     #endregion
 
     #region Flash Animation

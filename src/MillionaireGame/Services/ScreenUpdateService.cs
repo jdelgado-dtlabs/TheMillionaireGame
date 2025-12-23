@@ -123,6 +123,17 @@ public class ScreenUpdateService
     }
 
     /// <summary>
+    /// Show ATA timer on all screens
+    /// </summary>
+    public void ShowATATimer(int secondsRemaining, string stage)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowATATimer(secondsRemaining, stage);
+        }
+    }
+
+    /// <summary>
     /// Show or hide the question on all screens
     /// </summary>
     public void ShowQuestion(bool show)
@@ -246,6 +257,7 @@ public interface IGameScreen
     void ResetScreen();
     void ClearQuestionAndAnswerText();
     void ShowPAFTimer(int secondsRemaining, string stage);
+    void ShowATATimer(int secondsRemaining, string stage);
 }
 
 #region Event Args

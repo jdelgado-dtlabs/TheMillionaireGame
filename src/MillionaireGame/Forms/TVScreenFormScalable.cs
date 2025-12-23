@@ -32,6 +32,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private bool _showPAFTimer = false;
     private int _pafSecondsRemaining = 0;
     private string _pafStage = "";
+    
+    // ATA timer display
+    private bool _showATATimer = false;
+    private int _ataSecondsRemaining = 0;
+    private string _ataStage = "";
 
     // Design-time coordinates (based on 1920x1080, positioned in lower third)
     // Backgrounds are fully edge-to-edge (0 margins)
@@ -127,6 +132,12 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         if (_showPAFTimer)
         {
             DrawPAFTimer(g);
+        }
+
+        // Draw ATA timer if active
+        if (_showATATimer)
+        {
+            DrawATATimer(g);
         }
     }
 
@@ -447,6 +458,40 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
     }
 
+    private void DrawATATimer(System.Drawing.Graphics g)
+    {
+        // Define timer display bounds - upper right area (opposite side from PAF)
+        var designTimerBounds = new RectangleF(1570, 50, 300, 150);
+        
+        // Scale to actual screen coordinates
+        var actualBounds = new RectangleF(
+            designTimerBounds.X * ScaleX,
+            designTimerBounds.Y * ScaleY,
+            designTimerBounds.Width * ScaleX,
+            designTimerBounds.Height * ScaleY
+        );
+        
+        // Background box
+        using var bgBrush = new SolidBrush(Color.FromArgb(200, 0, 0, 0)); // Semi-transparent black
+        g.FillRectangle(bgBrush, actualBounds);
+        
+        // Border
+        using var borderPen = new Pen(_ataStage == "Intro" ? Color.DodgerBlue : Color.OrangeRed, 3);
+        g.DrawRectangle(borderPen, actualBounds.X, actualBounds.Y, actualBounds.Width, actualBounds.Height);
+        
+        // Format time as MM:SS
+        int minutes = _ataSecondsRemaining / 60;
+        int seconds = _ataSecondsRemaining % 60;
+        string displayText = $"{minutes}:{seconds:D2}";
+        
+        using var font = new Font("Arial", 60, FontStyle.Bold);
+        using var textBrush = new SolidBrush(Color.White);
+        
+        // Center text in bounds
+        DrawScaledText(g, displayText, font, textBrush,
+            designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
+    }
+
     /// <summary>
     /// Draw text with automatic wrapping to specified max lines and auto-scaling if text is too large
     /// </summary>
@@ -724,6 +769,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _showQuestionAndAnswers = false;
         _showWinnings = false;
         _showPAFTimer = false; // Hide PAF timer on reset
+        _showATATimer = false; // Hide ATA timer on reset
         Invalidate();
     }
 
@@ -738,6 +784,20 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _pafSecondsRemaining = secondsRemaining;
         _pafStage = stage;
         _showPAFTimer = stage != "Completed"; // Hide when completed
+        Invalidate();
+    }
+
+    public void ShowATATimer(int secondsRemaining, string stage)
+    {
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => ShowATATimer(secondsRemaining, stage)));
+            return;
+        }
+
+        _ataSecondsRemaining = secondsRemaining;
+        _ataStage = stage;
+        _showATATimer = stage != "Completed"; // Hide when completed
         Invalidate();
     }
 
