@@ -100,6 +100,14 @@ public class GameService
             throw new InvalidOperationException($"Lifeline {lifelineType} is disabled");
 
         lifeline.IsUsed = true;
+        
+        // Also mark as used in GameState's lifeline collection
+        var stateLifeline = _gameState.GetLifeline(lifelineType);
+        if (stateLifeline != null)
+        {
+            stateLifeline.IsUsed = true;
+        }
+        
         LifelineUsed?.Invoke(this, new LifelineUsedEventArgs(lifelineType));
     }
 

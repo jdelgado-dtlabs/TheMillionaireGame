@@ -39,12 +39,18 @@ public class LifelineManager
     private int _athLifelineButtonNumber = 0;
     
     // Lifeline icon ping animation state
-    private System.Windows.Forms.Timer? _pingTimer;
-    private int _currentPingLifelineNumber = 0;
-    private LifelineType _currentPingLifelineType = LifelineType.None;
+    private Dictionary<int, (LifelineType type, System.Windows.Forms.Timer timer)> _activePings = new();
+    
+    // Click cooldown protection
+    private DateTime _lastClickTime = DateTime.MinValue;
+    private const int CLICK_COOLDOWN_MS = 1000;
+    
+    // Active multi-stage lifeline tracking
+    private bool _isMultiStageActive = false;
     
     // Events for UI updates
     public event Action<int, Color, bool>? ButtonStateChanged; // buttonNumber, color, enabled
+    public event Action<int, bool>? SetOtherButtonsToStandby; // activeButtonNumber, isStandby (true=orange, false=reset)
     public event Action<Func<Task>>? RequestAsyncOperation; // For operations that need to await
     public event Action<string, string>? RequestAnswerRemoval; // For 50:50 answer removal
     public event Action<string>? LogMessage; // For debug logging
@@ -62,10 +68,34 @@ public class LifelineManager
     /// </summary>
     public async Task ExecuteLifelineAsync(LifelineType type, int buttonNumber, string correctAnswer)
     {
+        // Click cooldown protection
+        var timeSinceLastClick = (DateTime.Now - _lastClickTime).TotalMilliseconds;
+        if (timeSinceLastClick < CLICK_COOLDOWN_MS)
+        {
+            LogMessage?.Invoke($"[Lifeline] Click ignored - cooldown active ({CLICK_COOLDOWN_MS - (int)timeSinceLastClick}ms remaining)");
+            return;
+        }
+        _lastClickTime = DateTime.Now;
+        
+        // Check if another multi-stage lifeline is already active
+        if (_isMultiStageActive)
+        {
+            LogMessage?.Invoke($"[Lifeline] Click ignored - another multi-stage lifeline is active");
+            return;
+        }
+        
         var lifeline = _gameService.State.GetLifeline(type);
         if (lifeline == null || lifeline.IsUsed)
         {
             return;
+        }
+        
+        // Mark multi-stage lifelines as active and set other buttons to standby
+        bool isMultiStage = type is LifelineType.PlusOne or LifelineType.AskTheAudience or LifelineType.DoubleDip or LifelineType.AskTheHost;
+        if (isMultiStage)
+        {
+            _isMultiStageActive = true;
+            SetOtherButtonsToStandby?.Invoke(buttonNumber, true); // Set other buttons to orange/standby
         }
         
         switch (type)
@@ -133,6 +163,9 @@ public class LifelineManager
         _gameService.UseLifeline(lifeline.Type);
         ButtonStateChanged?.Invoke(buttonNumber, Color.Gray, false);
         
+        // Update icon to Used state
+        _screenService.SetLifelineIcon(buttonNumber, lifeline.Type, LifelineIconState.Used);
+        
         // Play lifeline sound without stopping bed music
         _soundService.PlaySound(SoundEffect.Lifeline5050);
         await Task.Delay(100); // Small delay for sound to register
@@ -179,6 +212,9 @@ public class LifelineManager
         _pafStage = PAFStage.CallingIntro;
         _pafLifelineButtonNumber = buttonNumber;
         ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
+        
+        // Activate the icon to show it's in use (no sound)
+        ActivateLifelineIcon(buttonNumber, lifeline.Type);
         
         // Play intro sound on loop
         await PlayLifelineSoundAsync(SoundEffect.LifelinePAFStart, "paf_intro", loop: true);
@@ -227,6 +263,10 @@ public class LifelineManager
     
     private void PAFTimer_Tick(object? sender, EventArgs e)
     {
+        // Guard: Exit if already completed (prevents queued timer events from firing)
+        if (_pafStage == PAFStage.Completed)
+            return;
+            
         _pafSecondsRemaining--;
         
         // Update screens with current countdown
@@ -254,6 +294,9 @@ public class LifelineManager
     
     private void CompletePAF()
     {
+        // Set stage first so any queued timer ticks will exit early
+        _pafStage = PAFStage.Completed;
+        
         _pafTimer?.Stop();
         _pafTimer?.Dispose();
         _pafTimer = null;
@@ -261,10 +304,15 @@ public class LifelineManager
         _gameService.UseLifeline(LifelineType.PlusOne);
         ButtonStateChanged?.Invoke(_pafLifelineButtonNumber, Color.Gray, false);
         
-        _pafStage = PAFStage.Completed;
+        // Update icon to Used state
+        _screenService.SetLifelineIcon(_pafLifelineButtonNumber, LifelineType.PlusOne, LifelineIconState.Used);
         
         // Hide PAF timer on screens
         _screenService.ShowPAFTimer(0, "Completed");
+        
+        // Reset other lifeline buttons from standby
+        _isMultiStageActive = false;
+        SetOtherButtonsToStandby?.Invoke(_pafLifelineButtonNumber, false);
         
         LogMessage?.Invoke("[Lifeline] PAF completed and marked as used");
     }
@@ -281,6 +329,9 @@ public class LifelineManager
         _ataLifelineButtonNumber = buttonNumber;
         _ataCorrectAnswer = _screenService.GetCorrectAnswer();
         ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
+        
+        // Activate the icon to show it's in use
+        ActivateLifelineIcon(buttonNumber, lifeline.Type);
         
         await PlayLifelineSoundAsync(SoundEffect.LifelineATAStart, "ata_intro");
         
@@ -313,6 +364,10 @@ public class LifelineManager
     
     private void ATATimer_Tick(object? sender, EventArgs e)
     {
+        // Guard: Exit if already completed (prevents queued timer events from firing)
+        if (_ataStage == ATAStage.Completed)
+            return;
+            
         _ataSecondsRemaining--;
         
         var stageName = _ataStage == ATAStage.Intro ? "Intro" : "Voting";
@@ -368,6 +423,9 @@ public class LifelineManager
     
     private async void CompleteATA()
     {
+        // Set stage first so any queued timer ticks will exit early
+        _ataStage = ATAStage.Completed;
+        
         _ataTimer?.Stop();
         _ataTimer?.Dispose();
         _ataTimer = null;
@@ -384,8 +442,14 @@ public class LifelineManager
         _gameService.UseLifeline(LifelineType.AskTheAudience);
         ButtonStateChanged?.Invoke(_ataLifelineButtonNumber, Color.Gray, false);
         
-        _ataStage = ATAStage.Completed;
+        // Update icon to Used state
+        _screenService.SetLifelineIcon(_ataLifelineButtonNumber, LifelineType.AskTheAudience, LifelineIconState.Used);
+        
         _screenService.ShowATATimer(0, "Completed");
+        
+        // Reset other lifeline buttons from standby
+        _isMultiStageActive = false;
+        SetOtherButtonsToStandby?.Invoke(_ataLifelineButtonNumber, false);
         
         LogMessage?.Invoke("[ATA] Completed and marked as used");
     }
@@ -454,6 +518,9 @@ public class LifelineManager
         _gameService.UseLifeline(lifeline.Type);
         ButtonStateChanged?.Invoke(buttonNumber, Color.Gray, false);
         
+        // Update icon to Used state
+        _screenService.SetLifelineIcon(buttonNumber, lifeline.Type, LifelineIconState.Used);
+        
         LogMessage?.Invoke($"[Lifeline] STQ loading new question at same difficulty level (Q{currentQuestionNumber})");
         
         // Request new question load via event
@@ -481,6 +548,9 @@ public class LifelineManager
         _athStage = ATHStage.Active;
         _athLifelineButtonNumber = buttonNumber;
         
+        // Activate the icon to show it's in use
+        ActivateLifelineIcon(buttonNumber, lifeline.Type);
+        
         // Play host bed music (looped)
         await PlayLifelineSoundAsync(SoundEffect.LifelineATHBed, "ath_bed", loop: true);
         
@@ -507,6 +577,9 @@ public class LifelineManager
         
         _doubleDipStage = DoubleDipStage.FirstAttempt;
         _doubleDipLifelineButtonNumber = buttonNumber;
+        
+        // Activate the icon to show it's in use
+        ActivateLifelineIcon(buttonNumber, lifeline.Type);
         
         // Play double dip start sound
         await PlayLifelineSoundAsync(SoundEffect.LifelineDoubleDipStart, "dd_start");
@@ -582,6 +655,13 @@ public class LifelineManager
         // Disable button (grey)
         ButtonStateChanged?.Invoke(_doubleDipLifelineButtonNumber, Color.Gray, false);
         
+        // Update icon to Used state
+        _screenService.SetLifelineIcon(_doubleDipLifelineButtonNumber, LifelineType.DoubleDip, LifelineIconState.Used);
+        
+        // Reset other lifeline buttons from standby
+        _isMultiStageActive = false;
+        SetOtherButtonsToStandby?.Invoke(_doubleDipLifelineButtonNumber, false);
+        
         _doubleDipStage = DoubleDipStage.Completed;
         
         LogMessage?.Invoke("[Lifeline] DD completed");
@@ -605,6 +685,13 @@ public class LifelineManager
             
             // Mark as used
             _gameService.UseLifeline(LifelineType.AskTheHost);
+            
+            // Update icon to Used state
+            _screenService.SetLifelineIcon(_athLifelineButtonNumber, LifelineType.AskTheHost, LifelineIconState.Used);
+            
+            // Reset other lifeline buttons from standby
+            _isMultiStageActive = false;
+            SetOtherButtonsToStandby?.Invoke(_athLifelineButtonNumber, false);
             
             // Button already disabled, just mark as completed
             _athStage = ATHStage.Completed;
@@ -695,7 +782,18 @@ public class LifelineManager
     #region Lifeline Icon Ping Animation
     
     /// <summary>
-    /// Ping a lifeline icon (turn yellow/bling for 2 seconds)
+    /// Activate a lifeline icon (turn yellow/bling) without sound - for lifeline execution
+    /// </summary>
+    private void ActivateLifelineIcon(int lifelineNumber, LifelineType type)
+    {
+        LogMessage?.Invoke($"[LifelineManager] Activating lifeline icon {lifelineNumber} ({type})");
+        
+        // Set icon to bling state (no timer, stays until changed)
+        _screenService.SetLifelineIcon(lifelineNumber, type, LifelineIconState.Bling);
+    }
+    
+    /// <summary>
+    /// Ping a lifeline icon (turn yellow/bling for 2 seconds) - for demo mode
     /// </summary>
     public void PingLifelineIcon(int lifelineNumber, LifelineType type)
     {
@@ -704,14 +802,24 @@ public class LifelineManager
         // Set icon to bling state
         _screenService.SetLifelineIcon(lifelineNumber, type, LifelineIconState.Bling);
         
-        // Start timer to return to normal after 2 seconds
-        _currentPingLifelineNumber = lifelineNumber;
-        _currentPingLifelineType = type;
-        _pingTimer?.Stop();
-        _pingTimer = new System.Windows.Forms.Timer();
-        _pingTimer.Interval = 2000; // 2 seconds
-        _pingTimer.Tick += PingTimer_Tick;
-        _pingTimer.Start();
+        // Create independent timer for this ping - each lifeline gets its own timer
+        var timer = new System.Windows.Forms.Timer();
+        timer.Interval = 2000; // 2 seconds
+        timer.Tick += (s, e) => PingTimer_Tick(lifelineNumber, timer);
+        
+        // Store this timer (will replace any existing one for this lifeline)
+        if (_activePings.ContainsKey(lifelineNumber))
+        {
+            // If there's already a timer for this lifeline, just add the new one
+            // The old one will complete on its own
+            _activePings[lifelineNumber] = (type, timer);
+        }
+        else
+        {
+            _activePings.Add(lifelineNumber, (type, timer));
+        }
+        
+        timer.Start();
         
         // Play ping sound based on lifeline number
         SoundEffect soundEffect = lifelineNumber switch
@@ -725,18 +833,19 @@ public class LifelineManager
         _soundService.PlaySound(soundEffect);
     }
     
-    private void PingTimer_Tick(object? sender, EventArgs e)
+    private void PingTimer_Tick(int lifelineNumber, System.Windows.Forms.Timer timer)
     {
-        _pingTimer?.Stop();
+        timer.Stop();
+        timer.Dispose();
         
-        // Return icon to normal state
-        if (_currentPingLifelineNumber > 0 && _currentPingLifelineType != LifelineType.None)
+        // Remove from dictionary if this is the current timer for this lifeline
+        if (_activePings.TryGetValue(lifelineNumber, out var ping) && ping.timer == timer)
         {
-            _screenService.SetLifelineIcon(_currentPingLifelineNumber, _currentPingLifelineType, LifelineIconState.Normal);
+            _activePings.Remove(lifelineNumber);
+            
+            // Return icon to normal state
+            _screenService.SetLifelineIcon(lifelineNumber, ping.type, LifelineIconState.Normal);
         }
-        
-        _currentPingLifelineNumber = 0;
-        _currentPingLifelineType = LifelineType.None;
     }
     
     #endregion

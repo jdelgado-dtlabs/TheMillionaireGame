@@ -159,14 +159,23 @@ public class ScreenUpdateService
             screen.ShowQuestion(show);
         }
         
-        // Show lifeline icons when question is shown, hide when question is hidden
+        // Manage lifeline icon visibility
         if (show)
         {
+            // Show lifeline icons on all screens when question is shown
             ShowLifelineIcons();
         }
         else
         {
-            HideLifelineIcons();
+            // When question is hidden, only hide icons on TV screen
+            // Keep icons visible on Host/Guest screens
+            foreach (var screen in _registeredScreens)
+            {
+                if (screen is TVScreenFormScalable)
+                {
+                    screen.HideLifelineIcons();
+                }
+            }
         }
     }
 
@@ -189,6 +198,12 @@ public class ScreenUpdateService
     /// </summary>
     public void ShowWinningsAmount(string amount)
     {
+        // Safety check
+        if (string.IsNullOrEmpty(amount))
+        {
+            return;
+        }
+        
         foreach (var screen in _registeredScreens)
         {
             if (screen is TVScreenFormScalable scalableScreen)
@@ -202,8 +217,8 @@ public class ScreenUpdateService
             }
         }
         
-        // Hide lifeline icons when winnings are shown
-        HideLifelineIcons();
+        // Icons stay visible on Host/Guest screens during winnings display
+        // TV screen handles hiding icons internally when showing winnings
     }
 
     /// <summary>
@@ -257,7 +272,7 @@ public class ScreenUpdateService
             screen.ResetScreen();
         }
         
-        // Clear lifeline icons on reset
+        // Clear lifeline icons on full game reset
         ClearLifelineIcons();
     }
 

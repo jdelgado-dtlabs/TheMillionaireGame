@@ -138,6 +138,7 @@ public partial class ControlPanelForm : Form
         // Initialize lifeline manager
         _lifelineManager = new LifelineManager(gameService, soundService, screenService);
         _lifelineManager.ButtonStateChanged += OnLifelineButtonStateChanged;
+        _lifelineManager.SetOtherButtonsToStandby += OnSetOtherButtonsToStandby;
         _lifelineManager.RequestAsyncOperation += OnLifelineRequestAsyncOperation;
         _lifelineManager.RequestAnswerRemoval += OnLifelineRequestAnswerRemoval;
         _lifelineManager.LogMessage += OnLifelineLogMessage;
@@ -191,6 +192,30 @@ public partial class ControlPanelForm : Form
         {
             button.BackColor = color;
             button.Enabled = enabled;
+        }
+    }
+    
+    private void OnSetOtherButtonsToStandby(int activeButtonNumber, bool isStandby)
+    {
+        // Set all buttons except the active one to standby (orange) or back to normal (LimeGreen)
+        var buttons = new[] { 
+            (1, btnLifeline1), 
+            (2, btnLifeline2), 
+            (3, btnLifeline3), 
+            (4, btnLifeline4) 
+        };
+        
+        foreach (var (number, button) in buttons)
+        {
+            if (number == activeButtonNumber || !button.Visible)
+                continue;
+                
+            var lifeline = _gameService.State.GetLifeline(GetLifelineTypeFromSettings(number));
+            if (lifeline != null && lifeline.IsUsed)
+                continue; // Don't change color of already-used lifelines (grey)
+            
+            // Set to standby (orange) or back to normal (LimeGreen)
+            button.BackColor = isStandby ? Color.Orange : Color.LimeGreen;
         }
     }
     
@@ -540,6 +565,7 @@ public partial class ControlPanelForm : Form
             // Use final winnings amount if available (end-of-round), otherwise use current value
             var amountToShow = _finalWinningsAmount ?? _gameService.State.CurrentValue;
             _screenService.ShowWinningsAmount(amountToShow);
+            // Icons stay visible on Host/Guest screens, hidden on TV
         }
         else
         {
@@ -712,6 +738,12 @@ public partial class ControlPanelForm : Form
 
             // Store question for progressive reveal
             _currentQuestion = question;
+
+            // Initialize lifeline icons if not already done (for games that skip explain phase)
+            if (!_isExplainGameActive)
+            {
+                InitializeLifelineIcons();
+            }
 
             // Update UI with question only - answers will be revealed progressively
             txtQuestion.Text = question.QuestionText;
@@ -1554,37 +1586,23 @@ public partial class ControlPanelForm : Form
     {
         if (_lifelineManager == null) return;
         
-        // Demo mode - just show on screens and play numbered ping
+        // Prevent clicking if button is in standby (orange)
+        if (button.BackColor == Color.Orange)
+        {
+            Console.WriteLine($"[Lifeline] Click ignored - button {lifelineNumber} is in standby mode");
+            return;
+        }
+        
+        var type = GetLifelineTypeFromSettings(lifelineNumber);
+        
+        // Demo mode - ping the lifeline icon
         if (_lifelineMode == LifelineMode.Demo)
         {
-            var pingSound = lifelineNumber switch
-            {
-                1 => SoundEffect.LifelinePing1,
-                2 => SoundEffect.LifelinePing2,
-                3 => SoundEffect.LifelinePing3,
-                4 => SoundEffect.LifelinePing4,
-                _ => SoundEffect.LifelinePing1
-            };
-            _soundService.PlaySound(pingSound);
-            
-            var lifelineTypeName = GetLifelineTypeFromSettings(lifelineNumber) switch
-            {
-                Core.Models.LifelineType.FiftyFifty => "50:50",
-                Core.Models.LifelineType.PlusOne => "Phone a Friend",
-                Core.Models.LifelineType.AskTheAudience => "Ask the Audience",
-                Core.Models.LifelineType.SwitchQuestion => "Switch Question",
-                Core.Models.LifelineType.AskTheHost => "Ask the Host",
-                Core.Models.LifelineType.DoubleDip => "Double Dip",
-                _ => "Unknown"
-            };
-            
-            MessageBox.Show($"Lifeline {lifelineNumber} ({lifelineTypeName}) demonstrated on screens", "Demo Mode", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _lifelineManager.PingLifelineIcon(lifelineNumber, type);
             return;
         }
 
         // Active mode - delegate to lifeline manager
-        var type = GetLifelineTypeFromSettings(lifelineNumber);
         
         // Check if this is a multi-stage lifeline click
         if (_lifelineManager.IsInMultiStageState(type))
@@ -1685,8 +1703,14 @@ public partial class ControlPanelForm : Form
         // Enter demo mode - lifelines turn yellow
         SetLifelineMode(LifelineMode.Demo);
         
-        // Set explain game active state
+        // Set explain game active state BEFORE initializing icons
         _isExplainGameActive = true;
+        
+        // Initialize lifeline icons on all screens (Hidden state during explain)
+        InitializeLifelineIcons();
+        
+        // Enable icon rendering (but Hidden icons won't be drawn)
+        _screenService.ShowLifelineIcons();
     }
 
     /// <summary>
@@ -3109,6 +3133,52 @@ public partial class ControlPanelForm : Form
         button.Enabled = enabled;
     }
 
+    /// <summary>
+    /// Initialize lifeline icons on all screens with their current types
+    /// </summary>
+    private void InitializeLifelineIcons()
+    {
+        // Don't clear existing icons - preserve Used states
+        // Only initialize icons that don't exist yet
+        
+        // Set up icon types for visible lifelines
+        // During explain phase: Hidden until pinged
+        // During normal game: Normal (visible) immediately
+        var initialState = _isExplainGameActive 
+            ? Core.Graphics.LifelineIconState.Hidden 
+            : Core.Graphics.LifelineIconState.Normal;
+        
+        for (int i = 1; i <= 4; i++)
+        {
+            var button = GetLifelineButtonByNumber(i);
+            if (button != null && button.Visible)
+            {
+                var type = GetLifelineTypeFromSettings(i);
+                // Check if this lifeline is already used
+                var lifeline = _gameService.State.GetLifeline(type);
+                if (lifeline != null && lifeline.IsUsed)
+                {
+                    // Preserve Used state
+                    _screenService.SetLifelineIcon(i, type, Core.Graphics.LifelineIconState.Used);
+                }
+                else
+                {
+                    // Set to initial state (Hidden or Normal)
+                    _screenService.SetLifelineIcon(i, type, initialState);
+                }
+            }
+        }
+    }
+    
+    private Button? GetLifelineButtonByNumber(int number) => number switch
+    {
+        1 => btnLifeline1,
+        2 => btnLifeline2,
+        3 => btnLifeline3,
+        4 => btnLifeline4,
+        _ => null
+    };
+
     #endregion
 
     #region Menu Handlers
@@ -3279,6 +3349,18 @@ public partial class ControlPanelForm : Form
             {
                 screen.SelectAnswer(_currentAnswer);
             }
+        }
+        
+        // Sync lifeline icons if in demo mode or if they should be visible
+        if (_isExplainGameActive || chkShowQuestion.Checked)
+        {
+            // Set up each lifeline icon
+            for (int i = 1; i <= 4; i++)
+            {
+                var type = GetLifelineTypeFromSettings(i);
+                screen.SetLifelineIcon(i, type, Core.Graphics.LifelineIconState.Normal);
+            }
+            screen.ShowLifelineIcons();
         }
         
         // Sync question visibility state

@@ -86,9 +86,12 @@ public static class LifelineIcons
                 .FirstOrDefault(a => a.GetName().Name == "MillionaireGame");
             
             if (mainAssembly == null)
+            {
                 return null;
+            }
 
             var resourceName = $"MillionaireGame.lib.textures.{fileName}";
+            
             using var stream = mainAssembly.GetManifestResourceStream(resourceName);
             if (stream != null)
             {
@@ -97,9 +100,8 @@ public static class LifelineIcons
                 return image;
             }
         }
-        catch (Exception)
+        catch
         {
-            // Silently fail if icon cannot be loaded
         }
 
         _iconCache[fileName] = null;

@@ -2,38 +2,57 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
-## [Unreleased] - 2025-12-23
+## [v0.4-2512] - 2025-12-23
 
 ### Added
-- **Lifeline Icon Display System**
-  - **Visual Icons**: Three-state icon display on all screens
-    * Normal state (black): Lifeline available
-    * Bling state (yellow/glint): During ping animation or activation
+- **Lifeline Icon Display System** ✅ FEATURE COMPLETE
+  - **Visual Icons**: Four-state icon display on all screens
+    * Hidden state (invisible): During explain game phase until pinged
+    * Normal state (black): Lifeline available and visible
+    * Bling state (yellow/glint): During activation or demo ping
     * Used state (red X): Lifeline consumed
-  - **Icon Positioning**: Screen-specific placement above question strap
-    * HostScreen: (849, 18) with 138px spacing, Size: 129x78
-    * GuestScreen: (566, 12) with 92px spacing, Size: 86x52
-    * TVScreenFormScalable: (846, 36) with 82px spacing, Size: 72x44
-  - **Ping Animation System**: 2-second yellow→black transition
-    * PingLifelineIcon(int lifelineNumber, LifelineType type) method
-    * Plays LifelinePing1-4 sounds during animation
-    * Automatic timer-based state transition
-  - **Automatic Visibility Control**: Icons tied to game flow
-    * Show when question/answer strap visible
-    * Hide during winning strap display
-    * Clear on game reset
+  - **Icon Positioning**: Screen-specific placement optimized to avoid UI overlaps
+    * HostScreen & GuestScreen: (680, 18) horizontal, spacing 138px, Size: 129x78
+    * TVScreenFormScalable: (1770, 36) vertical stack, spacing 82px, Size: 72x44
+  - **Dual Animation Modes**:
+    * Demo mode (explain phase): PingLifelineIcon() - Bling with sound and 2s timer → Normal
+    * Execution mode (actual use): ActivateLifelineIcon() - Silent Bling state without timer
+  - **Progressive Reveal**: Manual display during explain game
+    * Icons start Hidden during explain phase
+    * Appear when pinged for demonstration
+    * Automatically visible (Normal) during regular gameplay
+  - **State Persistence**: Used states maintained across questions
+    * GameService synchronizes dual lifeline collections (List and Dictionary)
+    * InitializeLifelineIcons() preserves Used states from GameState
+    * Icons clear only on full game reset
+  - **Multi-Stage Protection**:
+    * Standby mode (orange buttons) when multi-stage lifeline active
+    * Click cooldown: 1-second delay between lifeline clicks
+    * Timer guards prevent queued events from firing after completion
+    * Other lifeline buttons locked until active lifeline completes
+  - **Screen-Specific Visibility**:
+    * Host/Guest: Icons remain visible when question hidden or during winnings display
+    * TV Screen: Icons hidden when showing winnings or question hidden (audience focus)
+  - **All Lifeline Types Supported** (6 total):
+    * 50:50 - Shows Bling when activated, Used when complete
+    * Phone-a-Friend (PAF) - Shows Bling during call, Used when complete
+    * Ask the Audience (ATA) - Shows Bling during voting, Used when complete
+    * Switch the Question (STQ) - Shows Bling and Used immediately
+    * Double Dip (DD) - Shows Bling when activated, Used after second attempt
+    * Ask the Host (ATH) - Shows Bling when activated, Used when answer given
   - **Architecture**:
     * LifelineIcons helper class loads icons from embedded resources
     * LifelineIconState enum (Hidden, Normal, Bling, Used)
     * IGameScreen interface methods: ShowLifelineIcons(), HideLifelineIcons(), SetLifelineIcon(), ClearLifelineIcons()
     * ScreenUpdateService broadcasts icon state changes to all screens
-    * 18 embedded icon resources in lib/textures (6 types × 3 states)
+    * 18 embedded icon resources in lib/textures (6 types × 3 states each)
+    * Independent timer system for demo pings via Dictionary<int, (LifelineType, Timer)>
 
 - **Ask the Audience (ATA) Enhanced Visual System**
   - **Timer Display**: Two-phase visual timer on all screens
     * Intro phase: 2 minutes (blue border, MM:SS format)
     * Voting phase: 1 minute (red border, MM:SS format)
-    * Position: Upper-left below PAF (50, 220), Size: 300x150
+    * Position: Upper-left below PAF (50, 50), Size: 300x150
     * Real-time updates every second
   - **Animated Voting Results**: Random percentages during voting
     * Generates random A/B/C/D percentages summing to 100%
@@ -41,8 +60,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
     * Creates dramatic visual feedback for audience
   - **Results Display**: Post-voting placeholder results
     * Shows 100% on correct answer when voting completes
-    * TODO comment for future real voting system integration
-    * Upper-left quadrant on Host/Guest (100, 100, 650x400)
+    * Position centered below lifeline icons: Host/Guest (635, 150, 650x400)
     * Top-center on TV screen for audience view (585, 50, 750x450)
   - **Architecture Enhancements**:
     * ShowATATimer() and ShowATAResults() in IGameScreen interface

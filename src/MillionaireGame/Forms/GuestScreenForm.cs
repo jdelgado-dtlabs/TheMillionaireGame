@@ -118,6 +118,12 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         
         // Always draw question strap (with or without text)
         DrawQuestionStrap(g);
+        
+        // Draw lifeline icons if visible (always check, even without a question)
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
+        }
 
         // If no question loaded yet, still draw empty answer backgrounds
         if (_currentQuestion == null)
@@ -408,7 +414,9 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (_ataVotes.Count == 0) return;
 
-        var overlayBounds = new RectangleF(100, 100, 650, 400);
+        // Position centered horizontally, below lifeline icons
+        // Lifelines at (680, 18) with height ~78, so start at y=150
+        var overlayBounds = new RectangleF(635, 150, 650, 400);
         var scaledBounds = ScaleRect(overlayBounds.X, overlayBounds.Y, overlayBounds.Width, overlayBounds.Height);
 
         // Semi-transparent background
@@ -521,13 +529,13 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     
     private void DrawLifelineIcons(System.Drawing.Graphics g)
     {
-        // Design-time coordinates (1920x1080)
-        // Position: Upper right area (566, 12), spacing 92px, size 86x52
-        float baseX = 566;
-        float baseY = 12;
-        float spacing = 92;
-        float iconWidth = 86;
-        float iconHeight = 52;
+        // Design-time coordinates (1920x1080) - moved left to avoid money tree
+        // Position: Upper right area (680, 18), spacing 138px, size 129x78
+        float baseX = 680;
+        float baseY = 18;
+        float spacing = 138;
+        float iconWidth = 129;
+        float iconHeight = 78;
         
         // Draw up to 4 lifeline icons
         for (int i = 1; i <= 4; i++)
@@ -713,8 +721,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         _currentAmount = null;
         _visibleAnswers.Clear();
         _showPAFTimer = false; // Hide PAF timer on reset
-        _showATATimer = false; // Hide ATA timer on reset
-        // Straps remain always visible
+        _showATATimer = false; // Hide ATA timer on reset        _showLifelineIcons = false; // Hide lifeline icons on reset        // Straps remain always visible
         Invalidate();
     }
 

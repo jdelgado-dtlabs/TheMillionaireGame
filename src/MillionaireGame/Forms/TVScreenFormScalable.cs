@@ -107,10 +107,20 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             return; // Only show winnings, nothing else
         }
         
+        // Draw lifeline icons if visible (even without question/answer visibility during explain game)
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
+        }
+        
         if (!_showQuestionAndAnswers) return;
 
         // Draw question strap (with or without text)
         DrawQuestionStrap(g);
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
+        }
 
         // If no question loaded yet, still draw empty answer backgrounds
         if (_currentQuestion == null)
@@ -144,12 +154,6 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         if (_showATATimer)
         {
             DrawATATimer(g);
-        }
-        
-        // Draw lifeline icons if visible
-        if (_showLifelineIcons)
-        {
-            DrawLifelineIcons(g);
         }
     }
 
@@ -525,14 +529,14 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private void DrawLifelineIcons(System.Drawing.Graphics g)
     {
         // Design-time coordinates (1920x1080)
-        // Position: Above question strap (846, 36), spacing 82px
-        float baseX = 846;
+        // Position: Right edge, stacked vertically (1770, 36), spacing 82px vertical
+        float baseX = 1770;
         float baseY = 36;
-        float spacing = 82;
+        float spacingY = 82;  // Vertical spacing for stacking
         float iconWidth = 72;  // Slightly smaller for TV screen
         float iconHeight = 44;
         
-        // Draw up to 4 lifeline icons
+        // Draw up to 4 lifeline icons (stacked vertically on right edge)
         for (int i = 1; i <= 4; i++)
         {
             if (!_lifelineTypes.ContainsKey(i) || !_lifelineStates.ContainsKey(i))
@@ -547,8 +551,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             var icon = LifelineIcons.GetLifelineIcon(type, state);
             if (icon != null)
             {
-                float x = baseX + ((i - 1) * spacing);
-                DrawScaledImage(g, icon, x, baseY, iconWidth, iconHeight);
+                float y = baseY + ((i - 1) * spacingY);
+                DrawScaledImage(g, icon, baseX, y, iconWidth, iconHeight);
             }
         }
     }
@@ -832,6 +836,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _showWinnings = false;
         _showPAFTimer = false; // Hide PAF timer on reset
         _showATATimer = false; // Hide ATA timer on reset
+        _showLifelineIcons = false; // Hide lifeline icons on reset
         Invalidate();
     }
 

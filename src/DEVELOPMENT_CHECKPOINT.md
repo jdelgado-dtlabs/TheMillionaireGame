@@ -1,6 +1,6 @@
-# Development Checkpoint - v0.3-2512
+# Development Checkpoint - v0.4-2512
 **Date**: December 23, 2025  
-**Version**: 0.3-2512  
+**Version**: 0.4-2512  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
@@ -8,38 +8,65 @@
 
 ## Session Summary
 
-### Latest Session (Lifeline Icon System) - December 23, 2025
+### Latest Session (Lifeline Icon System) - December 23, 2025 ✅ FEATURE COMPLETE
 
 #### Lifeline Icon Visual Display System
 - ✅ **LifelineIcons Helper Class** (MillionaireGame.Core/Graphics/LifelineIcons.cs)
-  - LoadIconFromEmbeddedResource() loads from MillionaireGame.lib.textures namespace
-  - GetLifelineIcon(LifelineType, LifelineIconState) returns appropriate icon
-  - GetIconBaseName() maps lifeline types to icon filenames
+  - LoadIcon() loads from embedded resources (MillionaireGame.lib.textures namespace)
+  - GetLifelineIcon(LifelineType, LifelineIconState) returns appropriate icon with caching
+  - GetIconBaseName() maps lifeline types to icon filenames: ll_5050, ll_ata, ll_paf, ll_switch, ll_ath, ll_double
   - GetStateSuffix() handles state suffixes: "" (Normal), "_glint" (Bling), "_used" (Used)
-  - Icon caching for performance optimization
-  - 18 embedded icon resources: ll_audience, ll_5050, ll_phone, ll_switch, ll_host, ll_double
+  - Icon caching via Dictionary<string, Image?> for performance
+  - 18 embedded icon resources (6 types × 3 states each)
 
 - ✅ **LifelineIconState Enum**
-  - Hidden: Icon not shown
-  - Normal: Lifeline available (black/normal state)
-  - Bling: During ping animation or activation (yellow/glint)
-  - Used: Lifeline consumed (red X)
+  - Hidden: Icon not shown (invisible during explain phase until pinged)
+  - Normal: Lifeline available and visible (black/normal state)
+  - Bling: During activation or demo ping (yellow/glint with 2s timer)
+  - Used: Lifeline consumed (red X overlay)
 
-- ✅ **Screen Integration**
-  - DrawLifelineIcons() method added to all screen forms
-  - Screen-specific positioning (design-time 1920x1080):
-    * HostScreenForm: (849, 18), spacing 138px, size 129x78
-    * GuestScreenForm: (566, 12), spacing 92px, size 86x52
-    * TVScreenFormScalable: (846, 36), spacing 82px, size 72x44
-  - Fields: _showLifelineIcons, _lifelineStates, _lifelineTypes dictionaries
+- ✅ **Screen Integration** - All Three Screen Types
+  - DrawLifelineIcons() method added to HostScreenForm, GuestScreenForm, TVScreenFormScalable
+  - **Optimized positioning (1920×1080 reference)**:
+    * HostScreenForm & GuestScreenForm: (680, 18) horizontal, spacing 138px, size 129×78
+    * TVScreenFormScalable: (1770, 36) VERTICAL stack, spacing 82px, size 72×44
+  - Per-screen tracking: _showLifelineIcons bool, _lifelineStates/Types dictionaries
   - Public methods: ShowLifelineIcons(), HideLifelineIcons(), SetLifelineIcon(), ClearLifelineIcons()
+  - Drawing logic skips Hidden icons: `if (state == LifelineIconState.Hidden) continue;`
 
-- ✅ **Ping Animation System** (LifelineManager)
-  - PingLifelineIcon(int lifelineNumber, LifelineType type) method
-  - Sets icon to Bling state immediately
-  - Plays LifelinePing1-4 sound effects
-  - 2-second timer (PingTimer_Tick) returns to Normal state
-  - Tracks _currentPingLifelineNumber and _currentPingLifelineType
+- ✅ **Dual Animation System** (LifelineManager)
+  - **Demo Mode**: PingLifelineIcon(int, LifelineType)
+    * Shows Bling state with sound effect (LifelinePing1-4)
+    * Independent 2-second timers per lifeline via Dictionary<int, (LifelineType, Timer)>
+    * Returns to Normal state after timer expires
+    * Used during explain game phase for demonstration
+  - **Execution Mode**: ActivateLifelineIcon(int, LifelineType)
+    * Silent Bling state without timer
+    * Used during actual lifeline execution
+    * No sound effect played
+  - All 6 lifeline types integrated: 50:50, PAF, ATA, STQ, DD, ATH
+
+- ✅ **Progressive Reveal During Explain Phase**
+  - Icons start in Hidden state when explain game activated
+  - User clicks lifeline buttons to ping and reveal icons
+  - InitializeLifelineIcons() checks _isExplainGameActive flag
+  - Sets Hidden during explain, Normal during regular game
+
+- ✅ **State Persistence** - Critical Bug Fixed
+  - **Problem**: Icons reverted to Normal when loading new questions
+  - **Root Cause**: GameService had two separate lifeline collections:
+    * GameService._lifelines (List) - updated by UseLifeline()
+    * GameState._lifelines (Dictionary) - checked by InitializeLifelineIcons()
+  - **Solution**: UseLifeline() now updates BOTH collections
+  - InitializeLifelineIcons() preserves Used states by querying GameState.GetLifeline(type).IsUsed
+  - Used states persist across questions until game reset
+
+- ✅ **Screen-Specific Visibility Logic**
+  - Host/Guest: Icons remain visible during winnings display
+  - TV Screen: Icons hidden when showing winnings (early return in RenderScreen)
+  - ShowQuestion(true) → ShowLifelineIcons()
+  - ShowQuestion(false) → keeps icons visible (user control)
+  - ResetAllScreens() → ClearLifelineIcons()
 
 - ✅ **IGameScreen Interface Updates**
   - ShowLifelineIcons(): Make icons visible
@@ -49,26 +76,62 @@
 
 - ✅ **ScreenUpdateService Enhancements**
   - Broadcast methods for lifeline icon control
-  - Automatic visibility tied to game flow:
-    * ShowQuestion(true) → ShowLifelineIcons()
-    * ShowQuestion(false) → HideLifelineIcons()
-    * ShowWinnings() → HideLifelineIcons()
-    * ResetAllScreens() → ClearLifelineIcons()
+  - ShowQuestion() calls ShowLifelineIcons() when showing
+  - ShowWinningsAmount() NO LONGER calls HideLifelineIcons() (prevented crash)
+  - ResetAllScreens() calls ClearLifelineIcons() for proper cleanup
+  - Debug logging removed for performance
 
 - ✅ **Resource Management**
-  - Moved 18 lifeline icons from VB.NET Resources to src/MillionaireGame/lib/textures
-  - Icons embedded as resources via .csproj wildcard: `<EmbeddedResource Include="lib\textures\*.png" />`
-  - Resources accessible via MillionaireGame.lib.textures namespace
+  - Migrated 18 lifeline icons from VB.NET Resources to src/MillionaireGame/lib/textures
+  - Icons embedded as resources via .csproj: `<EmbeddedResource Include="lib\textures\*.png" />`
+  - Resources accessible via Assembly.GetManifestResourceStream()
+  - **All icons present**: ll_5050, ll_ata, ll_ath, ll_double, ll_paf, ll_switch (3 states each)
+
+#### Implementation Details
+- **All Lifeline Types Update Icons**:
+  * 50:50 (ExecuteFiftyFiftyAsync): Sets Used on line 135
+  * PAF (ExecutePhoneFriendAsync): ActivateLifelineIcon line 183, Used in CompletePAF line 268
+  * ATA (ExecuteAskAudienceAsync): ActivateLifelineIcon line 291, Used in CompleteATA line 391
+  * STQ (ExecuteSwitchQuestionAsync): Sets Used immediately line 466
+  * DD (ExecuteDoubleDipAsync): ActivateLifelineIcon when started, Used in CompleteDoubleDip line 597
+  * ATH (ExecuteAskTheHostAsync): ActivateLifelineIcon line 503, Used in HandleAskTheHostAnswerAsync line 625
+
+- **Debug Logging Cleanup**:
+  - Removed excessive Console.WriteLine from rendering loops (HostScreenForm.DrawLifelineIcons)
+  - Removed debug logging from LifelineIcons.LoadIcon()
+  - Removed debug logging from ScreenUpdateService.ShowWinningsAmount()
+  - Removed debug logging from ControlPanelForm.InitializeLifelineIcons()
+  - System now runs clean without console flooding
 
 #### Files Modified
-- MillionaireGame.Core/Graphics/LifelineIcons.cs (NEW)
-- MillionaireGame/Forms/HostScreenForm.cs
-- MillionaireGame/Forms/GuestScreenForm.cs
-- MillionaireGame/Forms/TVScreenFormScalable.cs
-- MillionaireGame/Forms/TVScreenForm.cs (stub implementations)
-- MillionaireGame/Services/ScreenUpdateService.cs
-- MillionaireGame/Services/LifelineManager.cs
-- 18 lifeline icon PNG files moved to lib/textures
+- MillionaireGame.Core/Graphics/LifelineIcons.cs (NEW, 120 lines)
+- MillionaireGame.Core/Game/GameService.cs (~204 lines - CRITICAL: dual collection sync)
+- MillionaireGame/Forms/ControlPanelForm.cs (~3489 lines)
+- MillionaireGame/Forms/HostScreenForm.cs (~900 lines)
+- MillionaireGame/Forms/GuestScreenForm.cs (~833 lines)
+- MillionaireGame/Forms/TVScreenFormScalable.cs (~966 lines)
+- MillionaireGame/Services/ScreenUpdateService.cs (~408 lines)
+- MillionaireGame/Services/LifelineManager.cs (~900 lines)
+- 18 lifeline icon PNG files in lib/textures (6 types × 3 states)
+
+#### Critical Bug Fixes
+- **Rapid Click Protection**: Added guard checks in PAF and ATA timer ticks to prevent queued events
+- **Standby Mode**: Multi-stage lifelines now set other buttons to orange, preventing multiple lifelines simultaneously
+- **Click Cooldown**: 1-second delay between lifeline clicks prevents rapid clicking issues
+- **Screen Visibility**: Icons remain visible on Host/Guest when question hidden, only TV screen hides icons
+- **ATA Results Repositioning**: Moved to center below lifelines (635, 150) to avoid timer overlap
+- **DD and ATH Activation**: Both now properly show yellow (Bling) icons when activated
+
+#### Production Readiness
+- ✅ All 6 lifeline types fully functional with complete icon lifecycle
+- ✅ State persistence across questions working correctly
+- ✅ Multi-stage protection prevents conflicts and UI pileups
+- ✅ Screen-specific behavior properly implemented
+- ✅ Debug logging cleaned up for production use
+- ✅ Extensive testing completed with rapid clicks and edge cases
+
+#### Next Steps
+- System complete and production-ready for live gameplay
 
 ### Previous Session (ATA Enhanced + Screen Sync) - December 23, 2025
 
