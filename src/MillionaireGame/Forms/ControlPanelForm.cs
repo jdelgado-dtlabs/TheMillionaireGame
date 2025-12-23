@@ -111,6 +111,9 @@ public partial class ControlPanelForm : Form
     private PreviewScreenForm? _previewScreen;
     private PreviewOrientation _lastPreviewOrientation = PreviewOrientation.Vertical;
     
+    // FFF window for audience participation
+    private FFFWindow? _fffWindow;
+    
     // Web server for audience participation
     private WebServerHost? _webServerHost;
     public WebServerHost? WebServerHost => _webServerHost;
@@ -1800,9 +1803,15 @@ public partial class ControlPanelForm : Form
 
     private void btnPickPlayer_Click(object? sender, EventArgs e)
     {
-        // TODO: Open FFF Server dialog to pick contestant
-        MessageBox.Show("FFF Server functionality will be implemented later.", 
-            "Pick Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        // Open FFF Window to manage Fastest Finger First
+        if (_fffWindow == null || _fffWindow.IsDisposed)
+        {
+            _fffWindow = new FFFWindow();
+        }
+        
+        // Show the window (or bring to front if already visible)
+        _fffWindow.Show();
+        _fffWindow.BringToFront();
         
         // Reset game win flag for new round
         _gameService.State.GameWin = false;
