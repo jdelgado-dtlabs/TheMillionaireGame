@@ -5,9 +5,12 @@ namespace MillionaireGame.Forms;
 /// </summary>
 public partial class FFFWindow : Form
 {
-    public FFFWindow()
+    private readonly string _serverUrl;
+    
+    public FFFWindow(string serverUrl = "http://localhost:5278")
     {
         InitializeComponent();
+        _serverUrl = serverUrl;
     }
     
     /// <summary>
@@ -19,6 +22,9 @@ public partial class FFFWindow : Form
     {
         try
         {
+            // Initialize SignalR client
+            await fffControlPanel.InitializeClientAsync(_serverUrl);
+            
             // Load available questions
             await fffControlPanel.LoadQuestionsAsync();
         }

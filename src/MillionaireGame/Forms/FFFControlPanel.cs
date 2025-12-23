@@ -1,4 +1,8 @@
 using MillionaireGame.Web.Models;
+using MillionaireGame.Web.Database;
+using MillionaireGame.Services;
+using MillionaireGame.Core.Database;
+using MillionaireGame.Core.Settings;
 using System.Timers;
 
 namespace MillionaireGame.Forms;
@@ -16,6 +20,9 @@ public partial class FFFControlPanel : UserControl
     private List<ParticipantInfo> _participants = new();
     private List<AnswerSubmission> _submissions = new();
     private List<RankingResult> _rankings = new();
+    private FFFClientService? _fffClient;
+    private readonly MillionaireGame.Web.Database.FFFQuestionRepository? _fffRepository;
+    private readonly string _sessionId = "game-session";
     
     public FFFControlPanel()
     {
@@ -23,6 +30,18 @@ public partial class FFFControlPanel : UserControl
         
         _fffTimer = new System.Timers.Timer(100); // Update every 100ms
         _fffTimer.Elapsed += FFFTimer_Elapsed;
+        
+        // Initialize repository
+        try
+        {
+            var sqlSettings = new SqlSettingsManager();
+            var connectionString = sqlSettings.Settings.GetConnectionString("waps.db");
+            _fffRepository = new MillionaireGame.Web.Database.FFFQuestionRepository(connectionString);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing FFF repository: {ex.Message}");
+        }
     }
     
     /// <summary>
@@ -32,19 +51,60 @@ public partial class FFFControlPanel : UserControl
     {
         try
         {
-            // TODO: Load questions from database via FFFService
-            // For now, show placeholder
             cmbQuestions.Items.Clear();
             cmbQuestions.Items.Add("-- Select a question --");
-            cmbQuestions.SelectedIndex = 0;
             
-            // Enable when web server connection is established
+            if (_fffRepository != null)
+            {
+                _questions = await _fffRepository.GetAllQuestionsAsync();
+                
+                foreach (var question in _questions)
+                {
+                    var displayText = $"Q{question.Id}: {question.QuestionText.Substring(0, Math.Min(60, question.QuestionText.Length))}...";
+                    cmbQuestions.Items.Add(new ComboBoxItem { Text = displayText, Value = question });
+                }
+            }
+            
+            cmbQuestions.SelectedIndex = 0;
             UpdateUIState();
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error loading FFF questions: {ex.Message}",
                 "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+    
+    /// <summary>
+    /// Initialize SignalR client connection
+    /// </summary>
+    public async Task InitializeClientAsync(string serverUrl)
+    {
+        try
+        {
+            _fffClient = new FFFClientService(serverUrl, _sessionId);
+            
+            // Subscribe to events
+            _fffClient.ParticipantJoined += (s, p) => UpdateParticipants(new List<ParticipantInfo> { p });
+            _fffClient.AnswerSubmitted += (s, a) => AddAnswerSubmission(a);
+            _fffClient.ConnectionStatusChanged += (s, status) =>
+            {
+                if (InvokeRequired)
+                    Invoke(() => Text = $"FFF Control - {status}");
+                else
+                    Text = $"FFF Control - {status}";
+            };
+            
+            await _fffClient.ConnectAsync();
+            
+            // Load initial participants
+            var participants = await _fffClient.GetActiveParticipantsAsync();
+            UpdateParticipants(participants);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error connecting to server: {ex.Message}",
+                "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
     
@@ -128,7 +188,7 @@ public partial class FFFControlPanel : UserControl
     
     private void cmbQuestions_SelectedIndexChanged(object? sender, EventArgs e)
     {
-        if (cmbQuestions.SelectedIndex > 0 && cmbQuestions.SelectedItem is FFFQuestion question)
+        if (cmbQuestions.SelectedIndex > 0 && cmbQuestions.SelectedItem is ComboBoxItem item && item.Value is FFFQuestion question)
         {
             _currentQuestion = question;
             LoadQuestionDetails(question);
@@ -183,7 +243,15 @@ public partial class FFFControlPanel : UserControl
         
         try
         {
-            // TODO: Call FFFHub.StartQuestion via SignalR client
+            if (_fffClient == null || !_fffClient.IsConnected)
+            {
+                MessageBox.Show("Not connected to web server. Start the web server from Settings first.",
+                    "Not Connected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            await _fffClient.StartQuestionAsync(_currentQuestion.Id, timeLimit: 30);
+            
             _fffStartTime = DateTime.UtcNow;
             _isFFFActive = true;
             _submissions.Clear();
@@ -210,7 +278,10 @@ public partial class FFFControlPanel : UserControl
             _fffTimer.Stop();
             _isFFFActive = false;
             
-            // TODO: Call FFFHub.EndQuestion via SignalR client
+            if (_fffClient != null && _fffClient.IsConnected)
+            {
+                await _fffClient.EndQuestionAsync();
+            }
             
             UpdateUIState();
             
@@ -235,10 +306,19 @@ public partial class FFFControlPanel : UserControl
         
         try
         {
-            // TODO: Call FFFService.CalculateRankings via API
-            
-            MessageBox.Show("Results calculated! Check the Rankings panel.",
-                "Results Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (_fffClient != null && _fffClient.IsConnected)
+            {
+                var rankings = await _fffClient.CalculateRankingsAsync(_currentQuestion.Id);
+                UpdateRankings(rankings);
+                
+                MessageBox.Show("Results calculated! Check the Rankings panel.",
+                    "Results Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Not connected to web server.", "Not Connected",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
         catch (Exception ex)
         {
@@ -358,4 +438,15 @@ public class RankingResult
     public string AnswerSequence { get; set; } = string.Empty;
     public double TimeElapsed { get; set; }
     public bool IsCorrect { get; set; }
+}
+
+/// <summary>
+/// Helper class for ComboBox items
+/// </summary>
+internal class ComboBoxItem
+{
+    public string Text { get; set; } = string.Empty;
+    public object? Value { get; set; }
+    
+    public override string ToString() => Text;
 }

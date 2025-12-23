@@ -1806,7 +1806,12 @@ public partial class ControlPanelForm : Form
         // Open FFF Window to manage Fastest Finger First
         if (_fffWindow == null || _fffWindow.IsDisposed)
         {
-            _fffWindow = new FFFWindow();
+            // Get server URL from settings or use web server host
+            var serverUrl = _webServerHost != null && _webServerHost.IsRunning
+                ? _webServerHost.BaseUrl
+                : $"http://{_appSettings.Settings.AudienceServerIP}:{_appSettings.Settings.AudienceServerPort}";
+            
+            _fffWindow = new FFFWindow(serverUrl);
         }
         
         // Show the window (or bring to front if already visible)
