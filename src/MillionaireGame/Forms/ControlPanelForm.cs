@@ -19,28 +19,6 @@ public enum LifelineMode
 }
 
 /// <summary>
-/// PAF (Phone a Friend) stages
-/// </summary>
-public enum PAFStage
-{
-    NotStarted,     // PAF not activated
-    CallingIntro,   // Blue - playing intro loop
-    CountingDown,   // Red - 30 second countdown active
-    Completed       // Grey - finished/used
-}
-
-/// <summary>
-/// ATA (Ask the Audience) stages
-/// </summary>
-public enum ATAStage
-{
-    NotStarted,     // ATA not activated
-    Intro,          // Blue - 2 min intro/explanation
-    Voting,         // Grey - 1 min voting period
-    Completed       // Grey - finished/used
-}
-
-/// <summary>
 /// Closing sequence stages
 /// </summary>
 public enum ClosingStage
@@ -111,17 +89,8 @@ public partial class ControlPanelForm : Form
     // Track if automated sequence is running (walk away, thanks for playing)
     private bool _isAutomatedSequenceRunning = false;
     
-    // PAF lifeline state tracking
-    private PAFStage _pafStage = PAFStage.NotStarted;
-    private int _pafLifelineNumber = 0; // Which button slot is PAF
-    private System.Windows.Forms.Timer? _pafTimer;
-    private int _pafSecondsRemaining = 30;
-    
-    // ATA lifeline state tracking
-    private ATAStage _ataStage = ATAStage.NotStarted;
-    private int _ataLifelineNumber = 0; // Which button slot is ATA
-    private System.Windows.Forms.Timer? _ataTimer;
-    private int _ataSecondsRemaining = 120; // Start with 2 min for intro
+    // Lifeline manager handles all lifeline logic
+    private LifelineManager? _lifelineManager;
     
     // Closing sequence state tracking
     private System.Windows.Forms.Timer? _closingTimer;
@@ -166,6 +135,13 @@ public partial class ControlPanelForm : Form
         _screenService = screenService;
         _soundService = soundService;
         
+        // Initialize lifeline manager
+        _lifelineManager = new LifelineManager(gameService, soundService, screenService);
+        _lifelineManager.ButtonStateChanged += OnLifelineButtonStateChanged;
+        _lifelineManager.RequestAsyncOperation += OnLifelineRequestAsyncOperation;
+        _lifelineManager.RequestAnswerRemoval += OnLifelineRequestAnswerRemoval;
+        _lifelineManager.LogMessage += OnLifelineLogMessage;
+        
         // Sounds are already loaded in Program.cs during initialization
         
         // Initialize hotkey handler
@@ -196,6 +172,57 @@ public partial class ControlPanelForm : Form
         _gameService.ModeChanged += OnModeChanged;
         _gameService.LifelineUsed += OnLifelineUsed;
     }
+    
+    #region Lifeline Manager Event Handlers
+    
+    private void OnLifelineButtonStateChanged(int buttonNumber, Color color, bool enabled)
+    {
+        var button = buttonNumber switch
+        {
+            1 => btnLifeline1,
+            2 => btnLifeline2,
+            3 => btnLifeline3,
+            4 => btnLifeline4,
+            _ => null
+        };
+        
+        if (button != null)
+        {
+            button.BackColor = color;
+            button.Enabled = enabled;
+        }
+    }
+    
+    private void OnLifelineRequestAsyncOperation(Func<Task> operation)
+    {
+        // Execute the async operation (typically LoadNewQuestion for STQ)
+        Task.Run(async () =>
+        {
+            await LoadNewQuestion();
+        });
+    }
+    
+    private void OnLifelineRequestAnswerRemoval(string answer, string unused)
+    {
+        // Remove answer text for 50:50
+        switch (answer)
+        {
+            case "A": txtA.Text = ""; break;
+            case "B": txtB.Text = ""; break;
+            case "C": txtC.Text = ""; break;
+            case "D": txtD.Text = ""; break;
+        }
+    }
+    
+    private void OnLifelineLogMessage(string message)
+    {
+        if (Program.DebugMode)
+        {
+            Console.WriteLine(message);
+        }
+    }
+    
+    #endregion
 
     private void ControlPanelForm_Load(object? sender, EventArgs e)
     {
@@ -1528,6 +1555,8 @@ public partial class ControlPanelForm : Form
 
     private async Task HandleLifelineClickAsync(int lifelineNumber, Button button)
     {
+        if (_lifelineManager == null) return;
+        
         // Demo mode - just show on screens and play numbered ping
         if (_lifelineMode == LifelineMode.Demo)
         {
@@ -1555,8 +1584,16 @@ public partial class ControlPanelForm : Form
             return;
         }
 
-        // Active mode - execute the lifeline based on configured type
+        // Active mode - delegate to lifeline manager
         var type = GetLifelineTypeFromSettings(lifelineNumber);
+        
+        // Check if this is a multi-stage lifeline click
+        if (_lifelineManager.IsInMultiStageState(type))
+        {
+            _lifelineManager.HandleMultiStageClick(type, lifelineNumber);
+            return;
+        }
+        
         var lifeline = _gameService.State.GetLifeline(type);
         
         if (lifeline == null || lifeline.IsUsed)
@@ -1566,22 +1603,8 @@ public partial class ControlPanelForm : Form
             return;
         }
 
-        // Execute lifeline based on type
-        switch (type)
-        {
-            case Core.Models.LifelineType.FiftyFifty:
-                ExecuteFiftyFifty(lifeline, button);
-                break;
-            case Core.Models.LifelineType.PlusOne:
-                ExecutePhoneFriend(lifeline, button);
-                break;
-            case Core.Models.LifelineType.AskTheAudience:
-                ExecuteAskAudience(lifeline, button);
-                break;
-            case Core.Models.LifelineType.SwitchQuestion:
-                await ExecuteSwitchQuestion(lifeline, button);
-                break;
-        }
+        // Execute lifeline via manager
+        await _lifelineManager.ExecuteLifelineAsync(type, lifelineNumber, lblAnswer.Text);
     }
 
     private async void ExecuteFiftyFifty(Core.Models.Lifeline lifeline, Button button)
