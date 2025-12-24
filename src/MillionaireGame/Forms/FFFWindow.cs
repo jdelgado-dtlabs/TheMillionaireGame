@@ -1,4 +1,5 @@
 using MillionaireGame.Services;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -41,20 +42,30 @@ public partial class FFFWindow : Form
     {
         try
         {
+            GameConsole.Log($"[FFFWindow] FFFWindow_Load called - _isWebServerRunning={_isWebServerRunning}, _serverUrl={_serverUrl}");
+            
             if (_isWebServerRunning)
             {
+                GameConsole.Log("[FFFWindow] Web server is running, showing web-based UI");
+                
                 // Show web-based UI
                 fffControlPanel.Visible = true;
                 localPlayerPanel.Visible = false;
                 
                 // Initialize SignalR client
+                GameConsole.Log("[FFFWindow] Initializing SignalR client...");
                 await fffControlPanel.InitializeClientAsync(_serverUrl);
+                GameConsole.Log("[FFFWindow] SignalR client initialized");
                 
                 // Load available questions
+                GameConsole.Log("[FFFWindow] Loading FFF questions...");
                 await fffControlPanel.LoadQuestionsAsync();
+                GameConsole.Log("[FFFWindow] FFF questions loaded");
             }
             else
             {
+                GameConsole.Log("[FFFWindow] Web server is NOT running, showing local player selection UI");
+                
                 // Show local player selection UI
                 fffControlPanel.Visible = false;
                 localPlayerPanel.Visible = true;
@@ -65,6 +76,8 @@ public partial class FFFWindow : Form
         }
         catch (Exception ex)
         {
+            GameConsole.Log($"[FFFWindow] ERROR in FFFWindow_Load: {ex.Message}");
+            GameConsole.Log($"[FFFWindow] Stack trace: {ex.StackTrace}");
             MessageBox.Show($"Error initializing FFF window: {ex.Message}",
                 "Initialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

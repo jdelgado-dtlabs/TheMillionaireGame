@@ -239,6 +239,18 @@ public class SessionService
     }
 
     /// <summary>
+    /// Get all answers for a specific FFF question
+    /// </summary>
+    public async Task<List<FFFAnswer>> GetAnswersForQuestionAsync(string sessionId, int questionId)
+    {
+        return await _context.FFFAnswers
+            .Include(a => a.Participant)
+            .Where(a => a.SessionId == sessionId && a.QuestionId == questionId)
+            .OrderBy(a => a.SubmittedAt)
+            .ToListAsync();
+    }
+
+    /// <summary>
     /// Save an ATA vote
     /// </summary>
     public async Task SaveATAVoteAsync(string sessionId, string participantId, string questionText, string selectedOption, DateTime submittedAt)

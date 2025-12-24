@@ -12,8 +12,6 @@ internal static class Program
 {
     public static bool DebugMode { get; private set; }
     
-    private static GameLogWindow? _gameLogWindow;
-    
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
     /// <summary>
@@ -110,14 +108,19 @@ internal static class Program
         {
             if (DebugMode || appSettings.Settings.ShowConsole)
             {
-                _gameLogWindow = new GameLogWindow();
-                _gameLogWindow.Log("THE MILLIONAIRE GAME - Debug Console");
-                _gameLogWindow.Log($"Version: Debug Build");
-                _gameLogWindow.Log($"Started: {DateTime.Now}");
-                _gameLogWindow.LogSeparator();
-                _gameLogWindow.Log("Application initialized successfully.");
-                _gameLogWindow.Log("");
-                _gameLogWindow.Show();
+                var gameLogWindow = new GameLogWindow();
+                gameLogWindow.Show(); // Show BEFORE setting it
+                GameConsole.SetWindow(gameLogWindow);
+                
+                // Test logging immediately
+                GameConsole.Log("===== TESTING GAMECONSOLE =====");
+                GameConsole.Log("THE MILLIONAIRE GAME - Debug Console");
+                GameConsole.Log($"Version: Debug Build");
+                GameConsole.Log($"Started: {DateTime.Now}");
+                GameConsole.LogSeparator();
+                GameConsole.Log("Application initialized successfully.");
+                GameConsole.Log("");
+                GameConsole.Log("If you see this, GameConsole.Log() is working!");
             }
         };
         
@@ -135,21 +138,11 @@ internal static class Program
         #else
         if (showConsole)
         {
-            // Show game log window if it doesn't exist
-            if (_gameLogWindow == null || _gameLogWindow.IsDisposed)
-            {
-                _gameLogWindow = new GameLogWindow();
-            }
-            
-            if (!_gameLogWindow.Visible)
-            {
-                _gameLogWindow.Show();
-            }
+            GameConsole.Show();
         }
         else
         {
-            // Hide game log window
-            _gameLogWindow?.Hide();
+            GameConsole.Hide();
         }
         #endif
     }

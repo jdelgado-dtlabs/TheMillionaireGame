@@ -10,6 +10,7 @@ using MillionaireGame.Web.Data;
 using MillionaireGame.Web.Database;
 using MillionaireGame.Web.Hubs;
 using MillionaireGame.Web.Services;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Hosting;
 
@@ -66,6 +67,11 @@ public class WebServerHost : IDisposable
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseUrls(_baseUrl);
+                    // Set the content root and web root to the application's base directory
+                    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    webBuilder.UseContentRoot(baseDir);
+                    webBuilder.UseWebRoot(Path.Combine(baseDir, "wwwroot"));
+                    
                     webBuilder.ConfigureServices((context, services) =>
                     {
                         ConfigureServices(services);
@@ -77,19 +83,44 @@ public class WebServerHost : IDisposable
                 })
                 .ConfigureLogging(logging =>
                 {
-                    // Reduce console logging noise in production
-                    logging.SetMinimumLevel(LogLevel.Warning);
+                    // Clear default providers
+                    logging.ClearProviders();
+                    
+                    // Add custom WebServiceConsole logger
+                    logging.AddProvider(new WebServiceConsoleLoggerProvider());
+                    
+                    // Set minimum level to Information to see participant joins
+                    logging.SetMinimumLevel(LogLevel.Information);
+                    
+                    // Filter out noisy Microsoft logs
                     logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
                     logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
+                    logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
                 });
 
             _host = builder.Build();
+
+            // Delete old database to ensure clean state on startup
+            var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "waps.db");
+            if (File.Exists(dbPath))
+            {
+                try
+                {
+                    File.Delete(dbPath);
+                    WebServiceConsole.Log($"[WebServer] Deleted existing database: {dbPath}");
+                }
+                catch (Exception ex)
+                {
+                    WebServiceConsole.Log($"[WebServer] Could not delete database: {ex.Message}");
+                }
+            }
 
             // Ensure database is created
             using (var scope = _host.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
                 context.Database.EnsureCreated();
+                WebServiceConsole.Log("[WebServer] Database created with clean state");
             }
 
             await _host.StartAsync();
@@ -238,5 +269,60 @@ public class WebServerHost : IDisposable
         _isDisposed = true;
 
         GC.SuppressFinalize(this);
+    }
+}
+/// <summary>
+/// Custom logger provider that writes to WebServiceConsole
+/// </summary>
+internal class WebServiceConsoleLoggerProvider : ILoggerProvider
+{
+    public ILogger CreateLogger(string categoryName)
+    {
+        return new WebServiceConsoleLogger(categoryName);
+    }
+
+    public void Dispose() { }
+}
+
+/// <summary>
+/// Custom logger that writes to WebServiceConsole
+/// </summary>
+internal class WebServiceConsoleLogger : ILogger
+{
+    private readonly string _categoryName;
+
+    public WebServiceConsoleLogger(string categoryName)
+    {
+        _categoryName = categoryName;
+    }
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        if (!IsEnabled(logLevel))
+            return;
+
+        var message = formatter(state, exception);
+        var logPrefix = logLevel switch
+        {
+            LogLevel.Information => "[INFO]",
+            LogLevel.Warning => "[WARN]",
+            LogLevel.Error => "[ERROR]",
+            LogLevel.Critical => "[CRITICAL]",
+            _ => $"[{logLevel}]"
+        };
+
+        // Get short category name
+        var shortCategory = _categoryName.Split('.').LastOrDefault() ?? _categoryName;
+        
+        WebServiceConsole.Log($"{logPrefix} [{shortCategory}] {message}");
+
+        if (exception != null)
+        {
+            WebServiceConsole.Log($"  Exception: {exception.Message}");
+        }
     }
 }

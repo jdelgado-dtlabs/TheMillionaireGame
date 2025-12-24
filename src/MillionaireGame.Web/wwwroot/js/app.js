@@ -163,15 +163,10 @@ function getAutoSessionId() {
 }
 
 /**
- * Get session code from URL or auto-generate
+ * Get session code - always use fixed session ID for live game
  */
 function getSessionCode() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSessionCode = urlParams.get('session');
-    if (urlSessionCode) {
-        return urlSessionCode;
-    }
-    return getAutoSessionId();
+    return 'LIVE'; // Always connect to the live game session
 }
 
 /**
@@ -239,6 +234,9 @@ async function joinSession(sessionId, displayName, participantId = null) {
             }
         });
 
+        // Setup FFF event handlers
+        setupFFFEventHandlers();
+
         // Setup ATA event handlers
         setupATAEventHandlers();
 
@@ -269,7 +267,7 @@ async function joinSession(sessionId, displayName, participantId = null) {
 
         // Update UI
         document.getElementById('displaySessionId').textContent = currentSessionId;
-        document.getElementById('displayName').textContent = currentDisplayName;
+        document.getElementById('lblDisplayName').textContent = currentDisplayName;
         document.getElementById('displayParticipantId').textContent = currentParticipantId;
         document.getElementById('displayConnectionId').textContent = connection.connectionId;
 
@@ -471,6 +469,258 @@ function updateATAResults(results, totalVotes) {
 }
 
 // ============================================================================
+// FFF (Fastest Finger First) Functions
+// ============================================================================
+
+let fffCurrentAnswers = [];
+let fffCurrentOrder = [];
+let fffCurrentQuestionId = null;
+let fffTimerInterval = null;
+let fffTimeRemaining = 20;
+let fffHasSubmitted = false;
+let fffStartTime = null;
+
+/**
+ * Setup FFF event handlers on SignalR connection
+ */
+function setupFFFEventHandlers() {
+    connection.on('QuestionStarted', (data) => {
+        console.log("FFF Question Started:", data);
+        startFFFQuestion(data);
+    });
+
+    connection.on('QuestionEnded', (data) => {
+        console.log("FFF Question Ended:", data);
+        endFFFQuestion(data);
+    });
+
+    connection.on('RankingsUpdated', (data) => {
+        console.log("FFF Rankings Updated:", data);
+        showFFFRankings(data);
+    });
+}
+
+/**
+ * Start FFF question
+ */
+function startFFFQuestion(data) {
+    console.log("Starting FFF question with data:", data);
+    
+    // Reset state
+    fffHasSubmitted = false;
+    fffCurrentQuestionId = data.QuestionId || data.questionId;
+    
+    // Extract answers from Options array
+    const options = data.Options || data.options || [];
+    fffCurrentAnswers = [
+        { letter: 'A', text: options[0] || 'Answer A' },
+        { letter: 'B', text: options[1] || 'Answer B' },
+        { letter: 'C', text: options[2] || 'Answer C' },
+        { letter: 'D', text: options[3] || 'Answer D' }
+    ];
+    fffCurrentOrder = ['A', 'B', 'C', 'D']; // Default order
+    fffTimeRemaining = Math.floor((data.TimeLimit || data.timeLimit || 20000) / 1000); // Convert ms to seconds
+    fffStartTime = Date.now();
+    
+    // Update UI with question text
+    const questionText = data.Question || data.question || data.QuestionText || data.questionText || 'Question';
+    document.getElementById('fffQuestionText').textContent = questionText;
+    document.getElementById('btnSubmitFFF').disabled = false;
+    document.getElementById('fffMessage').style.display = 'none';
+    
+    // Render answer list
+    renderFFFAnswers();
+    
+    // Start timer
+    updateFFFTimer(fffTimeRemaining);
+    startFFFTimerCountdown();
+    
+    // Show FFF screen
+    showScreen('fffQuestionScreen');
+}
+
+/**
+ * Render FFF answer list
+ */
+function renderFFFAnswers() {
+    const answerList = document.getElementById('fffAnswerList');
+    answerList.innerHTML = '';
+    
+    fffCurrentOrder.forEach((letter, index) => {
+        const answer = fffCurrentAnswers.find(a => a.letter === letter);
+        const answerItem = document.createElement('div');
+        answerItem.className = 'fff-answer-item';
+        answerItem.dataset.letter = letter;
+        answerItem.innerHTML = `
+            <div class="fff-position">${index + 1}</div>
+            <div class="fff-letter">${letter}</div>
+            <div class="fff-text">${answer.text}</div>
+        `;
+        
+        // Add click handler to select and reorder
+        answerItem.addEventListener('click', () => selectFFFAnswer(letter));
+        
+        answerList.appendChild(answerItem);
+    });
+}
+
+let fffSelectedLetter = null;
+
+/**
+ * Select FFF answer for reordering
+ */
+function selectFFFAnswer(letter) {
+    if (fffHasSubmitted) return;
+    
+    const answerItems = document.querySelectorAll('.fff-answer-item');
+    
+    if (fffSelectedLetter === null) {
+        // First selection - mark as selected
+        fffSelectedLetter = letter;
+        answerItems.forEach(item => {
+            if (item.dataset.letter === letter) {
+                item.classList.add('selected');
+            }
+        });
+    } else if (fffSelectedLetter === letter) {
+        // Deselect
+        fffSelectedLetter = null;
+        answerItems.forEach(item => item.classList.remove('selected'));
+    } else {
+        // Second selection - swap positions
+        const index1 = fffCurrentOrder.indexOf(fffSelectedLetter);
+        const index2 = fffCurrentOrder.indexOf(letter);
+        
+        // Swap in array
+        [fffCurrentOrder[index1], fffCurrentOrder[index2]] = [fffCurrentOrder[index2], fffCurrentOrder[index1]];
+        
+        // Deselect and re-render
+        fffSelectedLetter = null;
+        renderFFFAnswers();
+    }
+}
+
+/**
+ * Submit FFF answer
+ */
+async function submitFFFAnswer() {
+    if (fffHasSubmitted) return;
+    
+    try {
+        fffHasSubmitted = true;
+        document.getElementById('btnSubmitFFF').disabled = true;
+        stopFFFTimer();
+        
+        const timeElapsed = Date.now() - fffStartTime;
+        const answerSequence = fffCurrentOrder.join(''); // e.g., "BDCA"
+        
+        console.log("Submitting FFF answer:", answerSequence, "Time:", timeElapsed, "ms", "QuestionId:", fffCurrentQuestionId);
+        
+        // Submit to server
+        await connection.invoke("SubmitAnswer", currentSessionId, currentParticipantId, fffCurrentQuestionId, answerSequence);
+        
+        showFFFMessage(`✓ Answer submitted in ${(timeElapsed / 1000).toFixed(1)}s!`, false);
+        
+    } catch (err) {
+        console.error("Submit FFF answer failed:", err);
+        showFFFMessage("❌ Failed to submit answer: " + err.toString(), true);
+        fffHasSubmitted = false;
+        document.getElementById('btnSubmitFFF').disabled = false;
+    }
+}
+
+/**
+ * End FFF question
+ */
+function endFFFQuestion(data) {
+    stopFFFTimer();
+    document.getElementById('btnSubmitFFF').disabled = true;
+    
+    if (!fffHasSubmitted) {
+        showFFFMessage("⏱️ Time's up! Question ended.", true);
+    }
+}
+
+/**
+ * Show FFF rankings
+ */
+function showFFFRankings(data) {
+    if (!data.rankings || data.rankings.length === 0) {
+        showFFFMessage("📊 No correct answers submitted.", false);
+        return;
+    }
+    
+    let message = "📊 <strong>Results:</strong><br><br>";
+    data.rankings.forEach((rank, index) => {
+        const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+        message += `${medal} ${rank.displayName} - ${rank.timeElapsed.toFixed(1)}s<br>`;
+    });
+    
+    showFFFMessage(message, false);
+}
+
+/**
+ * Show FFF message
+ */
+function showFFFMessage(message, isError) {
+    const messageDiv = document.getElementById('fffMessage');
+    messageDiv.innerHTML = message;
+    messageDiv.style.display = 'block';
+    messageDiv.style.background = isError ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)';
+    messageDiv.style.borderColor = isError ? '#ff6666' : '#00ff00';
+}
+
+/**
+ * Update FFF timer display
+ */
+function updateFFFTimer(seconds) {
+    fffTimeRemaining = seconds;
+    const timerDiv = document.getElementById('fffTimer');
+    const timerSeconds = document.getElementById('fffTimerSeconds');
+    
+    timerSeconds.textContent = seconds;
+    
+    if (seconds <= 10) {
+        timerDiv.classList.add('warning');
+    } else {
+        timerDiv.classList.remove('warning');
+    }
+}
+
+/**
+ * Start FFF timer countdown
+ */
+function startFFFTimerCountdown() {
+    if (fffTimerInterval) {
+        clearInterval(fffTimerInterval);
+    }
+
+    fffTimerInterval = setInterval(() => {
+        fffTimeRemaining--;
+        updateFFFTimer(fffTimeRemaining);
+
+        if (fffTimeRemaining <= 0) {
+            clearInterval(fffTimerInterval);
+            fffTimerInterval = null;
+            
+            if (!fffHasSubmitted) {
+                submitFFFAnswer(); // Auto-submit on timeout
+            }
+        }
+    }, 1000);
+}
+
+/**
+ * Stop FFF timer
+ */
+function stopFFFTimer() {
+    if (fffTimerInterval) {
+        clearInterval(fffTimerInterval);
+        fffTimerInterval = null;
+    }
+}
+
+// ============================================================================
 // UI Helper Functions
 // ============================================================================
 
@@ -479,7 +729,8 @@ function updateATAResults(results, totalVotes) {
  */
 function showError(message) {
     const errorDiv = document.getElementById('errorMessage');
-    const nameInput = document.getElementById('displayName');
+    const nameInput = document.getElementById('txtDisplayName');
+    if (!nameInput || !errorDiv) return;
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
     nameInput.classList.add('error');
@@ -490,7 +741,8 @@ function showError(message) {
  */
 function hideError() {
     const errorDiv = document.getElementById('errorMessage');
-    const nameInput = document.getElementById('displayName');
+    const nameInput = document.getElementById('txtDisplayName');
+    if (!nameInput || !errorDiv) return;
     errorDiv.style.display = 'none';
     nameInput.classList.remove('error');
 }
@@ -500,37 +752,19 @@ function hideError() {
  */
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        screen.classList.add('active');
+    } else {
+        console.error(`Screen not found: ${screenId}`);
+    }
 }
 
 // ============================================================================
 // Event Listeners & Initialization
 // ============================================================================
-
-/**
- * Initialize application on page load
- */
-window.addEventListener('DOMContentLoaded', () => {
-    // Pre-fill session code (hidden field) with auto-generated ID
-    const sessionCode = getSessionCode();
-    document.getElementById('sessionCode').value = sessionCode;
-
-    // Pre-fill display name if stored
-    const storedName = getStoredDisplayName();
-    if (storedName) {
-        document.getElementById('displayName').value = storedName;
-    }
-
-    // Auto-reconnect if we have stored session info
-    const storedParticipantId = getStoredParticipantId();
-    if (sessionCode && storedName && storedParticipantId) {
-        console.log("Auto-reconnecting with stored participant ID:", storedParticipantId);
-        joinSession(sessionCode, storedName, storedParticipantId);
-    }
-
-    // Setup button event listeners
-    setupEventListeners();
-});
+// Initialization
+// ============================================================================
 
 /**
  * Setup all button and form event listeners
@@ -538,20 +772,21 @@ window.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
     // Join button
     document.getElementById('btnJoin').addEventListener('click', async () => {
-        const displayName = document.getElementById('displayName').value.trim();
-        const sessionCode = document.getElementById('sessionCode').value.trim();
+        const displayName = document.getElementById('txtDisplayName').value.trim();
 
         if (!displayName) {
-            alert("Please enter your name");
+            showError("Please enter your name");
             return;
         }
 
+        const sessionCode = getSessionCode(); // Always use "LIVE" session
+        // Get existing participant ID to support reconnection
         const existingParticipantId = getStoredParticipantId();
         await joinSession(sessionCode, displayName, existingParticipantId);
     });
 
     // Allow Enter key to join session
-    document.getElementById('displayName').addEventListener('keypress', (e) => {
+    document.getElementById('txtDisplayName').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             document.getElementById('btnJoin').click();
         }
@@ -585,6 +820,11 @@ function setupEventListeners() {
             const option = this.dataset.option;
             await submitATAVote(option);
         });
+    });
+    
+    // FFF submit button handler
+    document.getElementById('btnSubmitFFF').addEventListener('click', () => {
+        submitFFFAnswer();
     });
 }
 
@@ -723,3 +963,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Auto-reconnect if we have stored session info
     const storedParticipantId = getStoredParticipantId();
+    if (sessionCode && storedName && storedParticipantId) {
+        console.log("Auto-reconnecting with stored participant ID:", storedParticipantId);
+        joinSession(sessionCode, storedName, storedParticipantId);
+    }
+
+    // Setup button event listeners
+    setupEventListeners();
+});

@@ -76,16 +76,18 @@ public class FFFHub : Hub
             if (consoleType != null)
             {
                 var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
-                logMethod?.Invoke(null, new object[] { $"Player {participant.Id} joined FFF session" });
+                logMethod?.Invoke(null, new object[] { $"[FFFHub] Player {displayName} ({participant.Id}) joined session {sessionId}" });
             }
         }
         catch { /* WebService console not available - ignore */ }
         
-        // Notify all clients in the session about the participant
-        await Clients.Group(sessionId).SendAsync("ParticipantJoined", new
+        // Notify all clients (including control panel) about the participant
+        // Use Clients.All instead of Clients.Group to ensure control panel receives the event
+        await Clients.All.SendAsync("ParticipantJoined", new
         {
             ParticipantId = participant.Id,
             DisplayName = displayName,
+            SessionId = sessionId,
             IsReconnect = participantId != null,
             Timestamp = DateTime.UtcNow
         });
@@ -99,6 +101,25 @@ public class FFFHub : Hub
             SessionId = sessionId,
             State = participant.State.ToString()
         };
+    }
+
+    /// <summary>
+    /// Get list of active participants for a session
+    /// </summary>
+    public async Task<object> GetActiveParticipants(string sessionId)
+    {
+        var participants = await _sessionService.GetActiveParticipantsAsync(sessionId);
+        
+        _logger.LogInformation($"GetActiveParticipants called for session {sessionId}: Found {participants.Count()} participants");
+        
+        return participants.Select(p => new
+        {
+            Id = p.Id,
+            DisplayName = p.DisplayName,
+            JoinedAt = p.JoinedAt,
+            DeviceType = p.DeviceType,
+            State = p.State.ToString()
+        }).ToList();
     }
 
     /// <summary>
@@ -122,6 +143,15 @@ public class FFFHub : Hub
         
         // Save answer to database
         await _sessionService.SaveFFFAnswerAsync(sessionId, participantId, questionId, answerSequence, submittedAt);
+        
+        // Broadcast to all clients (including control panel) that an answer was submitted
+        await Clients.All.SendAsync("AnswerSubmitted", new
+        {
+            ParticipantId = participantId,
+            QuestionId = questionId,
+            AnswerSequence = answerSequence,
+            SubmittedAt = submittedAt
+        });
         
         // Acknowledge submission to the participant
         await Clients.Caller.SendAsync("AnswerReceived", new
@@ -236,6 +266,66 @@ public class FFFHub : Hub
             TotalSubmissions = results.TotalSubmissions,
             CorrectSubmissions = results.CorrectSubmissions
         });
+    }
+
+    /// <summary>
+    /// Get all answers for a specific question
+    /// </summary>
+    public async Task<object> GetAnswers(string sessionId, int questionId)
+    {
+        _logger.LogInformation("Getting answers for question {QuestionId} in session {SessionId}", questionId, sessionId);
+        
+        var answers = await _sessionService.GetAnswersForQuestionAsync(sessionId, questionId);
+        
+        return new
+        {
+            Success = true,
+            QuestionId = questionId,
+            Answers = answers.Select(a => new
+            {
+                ParticipantId = a.ParticipantId,
+                DisplayName = a.Participant?.DisplayName,
+                AnswerSequence = a.AnswerSequence,
+                TimeElapsed = a.TimeElapsed,
+                SubmittedAt = a.SubmittedAt
+            }).ToList(),
+            Count = answers.Count
+        };
+    }
+
+    /// <summary>
+    /// Calculate rankings for a specific question
+    /// </summary>
+    public async Task<object> CalculateRankings(string sessionId, int questionId)
+    {
+        _logger.LogInformation("Calculating rankings for question {QuestionId} in session {SessionId}", questionId, sessionId);
+        
+        var results = await _fffService.CalculateRankingsAsync(sessionId, questionId);
+        
+        return new
+        {
+            Success = true,
+            QuestionId = questionId,
+            Winner = results.Winner != null ? new
+            {
+                ParticipantId = results.Winner.ParticipantId,
+                DisplayName = results.Winner.Participant?.DisplayName,
+                TimeElapsed = results.Winner.TimeElapsed,
+                Rank = results.Winner.Rank,
+                IsCorrect = results.Winner.IsCorrect
+            } : null,
+            Rankings = results.Rankings.Select(r => new
+            {
+                ParticipantId = r.ParticipantId,
+                DisplayName = r.Participant?.DisplayName,
+                TimeElapsed = r.TimeElapsed,
+                Rank = r.Rank,
+                AnswerSequence = r.AnswerSequence,
+                IsCorrect = r.IsCorrect
+            }).ToList(),
+            TotalSubmissions = results.TotalSubmissions,
+            CorrectSubmissions = results.CorrectSubmissions
+        };
     }
 
     public override async Task OnConnectedAsync()

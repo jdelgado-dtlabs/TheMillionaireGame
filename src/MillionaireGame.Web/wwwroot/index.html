@@ -26,7 +26,7 @@
         <div id="joinScreen" class="screen active">
             <div class="status disconnected">Not Connected</div>
             <div id="errorMessage" class="error-message" style="display: none;"></div>
-            <input type="text" id="displayName" placeholder="Enter your name" maxlength="35" />
+            <input type="text" id="txtDisplayName" placeholder="Enter your name" maxlength="35" />
             <input type="text" id="sessionCode" placeholder="Session code (or from URL)" style="display: none;" />
             
             <div class="info">
@@ -53,7 +53,7 @@
             
             <div class="info">
                 <strong>Session:</strong> <span id="displaySessionId"></span><br>
-                <strong>Your Name:</strong> <span id="displayName"></span><br>
+                <strong>Your Name:</strong> <span id="lblDisplayName"></span><br>
                 <strong>Participant ID:</strong> <span id="displayParticipantId"></span><br>
                 <strong>Connection ID:</strong> <span id="displayConnectionId"></span>
             </div>
@@ -70,6 +70,32 @@
             </div>
         </div>
         
+        <!-- FFF Question Screen -->
+        <div id="fffQuestionScreen" class="screen">
+            <div class="status connected">⚡ Fastest Finger First</div>
+            
+            <h2 id="fffQuestionText" style="color: #FFD700; margin: 20px 0; font-size: 1.3em;"></h2>
+            
+            <div id="fffTimer" class="timer">
+                <span id="fffTimerSeconds">20</span>s
+            </div>
+            
+            <div class="info" style="margin-bottom: 20px; background: rgba(255, 215, 0, 0.1);">
+                <strong>⚡ Instructions:</strong><br>
+                • Tap answers to reorder them<br>
+                • Put them in the correct sequence<br>
+                • Submit when ready - fastest correct answer wins!
+            </div>
+            
+            <div id="fffAnswerList" class="fff-answer-list">
+                <!-- Answer items will be dynamically added here -->
+            </div>
+            
+            <button id="btnSubmitFFF" class="submit-button">Submit Answer</button>
+            
+            <div id="fffMessage" class="info" style="display: none; margin-top: 20px;"></div>
+        </div>
+
         <!-- ATA Voting Screen -->
         <div id="ataVotingScreen" class="screen">
             <div class="status connected">📊 Ask The Audience</div>
@@ -124,6 +150,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     
     <!-- Application Script -->
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=20251223-2"></script>
 </body>
 </html>

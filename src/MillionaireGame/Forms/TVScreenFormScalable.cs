@@ -542,8 +542,19 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     
     private void DrawFFFDisplay(System.Drawing.Graphics g)
     {
-        // Clear background
-        g.Clear(Color.FromArgb(0, 0, 51)); // Dark blue background
+        // Draw FFF background image
+        var backgroundImage = FFFGraphics.GetBackground();
+        if (backgroundImage != null)
+        {
+            // Draw full-screen background
+            var bgBounds = ScaleRect(0, 0, 1920, 1080);
+            g.DrawImage(backgroundImage, bgBounds);
+        }
+        else
+        {
+            // Fallback to solid color if image not found
+            g.Clear(Color.FromArgb(0, 0, 51)); // Dark blue background
+        }
         
         // Show winner with large text
         if (_fffShowWinner && !string.IsNullOrEmpty(_fffWinnerName))
@@ -569,11 +580,13 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // Draw contestant straps
         if (_fffContestants.Count > 0)
         {
-            // Layout contestants vertically
-            float startY = 200;
-            float strapHeight = 80;
-            float spacing = 20;
-            float totalHeight = (_fffContestants.Count * strapHeight) + ((_fffContestants.Count - 1) * spacing);
+            // Layout contestants vertically with full-width straps
+            float strapHeight = 77;    // Scaled from VB.NET's 51px (51 * 1.5 ≈ 77)
+            float spacing = 80;        // Scaled from VB.NET's 53px spacing (53 * 1.5 ≈ 80)
+            float strapWidth = 1920;   // Full screen width
+            
+            // Calculate total height and start position to center vertically
+            float totalHeight = (_fffContestants.Count * strapHeight) + ((_fffContestants.Count - 1) * (spacing - strapHeight));
             float currentY = (1080 - totalHeight) / 2; // Center vertically
             
             for (int i = 0; i < _fffContestants.Count; i++)
@@ -581,47 +594,49 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 var name = _fffContestants[i];
                 bool isHighlighted = i == _fffHighlightedIndex;
                 
-                // Design-time bounds for strap
-                var designBounds = new RectangleF(400, currentY, 1120, strapHeight);
+                // Full-width strap bounds
+                var designBounds = new RectangleF(0, currentY, strapWidth, strapHeight);
                 
-                // Background color
-                Color bgColor;
-                if (isHighlighted && _fffShowWinner)
+                // Determine strap image based on state
+                Image? strapImage;
+                if (isHighlighted)
                 {
-                    bgColor = Color.Gold;
-                }
-                else if (isHighlighted)
-                {
-                    bgColor = Color.Yellow;
+                    strapImage = FFFGraphics.GetFastestStrap(); // Yellow/gold highlight strap
                 }
                 else
                 {
-                    bgColor = Color.FromArgb(0, 0, 102); // Dark blue
+                    strapImage = FFFGraphics.GetIdleStrap(); // Normal blue strap
                 }
                 
-                // Draw background
+                // Draw strap image
                 var scaledBounds = ScaleRect(designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height);
-                using (var bgBrush = new SolidBrush(bgColor))
+                if (strapImage != null)
                 {
-                    g.FillRectangle(bgBrush, scaledBounds);
+                    g.DrawImage(strapImage, scaledBounds);
                 }
-                
-                // Draw border
-                using (var borderPen = new Pen(Color.White, 3))
+                else
                 {
+                    // Fallback: colored rectangle if image not found
+                    Color bgColor = isHighlighted ? Color.Yellow : Color.FromArgb(0, 0, 102);
+                    using var bgBrush = new SolidBrush(bgColor);
+                    g.FillRectangle(bgBrush, scaledBounds);
+                    
+                    using var borderPen = new Pen(Color.White, 3);
                     g.DrawRectangle(borderPen, scaledBounds.X, scaledBounds.Y, scaledBounds.Width, scaledBounds.Height);
                 }
                 
-                // Draw contestant name
-                using var font = new Font("Arial", 48, FontStyle.Bold);
-                Color textColor = (isHighlighted && !_fffShowWinner) ? Color.Black : Color.White;
+                // Draw contestant name (left side of strap)
+                // VB.NET position: X=379 (scaled to 570px for 1920 width)
+                using var font = new Font("Calibri", 30, FontStyle.Bold); // Scaled from 20.25pt
+                Color textColor = isHighlighted ? Color.Black : Color.White;
                 using var brush = new SolidBrush(textColor);
                 using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
                 
+                // Name text bounds (left offset matching VB.NET layout)
                 DrawScaledText(g, name, font, brush,
-                    designBounds.X + 20, designBounds.Y, designBounds.Width - 40, designBounds.Height, format);
+                    designBounds.X + 570, designBounds.Y, designBounds.Width - 600, designBounds.Height, format);
                 
-                currentY += strapHeight + spacing;
+                currentY += spacing; // Move to next strap position
             }
         }
     }

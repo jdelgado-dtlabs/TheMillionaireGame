@@ -10,7 +10,6 @@ public partial class GameLogWindow : Form
 {
     private readonly RichTextBox txtLog;
     private readonly ConsoleLogger _logger;
-    private readonly System.Windows.Forms.Timer _autoScrollTimer;
 
     public GameLogWindow()
     {
@@ -29,25 +28,10 @@ public partial class GameLogWindow : Form
             ForeColor = Color.Lime,
             Font = new Font("Consolas", 10),
             BorderStyle = BorderStyle.None,
-            WordWrap = false
+            WordWrap = true
         };
 
         Controls.Add(txtLog);
-
-        // Auto-scroll timer
-        _autoScrollTimer = new System.Windows.Forms.Timer
-        {
-            Interval = 100
-        };
-        _autoScrollTimer.Tick += (s, e) =>
-        {
-            if (txtLog.TextLength > 0)
-            {
-                txtLog.SelectionStart = txtLog.TextLength;
-                txtLog.ScrollToCaret();
-            }
-        };
-        _autoScrollTimer.Start();
 
         // Write header
         LogHeader();
@@ -103,20 +87,38 @@ public partial class GameLogWindow : Form
     {
         if (InvokeRequired)
         {
-            Invoke(new Action<string>(Log), message);
+            try
+            {
+                Invoke(new Action<string>(Log), message);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Window was disposed, ignore
+                return;
+            }
             return;
         }
 
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        var formattedMessage = $"[{timestamp}] {message}\n";
-        
-        txtLog.AppendText(formattedMessage);
-        _logger.Log(message);
-
-        // Limit text length to prevent memory issues
-        if (txtLog.TextLength > 100000)
+        try
         {
-            txtLog.Text = txtLog.Text.Substring(txtLog.TextLength - 50000);
+            var timestamp = DateTime.Now.ToString("HH:mm:ss");
+            var formattedMessage = $"[{timestamp}] {message}\n";
+            
+            txtLog.AppendText(formattedMessage);
+            txtLog.SelectionStart = txtLog.TextLength;
+            txtLog.ScrollToCaret();
+            
+            _logger.Log(message);
+
+            // Limit text length to prevent memory issues
+            if (txtLog.TextLength > 100000)
+            {
+                txtLog.Text = txtLog.Text.Substring(txtLog.TextLength - 50000);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[GameLogWindow] Error logging: {ex.Message}");
         }
     }
 
@@ -145,8 +147,6 @@ public partial class GameLogWindow : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        _autoScrollTimer?.Stop();
-        _autoScrollTimer?.Dispose();
         _logger?.Close();
         base.OnFormClosing(e);
     }

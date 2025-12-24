@@ -3,6 +3,7 @@ using MillionaireGame.Web.Database;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Utilities;
 using System.Timers;
 
 namespace MillionaireGame.Forms;
@@ -22,7 +23,7 @@ public partial class FFFControlPanel : UserControl
     private List<RankingResult> _rankings = new();
     private FFFClientService? _fffClient;
     private readonly MillionaireGame.Web.Database.FFFQuestionRepository? _fffRepository;
-    private readonly string _sessionId = "game-session";
+    private const string _sessionId = "LIVE"; // Fixed session ID for live game
     
     public FFFControlPanel()
     {
@@ -35,13 +36,22 @@ public partial class FFFControlPanel : UserControl
         try
         {
             var sqlSettings = new SqlSettingsManager();
-            var connectionString = sqlSettings.Settings.GetConnectionString("waps.db");
+            var connectionString = sqlSettings.Settings.GetConnectionString("dbMillionaire");
             _fffRepository = new MillionaireGame.Web.Database.FFFQuestionRepository(connectionString);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error initializing FFF repository: {ex.Message}");
         }
+        
+        // Auto-refresh participants when control becomes visible
+        this.VisibleChanged += async (s, e) =>
+        {
+            if (this.Visible)
+            {
+                await RefreshParticipantsAsync();
+            }
+        };
     }
     
     /// <summary>
@@ -82,27 +92,41 @@ public partial class FFFControlPanel : UserControl
     {
         try
         {
+            GameConsole.Log($"[FFFControlPanel] InitializeClientAsync called with serverUrl: {serverUrl}");
+            
             _fffClient = new FFFClientService(serverUrl, _sessionId);
+            GameConsole.Log($"[FFFControlPanel] FFFClientService created");
             
             // Subscribe to events
-            _fffClient.ParticipantJoined += (s, p) => UpdateParticipants(new List<ParticipantInfo> { p });
+            _fffClient.ParticipantJoined += async (s, p) =>
+            {
+                GameConsole.Log($"[FFFControlPanel] ParticipantJoined event: {p.DisplayName}");
+                await RefreshParticipantsAsync();
+            };
             _fffClient.AnswerSubmitted += (s, a) => AddAnswerSubmission(a);
             _fffClient.ConnectionStatusChanged += (s, status) =>
             {
+                GameConsole.Log($"[FFFControlPanel] Connection status changed: {status}");
                 if (InvokeRequired)
                     Invoke(() => Text = $"FFF Control - {status}");
                 else
                     Text = $"FFF Control - {status}";
             };
             
+            GameConsole.Log($"[FFFControlPanel] Calling ConnectAsync...");
             await _fffClient.ConnectAsync();
+            GameConsole.Log($"[FFFControlPanel] ConnectAsync completed");
             
             // Load initial participants
+            GameConsole.Log($"[FFFControlPanel] Getting active participants...");
             var participants = await _fffClient.GetActiveParticipantsAsync();
+            GameConsole.Log($"[FFFControlPanel] Received {participants.Count} participants");
             UpdateParticipants(participants);
         }
         catch (Exception ex)
         {
+            GameConsole.Log($"[FFFControlPanel] ERROR in InitializeClientAsync: {ex.Message}");
+            GameConsole.Log($"[FFFControlPanel] Stack trace: {ex.StackTrace}");
             MessageBox.Show($"Error connecting to server: {ex.Message}",
                 "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -113,22 +137,63 @@ public partial class FFFControlPanel : UserControl
     /// </summary>
     public void UpdateParticipants(List<ParticipantInfo> participants)
     {
+        GameConsole.Log($"[FFFControlPanel] UpdateParticipants called with {participants.Count} participants, InvokeRequired={InvokeRequired}");
+        
         if (InvokeRequired)
         {
+            GameConsole.Log("[FFFControlPanel] Invoking on UI thread...");
             Invoke(new Action(() => UpdateParticipants(participants)));
             return;
         }
         
+        GameConsole.Log("[FFFControlPanel] On UI thread, updating UI...");
         _participants = participants;
         lstParticipants.Items.Clear();
+        GameConsole.Log($"[FFFControlPanel] Cleared list, adding {participants.Count} items");
         
         foreach (var participant in participants)
         {
-            lstParticipants.Items.Add($"{participant.DisplayName} ({participant.Id.Substring(0, 8)}...)");
+            var idPreview = participant.Id.Length > 8 
+                ? participant.Id.Substring(0, 8) + "..." 
+                : participant.Id;
+            var displayText = $"{participant.DisplayName} ({idPreview})";
+            lstParticipants.Items.Add(displayText);
+            GameConsole.Log($"[FFFControlPanel] Added: {displayText}");
         }
         
         lblParticipantCount.Text = $"{participants.Count} Participant{(participants.Count != 1 ? "s" : "")}";
+        GameConsole.Log($"[FFFControlPanel] Updated label: {lblParticipantCount.Text}");
         UpdateUIState();
+        GameConsole.Log("[FFFControlPanel] UpdateParticipants completed");
+    }
+    
+    /// <summary>
+    /// Refresh participant list from server
+    /// </summary>
+    public async Task RefreshParticipantsAsync()
+    {
+        try
+        {
+            GameConsole.Log("[FFFControlPanel] RefreshParticipantsAsync called");
+            if (_fffClient != null && _fffClient.IsConnected)
+            {
+                GameConsole.Log("[FFFControlPanel] Client connected, calling GetActiveParticipantsAsync");
+                var participants = await _fffClient.GetActiveParticipantsAsync();
+                GameConsole.Log($"[FFFControlPanel] Received {participants.Count} participants");
+                UpdateParticipants(participants);
+                GameConsole.Log("[FFFControlPanel] UpdateParticipants completed");
+            }
+            else
+            {
+                GameConsole.Log($"[FFFControlPanel] Client not available - IsNull:{_fffClient == null}, IsConnected:{_fffClient?.IsConnected}");
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Log($"[FFFControlPanel] Error refreshing participants: {ex.Message}");
+            MessageBox.Show($"Error refreshing participants: {ex.Message}",
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
     
     /// <summary>
@@ -162,11 +227,14 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
+        GameConsole.Log($"[FFFControlPanel] UpdateRankings called with {rankings.Count} rankings");
+        
         _rankings = rankings;
         lstRankings.Items.Clear();
         
         foreach (var ranking in rankings)
         {
+            GameConsole.Log($"[FFFControlPanel] Ranking: Rank={ranking.Rank}, DisplayName={ranking.DisplayName}, IsCorrect={ranking.IsCorrect}, TimeElapsed={ranking.TimeElapsed}ms");
             var icon = ranking.IsCorrect ? "✓" : "✗";
             var timeSeconds = ranking.TimeElapsed / 1000.0;
             lstRankings.Items.Add($"#{ranking.Rank} {icon} {ranking.DisplayName} ({timeSeconds:F2}s)");
@@ -174,11 +242,13 @@ public partial class FFFControlPanel : UserControl
         
         if (rankings.Count > 0 && rankings[0].IsCorrect)
         {
+            GameConsole.Log($"[FFFControlPanel] Winner detected: {rankings[0].DisplayName}");
             lblWinner.Text = $"Winner: {rankings[0].DisplayName}";
             lblWinner.ForeColor = Color.Green;
         }
         else
         {
+            GameConsole.Log($"[FFFControlPanel] No winner - Count={rankings.Count}, FirstIsCorrect={rankings.Count > 0 && rankings[0].IsCorrect}");
             lblWinner.Text = "Winner: None (no correct answers)";
             lblWinner.ForeColor = Color.Red;
         }
@@ -250,7 +320,11 @@ public partial class FFFControlPanel : UserControl
                 return;
             }
             
-            await _fffClient.StartQuestionAsync(_currentQuestion.Id, timeLimit: 30);
+            await _fffClient.StartQuestionAsync(
+                _currentQuestion.Id, 
+                _currentQuestion.QuestionText,
+                new[] { _currentQuestion.AnswerA, _currentQuestion.AnswerB, _currentQuestion.AnswerC, _currentQuestion.AnswerD },
+                timeLimit: 30);
             
             _fffStartTime = DateTime.UtcNow;
             _isFFFActive = true;
@@ -262,7 +336,7 @@ public partial class FFFControlPanel : UserControl
             UpdateUIState();
             
             MessageBox.Show("FFF question started! Participants can now submit answers.",
-                "FFF Started", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                "FFF Started", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
         catch (Exception ex)
         {
@@ -280,13 +354,13 @@ public partial class FFFControlPanel : UserControl
             
             if (_fffClient != null && _fffClient.IsConnected)
             {
-                await _fffClient.EndQuestionAsync();
+                await _fffClient.EndQuestionAsync(_currentQuestion.Id);
             }
             
             UpdateUIState();
             
             MessageBox.Show("FFF question ended. Calculate results to see rankings.",
-                "FFF Ended", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                "FFF Ended", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
         catch (Exception ex)
         {
@@ -312,7 +386,7 @@ public partial class FFFControlPanel : UserControl
                 UpdateRankings(rankings);
                 
                 MessageBox.Show("Results calculated! Check the Rankings panel.",
-                    "Results Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    "Results Ready", MessageBoxButtons.OK, MessageBoxIcon.None);
             }
             else
             {
@@ -349,7 +423,7 @@ public partial class FFFControlPanel : UserControl
         {
             // TODO: Notify game service that this player won FFF and should proceed to hot seat
             MessageBox.Show($"{winner.DisplayName} selected as winner!",
-                "Winner Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                "Winner Selected", MessageBoxButtons.OK, MessageBoxIcon.None);
             
             // Reset for next round
             ResetFFFRound();

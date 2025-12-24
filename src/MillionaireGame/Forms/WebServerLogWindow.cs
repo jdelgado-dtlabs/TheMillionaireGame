@@ -10,7 +10,6 @@ public partial class WebServerLogWindow : Form
 {
     private readonly RichTextBox txtLog;
     private readonly ConsoleLogger _logger;
-    private readonly System.Windows.Forms.Timer _autoScrollTimer;
 
     public WebServerLogWindow()
     {
@@ -29,25 +28,10 @@ public partial class WebServerLogWindow : Form
             ForeColor = Color.Lime,
             Font = new Font("Consolas", 10),
             BorderStyle = BorderStyle.None,
-            WordWrap = false
+            WordWrap = true
         };
 
         Controls.Add(txtLog);
-
-        // Auto-scroll timer
-        _autoScrollTimer = new System.Windows.Forms.Timer
-        {
-            Interval = 100
-        };
-        _autoScrollTimer.Tick += (s, e) =>
-        {
-            if (txtLog.TextLength > 0)
-            {
-                txtLog.SelectionStart = txtLog.TextLength;
-                txtLog.ScrollToCaret();
-            }
-        };
-        _autoScrollTimer.Start();
 
         // Write header
         LogHeader();
@@ -146,8 +130,6 @@ public partial class WebServerLogWindow : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        _autoScrollTimer?.Stop();
-        _autoScrollTimer?.Dispose();
         _logger?.Close();
         base.OnFormClosing(e);
     }

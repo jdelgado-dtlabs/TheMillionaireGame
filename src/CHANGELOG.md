@@ -2,6 +2,44 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.5.2-2512] - 2025-12-23
+
+### Added
+- **FFF Web Participant Interface - Phase 5.2** ✅ COMPLETE
+  - **Answer Submission Real-Time Events**:
+    * AnswerSubmitted broadcasts to all clients (including control panel)
+    * Participant cache for DisplayName lookup
+    * Comprehensive JsonElement parsing for answer submissions
+  - **Rankings Calculation and Display**:
+    * Extract Rankings array from server wrapper object
+    * JsonElement array parsing for rankings
+    * Manual property enumeration for all ranking fields
+    * Time-based winner determination (fastest correct answer)
+  - **Enhanced Logging**:
+    * Detailed GameConsole.Log throughout answer submission flow
+    * Property-level logging in ParseRanking
+    * Data type and ValueKind logging for JsonElement debugging
+  - **UI Polish**:
+    * Changed MessageBoxIcon.Information to MessageBoxIcon.None (silent notifications)
+    * Affects: FFF Started, FFF Ended, Results Ready, Winner Selected
+
+### Changed
+- **FFFHub.SubmitAnswer**: Now broadcasts AnswerSubmitted event to Clients.All
+- **FFFClientService**:
+  * Added `_participants` cache field
+  * CalculateRankingsAsync extracts Rankings from wrapper object
+  * ParseRankings handles JsonElement.ValueKind.Array
+  * ParseRanking manually enumerates JsonElement properties
+  * ParseAnswer uses _participants cache for DisplayName lookup
+- **FFFControlPanel**: All Information message boxes now use Icon.None
+
+### Fixed
+- Answer submissions not appearing in control panel (AnswerSubmitted broadcast missing)
+- Rankings showing as empty despite correct answer submissions (wrapper object parsing)
+- IsCorrect flag not parsing correctly (JsonElement property enumeration)
+- DisplayName showing "Unknown" in answer submissions (participant cache)
+- System beep sounds on FFF notification dialogs
+
 ## [v0.5-2512] - 2025-12-23
 
 ### Added

@@ -276,7 +276,7 @@ public partial class ControlPanelForm : Form
     {
         if (Program.DebugMode)
         {
-            Console.WriteLine(message);
+            GameConsole.Log(message);
         }
     }
     
@@ -848,7 +848,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Question] Requesting question #{currentQuestion} (difficulty level {difficultyLevel})");
+                GameConsole.Log($"[Question] Requesting question #{currentQuestion} (difficulty level {difficultyLevel})");
             }
             
             // Try Range type first (most common), fall back to Specific if needed
@@ -866,8 +866,8 @@ public partial class ControlPanelForm : Form
                 
                 if (Program.DebugMode)
                 {
-                    Console.WriteLine($"[Question] No unused questions found for difficulty level {difficultyLevel}");
-                    Console.WriteLine($"[Question] Database has {total} total questions at level {difficultyLevel} ({unused} unused)");
+                    GameConsole.Log($"[Question] No unused questions found for difficulty level {difficultyLevel}");
+                    GameConsole.Log($"[Question] Database has {total} total questions at level {difficultyLevel} ({unused} unused)");
                 }
                 
                 MessageBox.Show(
@@ -884,7 +884,7 @@ public partial class ControlPanelForm : Form
 
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Question] Loaded question ID {question.Id}: {question.QuestionText.Substring(0, Math.Min(50, question.QuestionText.Length))}...");
+                GameConsole.Log($"[Question] Loaded question ID {question.Id}: {question.QuestionText.Substring(0, Math.Min(50, question.QuestionText.Length))}...");
             }
 
             // Store question for progressive reveal
@@ -1150,7 +1150,7 @@ public partial class ControlPanelForm : Form
         }
         
         // Log walk away to console
-        Console.WriteLine($"[WALK AWAY] Player walked away with: {winnings}");
+        GameConsole.Log($"[WALK AWAY] Player walked away with: {winnings}");
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)
@@ -1211,7 +1211,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine("[Risk Mode] Activated - No safety net at Q5/Q10, uses alternate sounds");
+                GameConsole.Log("[Risk Mode] Activated - No safety net at Q5/Q10, uses alternate sounds");
             }
         }
         else
@@ -1221,7 +1221,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine("[Risk Mode] Deactivated - Normal mode restored");
+                GameConsole.Log("[Risk Mode] Deactivated - Normal mode restored");
             }
         }
     }
@@ -1230,7 +1230,7 @@ public partial class ControlPanelForm : Form
     {
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[MoneyTreeButton] Button clicked, current text: '{btnShowMoneyTree.Text}', _pendingSafetyNetLevel={_pendingSafetyNetLevel}, _isExplainGameActive={_isExplainGameActive}");
+            GameConsole.Log($"[MoneyTreeButton] Button clicked, current text: '{btnShowMoneyTree.Text}', _pendingSafetyNetLevel={_pendingSafetyNetLevel}, _isExplainGameActive={_isExplainGameActive}");
         }
         
         if (btnShowMoneyTree.Text == "Show Money Tree")
@@ -1390,7 +1390,7 @@ public partial class ControlPanelForm : Form
     {
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}, playSound={playSound}, targetLevel={targetLevelAfterAnimation}");
+            GameConsole.Log($"[SafetyNetAnimation] StartSafetyNetAnimation called for level {safetyNetLevel}, playSound={playSound}, targetLevel={targetLevelAfterAnimation}");
         }
         
         // Optionally play safety net lock-in sound
@@ -1416,7 +1416,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[SafetyNetAnimation] Started lock-in animation for level {safetyNetLevel}");
+            GameConsole.Log($"[SafetyNetAnimation] Started lock-in animation for level {safetyNetLevel}");
         }
     }
     
@@ -1435,7 +1435,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[SafetyNetAnimation] Animation complete for level {_safetyNetAnimationLevel}, staying on target level {_safetyNetAnimationTargetLevel}");
+                GameConsole.Log($"[SafetyNetAnimation] Animation complete for level {_safetyNetAnimationLevel}, staying on target level {_safetyNetAnimationTargetLevel}");
             }
         }
         else
@@ -1446,7 +1446,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[SafetyNetAnimation] Flash {_safetyNetFlashCount}/{SAFETY_NET_FLASH_TOTAL}, State: {(_safetyNetFlashState ? "ON" : "OFF")}");
+                GameConsole.Log($"[SafetyNetAnimation] Flash {_safetyNetFlashCount}/{SAFETY_NET_FLASH_TOTAL}, State: {(_safetyNetFlashState ? "ON" : "OFF")}");
             }
         }
     }
@@ -1527,7 +1527,7 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                Console.WriteLine("[Reset] Cancelled automated sequence and cleaned up timers");
+                GameConsole.Log("[Reset] Cancelled automated sequence and cleaned up timers");
             }
         }
         
@@ -1635,11 +1635,11 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Lifelines] Initializing {totalLifelines} lifeline button(s):");
-            Console.WriteLine($"  Button 1: {label1} (Type: {_appSettings.Settings.Lifeline1}) - Visible: {totalLifelines >= 1}");
-            Console.WriteLine($"  Button 2: {label2} (Type: {_appSettings.Settings.Lifeline2}) - Visible: {totalLifelines >= 2}");
-            Console.WriteLine($"  Button 3: {label3} (Type: {_appSettings.Settings.Lifeline3}) - Visible: {totalLifelines >= 3}");
-            Console.WriteLine($"  Button 4: {label4} (Type: {_appSettings.Settings.Lifeline4}) - Visible: {totalLifelines >= 4}");
+            GameConsole.Log($"[Lifelines] Initializing {totalLifelines} lifeline button(s):");
+            GameConsole.Log($"  Button 1: {label1} (Type: {_appSettings.Settings.Lifeline1}) - Visible: {totalLifelines >= 1}");
+            GameConsole.Log($"  Button 2: {label2} (Type: {_appSettings.Settings.Lifeline2}) - Visible: {totalLifelines >= 2}");
+            GameConsole.Log($"  Button 3: {label3} (Type: {_appSettings.Settings.Lifeline3}) - Visible: {totalLifelines >= 3}");
+            GameConsole.Log($"  Button 4: {label4} (Type: {_appSettings.Settings.Lifeline4}) - Visible: {totalLifelines >= 4}");
         }
         
         // Button 1 - always visible if TotalLifelines >= 1
@@ -1664,11 +1664,11 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Lifelines] ATH enabled check: {athEnabled}");
-            Console.WriteLine($"  Lifeline1: {_appSettings.Settings.Lifeline1}");
-            Console.WriteLine($"  Lifeline2: {_appSettings.Settings.Lifeline2}");
-            Console.WriteLine($"  Lifeline3: {_appSettings.Settings.Lifeline3}");
-            Console.WriteLine($"  Lifeline4: {_appSettings.Settings.Lifeline4}");
+            GameConsole.Log($"[Lifelines] ATH enabled check: {athEnabled}");
+            GameConsole.Log($"  Lifeline1: {_appSettings.Settings.Lifeline1}");
+            GameConsole.Log($"  Lifeline2: {_appSettings.Settings.Lifeline2}");
+            GameConsole.Log($"  Lifeline3: {_appSettings.Settings.Lifeline3}");
+            GameConsole.Log($"  Lifeline4: {_appSettings.Settings.Lifeline4}");
         }
         
         // If ATH is enabled, disable and uncheck the checkbox
@@ -1678,7 +1678,7 @@ public partial class ControlPanelForm : Form
             chkCorrectAnswer.Enabled = false; // Then disable
             if (Program.DebugMode)
             {
-                Console.WriteLine("[Lifelines] ATH is enabled - 'Show Correct Answer to Host' checkbox disabled");
+                GameConsole.Log("[Lifelines] ATH is enabled - 'Show Correct Answer to Host' checkbox disabled");
             }
         }
         else
@@ -1687,7 +1687,7 @@ public partial class ControlPanelForm : Form
             chkCorrectAnswer.Checked = false; // But still start unchecked
             if (Program.DebugMode)
             {
-                Console.WriteLine("[Lifelines] ATH is NOT enabled - 'Show Correct Answer to Host' checkbox enabled");
+                GameConsole.Log("[Lifelines] ATH is NOT enabled - 'Show Correct Answer to Host' checkbox enabled");
             }
         }
     }
@@ -1740,7 +1740,7 @@ public partial class ControlPanelForm : Form
         // Prevent clicking if button is in standby (orange)
         if (button.BackColor == Color.Orange)
         {
-            Console.WriteLine($"[Lifeline] Click ignored - button {lifelineNumber} is in standby mode");
+            GameConsole.Log($"[Lifeline] Click ignored - button {lifelineNumber} is in standby mode");
             return;
         }
         
@@ -1806,10 +1806,12 @@ public partial class ControlPanelForm : Form
         // Open FFF Window to manage Fastest Finger First
         if (_fffWindow == null || _fffWindow.IsDisposed)
         {
-            // Get server URL from settings or use web server host
-            var serverUrl = _webServerHost != null && _webServerHost.IsRunning
-                ? _webServerHost.BaseUrl
-                : $"http://{_appSettings.Settings.AudienceServerIP}:{_appSettings.Settings.AudienceServerPort}";
+            // Always use localhost for the client connection, even if server listens on 0.0.0.0
+            var serverPort = _webServerHost != null && _webServerHost.IsRunning
+                ? new Uri(_webServerHost.BaseUrl).Port
+                : _appSettings.Settings.AudienceServerPort;
+            
+            var serverUrl = $"http://127.0.0.1:{serverPort}";
             
             // Check if web server is actually running
             bool isWebServerRunning = _webServerHost != null && _webServerHost.IsRunning;
@@ -1926,7 +1928,7 @@ public partial class ControlPanelForm : Form
         await Task.Delay(100);
         
         // Log final winnings to console
-        Console.WriteLine($"[GAME OVER] Total Winnings: {winnings} - Thanks for playing!");
+        GameConsole.Log($"[GAME OVER] Total Winnings: {winnings} - Thanks for playing!");
         
         // Show winnings on screens
         if (!chkShowWinnings.Checked)
@@ -1971,7 +1973,7 @@ public partial class ControlPanelForm : Form
                     
                     if (Program.DebugMode)
                     {
-                        Console.WriteLine("[Closing] Stage: GameOver - playing sound (5s)");
+                        GameConsole.Log("[Closing] Stage: GameOver - playing sound (5s)");
                     }
                     
                     // Set timer for 5 seconds, then move to underscore
@@ -2022,7 +2024,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine("[Closing] Stage: Underscore - playing sound (150s)");
+            GameConsole.Log("[Closing] Stage: Underscore - playing sound (150s)");
         }
         
         // Set timer for 150 seconds, then move to theme
@@ -2045,7 +2047,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine("[Closing] Stage: Theme - playing sound (wait for completion)");
+            GameConsole.Log("[Closing] Stage: Theme - playing sound (wait for completion)");
         }
         
         // Wait for closing theme to finish
@@ -2069,7 +2071,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine("[Closing] Complete - resetting application");
+            GameConsole.Log("[Closing] Complete - resetting application");
         }
         
         // Stop all sounds
@@ -2426,7 +2428,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Looking for final answer sound for question #{questionNumber}");
+            GameConsole.Log($"[Sound] Looking for final answer sound for question #{questionNumber}");
         }
         
         var soundKey = questionNumber switch
@@ -2453,14 +2455,14 @@ public partial class ControlPanelForm : Form
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No final answer sound key for Q{questionNumber}");
+                GameConsole.Log($"[Sound] No final answer sound key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing final answer sound for Q{questionNumber}: {soundKey}");
+            GameConsole.Log($"[Sound] Playing final answer sound for Q{questionNumber}: {soundKey}");
         }
         
         // Play without loop and store the identifier for later stopping
@@ -2473,7 +2475,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Looking for lose sound for question #{currentQuestion}");
+            GameConsole.Log($"[Sound] Looking for lose sound for question #{currentQuestion}");
         }
         
         var soundKey = currentQuestion switch
@@ -2500,14 +2502,14 @@ public partial class ControlPanelForm : Form
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No lose sound key for Q{currentQuestion}");
+                GameConsole.Log($"[Sound] No lose sound key for Q{currentQuestion}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing lose sound for Q{currentQuestion}: {soundKey}");
+            GameConsole.Log($"[Sound] Playing lose sound for Q{currentQuestion}: {soundKey}");
         }
         
         _soundService.PlaySoundByKey(soundKey);
@@ -2521,7 +2523,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Looking for correct sound for question #{currentQuestion}, Risk Mode: {isRiskMode}");
+            GameConsole.Log($"[Sound] Looking for correct sound for question #{currentQuestion}, Risk Mode: {isRiskMode}");
         }
         
         var soundKey = currentQuestion switch
@@ -2548,14 +2550,14 @@ public partial class ControlPanelForm : Form
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No correct sound key for Q{currentQuestion}");
+                GameConsole.Log($"[Sound] No correct sound key for Q{currentQuestion}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing correct sound for Q{currentQuestion}: {soundKey}");
+            GameConsole.Log($"[Sound] Playing correct sound for Q{currentQuestion}: {soundKey}");
         }
         
         _soundService.PlaySoundByKey(soundKey);
@@ -2567,7 +2569,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Looking for bed music for question #{questionNumber}");
+            GameConsole.Log($"[Sound] Looking for bed music for question #{questionNumber}");
         }
         
         var soundKey = questionNumber switch
@@ -2594,14 +2596,14 @@ public partial class ControlPanelForm : Form
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No bed music key for Q{questionNumber}");
+                GameConsole.Log($"[Sound] No bed music key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing bed music for Q{questionNumber}: {soundKey}");
+            GameConsole.Log($"[Sound] Playing bed music for Q{questionNumber}: {soundKey}");
         }
         
         _soundService.PlaySoundByKey(soundKey, loop: true);
@@ -2613,7 +2615,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Looking for lights down sound for question #{questionNumber}");
+            GameConsole.Log($"[Sound] Looking for lights down sound for question #{questionNumber}");
         }
         
         var soundKey = questionNumber switch
@@ -2640,14 +2642,14 @@ public partial class ControlPanelForm : Form
         {
             if (Program.DebugMode)
             {
-                Console.WriteLine($"[Sound] No lights down sound key for Q{questionNumber}");
+                GameConsole.Log($"[Sound] No lights down sound key for Q{questionNumber}");
             }
             return;
         }
         
         if (Program.DebugMode)
         {
-            Console.WriteLine($"[Sound] Playing lights down sound for Q{questionNumber}: {soundKey}");
+            GameConsole.Log($"[Sound] Playing lights down sound for Q{questionNumber}: {soundKey}");
         }
         
         // Play without loop and store the identifier for later stopping
@@ -2807,13 +2809,13 @@ public partial class ControlPanelForm : Form
                 
                 if (Program.DebugMode)
                 {
-                    Console.WriteLine($"[SafetyNetAnimation] Q{currentQuestionNumber} is a safety net, lock-in available");
-                    Console.WriteLine($"[SafetyNetAnimation] _pendingSafetyNetLevel set to {_pendingSafetyNetLevel}");
+                    GameConsole.Log($"[SafetyNetAnimation] Q{currentQuestionNumber} is a safety net, lock-in available");
+                    GameConsole.Log($"[SafetyNetAnimation] _pendingSafetyNetLevel set to {_pendingSafetyNetLevel}");
                 }
             }
             else if (Program.DebugMode)
             {
-                Console.WriteLine($"[SafetyNetAnimation] Q{currentQuestionNumber} - isSafetyNet={isSafetyNet}, disabled={_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(currentQuestionNumber, _gameService.State.Mode)}, mode={_gameService.State.Mode}");
+                GameConsole.Log($"[SafetyNetAnimation] Q{currentQuestionNumber} - isSafetyNet={isSafetyNet}, disabled={_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(currentQuestionNumber, _gameService.State.Mode)}, mode={_gameService.State.Mode}");
             }
             
             // For Q1-4, restart bed music after correct answer if it was stopped by a lifeline
@@ -2822,7 +2824,7 @@ public partial class ControlPanelForm : Form
             {
                 if (Program.DebugMode)
                 {
-                    Console.WriteLine($"[BedMusic] Q{currentQuestionNumber} correct after lifeline - will restart bed music after 2 seconds");
+                    GameConsole.Log($"[BedMusic] Q{currentQuestionNumber} correct after lifeline - will restart bed music after 2 seconds");
                 }
                 
                 // Wait for correct answer sound to play a bit, then restart bed music
