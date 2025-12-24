@@ -182,22 +182,28 @@ Need to match ControlPanelForm's design patterns:
 #### Step 2: Show Question Button
 - Verify question is selected
 - Verify participants are connected
-- Send question to participant screens (web clients)
+- Stop all sounds (end FFFExplain if still playing)
 - Display on TV: Question text only (no answers yet)
-- Play sound: `FFFThreeNotes` (wait for completion)
-- Then auto-play sound: `FFFReadQuestion`
+- Play sound: `FFFReadQuestion`
 - Enable "Reveal Answers" button
 - Update status to "Question Shown"
 
 #### Step 3: Reveal Answers Button
-- **Randomize answer positions** (NEVER show in correct order A-B-C-D)
-- Send randomized answers to participant screens
-- Display on TV: Full question with all 4 answers (in randomized order)
-- Play sound: `FFFThinking` (thinking/countdown music, loops until timer expires)
-- Start 20-second countdown timer
+- Stop all sounds (end FFFReadQuestion if still playing)
+- Play sound: `FFFThreeNotes`
+- When `FFFThreeNotes` completes:
+  - **Randomize answer positions** (NEVER show in correct order A-B-C-D)
+  - Send question and randomized answers to participant screens (web clients)
+  - Display on TV: Full question with all 4 answers (in randomized order)
+  - Start 20-second countdown timer (timed to match sound duration)
+  - Play sound: `FFFThinking` (thinking/countdown music, plays once)
+  - Timer expires at right moment using fade-out gap in sound file
+- When `FFFThinking` ends, play sound: `FFFReadAnswers`
+- When `FFFReadAnswers` completes:
+  - Stop accepting new answers
+  - Enable "Reveal Correct" button
 - Update status to "Accepting Answers"
 - Monitor answer submissions in real-time
-- When timer expires: Stop accepting new answers, enable "Reveal Correct" button
 
 #### Step 4: Reveal Correct Answers Button (Click 4 Times)
 - **Click 1**: Reveal first correct answer in sequence
