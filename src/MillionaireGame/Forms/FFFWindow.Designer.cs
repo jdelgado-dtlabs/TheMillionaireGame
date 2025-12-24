@@ -36,10 +36,10 @@ namespace MillionaireGame.Forms
             // 
             // fffControlPanel
             // 
-            fffControlPanel.Dock = DockStyle.Fill;
-            fffControlPanel.Location = new Point(0, 0);
+            fffControlPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            fffControlPanel.Location = new Point(10, 10);
             fffControlPanel.Name = "fffControlPanel";
-            fffControlPanel.Size = new Size(1000, 700);
+            fffControlPanel.Size = new Size(1010, 740);
             fffControlPanel.TabIndex = 0;
             
             // 
@@ -169,8 +169,8 @@ namespace MillionaireGame.Forms
             // FFFWindow
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1000, 700);
+            AutoScaleMode = AutoScaleMode.None;
+            ClientSize = new Size(1030, 760);
             Controls.Add(fffControlPanel);
             Controls.Add(localPlayerPanel);
             FormBorderStyle = FormBorderStyle.FixedDialog;

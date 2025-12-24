@@ -9,7 +9,7 @@
     <Sound Key="ClosingTheme" File="close_theme.mp3" />
     <Sound Key="HostEntrance" File="host_entrance.mp3" />
     <Sound Key="CloseUnderscore" File="close_underscore.mp3" />
-    <Sound Key="ExplainRules" File="explain_rules.mp3" />
+    <Sound Key="ExplainRules" File="explain_rules_v2.mp3" />
     <Sound Key="QuitSmall" File="quit_small.mp3" />
     <Sound Key="QuitLarge" File="quit_large.mp3" />
     <Sound Key="WalkAwaySmall" File="walk_away_small.mp3" />
@@ -21,6 +21,7 @@
     
     <!-- Fastest Finger First Sounds -->
     <Sound Key="FFFLightsDown" File="fastest_finger_lights_down.mp3" />
+    <Sound Key="FFFExplain" File="explain_rules.mp3" />
     <Sound Key="FFFMeet2" File="fastest_finger_contestants_2.mp3" />
     <Sound Key="FFFMeet3" File="fastest_finger_contestants_3.mp3" />
     <Sound Key="FFFMeet4" File="fastest_finger_contestants_4.mp3" />
@@ -39,6 +40,7 @@
     <Sound Key="FFFOrder4" File="fastest_finger_answer_correct_4.mp3" />
     <Sound Key="FFFWhoWasCorrect" File="fastest_finger_reveal_times.mp3" />
     <Sound Key="FFFWinner" File="fastest_finger_winner.mp3" />
+    <Sound Key="FFFWalkDown" File="close_underscore.mp3" />
     
     <!-- Lifeline Sounds -->
     <Sound Key="Lifeline1Ping" File="lifeline_1_on.mp3" />

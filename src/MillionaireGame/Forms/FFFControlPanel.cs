@@ -55,33 +55,30 @@ public partial class FFFControlPanel : UserControl
     }
     
     /// <summary>
-    /// Load available FFF questions
+    /// Load available FFF questions into memory
     /// </summary>
     public async Task LoadQuestionsAsync()
     {
         try
         {
-            cmbQuestions.Items.Clear();
-            cmbQuestions.Items.Add("-- Select a question --");
-            
             if (_fffRepository != null)
             {
                 _questions = await _fffRepository.GetAllQuestionsAsync();
-                
-                foreach (var question in _questions)
-                {
-                    var displayText = $"Q{question.Id}: {question.QuestionText.Substring(0, Math.Min(60, question.QuestionText.Length))}...";
-                    cmbQuestions.Items.Add(new ComboBoxItem { Text = displayText, Value = question });
-                }
+                MessageBox.Show($"Loaded {_questions.Count} FFF questions from database.",
+                    "Questions Loaded", MessageBoxButtons.OK, MessageBoxIcon.None);
+            }
+            else
+            {
+                MessageBox.Show("FFF Repository is not initialized.",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
             }
             
-            cmbQuestions.SelectedIndex = 0;
             UpdateUIState();
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error loading FFF questions: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
     
@@ -128,7 +125,7 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Log($"[FFFControlPanel] ERROR in InitializeClientAsync: {ex.Message}");
             GameConsole.Log($"[FFFControlPanel] Stack trace: {ex.StackTrace}");
             MessageBox.Show($"Error connecting to server: {ex.Message}",
-                "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
     
@@ -192,7 +189,7 @@ public partial class FFFControlPanel : UserControl
         {
             GameConsole.Log($"[FFFControlPanel] Error refreshing participants: {ex.Message}");
             MessageBox.Show($"Error refreshing participants: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
     
@@ -256,6 +253,7 @@ public partial class FFFControlPanel : UserControl
         UpdateUIState();
     }
     
+    /* REMOVED - No longer using dropdown
     private void cmbQuestions_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (cmbQuestions.SelectedIndex > 0 && cmbQuestions.SelectedItem is ComboBoxItem item && item.Value is FFFQuestion question)
@@ -280,6 +278,7 @@ public partial class FFFControlPanel : UserControl
         txtOption4.Text = question.AnswerD;
         lblCorrectOrder.Text = $"Correct Order: {question.CorrectOrder}";
     }
+    */
     
     private void ClearQuestionDetails()
     {
@@ -290,12 +289,13 @@ public partial class FFFControlPanel : UserControl
         lblCorrectOrder.Text = "Correct Order: ---";
     }
     
+    /* OLD - REPLACED BY NEW BUTTON FLOW
     private async void btnStartFFF_Click(object? sender, EventArgs e)
     {
         if (_currentQuestion == null)
         {
             MessageBox.Show("Please select a question first.", "No Question Selected",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBoxButtons.OK, MessageBoxIcon.None);
             return;
         }
         
@@ -305,7 +305,7 @@ public partial class FFFControlPanel : UserControl
                 "No participants are currently connected. Start FFF anyway?",
                 "No Participants",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
+                MessageBoxIcon.None);
                 
             if (result == DialogResult.No)
                 return;
@@ -316,7 +316,7 @@ public partial class FFFControlPanel : UserControl
             if (_fffClient == null || !_fffClient.IsConnected)
             {
                 MessageBox.Show("Not connected to web server. Start the web server from Settings first.",
-                    "Not Connected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    "Not Connected", MessageBoxButtons.OK, MessageBoxIcon.None);
                 return;
             }
             
@@ -341,10 +341,12 @@ public partial class FFFControlPanel : UserControl
         catch (Exception ex)
         {
             MessageBox.Show($"Error starting FFF: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
+    */
     
+    /* OLD - REPLACED BY NEW BUTTON FLOW
     private async void btnEndFFF_Click(object? sender, EventArgs e)
     {
         try
@@ -365,16 +367,18 @@ public partial class FFFControlPanel : UserControl
         catch (Exception ex)
         {
             MessageBox.Show($"Error ending FFF: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
+    */
     
+    /* OLD - REPLACED BY NEW BUTTON FLOW
     private async void btnCalculateResults_Click(object? sender, EventArgs e)
     {
         if (_currentQuestion == null)
         {
             MessageBox.Show("No question is currently loaded.", "No Question",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBoxButtons.OK, MessageBoxIcon.None);
             return;
         }
         
@@ -391,22 +395,24 @@ public partial class FFFControlPanel : UserControl
             else
             {
                 MessageBox.Show("Not connected to web server.", "Not Connected",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBoxButtons.OK, MessageBoxIcon.None);
             }
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error calculating results: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
         }
     }
+    */
     
+    /* OLD - REPLACED BY NEW BUTTON FLOW
     private void btnSelectWinner_Click(object? sender, EventArgs e)
     {
         if (_rankings.Count == 0 || !_rankings[0].IsCorrect)
         {
             MessageBox.Show("No winner available. Calculate results first or ensure there are correct answers.",
-                "No Winner", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                "No Winner", MessageBoxButtons.OK, MessageBoxIcon.None);
             return;
         }
         
@@ -417,7 +423,7 @@ public partial class FFFControlPanel : UserControl
             $"Answer: {winner.AnswerSequence}",
             "Confirm Winner",
             MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question);
+            MessageBoxIcon.None);
             
         if (result == DialogResult.Yes)
         {
@@ -429,6 +435,7 @@ public partial class FFFControlPanel : UserControl
             ResetFFFRound();
         }
     }
+    */
     
     private void FFFTimer_Elapsed(object? sender, ElapsedEventArgs e)
     {
@@ -454,12 +461,10 @@ public partial class FFFControlPanel : UserControl
         var hasAnswers = _submissions.Count > 0;
         var hasRankings = _rankings.Count > 0;
         
-        btnStartFFF.Enabled = hasQuestion && !_isFFFActive;
-        btnEndFFF.Enabled = _isFFFActive;
-        btnCalculateResults.Enabled = !_isFFFActive && hasAnswers;
-        btnSelectWinner.Enabled = hasRankings && _rankings[0].IsCorrect;
-        
-        cmbQuestions.Enabled = !_isFFFActive;
+        // TODO: Phase 3 - Implement button state management based on FFFFlowState
+        // btnIntroExplain.Enabled = hasQuestion && !_isFFFActive;
+        // btnShowQuestion.Enabled = _isFFFActive;
+        // etc...
     }
     
     private void ResetFFFRound()
@@ -468,7 +473,6 @@ public partial class FFFControlPanel : UserControl
         _submissions.Clear();
         _rankings.Clear();
         
-        cmbQuestions.SelectedIndex = 0;
         lstAnswers.Items.Clear();
         lstRankings.Items.Clear();
         lblAnswerCount.Text = "0 Answers";
@@ -478,6 +482,84 @@ public partial class FFFControlPanel : UserControl
         ClearQuestionDetails();
         UpdateUIState();
     }
+    
+    #region New Button Handlers (Stubs for UI Preview)
+    
+    private void btnLoadQuestions_Click(object? sender, EventArgs e)
+    {
+        // Load questions from database
+        _ = LoadQuestionsAsync();
+    }
+    
+    private void btnRefreshParticipants_Click(object? sender, EventArgs e)
+    {
+        // Refresh participant list
+        _ = RefreshParticipantsAsync();
+    }
+    
+    private void btnIntroExplain_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Play FFFLightsDown, then FFFExplain
+        MessageBox.Show("Intro + Explain - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.None);
+    }
+    
+    private void btnShowQuestion_Click(object? sender, EventArgs e)
+    {
+        // Randomly select a question from loaded questions
+        if (_questions == null || _questions.Count == 0)
+        {
+            MessageBox.Show("No questions loaded. Please wait for questions to load on startup.",
+                "No Questions", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        var random = new Random();
+        var index = random.Next(_questions.Count);
+        _currentQuestion = _questions[index];
+        
+        // Display question
+        txtQuestionDisplay.Text = _currentQuestion.QuestionText;
+        txtOption1.Text = _currentQuestion.AnswerA;
+        txtOption2.Text = _currentQuestion.AnswerB;
+        txtOption3.Text = _currentQuestion.AnswerC;
+        txtOption4.Text = _currentQuestion.AnswerD;
+        lblCorrectOrder.Text = $"Correct Order: {_currentQuestion.CorrectOrder}";
+        
+        MessageBox.Show($"Question {_currentQuestion.Id} selected and displayed.\n\nNext: Click 'Reveal Answers & Start' to randomize and show answers.",
+            "Question Loaded", MessageBoxButtons.OK, MessageBoxIcon.None);
+    }
+    
+    private void btnRevealAnswers_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Randomize answers, start timer, play FFFThinking
+        MessageBox.Show("Reveal Answers - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    
+    private void btnRevealCorrect_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Reveal correct answers one by one (4 clicks)
+        MessageBox.Show("Reveal Correct - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    
+    private void btnShowWinners_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Display list of winners
+        MessageBox.Show("Show Winners - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    
+    private void btnWinner_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Declare winner (auto if 1, times if multiple)
+        MessageBox.Show("Winner - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    
+    private void btnStopAudio_Click(object? sender, EventArgs e)
+    {
+        // TODO: Phase 3 - Stop all audio playback
+        MessageBox.Show("Stop Audio - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    
+    #endregion
 }
 
 /// <summary>
