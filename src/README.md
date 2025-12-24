@@ -4,13 +4,13 @@
 
 ## 🎮 Welcome to The Millionaire Game - Modern C# Edition!
 
-**Version**: 0.2-2512 (December 2025)
+**Version**: 0.7-2512 (December 2025)
 
-This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture and maintainability.
+This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture, maintainability, and a complete web-based audience participation system (WAPS).
 
 ### 🔄 Current Status
 
-**Version 0.3-2512 Features:**
+**Version 0.7-2512 Features:**
 - ✅ Core models and data structures
 - ✅ Settings management with XML persistence
 - ✅ Database layer with question repository
@@ -28,11 +28,20 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ Question Editor with CSV import/export
 - ✅ Monitor selection with WMI metadata
 - ✅ Full-screen mode with auto-show capabilities
+- ✅ Web-Based Audience Participation System (WAPS)
+- ✅ FFF (Fastest Finger First) with mobile web interface
+- ✅ Real-time SignalR communication for audience participation
+- ✅ QR code joining for mobile devices
+- ✅ Progressive Web App (PWA) for cross-platform support
+- ✅ Device telemetry and privacy-compliant data collection
+- 🚧 Real ATA voting integration (placeholder results currently)
+- 🚧 FFF Online as independent "game within a game" feature
 - 🚧 Switch the Question lifeline (pending)
-- 🚧 FFF networking (pending)
-- 🚧 Lifeline image loading (pending)
 
 **Future Vision (Post v1.0):**
+- 🎯 FFF Online complete integration with graphics
+- 🎯 Real ATA voting with actual participant votes
+- 🎯 Multi-session support for concurrent games
 - 🎯 OBS/Streaming platform integration
 - 🎯 Elgato Stream Deck plugin
 - 🎯 Web-based mobile interface (FFF/ATA)
@@ -245,11 +254,29 @@ gameService.LevelChanged += (sender, e) => {
 - [ ] FFF networking and online features
 - [ ] Enhanced screen transitions
 
-### Version 1.0 (⏳ Future)
-- [ ] Feature parity with VB.NET version
-- [ ] Comprehensive testing
+### Version 1.0 (⏳ In Progress - Target: Q1 2026)
+- [ ] FFF Online integration as "game within a game" feature
+- [ ] Real ATA voting with actual participant data
+- [ ] Hotkey mapping for lifelines (F8-F11)
+- [ ] Complete CSV import/export in Question Editor
+- [ ] Comprehensive end-to-end testing
 - [ ] Release builds and installers
 - [ ] User documentation
+
+## 📚 Documentation
+
+### Active Documentation
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+- **[DEVELOPMENT_CHECKPOINT.md](DEVELOPMENT_CHECKPOINT.md)** - Current development status
+- **[docs/active/](docs/active/)** - Current planning documents
+  - PROJECT_AUDIT_2025.md - Comprehensive project audit (Dec 2025)
+  - PRE_1.0_FINAL_CHECKLIST.md - v1.0 completion checklist
+- **[docs/reference/](docs/reference/)** - Architecture documentation
+  - WEB_SYSTEM_IMPLEMENTATION_PLAN.md - WAPS architecture
+
+### Historical Documentation
+- **[ARCHIVE.md](ARCHIVE.md)** - Historical session logs (v0.2-v0.3)
+- **[docs/archive/](docs/archive/)** - Completed phases and planning documents
 
 ## 📝 Contributing
 
