@@ -9,6 +9,24 @@ using System.Timers;
 namespace MillionaireGame.Forms;
 
 /// <summary>
+/// Game flow states for FFF round
+/// </summary>
+public enum FFFFlowState
+{
+    NotStarted,          // Initial state, select question
+    IntroPlaying,        // FFFLightsDown + FFFExplain playing
+    QuestionReady,       // Ready to show question
+    QuestionShown,       // Question displayed, FFFReadQuestion playing
+    AnswersRevealing,    // FFFThreeNotes playing
+    AnswersRevealed,     // Answers shown, FFFThinking playing, timer active
+    TimerExpired,        // FFFReadAnswers playing
+    RevealingCorrect,    // Revealing correct answers (multi-click)
+    WinnersShown,        // Winners list displayed
+    WinnerAnnounced,     // Winner declared
+    Complete             // Round complete
+}
+
+/// <summary>
 /// User control for managing Fastest Finger First (FFF) rounds
 /// </summary>
 public partial class FFFControlPanel : UserControl
@@ -24,6 +42,13 @@ public partial class FFFControlPanel : UserControl
     private FFFClientService? _fffClient;
     private readonly MillionaireGame.Web.Database.FFFQuestionRepository? _fffRepository;
     private const string _sessionId = "LIVE"; // Fixed session ID for live game
+    
+    // Phase 3: Game Flow State Management
+    private FFFFlowState _currentState = FFFFlowState.NotStarted;
+    private int _revealCorrectClickCount = 0;
+    private string[] _randomizedAnswers = new string[4];
+    private string _correctSequence = string.Empty;
+    private SoundService? _soundService;
     
     public FFFControlPanel()
     {
@@ -454,17 +479,92 @@ public partial class FFFControlPanel : UserControl
         }
     }
     
+    /// <summary>
+    /// Initialize sound service for audio playback
+    /// </summary>
+    public void SetSoundService(SoundService soundService)
+    {
+        _soundService = soundService;
+    }
+    
+    /// <summary>
+    /// Update button states based on current game flow state
+    /// </summary>
     private void UpdateUIState()
     {
         var hasQuestion = _currentQuestion != null;
         var hasParticipants = _participants.Count > 0;
-        var hasAnswers = _submissions.Count > 0;
-        var hasRankings = _rankings.Count > 0;
         
-        // TODO: Phase 3 - Implement button state management based on FFFFlowState
-        // btnIntroExplain.Enabled = hasQuestion && !_isFFFActive;
-        // btnShowQuestion.Enabled = _isFFFActive;
-        // etc...
+        // Update button enabled states based on game flow
+        switch (_currentState)
+        {
+            case FFFFlowState.NotStarted:
+                btnIntroExplain.Enabled = hasQuestion && hasParticipants;
+                btnIntroExplain.BackColor = btnIntroExplain.Enabled ? Color.LightGreen : Color.Gray;
+                btnShowQuestion.Enabled = false;
+                btnShowQuestion.BackColor = Color.Gray;
+                btnRevealAnswers.Enabled = false;
+                btnRevealAnswers.BackColor = Color.Gray;
+                btnRevealCorrect.Enabled = false;
+                btnRevealCorrect.BackColor = Color.Gray;
+                btnShowWinners.Enabled = false;
+                btnShowWinners.BackColor = Color.Gray;
+                btnWinner.Enabled = false;
+                btnWinner.BackColor = Color.Gray;
+                break;
+                
+            case FFFFlowState.IntroPlaying:
+                btnIntroExplain.Enabled = false;
+                btnIntroExplain.BackColor = Color.Yellow;
+                break;
+                
+            case FFFFlowState.QuestionReady:
+                btnIntroExplain.Enabled = false;
+                btnIntroExplain.BackColor = Color.Gray;
+                btnShowQuestion.Enabled = true;
+                btnShowQuestion.BackColor = Color.LightGreen;
+                break;
+                
+            case FFFFlowState.QuestionShown:
+                btnShowQuestion.Enabled = false;
+                btnShowQuestion.BackColor = Color.Yellow;
+                btnRevealAnswers.Enabled = true;
+                btnRevealAnswers.BackColor = Color.LightGreen;
+                break;
+                
+            case FFFFlowState.AnswersRevealing:
+            case FFFFlowState.AnswersRevealed:
+                btnRevealAnswers.Enabled = false;
+                btnRevealAnswers.BackColor = Color.Yellow;
+                break;
+                
+            case FFFFlowState.TimerExpired:
+                btnRevealAnswers.BackColor = Color.Gray;
+                btnRevealCorrect.Enabled = true;
+                btnRevealCorrect.BackColor = Color.LightGreen;
+                btnRevealCorrect.Text = "4. Reveal Correct";
+                break;
+                
+            case FFFFlowState.RevealingCorrect:
+                btnRevealCorrect.Enabled = true;
+                btnRevealCorrect.BackColor = Color.Yellow;
+                break;
+                
+            case FFFFlowState.WinnersShown:
+                btnRevealCorrect.Enabled = false;
+                btnRevealCorrect.BackColor = Color.Gray;
+                btnShowWinners.Enabled = false;
+                btnShowWinners.BackColor = Color.Gray;
+                btnWinner.Enabled = true;
+                btnWinner.BackColor = Color.LightGreen;
+                break;
+                
+            case FFFFlowState.WinnerAnnounced:
+            case FFFFlowState.Complete:
+                btnWinner.Enabled = false;
+                btnWinner.BackColor = Color.Gray;
+                break;
+        }
     }
     
     private void ResetFFFRound()
@@ -472,6 +572,8 @@ public partial class FFFControlPanel : UserControl
         _currentQuestion = null;
         _submissions.Clear();
         _rankings.Clear();
+        _currentState = FFFFlowState.NotStarted;
+        _revealCorrectClickCount = 0;
         
         lstAnswers.Items.Clear();
         lstRankings.Items.Clear();
@@ -499,64 +601,297 @@ public partial class FFFControlPanel : UserControl
     
     private void btnIntroExplain_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Play FFFLightsDown, then FFFExplain
-        MessageBox.Show("Intro + Explain - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.None);
+        if (_soundService == null)
+        {
+            MessageBox.Show("Sound service not initialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        _currentState = FFFFlowState.IntroPlaying;
+        UpdateUIState();
+        
+        // Play FFFLightsDown, then FFFExplain
+        // TODO Phase 4: Update TV screen with FFF title
+        _soundService.PlaySound(SoundEffect.FFFLightsDown);
+        
+        // Wait for FFFLightsDown to finish, then play FFFExplain
+        // For now, using async pattern to sequence sounds
+        Task.Run(async () =>
+        {
+            await Task.Delay(3000); // Estimate for FFFLightsDown duration
+            if (_soundService != null)
+            {
+                _soundService.PlaySound(SoundEffect.FFFExplain);
+            }
+            await Task.Delay(5000); // Estimate for FFFExplain duration
+            
+            // Move to next state
+            if (InvokeRequired)
+            {
+                Invoke(() =>
+                {
+                    _currentState = FFFFlowState.QuestionReady;
+                    UpdateUIState();
+                });
+            }
+            else
+            {
+                _currentState = FFFFlowState.QuestionReady;
+                UpdateUIState();
+            }
+        });
     }
     
     private void btnShowQuestion_Click(object? sender, EventArgs e)
     {
-        // Randomly select a question from loaded questions
-        if (_questions == null || _questions.Count == 0)
+        // Randomly select a question from loaded questions if not already selected
+        if (_currentQuestion == null)
         {
-            MessageBox.Show("No questions loaded. Please wait for questions to load on startup.",
-                "No Questions", MessageBoxButtons.OK, MessageBoxIcon.None);
+            if (_questions == null || _questions.Count == 0)
+            {
+                MessageBox.Show("No questions loaded. Please wait for questions to load on startup.",
+                    "No Questions", MessageBoxButtons.OK, MessageBoxIcon.None);
+                return;
+            }
+            
+            var random = new Random();
+            var index = random.Next(_questions.Count);
+            _currentQuestion = _questions[index];
+            
+            // Display question
+            txtQuestionDisplay.Text = _currentQuestion.QuestionText;
+            txtOption1.Text = _currentQuestion.AnswerA;
+            txtOption2.Text = _currentQuestion.AnswerB;
+            txtOption3.Text = _currentQuestion.AnswerC;
+            txtOption4.Text = _currentQuestion.AnswerD;
+            lblCorrectOrder.Text = $"Correct Order: {_currentQuestion.CorrectOrder}";
+            _correctSequence = _currentQuestion.CorrectOrder;
+        }
+        
+        if (_soundService == null)
+        {
+            MessageBox.Show("Sound service not initialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
             return;
         }
         
-        var random = new Random();
-        var index = random.Next(_questions.Count);
-        _currentQuestion = _questions[index];
+        _currentState = FFFFlowState.QuestionShown;
+        UpdateUIState();
         
-        // Display question
-        txtQuestionDisplay.Text = _currentQuestion.QuestionText;
-        txtOption1.Text = _currentQuestion.AnswerA;
-        txtOption2.Text = _currentQuestion.AnswerB;
-        txtOption3.Text = _currentQuestion.AnswerC;
-        txtOption4.Text = _currentQuestion.AnswerD;
-        lblCorrectOrder.Text = $"Correct Order: {_currentQuestion.CorrectOrder}";
+        // Stop all sounds (end FFFExplain if still playing)
+        _soundService.StopAllSounds();
         
-        MessageBox.Show($"Question {_currentQuestion.Id} selected and displayed.\n\nNext: Click 'Reveal Answers & Start' to randomize and show answers.",
-            "Question Loaded", MessageBoxButtons.OK, MessageBoxIcon.None);
+        // TODO Phase 4: Display question on TV (no answers yet)
+        
+        // Play FFFReadQuestion
+        _soundService.PlaySound(SoundEffect.FFFReadQuestion);
     }
     
-    private void btnRevealAnswers_Click(object? sender, EventArgs e)
+    private async void btnRevealAnswers_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Randomize answers, start timer, play FFFThinking
-        MessageBox.Show("Reveal Answers - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        if (_currentQuestion == null)
+        {
+            MessageBox.Show("No question selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        if (_soundService == null)
+        {
+            MessageBox.Show("Sound service not initialized.", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        _currentState = FFFFlowState.AnswersRevealing;
+        UpdateUIState();
+        
+        // Stop all sounds (end FFFReadQuestion if still playing)
+        _soundService.StopAllSounds();
+        
+        // Play FFFThreeNotes
+        _soundService.PlaySound(SoundEffect.FFFThreeNotes);
+        
+        // Wait for FFFThreeNotes to complete
+        await Task.Delay(3000); // Estimate for FFFThreeNotes duration
+        
+        // Randomize answer positions (NEVER in correct order A-B-C-D)
+        var answers = new List<string>
+        {
+            _currentQuestion.AnswerA,
+            _currentQuestion.AnswerB,
+            _currentQuestion.AnswerC,
+            _currentQuestion.AnswerD
+        };
+        
+        var random = new Random();
+        var randomized = answers.OrderBy(x => random.Next()).ToArray();
+        _randomizedAnswers = randomized;
+        
+        // Send question and randomized answers to participants (START COMPETITION)
+        if (_fffClient != null && _fffClient.IsConnected)
+        {
+            try
+            {
+                // TODO: Send randomized answers to participants via SignalR
+                // await _fffClient.StartRoundAsync(_currentQuestion.Id, randomized);
+                _fffStartTime = DateTime.Now;
+                _isFFFActive = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error starting round: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+                return;
+            }
+        }
+        
+        // TODO Phase 4: Display on TV with randomized answers
+        
+        // Start 20-second countdown timer (timed to match sound duration)
+        _fffTimer.Start();
+        
+        // Play FFFThinking
+        _soundService.PlaySound(SoundEffect.FFFThinking);
+        
+        _currentState = FFFFlowState.AnswersRevealed;
+        UpdateUIState();
+        
+        // Wait for FFFThinking duration (approximately 20 seconds)
+        await Task.Delay(20000); // Timer expires at right moment using fade-out gap
+        
+        _fffTimer.Stop();
+        _isFFFActive = false;
+        
+        // Play FFFReadAnswers
+        _soundService.PlaySound(SoundEffect.FFFReadAnswers);
+        
+        // Wait for FFFReadAnswers to complete
+        await Task.Delay(5000); // Estimate for FFFReadAnswers duration
+        
+        // Move to next state - ready to reveal correct answers
+        _currentState = FFFFlowState.TimerExpired;
+        UpdateUIState();
     }
     
     private void btnRevealCorrect_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Reveal correct answers one by one (4 clicks)
-        MessageBox.Show("Reveal Correct - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        _revealCorrectClickCount++;
+        
+        _currentState = FFFFlowState.RevealingCorrect;
+        
+        // TODO Phase 4: Highlight correct answer position on TV
+        
+        // Play appropriate sound for this reveal (1-4)
+        // Note: These sound effects need to be added to sound packs
+        // For now, using placeholder logic
+        
+        if (_revealCorrectClickCount < 4)
+        {
+            btnRevealCorrect.Text = $"4. Reveal Correct ({_revealCorrectClickCount}/4)";
+            // TODO: Play sound for revealing answer 1, 2, or 3
+            // _soundService?.PlaySound(SoundEffect.FFFRevealCorrect1); // etc
+        }
+        else
+        {
+            // Fourth click - all revealed
+            btnRevealCorrect.Text = "4. Reveal Correct";
+            // TODO: Play sound for revealing 4th answer
+            
+            // Calculate rankings if not already done
+            if (_rankings.Count == 0 && _submissions.Count > 0)
+            {
+                CalculateRankings();
+            }
+            
+            // Move to winners shown state
+            _currentState = FFFFlowState.WinnersShown;
+            _revealCorrectClickCount = 0; // Reset for next round
+        }
+        
+        UpdateUIState();
+    }
+    
+    private void CalculateRankings()
+    {
+        // Calculate rankings based on correct answers and time
+        var rankings = new List<RankingResult>();
+        int rank = 1;
+        
+        foreach (var submission in _submissions.OrderBy(s => (s.SubmittedAt - _fffStartTime).TotalMilliseconds))
+        {
+            var isCorrect = submission.AnswerSequence == _correctSequence;
+            rankings.Add(new RankingResult
+            {
+                Rank = rank++,
+                ParticipantId = submission.ParticipantId,
+                DisplayName = submission.DisplayName,
+                AnswerSequence = submission.AnswerSequence,
+                TimeElapsed = (submission.SubmittedAt - _fffStartTime).TotalMilliseconds,
+                IsCorrect = isCorrect
+            });
+        }
+        
+        UpdateRankings(rankings);
     }
     
     private void btnShowWinners_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Display list of winners
-        MessageBox.Show("Show Winners - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        // TODO Phase 4: Display list of winners on TV
+        // Clear TV screen and show names of participants who answered correctly
+        
+        _currentState = FFFFlowState.WinnersShown;
+        UpdateUIState();
     }
     
-    private void btnWinner_Click(object? sender, EventArgs e)
+    private async void btnWinner_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Declare winner (auto if 1, times if multiple)
-        MessageBox.Show("Winner - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        if (_soundService == null || _rankings.Count == 0)
+        {
+            MessageBox.Show("No rankings available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        var correctAnswers = _rankings.Where(r => r.IsCorrect).ToList();
+        
+        if (correctAnswers.Count == 0)
+        {
+            MessageBox.Show("No correct answers - no winner to announce.", "No Winner", MessageBoxButtons.OK, MessageBoxIcon.None);
+            return;
+        }
+        
+        if (correctAnswers.Count == 1)
+        {
+            // Only 1 winner - auto-win
+            var winner = correctAnswers[0];
+            lblWinner.Text = $"Winner: 🏆 {winner.DisplayName}";
+            lblWinner.ForeColor = Color.Green;
+            
+            // TODO Phase 4: Display winner celebration on TV
+            
+            _soundService.PlaySound(SoundEffect.FFFWinner);
+            await Task.Delay(3000);
+            _soundService.PlaySound(SoundEffect.FFFWalkDown);
+        }
+        else
+        {
+            // Multiple winners - reveal times slowest to fastest
+            // TODO Phase 4: Display winner list with times on TV, highlight fastest
+            
+            var winner = correctAnswers[0]; // Already sorted by time (fastest first)
+            lblWinner.Text = $"Winner: 🏆 {winner.DisplayName} ({winner.TimeElapsed / 1000.0:F2}s)";
+            lblWinner.ForeColor = Color.Green;
+            
+            _soundService.PlaySound(SoundEffect.FFFWinner);
+            await Task.Delay(3000);
+            _soundService.PlaySound(SoundEffect.FFFWalkDown);
+        }
+        
+        _currentState = FFFFlowState.WinnerAnnounced;
+        UpdateUIState();
+        
+        // TODO: Notify main control panel of winner
     }
     
     private void btnStopAudio_Click(object? sender, EventArgs e)
     {
-        // TODO: Phase 3 - Stop all audio playback
-        MessageBox.Show("Stop Audio - Coming in Phase 3", "UI Preview", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        _soundService?.StopAllSounds();
     }
     
     #endregion

@@ -52,6 +52,13 @@ public partial class FFFWindow : Form
                 fffControlPanel.Visible = true;
                 localPlayerPanel.Visible = false;
                 
+                // Set sound service for control panel
+                if (_soundService != null)
+                {
+                    fffControlPanel.SetSoundService(_soundService);
+                    GameConsole.Log("[FFFWindow] Sound service set for control panel");
+                }
+                
                 // Initialize SignalR client
                 GameConsole.Log("[FFFWindow] Initializing SignalR client...");
                 await fffControlPanel.InitializeClientAsync(_serverUrl);

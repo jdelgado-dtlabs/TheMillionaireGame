@@ -595,8 +595,12 @@ public enum SoundEffect
     FFFMeet6,
     FFFMeet7,
     FFFMeet8,
+    FFFExplain,
+    FFFReadQuestion,
     FFFThreeNotes,
     FFFRandomPicker,
     FFFThinking,
-    FFFWinner
+    FFFReadAnswers,
+    FFFWinner,
+    FFFWalkDown
 }
