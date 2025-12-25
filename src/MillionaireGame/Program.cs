@@ -27,6 +27,11 @@ internal static class Program
         DebugMode = true;
         #endif
         
+        // Setup global exception handlers
+        Application.ThreadException += Application_ThreadException;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        
         // Settings are stored in XML for now (database migration disabled)
         // Load application settings from XML first to check console setting
         var appSettings = new ApplicationSettingsManager();
@@ -145,5 +150,84 @@ internal static class Program
             GameConsole.Hide();
         }
         #endif
+    }
+
+    /// <summary>
+    /// Handles unhandled exceptions in Windows Forms UI threads
+    /// </summary>
+    private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
+    {
+        LogUnhandledException(e.Exception, "UI Thread Exception");
+    }
+
+    /// <summary>
+    /// Handles unhandled exceptions in non-UI threads
+    /// </summary>
+    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var exception = e.ExceptionObject as Exception;
+        LogUnhandledException(exception, "AppDomain Unhandled Exception");
+    }
+
+    /// <summary>
+    /// Logs unhandled exceptions to GameConsole and displays error dialog
+    /// </summary>
+    private static void LogUnhandledException(Exception? exception, string source)
+    {
+        if (exception == null)
+        {
+            GameConsole.Error($"[{source}] Unknown exception occurred (null exception object)");
+            return;
+        }
+
+        // Log to GameConsole
+        GameConsole.LogSeparator();
+        GameConsole.Error($"[UNHANDLED EXCEPTION] {source}");
+        GameConsole.LogSeparator();
+        GameConsole.Error($"Exception Type: {exception.GetType().FullName}");
+        GameConsole.Error($"Message: {exception.Message}");
+        GameConsole.Error($"Source: {exception.Source}");
+        
+        if (exception.TargetSite != null)
+        {
+            GameConsole.Error($"Method: {exception.TargetSite.DeclaringType?.FullName}.{exception.TargetSite.Name}");
+        }
+        
+        GameConsole.Error($"Stack Trace:");
+        GameConsole.Error(exception.StackTrace ?? "(No stack trace available)");
+        
+        // Log inner exceptions
+        if (exception.InnerException != null)
+        {
+            GameConsole.Error($"Inner Exception: {exception.InnerException.GetType().FullName}");
+            GameConsole.Error($"Inner Message: {exception.InnerException.Message}");
+            GameConsole.Error($"Inner Stack Trace:");
+            GameConsole.Error(exception.InnerException.StackTrace ?? "(No stack trace available)");
+        }
+        
+        GameConsole.LogSeparator();
+
+        // Show error dialog to user
+        var message = $"An unhandled exception has occurred:\n\n{exception.Message}\n\n" +
+                     $"Source: {source}\n" +
+                     $"Type: {exception.GetType().Name}\n\n" +
+                     $"This error has been logged to the console and log file.\n\n" +
+                     $"Click OK to continue or Cancel to exit the application.";
+
+        var result = MessageBox.Show(
+            message,
+            "Unhandled Exception",
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Error);
+
+        if (result == DialogResult.Cancel)
+        {
+            GameConsole.Error("User chose to exit application after unhandled exception.");
+            Application.Exit();
+        }
+        else
+        {
+            GameConsole.Info("User chose to continue after unhandled exception.");
+        }
     }
 }
