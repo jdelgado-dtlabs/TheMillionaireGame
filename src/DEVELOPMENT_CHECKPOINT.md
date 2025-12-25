@@ -1,8 +1,65 @@
 # Development Checkpoint - v0.7.1-2512
-**Date**: December 24, 2025  
-**Version**: 0.7.1-2512 (FFF Control Panel UI Redesign Phase 2 Complete)  
+**Date**: December 25, 2025 2:00 AM  
+**Version**: 0.7.1-2512 (Sound System Refactoring - Planning Phase)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
+
+---
+
+## 🚨 ACTIVE ISSUE: Sound System Freezing - CSCore Migration Planned
+
+### Critical Blocking Issue - December 25, 2025
+
+**Status**: 🔴 **BLOCKING** - UI freezes on sound operations  
+**Decision**: ✅ **CSCore Migration Approved**  
+**Plan Document**: `docs/active/SOUND_SYSTEM_REFACTORING_PLAN.md`  
+**Next Action**: Create feature branch `feature/cscore-sound-system` and begin Phase 1
+
+#### Problem Summary
+NAudio-based sound system experiences UI freezing when stopping/disposing audio players due to:
+- Single-channel architecture mixing looping music with one-shot effects
+- NAudio's `Dispose()` blocks waiting for playback thread termination
+- Disposal from event handlers causes thread deadlock
+
+#### Failed Attempts (7 iterations - DO NOT RETRY)
+1. ❌ Removed Task.Run wrappers - still blocked
+2. ❌ Monitor.TryEnter non-blocking locks - insufficient
+3. ❌ Removed Stop(), only Dispose() - still blocked
+4. ❌ Background thread disposal - race conditions
+5. ❌ Fire-and-forget disposal - zombie processes
+6. ❌ Clear dictionary without disposal - sounds continued
+7. ❌ Dispose from PlaybackStopped - deadlock
+
+#### Approved Solution: CSCore Migration
+**Why CSCore over NAudio multi-channel:**
+- ✓ Better async disposal patterns (fixes freezing)
+- ✓ **Broadcasting ready** - Future requirement for OBS/streaming integration
+- ✓ Built-in audio routing (ISampleSource → Mixer → Multiple outputs)
+- ✓ Professional architecture matching industry standards
+- ✓ Won't need refactoring when adding streaming features
+
+#### Implementation Plan
+- **Time Estimate**: 7-9 hours
+- **Feature Branch**: `feature/cscore-sound-system`
+- **Phases**: 6 phases (Install → Music Channel → Effects Channel → Mixer → API Update → Testing)
+- **Fallback**: NAudio multi-channel if CSCore fails after 3 attempts or >12 hours
+
+#### Files Affected
+**New Files:**
+- `src/MillionaireGame/Services/Audio/MusicChannel.cs`
+- `src/MillionaireGame/Services/Audio/EffectsChannel.cs`
+
+**Modified Files:**
+- `src/MillionaireGame/Services/SoundService.cs` (major refactor)
+- `src/MillionaireGame/Forms/ControlPanelForm.cs` (minimal changes)
+
+#### Sound Behavior Requirements (Critical)
+- **Q1-4**: Bed music loops continuously, no final answer sound
+- **Q5**: Stop all sounds before playing correct answer
+- **Q6+**: Stop bed music when loading new question
+- **Future**: Multi-output routing for broadcasting (speakers + OBS + recording)
+
+**Full Details**: See `docs/active/SOUND_SYSTEM_REFACTORING_PLAN.md`
 
 ---
 
