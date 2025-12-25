@@ -15,8 +15,8 @@ public partial class OptionsDialog : Form
     private readonly ApplicationSettingsManager _settingsManager;
     private readonly MoneyTreeService _moneyTreeService;
     private bool _hasChanges;
-    private DataTable _soundPackDataTable = new DataTable();
-    private DataView _soundPackDataView;
+    private readonly DataTable _soundPackDataTable = new DataTable();
+    private readonly DataView _soundPackDataView;
     
     /// <summary>
     /// Event fired when settings are applied (via Apply button or OK button)
@@ -28,6 +28,10 @@ public partial class OptionsDialog : Form
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
         _moneyTreeService = new MoneyTreeService(); // Load money tree settings
+        
+        // Initialize DataView before InitializeComponent (which may trigger events)
+        _soundPackDataView = new DataView(_soundPackDataTable);
+        
         InitializeComponent();
         IconHelper.ApplyToForm(this);
         
@@ -877,10 +881,7 @@ public partial class OptionsDialog : Form
         _soundPackDataTable.Columns.Add("Category", typeof(string));
         _soundPackDataTable.Columns.Add("FullPath", typeof(string));
 
-        // Setup DataView for filtering
-        _soundPackDataView = new DataView(_soundPackDataTable);
-
-        // Bind to DataGridView
+        // Bind to DataGridView (DataView already initialized in constructor)
         dgvSoundPackInfo.DataSource = _soundPackDataView;
 
         // Configure columns
