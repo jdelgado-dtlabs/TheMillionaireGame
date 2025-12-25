@@ -2158,6 +2158,9 @@ public partial class ControlPanelForm : Form
         
         // Reset all controls
         ResetAllControls();
+
+        // Reset FFF Online control panel state
+        _fffWindow?.ControlPanel.ResetFFFRound();
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -2224,6 +2227,9 @@ public partial class ControlPanelForm : Form
         
         // Reset all controls but preserve FFF window player state
         ResetAllControls(resetFFFWindow: false);
+
+        // Reset FFF Online control panel state
+        _fffWindow?.ControlPanel.ResetFFFRound();
         
         // Clear screens
         _screenService.ResetAllScreens();

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Wants to be a Millionaire - Audience Participation</title>
+    
+    <!-- Privacy & Security Meta Tags -->
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="referrer" content="no-referrer">
+    
+    <!-- Application Styles -->
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <img src="logo.png" alt="Logo" class="logo">
+            Millionaire Game Audience
+        </h1>
+        
+        <!-- Connection Status Overlay -->
+        <div id="connectionOverlay" class="connection-overlay" style="display: none;">
+            <div class="connection-overlay-content">
+                <div class="spinner"></div>
+                <h2 id="connectionOverlayTitle">Lost Connection</h2>
+                <p id="connectionOverlayMessage">Retrying...</p>
+            </div>
+        </div>
+        
+        <!-- Join Screen -->
+        <div id="joinScreen" class="screen active">
+            <div class="status disconnected">Not Connected</div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <input type="text" id="txtDisplayName" placeholder="Enter your name" maxlength="35" />
+            <input type="text" id="sessionCode" placeholder="Session code (or from URL)" style="display: none;" />
+            
+            <div class="info">
+                <strong>✨ Name Requirements:</strong><br>
+                • 1-35 characters<br>
+                • No emojis or special symbols<br>
+                • No inappropriate language<br>
+                • Must be unique in the session
+            </div>
+            
+            <div class="privacy-notice">
+                <strong>🔒 Privacy Notice:</strong><br>
+                We collect anonymous usage data (device type, OS version, browser, play duration) for statistics. 
+                Your name and all identifying information are deleted after the show. By clicking "Join Session", 
+                you agree to these terms.
+            </div>
+            
+            <button id="btnJoin">Join Session</button>
+        </div>
+        
+        <!-- Connected Screen -->
+        <!-- TODO: Differentiate lobby states
+             Current: Pre-game testing screen (fine for before game starts)
+             Needed: When game starts (Host Intro clicked on control panel), show:
+             "Welcome to Who Wants to be a Millionaire! The show has begun!"
+             with no buttons (waiting for host to select FFF players)
+        -->
+        <div id="connectedScreen" class="screen">
+            <div class="status connected">✓ Connected to Session</div>
+            
+            <div class="info">
+                <strong>Session:</strong> <span id="displaySessionId"></span><br>
+                <strong>Your Name:</strong> <span id="lblDisplayName"></span><br>
+                <strong>Participant ID:</strong> <span id="displayParticipantId"></span><br>
+                <strong>Connection ID:</strong> <span id="displayConnectionId"></span>
+            </div>
+            
+            <button id="btnTestReconnect">🔄 Test Reconnect (Disconnect & Reconnect)</button>
+            <button id="btnLeave">Leave Session</button>
+            
+            <div class="info" style="margin-top: 20px; background: rgba(0, 255, 0, 0.1);">
+                <strong>✓ Protected Features:</strong><br>
+                • Your participant ID is saved in localStorage<br>
+                • If you refresh or disconnect, you'll reconnect with the same ID<br>
+                • Duplicate votes/answers are prevented server-side<br>
+                • Your progress in FFF is maintained
+            </div>
+        </div>
+        
+        <!-- FFF Question Screen -->
+        <div id="fffQuestionScreen" class="screen">
+            <div class="status connected">⚡ Fastest Finger First</div>
+            
+            <h2 id="fffQuestionText" style="color: #FFD700; margin: 20px 0; font-size: 1.3em;"></h2>
+            
+            <div id="fffTimer" class="timer">
+                <span id="fffTimerSeconds">20</span>s
+            </div>
+            
+            <div class="info" style="margin-bottom: 20px; background: rgba(255, 215, 0, 0.1);">
+                <strong>⚡ Instructions:</strong><br>
+                • Tap answers to reorder them<br>
+                • Put them in the correct sequence<br>
+                • Submit when ready - fastest correct answer wins!
+            </div>
+            
+            <div id="fffAnswerList" class="fff-answer-list">
+                <!-- Answer items will be dynamically added here -->
+            </div>
+            
+            <button id="btnSubmitFFF" class="submit-button">Submit Answer</button>
+            
+            <div id="fffMessage" class="info" style="display: none; margin-top: 20px;"></div>
+        </div>
+
+        <!-- ATA Voting Screen -->
+        <div id="ataVotingScreen" class="screen">
+            <div class="status connected">📊 Ask The Audience</div>
+            
+            <h2 id="ataQuestionText" style="color: #FFD700; margin: 20px 0;"></h2>
+            
+            <div id="ataTimer" class="timer">
+                <span id="timerSeconds">30</span>s
+            </div>
+            
+            <div id="ataVoteButtons" style="margin: 20px 0;">
+                <button id="btnVoteA" class="vote-button" data-option="A">
+                    <strong>A:</strong> <span id="optionAText"></span>
+                </button>
+                <button id="btnVoteB" class="vote-button" data-option="B">
+                    <strong>B:</strong> <span id="optionBText"></span>
+                </button>
+                <button id="btnVoteC" class="vote-button" data-option="C">
+                    <strong>C:</strong> <span id="optionCText"></span>
+                </button>
+                <button id="btnVoteD" class="vote-button" data-option="D">
+                    <strong>D:</strong> <span id="optionDText"></span>
+                </button>
+            </div>
+            
+            <div id="ataMessage" class="info" style="display: none;"></div>
+            
+            <div id="ataResults" style="margin-top: 30px; display: none;">
+                <h3 style="color: #FFD700;">Results:</h3>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillA" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextA">A: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillB" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextB">B: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillC" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextC">C: 0%</div>
+                </div>
+                <div class="results-bar">
+                    <div class="results-fill" id="resultsFillD" style="width: 0%;"></div>
+                    <div class="results-text" id="resultsTextD">D: 0%</div>
+                </div>
+                <p id="totalVotes" style="text-align: center; color: #FFD700; margin-top: 10px;">Total votes: 0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Third-Party Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    
+    <!-- Application Script -->
+    <script src="/js/app.js?v=20251223-2"></script>
+</body>
+</html>

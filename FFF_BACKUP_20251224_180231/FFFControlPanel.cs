@@ -77,6 +77,12 @@ public partial class FFFControlPanel : UserControl
                 await RefreshParticipantsAsync();
             }
         };
+        
+        // Initialize UI state when control is fully loaded
+        this.Load += (s, e) => UpdateUIState();
+        
+        // Also try immediately after InitializeComponent
+        UpdateUIState();
     }
     
     /// <summary>
@@ -89,13 +95,11 @@ public partial class FFFControlPanel : UserControl
             if (_fffRepository != null)
             {
                 _questions = await _fffRepository.GetAllQuestionsAsync();
-                MessageBox.Show($"Loaded {_questions.Count} FFF questions from database.",
-                    "Questions Loaded", MessageBoxButtons.OK, MessageBoxIcon.None);
+                GameConsole.Log($"[FFF] Loaded {_questions.Count} FFF questions from database.");
             }
             else
             {
-                MessageBox.Show("FFF Repository is not initialized.",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+                GameConsole.Log("[FFF] ERROR: FFF Repository is not initialized.");
             }
             
             UpdateUIState();
@@ -467,7 +471,18 @@ public partial class FFFControlPanel : UserControl
         if (!_isFFFActive) return;
         
         var elapsed = DateTime.UtcNow - _fffStartTime;
-        var display = $"{(int)elapsed.TotalMinutes:D2}:{elapsed.Seconds:D2}";
+        var remaining = TimeSpan.FromSeconds(20) - elapsed;
+        
+        if (remaining.TotalSeconds <= 0)
+        {
+            remaining = TimeSpan.Zero;
+        }
+        
+        // Round up seconds to match JavaScript behavior (19.9 seconds shows as "20")
+        var displaySeconds = (int)Math.Ceiling(remaining.TotalSeconds);
+        var displayMinutes = displaySeconds / 60;
+        displaySeconds = displaySeconds % 60;
+        var display = $"{displayMinutes:D2}:{displaySeconds:D2}";
         
         if (InvokeRequired)
         {
@@ -490,17 +505,20 @@ public partial class FFFControlPanel : UserControl
     /// <summary>
     /// Update button states based on current game flow state
     /// </summary>
-    private void UpdateUIState()
+    public void UpdateUIState()
     {
-        var hasQuestion = _currentQuestion != null;
+        var hasQuestionsAvailable = (_questions?.Count ?? 0) > 0;
         var hasParticipants = _participants.Count > 0;
+        
+        GameConsole.Log($"[FFF] UpdateUIState - State: {_currentState}, HasQuestionsAvailable: {hasQuestionsAvailable}, HasParticipants: {hasParticipants}, Questions: {(_questions?.Count ?? 0)}");
         
         // Update button enabled states based on game flow
         switch (_currentState)
         {
             case FFFFlowState.NotStarted:
-                btnIntroExplain.Enabled = hasQuestion && hasParticipants;
+                btnIntroExplain.Enabled = hasQuestionsAvailable && hasParticipants;
                 btnIntroExplain.BackColor = btnIntroExplain.Enabled ? Color.LightGreen : Color.Gray;
+                GameConsole.Log($"[FFF] NotStarted - Button enabled: {btnIntroExplain.Enabled}");
                 btnShowQuestion.Enabled = false;
                 btnShowQuestion.BackColor = Color.Gray;
                 btnRevealAnswers.Enabled = false;
@@ -516,6 +534,8 @@ public partial class FFFControlPanel : UserControl
             case FFFFlowState.IntroPlaying:
                 btnIntroExplain.Enabled = false;
                 btnIntroExplain.BackColor = Color.Yellow;
+                btnShowQuestion.Enabled = true; // Allow interrupting intro/explain
+                btnShowQuestion.BackColor = Color.LightGreen;
                 break;
                 
             case FFFFlowState.QuestionReady:
@@ -534,6 +554,8 @@ public partial class FFFControlPanel : UserControl
                 
             case FFFFlowState.AnswersRevealing:
             case FFFFlowState.AnswersRevealed:
+                btnShowQuestion.Enabled = false;
+                btnShowQuestion.BackColor = Color.Gray;
                 btnRevealAnswers.Enabled = false;
                 btnRevealAnswers.BackColor = Color.Yellow;
                 break;
@@ -567,8 +589,15 @@ public partial class FFFControlPanel : UserControl
         }
     }
     
+    /// <summary>
+    /// Reset FFF round state - can be called from parent Control Panel reset buttons
+    /// </summary>
     public void ResetFFFRound()
     {
+        // Stop sounds and timer
+        _soundService?.StopAllSounds();
+        _fffTimer?.Stop();
+        
         _currentQuestion = null;
         _submissions.Clear();
         _rankings.Clear();
@@ -583,6 +612,8 @@ public partial class FFFControlPanel : UserControl
         
         ClearQuestionDetails();
         UpdateUIState();
+        
+        GameConsole.Log("[FFF] Round reset from Control Panel");
     }
     
     #region New Button Handlers (Stubs for UI Preview)
@@ -610,47 +641,53 @@ public partial class FFFControlPanel : UserControl
         _currentState = FFFFlowState.IntroPlaying;
         UpdateUIState();
         
+        GameConsole.Log("[FFF] Step 1: Intro/Explain started");
+        
         // Play FFFLightsDown, then FFFExplain
         // TODO Phase 4: Update TV screen with FFF title
-        _soundService.PlaySound(SoundEffect.FFFLightsDown);
-        
-        // Wait for FFFLightsDown to finish, then play FFFExplain
-        // For now, using async pattern to sequence sounds
         Task.Run(async () =>
         {
-            await Task.Delay(3000); // Estimate for FFFLightsDown duration
-            if (_soundService != null)
-            {
-                _soundService.PlaySound(SoundEffect.FFFExplain);
-            }
-            await Task.Delay(5000); // Estimate for FFFExplain duration
+            GameConsole.Log("[FFF] Playing FFFLightsDown...");
+            await _soundService.PlaySoundAsync(SoundEffect.FFFLightsDown);
+            GameConsole.Log("[FFF] FFFLightsDown finished");
             
-            // Move to next state
+            // Move to next state immediately after LightsDown
             if (InvokeRequired)
             {
                 Invoke(() =>
                 {
                     _currentState = FFFFlowState.QuestionReady;
                     UpdateUIState();
+                    GameConsole.Log("[FFF] Step 1 complete - Ready for Step 2");
                 });
             }
             else
             {
                 _currentState = FFFFlowState.QuestionReady;
                 UpdateUIState();
+                GameConsole.Log("[FFF] Step 1 complete - Ready for Step 2");
             }
+            
+            GameConsole.Log("[FFF] Playing FFFExplain...");
+            await _soundService.PlaySoundAsync(SoundEffect.FFFExplain);
+            GameConsole.Log("[FFF] FFFExplain finished");
         });
     }
     
     private void btnShowQuestion_Click(object? sender, EventArgs e)
     {
+        // Prevent double-click
+        if (_currentState != FFFFlowState.QuestionReady)
+        {
+            return;
+        }
+        
         // Randomly select a question from loaded questions if not already selected
         if (_currentQuestion == null)
         {
             if (_questions == null || _questions.Count == 0)
             {
-                MessageBox.Show("No questions loaded. Please wait for questions to load on startup.",
-                    "No Questions", MessageBoxButtons.OK, MessageBoxIcon.None);
+                GameConsole.Log("[FFF] ERROR: No questions loaded. Please wait for questions to load on startup.");
                 return;
             }
             
@@ -674,16 +711,23 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
-        _currentState = FFFFlowState.QuestionShown;
-        UpdateUIState();
-        
-        // Stop all sounds (end FFFExplain if still playing)
-        _soundService.StopAllSounds();
+        GameConsole.Log("[FFF] Step 2: Show Question started");
         
         // TODO Phase 4: Display question on TV (no answers yet)
         
-        // Play FFFReadQuestion
-        _soundService.PlaySound(SoundEffect.FFFReadQuestion);
+        // Change state immediately - enables next button
+        _currentState = FFFFlowState.QuestionShown;
+        UpdateUIState();
+        GameConsole.Log("[FFF] Step 2 complete - Ready for Step 3");
+        
+        // Stop sounds and play in background (can be interrupted by next button)
+        Task.Run(async () =>
+        {
+            _soundService.StopAllSounds();
+            GameConsole.Log("[FFF] Playing FFFReadQuestion...");
+            await _soundService.PlaySoundAsync(SoundEffect.FFFReadQuestion);
+            GameConsole.Log("[FFF] FFFReadQuestion finished");
+        });
     }
     
     private async void btnRevealAnswers_Click(object? sender, EventArgs e)
@@ -700,74 +744,135 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
+        GameConsole.Log("[FFF] Step 3: Reveal Answers started");
+        
         _currentState = FFFFlowState.AnswersRevealing;
         UpdateUIState();
         
-        // Stop all sounds (end FFFReadQuestion if still playing)
-        _soundService.StopAllSounds();
-        
-        // Play FFFThreeNotes
-        _soundService.PlaySound(SoundEffect.FFFThreeNotes);
-        
-        // Wait for FFFThreeNotes to complete
-        await Task.Delay(3000); // Estimate for FFFThreeNotes duration
-        
-        // Randomize answer positions (NEVER in correct order A-B-C-D)
-        var answers = new List<string>
+        // Play sounds sequentially in background thread - randomize/transmit AFTER cue plays
+        Task.Run(async () =>
         {
-            _currentQuestion.AnswerA,
-            _currentQuestion.AnswerB,
-            _currentQuestion.AnswerC,
-            _currentQuestion.AnswerD
-        };
-        
-        var random = new Random();
-        var randomized = answers.OrderBy(x => random.Next()).ToArray();
-        _randomizedAnswers = randomized;
-        
-        // Send question and randomized answers to participants (START COMPETITION)
-        if (_fffClient != null && _fffClient.IsConnected)
-        {
-            try
+            // Stop all sounds (end FFFReadQuestion if still playing)
+            _soundService.StopAllSounds();
+            
+            // Play FFFThreeNotes first (the cue sound)
+            GameConsole.Log("[FFF] Playing FFFThreeNotes...");
+            await _soundService.PlaySoundAsync(SoundEffect.FFFThreeNotes);
+            GameConsole.Log("[FFF] FFFThreeNotes finished");
+            
+            // NOW randomize answer positions (after cue finishes)
+            var answers = new List<string>
             {
-                // TODO: Send randomized answers to participants via SignalR
-                // await _fffClient.StartRoundAsync(_currentQuestion.Id, randomized);
-                _fffStartTime = DateTime.Now;
+                _currentQuestion.AnswerA,
+                _currentQuestion.AnswerB,
+                _currentQuestion.AnswerC,
+                _currentQuestion.AnswerD
+            };
+            
+            var random = new Random();
+            var randomized = answers.OrderBy(x => random.Next()).ToArray();
+            
+            // Ensure randomized order doesn't match correct order
+            var currentSequence = GetAnswerSequence(_currentQuestion, randomized);
+            if (currentSequence == _currentQuestion.CorrectOrder)
+            {
+                // Randomization matched correct order - swap two answers to change it
+                (randomized[0], randomized[1]) = (randomized[1], randomized[0]);
+            }
+            
+            _randomizedAnswers = randomized;
+            
+            // Send question and randomized answers to participants via SignalR
+            if (_fffClient != null && _fffClient.IsConnected)
+            {
+                try
+                {
+                    GameConsole.Log("[FFF] Sending question to participants...");
+                    await _fffClient.StartQuestionAsync(_currentQuestion.Id, _currentQuestion.QuestionText, randomized, 20);
+                    GameConsole.Log("[FFF] Question transmitted successfully");
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Log($"[FFF] Error starting round: {ex.Message}");
+                    if (InvokeRequired)
+                    {
+                        Invoke(() => MessageBox.Show($"Error starting round: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.None));
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Error starting round: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
+                    }
+                    return;
+                }
+            }
+            
+            // TODO Phase 4: Display on TV with randomized answers
+            
+            // Update state and start timer (after transmission)
+            if (InvokeRequired)
+            {
+                Invoke(() =>
+                {
+                    _currentState = FFFFlowState.AnswersRevealed;
+                    UpdateUIState();
+                    GameConsole.Log("[FFF] Starting timer...");
+                    lblTimer.Text = "00:20"; // Set initial display before timer starts
+                    _fffStartTime = DateTime.UtcNow;
+                    _isFFFActive = true;
+                    _fffTimer.Start();
+                    GameConsole.Log($"[FFF] Timer started: {_fffTimer.Enabled}");
+                });
+            }
+            else
+            {
+                _currentState = FFFFlowState.AnswersRevealed;
+                UpdateUIState();
+                GameConsole.Log("[FFF] Starting timer...");
+                lblTimer.Text = "00:20"; // Set initial display before timer starts
+                _fffStartTime = DateTime.UtcNow;
                 _isFFFActive = true;
+                _fffTimer.Start();
+                GameConsole.Log($"[FFF] Timer started: {_fffTimer.Enabled}");
             }
-            catch (Exception ex)
+            
+            // Now play FFFThinking (20 seconds)
+            GameConsole.Log("[FFF] Playing FFFThinking (20s)...");
+            await _soundService.PlaySoundAsync(SoundEffect.FFFThinking);
+            
+            if (InvokeRequired)
             {
-                MessageBox.Show($"Error starting round: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.None);
-                return;
+                Invoke(() =>
+                {
+                    _fffTimer.Stop();
+                    _isFFFActive = false;
+                    GameConsole.Log("[FFF] FFFThinking finished - Timer expired");
+                    
+                    // Play FFFReadAnswers in background (continues during Step 4: Reveal Correct)
+                    GameConsole.Log("[FFF] Playing FFFReadAnswers (background music)...");
+                    _soundService.PlaySound(SoundEffect.FFFReadAnswers);
+                    
+                    // Move to next state - ready to reveal correct answers
+                    _currentState = FFFFlowState.TimerExpired;
+                    UpdateUIState();
+                    GameConsole.Log("[FFF] Step 3 complete - Ready for Step 4");
+                });
             }
-        }
-        
-        // TODO Phase 4: Display on TV with randomized answers
-        
-        // Start 20-second countdown timer (timed to match sound duration)
-        _fffTimer.Start();
-        
-        // Play FFFThinking
-        _soundService.PlaySound(SoundEffect.FFFThinking);
-        
-        _currentState = FFFFlowState.AnswersRevealed;
-        UpdateUIState();
-        
-        // Wait for FFFThinking duration (approximately 20 seconds)
-        await Task.Delay(20000); // Timer expires at right moment using fade-out gap
-        
-        _fffTimer.Stop();
-        _isFFFActive = false;
-        
-        // Play FFFReadAnswers
-        _soundService.PlaySound(SoundEffect.FFFReadAnswers);
-        
-        // Wait for FFFReadAnswers to complete
-        await Task.Delay(5000); // Estimate for FFFReadAnswers duration
-        
-        // Move to next state - ready to reveal correct answers
-        _currentState = FFFFlowState.TimerExpired;
-        UpdateUIState();
+            else
+            {
+                _fffTimer.Stop();
+                _isFFFActive = false;
+                GameConsole.Log("[FFF] FFFThinking finished - Timer expired");
+                
+                // Play FFFReadAnswers in background (continues during Step 4: Reveal Correct)
+                GameConsole.Log("[FFF] Playing FFFReadAnswers (background music)...");
+                _soundService.PlaySound(SoundEffect.FFFReadAnswers);
+                
+                // Move to next state - ready to reveal correct answers
+                _currentState = FFFFlowState.TimerExpired;
+                UpdateUIState();
+                GameConsole.Log("[FFF] Step 3 complete - Ready for Step 4");
+            }
+        });
     }
     
     private void btnRevealCorrect_Click(object? sender, EventArgs e)
@@ -776,36 +881,84 @@ public partial class FFFControlPanel : UserControl
         
         _currentState = FFFFlowState.RevealingCorrect;
         
-        // TODO Phase 4: Highlight correct answer position on TV
+        GameConsole.Log($"[FFF] Step 4: Reveal Correct ({_revealCorrectClickCount}/4)");
         
-        // Play appropriate sound for this reveal (1-4)
-        // Note: These sound effects need to be added to sound packs
-        // For now, using placeholder logic
-        
+        // Update button text immediately (before sound plays)
         if (_revealCorrectClickCount < 4)
         {
             btnRevealCorrect.Text = $"4. Reveal Correct ({_revealCorrectClickCount}/4)";
-            // TODO: Play sound for revealing answer 1, 2, or 3
-            // _soundService?.PlaySound(SoundEffect.FFFRevealCorrect1); // etc
         }
         else
         {
-            // Fourth click - all revealed
             btnRevealCorrect.Text = "4. Reveal Correct";
-            // TODO: Play sound for revealing 4th answer
-            
-            // Calculate rankings if not already done
-            if (_rankings.Count == 0 && _submissions.Count > 0)
-            {
-                CalculateRankings();
-            }
-            
-            // Move to winners shown state
-            _currentState = FFFFlowState.WinnersShown;
-            _revealCorrectClickCount = 0; // Reset for next round
         }
         
+        // Update UI state immediately
         UpdateUIState();
+        
+        // TODO Phase 4: Highlight correct answer position on TV
+        
+        // Play appropriate sound for this reveal (1-4) in background
+        // Note: FFFReadAnswers continues playing in background during all reveals
+        var clickCount = _revealCorrectClickCount; // Capture for async use
+        
+        Task.Run(async () =>
+        {
+            switch (clickCount)
+            {
+                case 1:
+                    GameConsole.Log("[FFF] Playing FFFOrder1...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFOrder1);
+                    break;
+                case 2:
+                    GameConsole.Log("[FFF] Playing FFFOrder2...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFOrder2);
+                    break;
+                case 3:
+                    GameConsole.Log("[FFF] Playing FFFOrder3...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFOrder3);
+                    break;
+                case 4:
+                    GameConsole.Log("[FFF] Playing FFFOrder4...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFOrder4);
+                    
+                    // After final sound, move to next state
+                    if (InvokeRequired)
+                    {
+                        Invoke(() =>
+                        {
+                            // Calculate rankings if not already done
+                            if (_rankings.Count == 0 && _submissions.Count > 0)
+                            {
+                                CalculateRankings();
+                            }
+                            
+                            GameConsole.Log("[FFF] Step 4 complete - Ready for Step 5");
+                            
+                            // Move to winners shown state
+                            _currentState = FFFFlowState.WinnersShown;
+                            _revealCorrectClickCount = 0; // Reset for next round
+                            UpdateUIState();
+                        });
+                    }
+                    else
+                    {
+                        // Calculate rankings if not already done
+                        if (_rankings.Count == 0 && _submissions.Count > 0)
+                        {
+                            CalculateRankings();
+                        }
+                        
+                        GameConsole.Log("[FFF] Step 4 complete - Ready for Step 5");
+                        
+                        // Move to winners shown state
+                        _currentState = FFFFlowState.WinnersShown;
+                        _revealCorrectClickCount = 0; // Reset for next round
+                        UpdateUIState();
+                    }
+                    break;
+            }
+        });
     }
     
     private void CalculateRankings()
@@ -831,13 +984,39 @@ public partial class FFFControlPanel : UserControl
         UpdateRankings(rankings);
     }
     
+    /// <summary>
+    /// Get the answer sequence (e.g., "DABC") for a given randomized answer array
+    /// </summary>
+    private string GetAnswerSequence(FFFQuestion question, string[] randomizedAnswers)
+    {
+        var sequence = "";
+        
+        foreach (var answer in randomizedAnswers)
+        {
+            if (answer == question.AnswerA)
+                sequence += "A";
+            else if (answer == question.AnswerB)
+                sequence += "B";
+            else if (answer == question.AnswerC)
+                sequence += "C";
+            else if (answer == question.AnswerD)
+                sequence += "D";
+        }
+        
+        return sequence;
+    }
+    
     private void btnShowWinners_Click(object? sender, EventArgs e)
     {
+        GameConsole.Log("[FFF] Step 5: Show Winners");
+        
         // TODO Phase 4: Display list of winners on TV
         // Clear TV screen and show names of participants who answered correctly
         
         _currentState = FFFFlowState.WinnersShown;
         UpdateUIState();
+        
+        GameConsole.Log("[FFF] Step 5 complete - Ready for Step 6");
     }
     
     private async void btnWinner_Click(object? sender, EventArgs e)
@@ -848,6 +1027,8 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
+        GameConsole.Log("[FFF] Step 6: Confirm Winner started");
+        
         var correctAnswers = _rankings.Where(r => r.IsCorrect).ToList();
         
         if (correctAnswers.Count == 0)
@@ -856,6 +1037,9 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
+        // Stop FFFReadAnswers (playing in background from Step 3)
+        _soundService.StopAllSounds();
+        
         if (correctAnswers.Count == 1)
         {
             // Only 1 winner - auto-win
@@ -863,10 +1047,16 @@ public partial class FFFControlPanel : UserControl
             lblWinner.Text = $"Winner: 🏆 {winner.DisplayName}";
             lblWinner.ForeColor = Color.Green;
             
+            GameConsole.Log($"[FFF] Winner: {winner.DisplayName}");
+            
             // TODO Phase 4: Display winner celebration on TV
             
+            GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
             await Task.Delay(3000);
+            GameConsole.Log("[FFF] FFFWinner finished");
+            
+            GameConsole.Log("[FFF] Playing FFFWalkDown...");
             _soundService.PlaySound(SoundEffect.FFFWalkDown);
         }
         else
@@ -878,13 +1068,20 @@ public partial class FFFControlPanel : UserControl
             lblWinner.Text = $"Winner: 🏆 {winner.DisplayName} ({winner.TimeElapsed / 1000.0:F2}s)";
             lblWinner.ForeColor = Color.Green;
             
+            GameConsole.Log($"[FFF] Winner: {winner.DisplayName} ({winner.TimeElapsed / 1000.0:F2}s) - {correctAnswers.Count} correct answers");
+            
+            GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
             await Task.Delay(3000);
+            GameConsole.Log("[FFF] FFFWinner finished");
+            
+            GameConsole.Log("[FFF] Playing FFFWalkDown...");
             _soundService.PlaySound(SoundEffect.FFFWalkDown);
         }
         
         _currentState = FFFFlowState.WinnerAnnounced;
         UpdateUIState();
+        GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
         
         // TODO: Notify main control panel of winner
     }
