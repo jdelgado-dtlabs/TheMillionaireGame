@@ -747,7 +747,7 @@ public partial class ControlPanelForm : Form
 
     #region Button Click Handlers
 
-    private async void btnNewQuestion_Click(object? sender, EventArgs e)
+    private void btnNewQuestion_Click(object? sender, EventArgs e)
     {
         if (_answerRevealStep == 0)
         {
@@ -758,15 +758,42 @@ public partial class ControlPanelForm : Form
                 _currentLightsDownIdentifier = null; // Clear it
             }
             
-            // First click: Load question but don't show answers yet
-            await LoadNewQuestion();
-            _answerRevealStep = 1; // Question shown, no answers
-            
-            // Enable checkbox and keep Question button enabled for answer reveals
-            chkShowQuestion.Checked = true;
-            btnNewQuestion.Enabled = true;
-            btnNewQuestion.BackColor = Color.LimeGreen;
-            btnNewQuestion.Text = "Question";
+            // First click: Load question but don't show answers yet - run in background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await LoadNewQuestion();
+                    
+                    if (!IsDisposed && IsHandleCreated)
+                    {
+                        BeginInvoke(() =>
+                        {
+                            try
+                            {
+                                if (!IsDisposed)
+                                {
+                                    _answerRevealStep = 1; // Question shown, no answers
+                                    
+                                    // Enable checkbox and keep Question button enabled for answer reveals
+                                    chkShowQuestion.Checked = true;
+                                    btnNewQuestion.Enabled = true;
+                                    btnNewQuestion.BackColor = Color.LimeGreen;
+                                    btnNewQuestion.Text = "Question";
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                GameConsole.Log($"[NewQuestion] Error updating UI: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Log($"[NewQuestion] Error loading question: {ex.Message}");
+                }
+            });
         }
         else if (_answerRevealStep >= 1 && _answerRevealStep <= 4)
         {
@@ -829,6 +856,9 @@ public partial class ControlPanelForm : Form
     {
         // Clear any pending safety net lock-in when starting a new question
         _pendingSafetyNetLevel = 0;
+        
+        // Clear old answers from host/guest screens immediately
+        _screenService.ClearQuestionAndAnswerText();
         
         try
         {
@@ -996,7 +1026,7 @@ public partial class ControlPanelForm : Form
         SelectAnswer("D");
     }
 
-    private async void btnLightsDown_Click(object? sender, EventArgs e)
+    private void btnLightsDown_Click(object? sender, EventArgs e)
     {
         // Cancel any previous lights down operation
         _lightsDownCts?.Cancel();
@@ -1034,38 +1064,86 @@ public partial class ControlPanelForm : Form
             btnShowMoneyTree.Enabled = true;
         }
         
-        // Stop any playing sounds first
-        _soundService.StopAllSounds();
-        
-        // Play question-specific lights down sound
-        PlayLightsDownSound();
-        
         var questionNumber = (int)nmrLevel.Value + 1;
         
-        // For Q1-5, enable Reset button on first lights down and play bed music after delay
+        // Stop sounds and handle question loading in proper sequence
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // Stop all sounds first and wait for completion
+                await _soundService.StopAllSoundsAsync();
+                
+                // Play lights down sound after stopping completes
+                if (!token.IsCancellationRequested && !IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(() =>
+                    {
+                        if (!IsDisposed)
+                        {
+                            PlayLightsDownSound();
+                        }
+                    });
+                }
+                
+                // For Q1-5, continue with question loading after sounds are handled
+                if (questionNumber >= 1 && questionNumber <= 5)
+                {
+                    // Load question in background
+                    await LoadNewQuestion();
+                    
+                    if (!token.IsCancellationRequested && !IsDisposed && IsHandleCreated)
+                    {
+                        // Update UI on main thread
+                        BeginInvoke(() =>
+                        {
+                            try
+                            {
+                                if (!IsDisposed)
+                                {
+                                    _answerRevealStep = 1; // Question shown, ready to reveal answers
+                                    chkShowQuestion.Checked = true;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                GameConsole.Log($"[LightsDown] Error updating UI after question load: {ex.Message}");
+                            }
+                        });
+                        
+                        // Wait for lights down sound to finish before starting bed music
+                        await Task.Delay(4000, token);
+                        
+                        if (!token.IsCancellationRequested && !IsDisposed && IsHandleCreated)
+                        {
+                            // Start bed music on UI thread for proper sound service access
+                            BeginInvoke(() =>
+                            {
+                                if (!IsDisposed)
+                                {
+                                    PlayQuestionBed();
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation is normal, don't log it
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[LightsDown] Error in lights down sequence: {ex.Message}");
+            }
+        });
+        
+        // For Q1-5, setup UI for first question
         if (questionNumber >= 1 && questionNumber <= 5)
         {
             // Disable risk mode button after first lights down (grey)
             btnActivateRiskMode.Enabled = false;
             btnActivateRiskMode.BackColor = Color.Gray;
-            
-            // Wait for lights down sound to finish before starting bed music
-            try
-            {
-                await Task.Delay(4000, token);
-            }
-            catch (OperationCanceledException)
-            {
-                return; // Operation was cancelled
-            }
-            
-            PlayQuestionBed();
-            
-            // Emulate first Question button click: load question and prepare for progressive reveal
-            // This ensures consistent state management between Q1-5 and Q6+
-            await LoadNewQuestion();
-            _answerRevealStep = 1; // Question shown, ready to reveal answers
-            chkShowQuestion.Checked = true;
         }
         else
         {
@@ -1077,9 +1155,6 @@ public partial class ControlPanelForm : Form
             {
                 chkShowWinnings.Checked = false;
             }
-            
-            // Clear text on host and guest screens for Q6+
-            _screenService.ClearQuestionAndAnswerText();
         }
         
         // Enable Question button (green) for all questions after lights down
@@ -1110,10 +1185,159 @@ public partial class ControlPanelForm : Form
         }
 
         bool isCorrect = _currentAnswer == lblAnswer.Text;
-        RevealAnswer(isCorrect);
+        
+        // Check if Double Dip is active first (synchronously)
+        DoubleDipRevealResult ddResult = DoubleDipRevealResult.NotActive;
+        if (_lifelineManager != null)
+        {
+            // Run DD check in background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var result = await _lifelineManager.HandleDoubleDipRevealAsync(_currentAnswer, lblAnswer.Text, isCorrect);
+                    if (result == DoubleDipRevealResult.FirstAttemptWrong)
+                    {
+                        // First DD attempt was wrong - update UI on main thread
+                        if (!IsDisposed && IsHandleCreated)
+                        {
+                            BeginInvoke(() =>
+                            {
+                                try
+                                {
+                                    if (!IsDisposed)
+                                    {
+                                        // Show wrong answer on control panel briefly
+                                        switch (_currentAnswer)
+                                        {
+                                            case "A": txtA.BackColor = Color.Red; break;
+                                            case "B": txtB.BackColor = Color.Red; break;
+                                            case "C": txtC.BackColor = Color.Red; break;
+                                            case "D": txtD.BackColor = Color.Red; break;
+                                        }
+                                        
+                                        // Play DD first wrong attempt sound
+                                        _soundService.PlaySound(SoundEffect.LifelineDoubleDipFirst, "dd_first");
+                                        
+                                        // Remove from screens (not control panel)
+                                        _screenService.RemoveAnswer(_currentAnswer);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    GameConsole.Log($"[RevealAnswer] Error updating UI for DD first attempt: {ex.Message}");
+                                }
+                            });
+                        }
+                        
+                        // Wait a moment for dramatic effect
+                        await Task.Delay(1500);
+                        
+                        // Update UI on main thread after delay
+                        if (!IsDisposed && IsHandleCreated)
+                        {
+                            BeginInvoke(() =>
+                            {
+                                try
+                                {
+                                    if (!IsDisposed)
+                                    {
+                                        // Disable the wrong answer button on control panel
+                                        switch (_currentAnswer)
+                                        {
+                                            case "A": 
+                                                btnA.Enabled = false;
+                                                btnA.BackColor = Color.Gray;
+                                                break;
+                                            case "B": 
+                                                btnB.Enabled = false;
+                                                btnB.BackColor = Color.Gray;
+                                                break;
+                                            case "C": 
+                                                btnC.Enabled = false;
+                                                btnC.BackColor = Color.Gray;
+                                                break;
+                                            case "D": 
+                                                btnD.Enabled = false;
+                                                btnD.BackColor = Color.Gray;
+                                                break;
+                                        }
+                                        
+                                        // Reset answer colors for second attempt
+                                        ResetAnswerColors();
+                                        
+                                        // Re-enable remaining answer buttons for second attempt (that aren't the wrong one)
+                                        if (_currentAnswer != "A" && !btnA.Enabled) 
+                                        { 
+                                            btnA.Enabled = true;
+                                            btnA.BackColor = Color.DarkOrange; 
+                                        }
+                                        if (_currentAnswer != "B" && !btnB.Enabled) 
+                                        { 
+                                            btnB.Enabled = true;
+                                            btnB.BackColor = Color.DarkOrange; 
+                                        }
+                                        if (_currentAnswer != "C" && !btnC.Enabled) 
+                                        { 
+                                            btnC.Enabled = true;
+                                            btnC.BackColor = Color.DarkOrange; 
+                                        }
+                                        if (_currentAnswer != "D" && !btnD.Enabled) 
+                                        { 
+                                            btnD.Enabled = true;
+                                            btnD.BackColor = Color.DarkOrange; 
+                                        }
+                                        
+                                        // Disable Reveal button - wait for second answer
+                                        btnReveal.Enabled = false;
+                                        btnReveal.BackColor = Color.Gray;
+                                        
+                                        // Clear current answer for second attempt
+                                        _currentAnswer = string.Empty;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    GameConsole.Log($"[RevealAnswer] Error updating UI after DD delay: {ex.Message}");
+                                }
+                            });
+                        }
+                        
+                        return; // Don't proceed with normal reveal
+                    }
+                    
+                    // If ddResult is SecondAttempt or NotActive, proceed with normal reveal on UI thread
+                    if (!IsDisposed && IsHandleCreated)
+                    {
+                        BeginInvoke(() =>
+                        {
+                            try
+                            {
+                                if (!IsDisposed)
+                                {
+                                    ProcessNormalReveal(isCorrect);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                GameConsole.Log($"[RevealAnswer] Error in normal reveal: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Log($"[RevealAnswer] Error in DD background task: {ex.Message}");
+                }
+            });
+            return; // Exit early if DD is being checked
+        }
+        
+        // No Double Dip - process reveal immediately on UI thread
+        ProcessNormalReveal(isCorrect);
     }
 
-    private async void btnWalk_Click(object? sender, EventArgs e)
+    private void btnWalk_Click(object? sender, EventArgs e)
     {
         // Capture winnings BEFORE modifying game state
         // If final winnings already set (after wrong answer), use that; otherwise use current value
@@ -1139,16 +1363,6 @@ public partial class ControlPanelForm : Form
         
         _soundService.PlaySound(quitSound, quitSoundId, loop: false);
         
-        // Give sound time to register before checking status
-        try
-        {
-            await Task.Delay(100, token);
-        }
-        catch (OperationCanceledException)
-        {
-            return; // Sequence was cancelled
-        }
-        
         // Log walk away to console
         GameConsole.Log($"[WALK AWAY] Player walked away with: {winnings}");
         
@@ -1172,16 +1386,24 @@ public partial class ControlPanelForm : Form
         btnClosing.BackColor = Color.LimeGreen;
         btnClosing.ForeColor = Color.Black;
         
-        // Wait for quit sound to finish, then auto-trigger end-of-round sequence
-        try
+        // Wait for quit sound to finish, then auto-trigger end-of-round sequence - in background
+        _ = Task.Run(async () =>
         {
-            await _soundService.WaitForSoundAsync(quitSoundId, token);
-            await EndRoundSequence(winnings);
-        }
-        catch (OperationCanceledException)
-        {
-            // Sequence was cancelled by reset
-        }
+            try
+            {
+                await Task.Delay(100, token);
+                await _soundService.WaitForSoundAsync(quitSoundId, token);
+                await EndRoundSequence(winnings);
+            }
+            catch (OperationCanceledException)
+            {
+                // Sequence was cancelled by reset
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[WalkAway] Error in background task: {ex.Message}");
+            }
+        });
     }
 
     private void btnActivateRiskMode_Click(object? sender, EventArgs e)
@@ -1226,7 +1448,7 @@ public partial class ControlPanelForm : Form
         }
     }
     
-    private async void btnShowMoneyTree_Click(object? sender, EventArgs e)
+    private void btnShowMoneyTree_Click(object? sender, EventArgs e)
     {
         if (Program.DebugMode)
         {
@@ -1283,14 +1505,40 @@ public partial class ControlPanelForm : Form
             // Start the animation with sound and revert to current level after
             StartSafetyNetAnimation(levelToLock, playSound: true, targetLevelAfterAnimation: _gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
             
-            // Wait for animation to complete (6 flashes × 300ms = 1800ms + small buffer)
-            await Task.Delay(2000);
-            
-            // After animation, change to "Hide Money Tree"
-            btnShowMoneyTree.BackColor = Color.Orange;
-            btnShowMoneyTree.ForeColor = Color.Black;
-            btnShowMoneyTree.Text = "Hide Money Tree";
-            btnShowMoneyTree.Enabled = true;
+            // Wait for animation to complete (6 flashes × 300ms = 1800ms + small buffer) - in background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(2000);
+                    
+                    if (!IsDisposed && IsHandleCreated)
+                    {
+                        BeginInvoke(() =>
+                        {
+                            try
+                            {
+                                if (!IsDisposed)
+                                {
+                                    // After animation, change to "Hide Money Tree"
+                                    btnShowMoneyTree.BackColor = Color.Orange;
+                                    btnShowMoneyTree.ForeColor = Color.Black;
+                                    btnShowMoneyTree.Text = "Hide Money Tree";
+                                    btnShowMoneyTree.Enabled = true;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                GameConsole.Log($"[MoneyTree] Error updating button after animation: {ex.Message}");
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Log($"[MoneyTree] Error in animation wait: {ex.Message}");
+                }
+            });
         }
         else if (btnShowMoneyTree.Text == "Demo Money Tree")
         {
@@ -1557,24 +1805,24 @@ public partial class ControlPanelForm : Form
     }
     */
 
-    private async void btnLifeline1_Click(object? sender, EventArgs e)
+    private void btnLifeline1_Click(object? sender, EventArgs e)
     {
-        await HandleLifelineClickAsync(1, btnLifeline1);
+        _ = Task.Run(async () => await HandleLifelineClickAsync(1, btnLifeline1));
     }
 
-    private async void btnLifeline2_Click(object? sender, EventArgs e)
+    private void btnLifeline2_Click(object? sender, EventArgs e)
     {
-        await HandleLifelineClickAsync(2, btnLifeline2);
+        _ = Task.Run(async () => await HandleLifelineClickAsync(2, btnLifeline2));
     }
 
-    private async void btnLifeline3_Click(object? sender, EventArgs e)
+    private void btnLifeline3_Click(object? sender, EventArgs e)
     {
-        await HandleLifelineClickAsync(3, btnLifeline3);
+        _ = Task.Run(async () => await HandleLifelineClickAsync(3, btnLifeline3));
     }
 
-    private async void btnLifeline4_Click(object? sender, EventArgs e)
+    private void btnLifeline4_Click(object? sender, EventArgs e)
     {
-        await HandleLifelineClickAsync(4, btnLifeline4);
+        _ = Task.Run(async () => await HandleLifelineClickAsync(4, btnLifeline4));
     }
 
     private Core.Models.LifelineType GetLifelineTypeFromSettings(int lifelineNumber)
@@ -1775,11 +2023,8 @@ public partial class ControlPanelForm : Form
         await _lifelineManager.ExecuteLifelineAsync(type, lifelineNumber, lblAnswer.Text);
     }
 
-    private async void btnHostIntro_Click(object? sender, EventArgs e)
+    private void btnHostIntro_Click(object? sender, EventArgs e)
     {
-        // Reset all questions to unused for new game
-        await _questionRepository.ResetAllQuestionsAsync();
-        
         // Disable Host Intro until closing
         btnHostIntro.Enabled = false;
         btnHostIntro.BackColor = Color.Gray;
@@ -1799,6 +2044,19 @@ public partial class ControlPanelForm : Form
         
         // Play host entrance audio once
         _soundService.PlaySound(SoundEffect.HostEntrance, loop: false);
+        
+        // Reset all questions to unused for new game - run in background
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _questionRepository.ResetAllQuestionsAsync();
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[HostIntro] Error resetting questions: {ex.Message}");
+            }
+        });
     }
 
     private void btnPickPlayer_Click(object? sender, EventArgs e)
@@ -1949,7 +2207,7 @@ public partial class ControlPanelForm : Form
         // All buttons should already be disabled at this point except Closing
     }
 
-    private async void btnClosing_Click(object? sender, EventArgs e)
+    private void btnClosing_Click(object? sender, EventArgs e)
     {
         switch (_closingStage)
         {
@@ -2034,7 +2292,7 @@ public partial class ControlPanelForm : Form
         _closingTimer.Start();
     }
     
-    private async void MoveToThemeStage()
+    private void MoveToThemeStage()
     {
         _closingStage = ClosingStage.Theme;
         btnClosing.BackColor = Color.Yellow;
@@ -2050,10 +2308,36 @@ public partial class ControlPanelForm : Form
             GameConsole.Log("[Closing] Stage: Theme - playing sound (wait for completion)");
         }
         
-        // Wait for closing theme to finish
-        await _soundService.WaitForSoundAsync("close_theme");
-        
-        CompleteClosing();
+        // Wait for closing theme to finish - in background
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _soundService.WaitForSoundAsync("close_theme");
+                
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(() =>
+                    {
+                        try
+                        {
+                            if (!IsDisposed)
+                            {
+                                CompleteClosing();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            GameConsole.Log($"[Closing] Error completing closing: {ex.Message}");
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[Closing] Error waiting for theme: {ex.Message}");
+            }
+        });
     }
     
     private void CompleteClosing()
@@ -2113,8 +2397,8 @@ public partial class ControlPanelForm : Form
 
     private void btnStopAudio_Click(object? sender, EventArgs e)
     {
-        // Stop all currently playing audio
-        _soundService.StopAllSounds();
+        // Run on background thread to prevent UI deadlock
+        _ = _soundService.StopAllSoundsAsync();
     }
 
     private void btnResetGame_Click(object? sender, EventArgs e)
@@ -2312,19 +2596,47 @@ public partial class ControlPanelForm : Form
         return 0;
     }
 
-    private async void SelectAnswer(string answer)
+    private void SelectAnswer(string answer)
     {
-        // Check if Ask the Host is active
+        // Check if Ask the Host is active - run in background
         if (_lifelineManager != null)
         {
-            bool athActive = await _lifelineManager.HandleAskTheHostAnswerAsync();
-            if (athActive)
+            _ = Task.Run(async () =>
             {
-                // ATH was active and is now completed
-                // Continue with normal answer selection
-            }
+                try
+                {
+                    bool athActive = await _lifelineManager.HandleAskTheHostAnswerAsync();
+                    if (athActive)
+                    {
+                        // ATH was active and is now completed
+                        // Continue with normal answer selection on UI thread
+                        if (!IsDisposed && IsHandleCreated)
+                        {
+                            BeginInvoke(() => ContinueAnswerSelection(answer));
+                        }
+                        return;
+                    }
+                    
+                    // ATH not active, continue immediately on UI thread
+                    if (!IsDisposed && IsHandleCreated)
+                    {
+                        BeginInvoke(() => ContinueAnswerSelection(answer));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Log($"[SelectAnswer] Error checking ATH: {ex.Message}");
+                }
+            });
+            return; // Exit early, continuation handled in background task
         }
         
+        // No lifeline manager - continue immediately
+        ContinueAnswerSelection(answer);
+    }
+    
+    private void ContinueAnswerSelection(string answer)
+    {
         // For Double Dip, just proceed with normal selection - DD logic handled in Reveal
         
         ResetAnswerColors();
@@ -2661,92 +2973,9 @@ public partial class ControlPanelForm : Form
         // Play without loop and store the identifier for later stopping
         _currentLightsDownIdentifier = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
     }
-
-    private async void RevealAnswer(bool isCorrect)
+    
+    private void ProcessNormalReveal(bool isCorrect)
     {
-        // Check if Double Dip is active - handle DD logic before normal reveal
-        if (_lifelineManager != null)
-        {
-            var ddResult = await _lifelineManager.HandleDoubleDipRevealAsync(_currentAnswer, lblAnswer.Text, isCorrect);
-            if (ddResult == DoubleDipRevealResult.FirstAttemptWrong)
-            {
-                // First DD attempt was wrong - remove from screens, disable button, wait for second
-                // Show wrong answer on control panel briefly
-                switch (_currentAnswer)
-                {
-                    case "A": txtA.BackColor = Color.Red; break;
-                    case "B": txtB.BackColor = Color.Red; break;
-                    case "C": txtC.BackColor = Color.Red; break;
-                    case "D": txtD.BackColor = Color.Red; break;
-                }
-                
-                // Play DD first wrong attempt sound
-                _soundService.PlaySound(SoundEffect.LifelineDoubleDipFirst, "dd_first");
-                
-                // Remove from screens (not control panel)
-                _screenService.RemoveAnswer(_currentAnswer);
-                
-                // Wait a moment for dramatic effect
-                await Task.Delay(1500);
-                
-                // Disable the wrong answer button on control panel
-                switch (_currentAnswer)
-                {
-                    case "A": 
-                        btnA.Enabled = false;
-                        btnA.BackColor = Color.Gray;
-                        break;
-                    case "B": 
-                        btnB.Enabled = false;
-                        btnB.BackColor = Color.Gray;
-                        break;
-                    case "C": 
-                        btnC.Enabled = false;
-                        btnC.BackColor = Color.Gray;
-                        break;
-                    case "D": 
-                        btnD.Enabled = false;
-                        btnD.BackColor = Color.Gray;
-                        break;
-                }
-                
-                // Reset answer colors for second attempt
-                ResetAnswerColors();
-                
-                // Re-enable remaining answer buttons for second attempt (that aren't the wrong one)
-                if (_currentAnswer != "A" && !btnA.Enabled) 
-                { 
-                    btnA.Enabled = true;
-                    btnA.BackColor = Color.DarkOrange; 
-                }
-                if (_currentAnswer != "B" && !btnB.Enabled) 
-                { 
-                    btnB.Enabled = true;
-                    btnB.BackColor = Color.DarkOrange; 
-                }
-                if (_currentAnswer != "C" && !btnC.Enabled) 
-                { 
-                    btnC.Enabled = true;
-                    btnC.BackColor = Color.DarkOrange; 
-                }
-                if (_currentAnswer != "D" && !btnD.Enabled) 
-                { 
-                    btnD.Enabled = true;
-                    btnD.BackColor = Color.DarkOrange; 
-                }
-                
-                // Disable Reveal button - wait for second answer
-                btnReveal.Enabled = false;
-                btnReveal.BackColor = Color.Gray;
-                
-                // Clear current answer for second attempt
-                _currentAnswer = string.Empty;
-                
-                return; // Don't proceed with normal reveal
-            }
-            // If ddResult is SecondAttempt or NotActive, proceed with normal reveal
-        }
-        
         if (isCorrect)
         {
             // Correct answer
@@ -2767,45 +2996,57 @@ public partial class ControlPanelForm : Form
                 _gameService.ChangeLevel(_gameService.State.CurrentLevel + 1);
             }
 
-            // Broadcast correct answer to all screens
-            _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true);
+            // Broadcast correct answer to all screens in background to prevent blocking
+            Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true));
 
-            // Stop final answer sound before playing correct sound
-            // Stop final answer using the stored key
-            if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
+            // Stop sounds and play correct answer in background to prevent UI deadlock
+            _ = Task.Run(async () =>
             {
-                _soundService.StopSound(_currentFinalAnswerKey);
-                _currentFinalAnswerKey = null; // Clear it
-            }
-            
-            // Stop bed music immediately before playing correct sound (Q5+)
-            // For Q1-4, the bed continues playing through the correct answer
-            if (currentQuestionNumber >= 5)
-            {
-                var bedMusicKey = currentQuestionNumber switch
+                // Stop final answer sound before playing correct sound
+                if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
                 {
-                    >= 1 and <= 5 => "Q01to05Bed",
-                    6 => "Q06Bed",
-                    7 => "Q07Bed",
-                    8 => "Q08Bed",
-                    9 => "Q09Bed",
-                    10 => "Q10Bed",
-                    11 => "Q11Bed",
-                    12 => "Q12Bed",
-                    13 => "Q13Bed",
-                    14 => "Q14Bed",
-                    15 => "Q15Bed",
-                    _ => string.Empty
-                };
-                
-                if (!string.IsNullOrEmpty(bedMusicKey))
-                {
-                    _soundService.StopSound(bedMusicKey);
+                    await _soundService.StopSoundAsync(_currentFinalAnswerKey);
+                    _currentFinalAnswerKey = null; // Clear it
                 }
-            }
-            
-            // Play question-specific correct answer sound using captured question number
-            PlayCorrectSound(currentQuestionNumber);
+                
+                // Stop bed music before playing correct sound (Q5+)
+                // For Q1-4, the bed continues playing through the correct answer
+                if (currentQuestionNumber >= 5)
+                {
+                    var bedMusicKey = currentQuestionNumber switch
+                    {
+                        >= 1 and <= 5 => "Q01to05Bed",
+                        6 => "Q06Bed",
+                        7 => "Q07Bed",
+                        8 => "Q08Bed",
+                        9 => "Q09Bed",
+                        10 => "Q10Bed",
+                        11 => "Q11Bed",
+                        12 => "Q12Bed",
+                        13 => "Q13Bed",
+                        14 => "Q14Bed",
+                        15 => "Q15Bed",
+                        _ => string.Empty
+                    };
+                    
+                    if (!string.IsNullOrEmpty(bedMusicKey))
+                    {
+                        await _soundService.StopSoundAsync(bedMusicKey);
+                    }
+                }
+                
+                // Play question-specific correct answer sound after stops complete
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(() =>
+                    {
+                        if (!IsDisposed)
+                        {
+                            PlayCorrectSound(currentQuestionNumber);
+                        }
+                    });
+                }
+            });
             
             // Check if this is a safety net question (Q5 or Q10) and mark it as pending for manual lock-in
             var isSafetyNet = _gameService.MoneyTree.IsSafetyNet(currentQuestionNumber);
@@ -2883,12 +3124,27 @@ public partial class ControlPanelForm : Form
                 case "D": txtD.BackColor = Color.LimeGreen; break;
             }
 
-            // Broadcast wrong answer to all screens
-            _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false);
+            // Broadcast wrong answer to all screens in background to prevent blocking
+            Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false));
 
-            // Stop all audio first (including final answer), then play question-specific lose sound
-            _soundService.StopAllSounds();
-            PlayLoseSound(currentQuestionNumber);
+            // Stop all sounds and play lose sound in background to prevent UI deadlock
+            _ = Task.Run(async () =>
+            {
+                // Stop all audio first (including final answer and bed music)
+                await _soundService.StopAllSoundsAsync();
+                
+                // Play question-specific lose sound after stops complete
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(() =>
+                    {
+                        if (!IsDisposed)
+                        {
+                            PlayLoseSound(currentQuestionNumber);
+                        }
+                    });
+                }
+            });
             
             // Calculate the dropped level based on wrong value (safety net level or 0)
             int droppedLevel = GetDroppedLevel(currentQuestionNumber);

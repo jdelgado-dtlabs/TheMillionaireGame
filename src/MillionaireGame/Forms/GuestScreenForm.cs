@@ -92,7 +92,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => UpdateMoneyTreeLevel(level)));
+            BeginInvoke(new Action(() => UpdateMoneyTreeLevel(level)));
             return;
         }
         
@@ -563,7 +563,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => UpdateQuestion(question)));
+            BeginInvoke(new Action(() => UpdateQuestion(question)));
             return;
         }
 
@@ -582,7 +582,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => SelectAnswer(answer)));
+            BeginInvoke(new Action(() => SelectAnswer(answer)));
             return;
         }
 
@@ -594,7 +594,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
+            BeginInvoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
             return;
         }
 
@@ -609,7 +609,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowAnswer(answer)));
+            BeginInvoke(new Action(() => ShowAnswer(answer)));
             return;
         }
 
@@ -621,7 +621,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RemoveAnswer(answer)));
+            BeginInvoke(new Action(() => RemoveAnswer(answer)));
             return;
         }
 
@@ -639,7 +639,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowQuestion(show)));
+            BeginInvoke(new Action(() => ShowQuestion(show)));
             return;
         }
 
@@ -651,7 +651,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowWinnings(state)));
+            BeginInvoke(new Action(() => ShowWinnings(state)));
             return;
         }
 
@@ -663,7 +663,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideWinnings));
+            BeginInvoke(new Action(HideWinnings));
             return;
         }
 
@@ -708,7 +708,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ResetScreen));
+            BeginInvoke(new Action(ResetScreen));
             return;
         }
 
@@ -729,7 +729,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowPAFTimer(secondsRemaining, stage)));
+            BeginInvoke(new Action(() => ShowPAFTimer(secondsRemaining, stage)));
             return;
         }
 
@@ -743,7 +743,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowATATimer(secondsRemaining, stage)));
+            BeginInvoke(new Action(() => ShowATATimer(secondsRemaining, stage)));
             return;
         }
 
@@ -757,7 +757,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ClearQuestionAndAnswerText));
+            BeginInvoke(new Action(ClearQuestionAndAnswerText));
             return;
         }
 
@@ -785,7 +785,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ShowLifelineIcons));
+            BeginInvoke(new Action(ShowLifelineIcons));
             return;
         }
         
@@ -797,7 +797,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideLifelineIcons));
+            BeginInvoke(new Action(HideLifelineIcons));
             return;
         }
         
@@ -809,7 +809,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
+            BeginInvoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
             return;
         }
         
@@ -822,7 +822,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ClearLifelineIcons));
+            BeginInvoke(new Action(ClearLifelineIcons));
             return;
         }
         

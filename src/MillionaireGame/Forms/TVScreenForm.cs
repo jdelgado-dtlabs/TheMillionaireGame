@@ -53,7 +53,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => UpdateQuestion(question)));
+            BeginInvoke(new Action(() => UpdateQuestion(question)));
             return;
         }
 
@@ -73,7 +73,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => SelectAnswer(answer)));
+            BeginInvoke(new Action(() => SelectAnswer(answer)));
             return;
         }
 
@@ -104,7 +104,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowAnswer(answer)));
+            BeginInvoke(new Action(() => ShowAnswer(answer)));
             return;
         }
 
@@ -116,7 +116,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RemoveAnswer(answer)));
+            BeginInvoke(new Action(() => RemoveAnswer(answer)));
             return;
         }
 
@@ -147,7 +147,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowQuestion(show)));
+            BeginInvoke(new Action(() => ShowQuestion(show)));
             return;
         }
 
@@ -163,7 +163,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowWinnings(state)));
+            BeginInvoke(new Action(() => ShowWinnings(state)));
             return;
         }
 
@@ -175,7 +175,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideWinnings));
+            BeginInvoke(new Action(HideWinnings));
             return;
         }
 
@@ -186,7 +186,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
+            BeginInvoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
             return;
         }
 
@@ -199,7 +199,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => UpdateMoney(current, correct, wrong, drop, questionsLeft)));
+            BeginInvoke(new Action(() => UpdateMoney(current, correct, wrong, drop, questionsLeft)));
             return;
         }
 
@@ -210,7 +210,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ActivateLifeline(lifeline)));
+            BeginInvoke(new Action(() => ActivateLifeline(lifeline)));
             return;
         }
 
@@ -229,7 +229,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action<Dictionary<string, int>>(ShowATAResults), votes);
+            BeginInvoke(new Action<Dictionary<string, int>>(ShowATAResults), votes);
             return;
         }
         
@@ -245,7 +245,7 @@ public partial class TVScreenForm : Form, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ResetScreen));
+            BeginInvoke(new Action(ResetScreen));
             return;
         }
 

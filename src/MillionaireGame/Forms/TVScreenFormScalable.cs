@@ -748,7 +748,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => UpdateQuestion(question)));
+            BeginInvoke(new Action(() => UpdateQuestion(question)));
             return;
         }
 
@@ -767,7 +767,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => SelectAnswer(answer)));
+            BeginInvoke(new Action(() => SelectAnswer(answer)));
             return;
         }
 
@@ -779,7 +779,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowAnswer(answer)));
+            BeginInvoke(new Action(() => ShowAnswer(answer)));
             return;
         }
 
@@ -791,7 +791,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RemoveAnswer(answer)));
+            BeginInvoke(new Action(() => RemoveAnswer(answer)));
             return;
         }
 
@@ -809,7 +809,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowQuestion(show)));
+            BeginInvoke(new Action(() => ShowQuestion(show)));
             return;
         }
 
@@ -822,7 +822,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowWinnings(state)));
+            BeginInvoke(new Action(() => ShowWinnings(state)));
             return;
         }
 
@@ -860,7 +860,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowWinningsAmount(amount)));
+            BeginInvoke(new Action(() => ShowWinningsAmount(amount)));
             return;
         }
 
@@ -874,7 +874,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideWinnings));
+            BeginInvoke(new Action(HideWinnings));
             return;
         }
 
@@ -920,7 +920,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
+            BeginInvoke(new Action(() => RevealAnswer(selectedAnswer, correctAnswer, isCorrect)));
             return;
         }
 
@@ -935,7 +935,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ResetScreen));
+            BeginInvoke(new Action(ResetScreen));
             return;
         }
 
@@ -959,7 +959,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowPAFTimer(secondsRemaining, stage)));
+            BeginInvoke(new Action(() => ShowPAFTimer(secondsRemaining, stage)));
             return;
         }
 
@@ -973,7 +973,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowATATimer(secondsRemaining, stage)));
+            BeginInvoke(new Action(() => ShowATATimer(secondsRemaining, stage)));
             return;
         }
 
@@ -987,7 +987,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowATAResults(votes)));
+            BeginInvoke(new Action(() => ShowATAResults(votes)));
             return;
         }
 
@@ -1000,7 +1000,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideATAResults));
+            BeginInvoke(new Action(HideATAResults));
             return;
         }
 
@@ -1030,7 +1030,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ShowLifelineIcons));
+            BeginInvoke(new Action(ShowLifelineIcons));
             return;
         }
         
@@ -1042,7 +1042,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(HideLifelineIcons));
+            BeginInvoke(new Action(HideLifelineIcons));
             return;
         }
         
@@ -1054,7 +1054,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
+            BeginInvoke(new Action(() => SetLifelineIcon(lifelineNumber, type, state)));
             return;
         }
         
@@ -1067,7 +1067,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ClearLifelineIcons));
+            BeginInvoke(new Action(ClearLifelineIcons));
             return;
         }
         
@@ -1083,7 +1083,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowFFFContestant(index, name)));
+            BeginInvoke(new Action(() => ShowFFFContestant(index, name)));
             return;
         }
         
@@ -1100,7 +1100,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowAllFFFContestants(names)));
+            BeginInvoke(new Action(() => ShowAllFFFContestants(names)));
             return;
         }
         
@@ -1115,7 +1115,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => HighlightFFFContestant(index, isWinner)));
+            BeginInvoke(new Action(() => HighlightFFFContestant(index, isWinner)));
             return;
         }
         
@@ -1128,7 +1128,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ShowFFFWinner(name)));
+            BeginInvoke(new Action(() => ShowFFFWinner(name)));
             return;
         }
         
@@ -1141,7 +1141,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(ClearFFFDisplay));
+            BeginInvoke(new Action(ClearFFFDisplay));
             return;
         }
         
