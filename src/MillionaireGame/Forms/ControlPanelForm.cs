@@ -318,16 +318,10 @@ public partial class ControlPanelForm : Form
         // Update menu item enabled states based on settings
         UpdateScreenMenuItemStates();
         
-        // Auto-show Preview Screen if enabled
-        if (_appSettings.Settings.EnablePreviewAutomatically)
-        {
-            PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
-        }
-        
-        // Initialize web server host
+        // Initialize web server host first
         InitializeWebServer();
         
-        // Initialize WebService console if enabled
+        // Initialize WebService console if enabled (before auto-start so it doesn't steal focus)
 #if DEBUG
         // Always show in debug mode
         WebServiceConsole.Show();
@@ -358,6 +352,22 @@ public partial class ControlPanelForm : Form
                 }
             });
         }
+        
+        // Auto-show Preview Screen after web server (so it loads in correct order)
+        if (_appSettings.Settings.EnablePreviewAutomatically)
+        {
+            PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
+        // Bring Control Panel to front after everything else loads
+        // Use BeginInvoke to let all other windows finish loading first
+        this.BeginInvoke(new Action(() =>
+        {
+            System.Threading.Thread.Sleep(100); // Small delay to ensure preview screens are fully loaded
+            this.Activate();
+            this.BringToFront();
+            this.Focus();
+        }));
     }
     
     /// <summary>

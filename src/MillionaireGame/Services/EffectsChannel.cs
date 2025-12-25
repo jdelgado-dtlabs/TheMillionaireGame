@@ -1,6 +1,8 @@
 using CSCore;
 using CSCore.Codecs;
-using CSCore.SoundOut;
+using CSCore.Codecs.MP3;
+using CSCore.MediaFoundation;
+using CSCore.Streams.SampleConverter;
 using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Services;
@@ -8,13 +10,34 @@ namespace MillionaireGame.Services;
 /// <summary>
 /// Manages one-shot sound effect playback using CSCore.
 /// Handles sounds that play once and complete (reveal sounds, lifelines, etc.).
+/// Provides a continuous ISampleSource stream for mixer integration.
 /// </summary>
 public class EffectsChannel : IDisposable
 {
-    private readonly Dictionary<string, EffectPlayer> _activePlayers = new();
+    private readonly EffectsMixerSource _mixerSource;
     private readonly object _lock = new();
     private bool _disposed = false;
     private float _volume = 1.0f;
+
+    public EffectsChannel()
+    {
+        // Create a standard wave format (44.1kHz, 16-bit, stereo)
+        var waveFormat = new WaveFormat(44100, 16, 2);
+        _mixerSource = new EffectsMixerSource(waveFormat);
+    }
+
+    /// <summary>
+    /// Gets the output stream for mixer integration
+    /// </summary>
+    public ISampleSource GetOutputStream()
+    {
+        return _mixerSource;
+    }
+    
+    /// <summary>
+    /// Gets the count of active effects
+    /// </summary>
+    public int ActiveEffectCount => _mixerSource.GetActiveEffectCount();
 
     /// <summary>
     /// Play a sound effect
@@ -45,18 +68,61 @@ public class EffectsChannel : IDisposable
 
             if (Program.DebugMode)
             {
-                GameConsole.Debug($"[EffectsChannel] Playing: {Path.GetFileName(filePath)} (id: {id})");
+                GameConsole.Debug($"[EffectsChannel] Starting playback: {Path.GetFileName(filePath)} (id: {id})");
+                GameConsole.Debug($"[EffectsChannel] Full path: {filePath}");
+                GameConsole.Debug($"[EffectsChannel] Loading codec...");
             }
-
-            var player = new EffectPlayer(id, filePath, _volume);
-            player.PlaybackStopped += OnEffectStopped;
-
-            lock (_lock)
+            
+            // Try MediaFoundation decoder first for MP3 files
+            IWaveSource waveSource;
+            if (filePath.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
             {
-                _activePlayers[id] = player;
+                try
+                {
+                    waveSource = new MediaFoundationDecoder(filePath);
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Debug($"[EffectsChannel] Using MediaFoundationDecoder for MP3");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Warn($"[EffectsChannel] MediaFoundation failed ({ex.Message}), falling back to DmoMp3Decoder");
+                    }
+                    waveSource = new DmoMp3Decoder(filePath);
+                }
+            }
+            else
+            {
+                waveSource = CodecFactory.Instance.GetCodec(filePath);
+            }
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[EffectsChannel] Codec loaded: Format={waveSource.WaveFormat}, Length={waveSource.Length}");
+                GameConsole.Debug($"[EffectsChannel] Codec CanSeek: {waveSource.CanSeek}, Position: {waveSource.Position}");
+            }
+            var sampleSource = waveSource.ToSampleSource();
+            
+            // Apply volume
+            var volumeSource = new VolumeSource(sampleSource);
+            volumeSource.Volume = _volume;
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[EffectsChannel] Volume set to: {_volume}");
+                GameConsole.Debug($"[EffectsChannel] Adding to mixer source...");
+            }
+            
+            _mixerSource.AddEffect(id, volumeSource);
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[EffectsChannel] Added to mixer successfully. Active effects: {ActiveEffectCount}");
             }
 
-            player.Play();
             return id;
         }
         catch (Exception ex)
@@ -73,35 +139,11 @@ public class EffectsChannel : IDisposable
     {
         if (string.IsNullOrEmpty(identifier)) return;
 
-        EffectPlayer? player = null;
-        lock (_lock)
-        {
-            if (_activePlayers.TryGetValue(identifier, out player))
-            {
-                _activePlayers.Remove(identifier);
-            }
-        }
+        _mixerSource.RemoveEffect(identifier);
 
-        if (player != null)
+        if (Program.DebugMode)
         {
-            try
-            {
-                player.PlaybackStopped -= OnEffectStopped;
-                player.Stop();
-                player.Dispose();
-
-                if (Program.DebugMode)
-                {
-                    GameConsole.Debug($"[EffectsChannel] Stopped effect: {identifier}");
-                }
-            }
-            catch (Exception ex)
-            {
-                if (Program.DebugMode)
-                {
-                    GameConsole.Debug($"[EffectsChannel] Error stopping effect: {ex.Message}");
-                }
-            }
+            GameConsole.Debug($"[EffectsChannel] Stopped effect: {identifier}");
         }
     }
 
@@ -110,35 +152,13 @@ public class EffectsChannel : IDisposable
     /// </summary>
     public void StopAllEffects()
     {
-        List<EffectPlayer> players;
-        lock (_lock)
-        {
-            players = new List<EffectPlayer>(_activePlayers.Values);
-            _activePlayers.Clear();
+        int count = _mixerSource.GetActiveEffectCount();
+        _mixerSource.RemoveAllEffects();
 
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug($"[EffectsChannel] Stopping {players.Count} effect(s)");
-            }
+        if (Program.DebugMode)
+        {
+            GameConsole.Debug($"[EffectsChannel] Stopped {count} effect(s)");
         }
-
-        // Stop and dispose all players asynchronously to avoid blocking
-        Task.Run(() =>
-        {
-            foreach (var player in players)
-            {
-                try
-                {
-                    player.PlaybackStopped -= OnEffectStopped;
-                    player.Stop();
-                    player.Dispose();
-                }
-                catch
-                {
-                    // Ignore errors during cleanup
-                }
-            }
-        });
     }
 
     /// <summary>
@@ -146,10 +166,7 @@ public class EffectsChannel : IDisposable
     /// </summary>
     public bool IsEffectPlaying(string identifier)
     {
-        lock (_lock)
-        {
-            return _activePlayers.ContainsKey(identifier);
-        }
+        return _mixerSource.HasEffect(identifier);
     }
 
     /// <summary>
@@ -162,12 +179,7 @@ public class EffectsChannel : IDisposable
         lock (_lock)
         {
             _volume = volume;
-
-            // Update volume on all active players
-            foreach (var player in _activePlayers.Values)
-            {
-                player.SetVolume(volume);
-            }
+            _mixerSource.SetVolume(volume);
         }
     }
 
@@ -176,53 +188,12 @@ public class EffectsChannel : IDisposable
     /// </summary>
     public void ClearCompleted()
     {
-        lock (_lock)
+        int cleared = _mixerSource.ClearCompleted();
+
+        if (Program.DebugMode && cleared > 0)
         {
-            var completedIds = _activePlayers
-                .Where(kvp => !kvp.Value.IsPlaying)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var id in completedIds)
-            {
-                if (_activePlayers.TryGetValue(id, out var player))
-                {
-                    player.PlaybackStopped -= OnEffectStopped;
-                    player.Dispose();
-                    _activePlayers.Remove(id);
-                }
-            }
-
-            if (Program.DebugMode && completedIds.Count > 0)
-            {
-                GameConsole.Debug($"[EffectsChannel] Cleared {completedIds.Count} completed effect(s)");
-            }
+            GameConsole.Debug($"[EffectsChannel] Cleared {cleared} completed effect(s)");
         }
-    }
-
-    /// <summary>
-    /// Handle effect playback stopped event
-    /// </summary>
-    private void OnEffectStopped(object? sender, string identifier)
-    {
-        // Cleanup completed effect asynchronously
-        Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                if (_activePlayers.TryGetValue(identifier, out var player))
-                {
-                    player.PlaybackStopped -= OnEffectStopped;
-                    player.Dispose();
-                    _activePlayers.Remove(identifier);
-
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Debug($"[EffectsChannel] Effect completed: {identifier}");
-                    }
-                }
-            }
-        });
     }
 
     /// <summary>
@@ -235,18 +206,7 @@ public class EffectsChannel : IDisposable
         lock (_lock)
         {
             _disposed = true;
-
-            foreach (var player in _activePlayers.Values)
-            {
-                try
-                {
-                    player.PlaybackStopped -= OnEffectStopped;
-                    player.Dispose();
-                }
-                catch { }
-            }
-
-            _activePlayers.Clear();
+            _mixerSource?.Dispose();
         }
 
         GC.SuppressFinalize(this);
@@ -254,78 +214,237 @@ public class EffectsChannel : IDisposable
 }
 
 /// <summary>
-/// Single effect player wrapper for CSCore
+/// Continuously mixes multiple effect sources into a single ISampleSource stream
 /// </summary>
-internal class EffectPlayer : IDisposable
+internal class EffectsMixerSource : ISampleSource
 {
-    private readonly string _identifier;
-    private readonly string _filePath;
-    private ISoundOut? _soundOut;
-    private IWaveSource? _waveSource;
-    private bool _disposed = false;
+    private readonly WaveFormat _waveFormat;
+    private readonly Dictionary<string, EffectStream> _effects = new();
+    private readonly object _lock = new();
+    private long _position;
 
-    public event EventHandler<string>? PlaybackStopped;
-
-    public EffectPlayer(string identifier, string filePath, float volume)
+    private class EffectStream
     {
-        _identifier = identifier;
-        _filePath = filePath;
+        public ISampleSource Source { get; set; }
+        public bool IsCompleted { get; set; }
 
-        // Load audio file
-        _waveSource = CodecFactory.Instance.GetCodec(filePath);
-
-        // Create sound output
-        _soundOut = new WasapiOut();
-        _soundOut.Initialize(_waveSource);
-        _soundOut.Volume = volume;
-
-        // Handle stopped event
-        _soundOut.Stopped += (s, e) =>
+        public EffectStream(ISampleSource source)
         {
-            PlaybackStopped?.Invoke(this, _identifier);
-        };
+            Source = source;
+            IsCompleted = false;
+        }
     }
 
-    public bool IsPlaying => _soundOut?.PlaybackState == PlaybackState.Playing;
-
-    public void Play()
+    public EffectsMixerSource(WaveFormat waveFormat)
     {
-        _soundOut?.Play();
+        _waveFormat = waveFormat ?? throw new ArgumentNullException(nameof(waveFormat));
     }
 
-    public void Stop()
+    public void AddEffect(string identifier, ISampleSource source)
     {
-        if (_soundOut?.PlaybackState == PlaybackState.Playing)
+        if (source == null) throw new ArgumentNullException(nameof(source));
+
+        lock (_lock)
         {
-            _soundOut.Stop();
+            _effects[identifier] = new EffectStream(source);
+        }
+
+        if (Program.DebugMode)
+        {
+            GameConsole.Debug($"[EffectsMixerSource] Added effect: {identifier}");
+        }
+    }
+
+    public void RemoveEffect(string identifier)
+    {
+        lock (_lock)
+        {
+            if (_effects.TryGetValue(identifier, out var effect))
+            {
+                effect.Source?.Dispose();
+                _effects.Remove(identifier);
+            }
+        }
+    }
+
+    public void RemoveAllEffects()
+    {
+        lock (_lock)
+        {
+            foreach (var effect in _effects.Values)
+            {
+                effect.Source?.Dispose();
+            }
+            _effects.Clear();
+        }
+    }
+
+    public bool HasEffect(string identifier)
+    {
+        lock (_lock)
+        {
+            return _effects.ContainsKey(identifier);
+        }
+    }
+
+    public int GetActiveEffectCount()
+    {
+        lock (_lock)
+        {
+            return _effects.Count;
         }
     }
 
     public void SetVolume(float volume)
     {
-        if (_soundOut != null)
+        lock (_lock)
         {
-            _soundOut.Volume = Math.Clamp(volume, 0.0f, 1.0f);
+            foreach (var effect in _effects.Values)
+            {
+                if (effect.Source is VolumeSource volumeSource)
+                {
+                    volumeSource.Volume = volume;
+                }
+            }
         }
+    }
+
+    public int ClearCompleted()
+    {
+        int cleared = 0;
+        lock (_lock)
+        {
+            var completedIds = _effects
+                .Where(kvp => kvp.Value.IsCompleted)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var id in completedIds)
+            {
+                if (_effects.TryGetValue(id, out var effect))
+                {
+                    effect.Source?.Dispose();
+                    _effects.Remove(id);
+                    cleared++;
+                }
+            }
+        }
+        return cleared;
+    }
+
+    public bool CanSeek => false;
+    public WaveFormat WaveFormat => new WaveFormat(44100, 32, 2, AudioEncoding.IeeeFloat); // Float format for ISampleSource
+    public long Position
+    {
+        get => _position;
+        set => throw new NotSupportedException("EffectsMixerSource does not support seeking");
+    }
+    public long Length => 0; // Infinite length for continuous mixing
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        if (Program.DebugMode && _effects.Count > 0)
+        {
+            GameConsole.Debug($"[EffectsMixerSource] Read() called: count={count}, active effects={_effects.Count}");
+        }
+        
+        // Clear buffer
+        Array.Clear(buffer, offset, count);
+
+        int maxSamplesRead = count; // Always output full buffer (silence if no effects)
+
+        lock (_lock)
+        {
+            if (_effects.Count == 0)
+            {
+                // No effects playing - return silence
+                _position += count;
+                return count;
+            }
+
+            // Mix all active effects
+            float[] tempBuffer = new float[count];
+            var effectsToRemove = new List<string>();
+
+            foreach (var kvp in _effects.ToList())
+            {
+                var effect = kvp.Value;
+                Array.Clear(tempBuffer, 0, count);
+
+                int samplesRead = effect.Source.Read(tempBuffer, 0, count);
+
+                if (samplesRead == 0)
+                {
+                    // Effect completed
+                    effect.IsCompleted = true;
+                    effectsToRemove.Add(kvp.Key);
+
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Debug($"[EffectsMixerSource] Effect completed: {kvp.Key}");
+                    }
+                }
+                else
+                {
+                    // Check if buffer has actual audio data
+                    float maxSample = 0;
+                    for (int i = 0; i < samplesRead; i++)
+                    {
+                        if (Math.Abs(tempBuffer[i]) > maxSample)
+                            maxSample = Math.Abs(tempBuffer[i]);
+                    }
+                    
+                    if (Program.DebugMode && maxSample > 0)
+                    {
+                        GameConsole.Debug($"[EffectsMixerSource] Read {samplesRead} samples, max amplitude: {maxSample:F4}");
+                    }
+                    else if (Program.DebugMode && maxSample == 0)
+                    {
+                        GameConsole.Debug($"[EffectsMixerSource] WARNING: Read {samplesRead} samples but all are ZERO (silence)");
+                    }
+                    
+                    // Add this effect to the mix
+                    for (int i = 0; i < samplesRead; i++)
+                    {
+                        buffer[offset + i] += tempBuffer[i];
+                    }
+                }
+            }
+
+            // Remove completed effects
+            foreach (var id in effectsToRemove)
+            {
+                if (_effects.TryGetValue(id, out var effect))
+                {
+                    effect.Source?.Dispose();
+                    _effects.Remove(id);
+                }
+            }
+
+            // Prevent clipping if multiple effects are playing
+            if (_effects.Count > 1)
+            {
+                float divisor = (float)Math.Sqrt(_effects.Count);
+                for (int i = 0; i < count; i++)
+                {
+                    buffer[offset + i] /= divisor;
+                }
+            }
+        }
+
+        _position += maxSamplesRead;
+        return maxSamplesRead;
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
-
-        try
+        lock (_lock)
         {
-            _soundOut?.Dispose();
-            _soundOut = null;
+            foreach (var effect in _effects.Values)
+            {
+                effect.Source?.Dispose();
+            }
+            _effects.Clear();
         }
-        catch { }
-
-        try
-        {
-            _waveSource?.Dispose();
-            _waveSource = null;
-        }
-        catch { }
     }
 }

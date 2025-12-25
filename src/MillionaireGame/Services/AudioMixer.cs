@@ -1,4 +1,5 @@
 using CSCore;
+using CSCore.CoreAudioAPI;
 using CSCore.SoundOut;
 using CSCore.Streams;
 using MillionaireGame.Utilities;
@@ -22,9 +23,12 @@ public class AudioMixer : IDisposable
     // private ISoundOut? _recordingOutput;
 
     /// <summary>
-    /// Initialize the mixer with source streams
+    /// Initialize the mixer with source streams and optional output device
     /// </summary>
-    public void Initialize(ISampleSource musicSource, ISampleSource effectsSource)
+    /// <param name="musicSource">Music channel audio source</param>
+    /// <param name="effectsSource">Effects channel audio source</param>
+    /// <param name="deviceId">Optional audio output device ID (null for system default)</param>
+    public void Initialize(ISampleSource musicSource, ISampleSource effectsSource, string? deviceId = null)
     {
         lock (_lock)
         {
@@ -41,14 +45,47 @@ public class AudioMixer : IDisposable
                 _mixer.AddSource(musicSource);
                 _mixer.AddSource(effectsSource);
 
-                // Create system audio output
-                _systemOutput = new WasapiOut();
+                // Create system audio output with device selection
+                if (string.IsNullOrWhiteSpace(deviceId))
+                {
+                    _systemOutput = new WasapiOut(); // Use system default
+                }
+                else
+                {
+                    try
+                    {
+                        var device = AudioDeviceManager.GetDeviceById(deviceId);
+                        if (device != null)
+                        {
+                            _systemOutput = new WasapiOut { Device = device };
+                        }
+                        else
+                        {
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Warn($"[AudioMixer] Device not found: {deviceId}, using default");
+                            }
+                            _systemOutput = new WasapiOut();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Warn($"[AudioMixer] Failed to use device {deviceId}, using default: {ex.Message}");
+                        }
+                        _systemOutput = new WasapiOut();
+                    }
+                }
+
                 _systemOutput.Initialize(_mixer.ToWaveSource());
                 _systemOutput.Volume = _masterVolume;
 
                 if (Program.DebugMode)
                 {
-                    GameConsole.Debug("[AudioMixer] Initialized with system output");
+                    var deviceName = string.IsNullOrWhiteSpace(deviceId) ? "System Default" : deviceId;
+                    GameConsole.Debug($"[AudioMixer] Initialized with device: {deviceName}");
+                    GameConsole.Debug($"[AudioMixer] WasapiOut state after Initialize: {_systemOutput.PlaybackState}");
                 }
 
                 // Future: Initialize additional outputs here
@@ -65,25 +102,130 @@ public class AudioMixer : IDisposable
     }
 
     /// <summary>
+    /// Change the audio output device without disposing the mixer
+    /// </summary>
+    /// <param name="musicSource">Music channel audio source</param>
+    /// <param name="effectsSource">Effects channel audio source</param>
+    /// <param name="deviceId">Optional audio output device ID (null for system default)</param>
+    public void ChangeDevice(ISampleSource musicSource, ISampleSource effectsSource, string? deviceId = null)
+    {
+        lock (_lock)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(AudioMixer));
+
+            // Stop current playback
+            bool wasPlaying = _systemOutput?.PlaybackState == PlaybackState.Playing;
+            
+            if (wasPlaying)
+            {
+                Stop();
+            }
+
+            // Clean up and reinitialize with new device
+            CleanupInternal();
+
+            try
+            {
+                // Create mixer that combines music and effects
+                _mixer = new MixingSampleSource(musicSource.WaveFormat);
+                _mixer.AddSource(musicSource);
+                _mixer.AddSource(effectsSource);
+
+                // Create system audio output with new device
+                if (string.IsNullOrWhiteSpace(deviceId))
+                {
+                    _systemOutput = new WasapiOut();
+                }
+                else
+                {
+                    try
+                    {
+                        var device = AudioDeviceManager.GetDeviceById(deviceId);
+                        if (device != null)
+                        {
+                            _systemOutput = new WasapiOut { Device = device };
+                        }
+                        else
+                        {
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Warn($"[AudioMixer] Device not found: {deviceId}, using default");
+                            }
+                            _systemOutput = new WasapiOut();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Warn($"[AudioMixer] Failed to use device {deviceId}, using default: {ex.Message}");
+                        }
+                        _systemOutput = new WasapiOut();
+                    }
+                }
+
+                _systemOutput.Initialize(_mixer.ToWaveSource());
+                _systemOutput.Volume = _masterVolume;
+
+                if (Program.DebugMode)
+                {
+                    var deviceName = string.IsNullOrWhiteSpace(deviceId) ? "System Default" : deviceId;
+                    GameConsole.Debug($"[AudioMixer] Device changed to: {deviceName}");
+                }
+
+                // Restart playback if it was playing before
+                if (wasPlaying)
+                {
+                    Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[AudioMixer] Device change failed: {ex.Message}");
+                CleanupInternal();
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
     /// Start audio playback through all outputs
     /// </summary>
     public void Start()
     {
         lock (_lock)
         {
-            if (_systemOutput?.PlaybackState == PlaybackState.Stopped)
+            if (Program.DebugMode)
             {
-                _systemOutput.Play();
-
-                // Future: Start additional outputs
-                // _broadcastOutput?.Play();
-                // _recordingOutput?.Play();
-
+                GameConsole.Debug($"[AudioMixer] Start() called");
+                GameConsole.Debug($"[AudioMixer] _systemOutput null? {_systemOutput == null}");
+                GameConsole.Debug($"[AudioMixer] Current state: {_systemOutput?.PlaybackState}");
+            }
+            
+            if (_systemOutput?.PlaybackState != PlaybackState.Playing)
+            {
                 if (Program.DebugMode)
                 {
-                    GameConsole.Debug("[AudioMixer] Playback started");
+                    GameConsole.Debug($"[AudioMixer] Calling Play()...");
+                }
+                _systemOutput?.Play();
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug($"[AudioMixer] Play() completed. New state: {_systemOutput?.PlaybackState}");
                 }
             }
+            else
+            {
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug($"[AudioMixer] Already playing, skipping Play() call");
+                }
+            }
+
+            // Future: Start additional outputs
+            // _broadcastOutput?.Play();
+            // _recordingOutput?.Play();
         }
     }
 

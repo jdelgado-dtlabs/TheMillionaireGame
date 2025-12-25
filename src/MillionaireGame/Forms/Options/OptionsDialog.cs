@@ -57,6 +57,9 @@ public partial class OptionsDialog : Form
         // Initialize soundpack DataGridView
         InitializeSoundPackDataGrid();
         
+        // Wire up audio device refresh button
+        btnRefreshDevices.Click += (s, e) => LoadAudioDevices();
+        
         LoadSettings();
     }
 
@@ -107,6 +110,9 @@ public partial class OptionsDialog : Form
         {
             cmbSoundPack.SelectedIndex = 0; // Default to first pack if selected pack not found
         }
+        
+        // Load audio devices for mixer
+        LoadAudioDevices();
         
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
@@ -292,6 +298,29 @@ public partial class OptionsDialog : Form
         if (cmbSoundPack.SelectedItem != null)
         {
             _settings.SelectedSoundPack = cmbSoundPack.SelectedItem.ToString() ?? "Default";
+        }
+        
+        // Save audio device selection
+        if (cmbAudioDevice.SelectedItem is Services.AudioDeviceInfo selectedDevice)
+        {
+            _settings.AudioOutputDevice = selectedDevice.IsDefault ? null : selectedDevice.DeviceId;
+            
+            // Apply device change to SoundService immediately
+            try
+            {
+                var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+                soundService?.SetAudioOutputDevice(_settings.AudioOutputDevice);
+                
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug($"[OptionsDialog] Audio output device changed to: {selectedDevice.FriendlyName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to change audio device: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // Console settings (only save in release mode, debug is always true)
@@ -745,6 +774,52 @@ public partial class OptionsDialog : Form
         }
     }
 
+    private void LoadAudioDevices()
+    {
+        try
+        {
+            var devices = Services.AudioDeviceManager.GetAudioOutputDevices();
+            cmbAudioDevice.Items.Clear();
+            
+            foreach (var device in devices)
+            {
+                cmbAudioDevice.Items.Add(device);
+            }
+            
+            // Select current device or default
+            var currentDeviceId = _settings.AudioOutputDevice;
+            if (string.IsNullOrWhiteSpace(currentDeviceId))
+            {
+                // Select system default
+                cmbAudioDevice.SelectedIndex = 0;
+            }
+            else
+            {
+                // Find matching device
+                for (int i = 0; i < cmbAudioDevice.Items.Count; i++)
+                {
+                    if (cmbAudioDevice.Items[i] is Services.AudioDeviceInfo device && 
+                        device.DeviceId == currentDeviceId)
+                    {
+                        cmbAudioDevice.SelectedIndex = i;
+                        break;
+                    }
+                }
+                
+                // If not found, select default
+                if (cmbAudioDevice.SelectedIndex == -1 && cmbAudioDevice.Items.Count > 0)
+                {
+                    cmbAudioDevice.SelectedIndex = 0;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error loading audio devices: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     private void cmbSoundPack_SelectedIndexChanged(object sender, EventArgs e)
     {
         try
@@ -1004,7 +1079,18 @@ public partial class OptionsDialog : Form
             }
 
             // Play the sound using the soundpack key
-            soundService.PlaySoundByKey(key, loop: false);
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[OptionsDialog] Play button clicked for key: {key}");
+                GameConsole.Debug($"[OptionsDialog] File path: {fullPath}");
+            }
+            
+            var resultId = soundService.PlaySoundByKey(key, loop: false);
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[OptionsDialog] PlaySoundByKey returned: {(string.IsNullOrEmpty(resultId) ? "EMPTY" : resultId)}");
+            }
 
             if (Program.DebugMode)
             {

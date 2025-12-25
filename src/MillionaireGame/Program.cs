@@ -85,14 +85,48 @@ internal static class Program
             return;
         }
 
+        // Create and show game log window FIRST so we can log service initialization
+        if (DebugMode || appSettings.Settings.ShowConsole)
+        {
+            var gameLogWindow = new GameLogWindow();
+            gameLogWindow.Show();
+            GameConsole.SetWindow(gameLogWindow);
+            
+            GameConsole.Info("===== TESTING GAMECONSOLE =====");
+            GameConsole.Info("THE MILLIONAIRE GAME - Debug Console");
+            GameConsole.Info($"Version: Debug Build");
+            GameConsole.Info($"Started: {DateTime.Now}");
+            GameConsole.LogSeparator();
+        }
+
         // Initialize services
         var gameService = new GameService();
         var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
         var screenService = new ScreenUpdateService();
-        var soundService = new SoundService();
         
-        // Load sounds from settings
-        soundService.LoadSoundsFromSettings(appSettings.Settings);
+        SoundService soundService;
+        try
+        {
+            GameConsole.Debug("[Program] Creating SoundService...");
+            soundService = new SoundService(appSettings);
+            GameConsole.Debug("[Program] SoundService created successfully");
+            
+            // Load sounds from settings
+            GameConsole.Debug("[Program] Loading sounds from settings...");
+            soundService.LoadSoundsFromSettings(appSettings.Settings);
+            GameConsole.Debug("[Program] Sounds loaded successfully");
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[Program] CRITICAL ERROR creating SoundService: {ex.Message}");
+            GameConsole.Error($"[Program] Exception type: {ex.GetType().Name}");
+            GameConsole.Error($"[Program] Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                GameConsole.Error($"[Program] Inner exception: {ex.InnerException.Message}");
+            }
+            throw;
+        }
 
         // Setup dependency injection container
         var services = new ServiceCollection();
@@ -105,29 +139,16 @@ internal static class Program
         
         ServiceProvider = services.BuildServiceProvider();
 
+        // Log initialization complete
+        if (DebugMode || appSettings.Settings.ShowConsole)
+        {
+            GameConsole.Info("Application initialized successfully.");
+            GameConsole.Info("");
+            GameConsole.Log("If you see this, GameConsole.Log() is working!");
+        }
+
         // Create and run main control panel
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
-        
-        // Create and show game log window after the main form is shown
-        controlPanel.Shown += (s, e) =>
-        {
-            if (DebugMode || appSettings.Settings.ShowConsole)
-            {
-                var gameLogWindow = new GameLogWindow();
-                gameLogWindow.Show(); // Show BEFORE setting it
-                GameConsole.SetWindow(gameLogWindow);
-                
-                // Test logging immediately
-                GameConsole.Info("===== TESTING GAMECONSOLE =====");
-                GameConsole.Info("THE MILLIONAIRE GAME - Debug Console");
-                GameConsole.Info($"Version: Debug Build");
-                GameConsole.Info($"Started: {DateTime.Now}");
-                GameConsole.LogSeparator();
-                GameConsole.Info("Application initialized successfully.");
-                GameConsole.Info("");
-                GameConsole.Log("If you see this, GameConsole.Log() is working!");
-            }
-        };
         
         Application.Run(controlPanel);
     }

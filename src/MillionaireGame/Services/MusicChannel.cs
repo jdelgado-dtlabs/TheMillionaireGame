@@ -1,7 +1,10 @@
 using CSCore;
 using CSCore.Codecs;
+using CSCore.Codecs.MP3;
+using CSCore.MediaFoundation;
 using CSCore.SoundOut;
 using CSCore.Streams;
+using CSCore.Streams.SampleConverter;
 using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Services;
@@ -9,16 +12,23 @@ namespace MillionaireGame.Services;
 /// <summary>
 /// Manages looping background music playback using CSCore.
 /// Handles bed music that plays continuously across multiple questions.
+/// Provides an ISampleSource stream for mixer integration.
 /// </summary>
 public class MusicChannel : IDisposable
 {
-    private ISoundOut? _soundOut;
     private IWaveSource? _waveSource;
     private LoopStream? _loopStream;
+    private ISampleSource? _currentMusicSource;
+    private readonly MusicSourceProvider _sourceProvider;
     private readonly object _lock = new();
     private bool _disposed = false;
     private string? _currentFile;
     private float _volume = 1.0f;
+
+    public MusicChannel()
+    {
+        _sourceProvider = new MusicSourceProvider();
+    }
 
     /// <summary>
     /// Gets whether music is currently playing
@@ -29,7 +39,7 @@ public class MusicChannel : IDisposable
         {
             lock (_lock)
             {
-                return _soundOut?.PlaybackState == PlaybackState.Playing;
+                return _currentMusicSource != null;
             }
         }
     }
@@ -46,6 +56,14 @@ public class MusicChannel : IDisposable
                 return _currentFile;
             }
         }
+    }
+
+    /// <summary>
+    /// Gets the output stream for mixer integration
+    /// </summary>
+    public ISampleSource GetOutputStream()
+    {
+        return _sourceProvider;
     }
 
     /// <summary>
@@ -80,40 +98,62 @@ public class MusicChannel : IDisposable
 
                 if (Program.DebugMode)
                 {
-                    GameConsole.Debug($"[MusicChannel] Loading: {Path.GetFileName(filePath)} (loop: {loop})");
+                    GameConsole.Debug($"[MusicChannel] Starting playback: {Path.GetFileName(filePath)} (loop: {loop})");
+                    GameConsole.Debug($"[MusicChannel] Full path: {filePath}");
                 }
 
-                // Load audio file
-                _waveSource = CodecFactory.Instance.GetCodec(filePath);
+                // Load audio file - use MediaFoundation for MP3 files
+                if (filePath.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        _waveSource = new MediaFoundationDecoder(filePath);
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Debug($"[MusicChannel] Using MediaFoundationDecoder for MP3");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Warn($"[MusicChannel] MediaFoundation failed ({ex.Message}), falling back to DmoMp3Decoder");
+                        }
+                        _waveSource = new DmoMp3Decoder(filePath);
+                    }
+                }
+                else
+                {
+                    _waveSource = CodecFactory.Instance.GetCodec(filePath);
+                }
 
+                IWaveSource sourceToUse;
                 if (loop)
                 {
                     // Wrap in loop stream for seamless looping
                     _loopStream = new LoopStream(_waveSource);
                     _loopStream.EnableLooping = true;
-
-                    // Create sound output with loop stream
-                    _soundOut = new WasapiOut();
-                    _soundOut.Initialize(_loopStream);
+                    sourceToUse = _loopStream;
                 }
                 else
                 {
                     // Direct playback without looping
-                    _soundOut = new WasapiOut();
-                    _soundOut.Initialize(_waveSource);
+                    sourceToUse = _waveSource;
                 }
 
-                // Set volume
-                _soundOut.Volume = _volume;
+                // Convert to ISampleSource for mixer
+                _currentMusicSource = sourceToUse.ToSampleSource();
+                
+                // Apply volume
+                var volumeSource = new VolumeSource(_currentMusicSource);
+                volumeSource.Volume = _volume;
+                _currentMusicSource = volumeSource;
 
-                // Set up stopped event for cleanup
-                _soundOut.Stopped += OnPlaybackStopped;
+                // Set in provider
+                _sourceProvider.SetSource(_currentMusicSource);
 
                 // Store current file
                 _currentFile = filePath;
-
-                // Start playback
-                _soundOut.Play();
 
                 if (Program.DebugMode)
                 {
@@ -149,9 +189,9 @@ public class MusicChannel : IDisposable
         lock (_lock)
         {
             _volume = volume;
-            if (_soundOut != null)
+            if (_currentMusicSource is VolumeSource volumeSource)
             {
-                _soundOut.Volume = volume;
+                volumeSource.Volume = volume;
             }
         }
     }
@@ -167,10 +207,18 @@ public class MusicChannel : IDisposable
             return;
         }
 
+        VolumeSource? volumeSource = null;
         lock (_lock)
         {
-            if (_soundOut == null || _soundOut.PlaybackState != PlaybackState.Playing)
+            if (_currentMusicSource == null)
             {
+                return;
+            }
+            volumeSource = _currentMusicSource as VolumeSource;
+            if (volumeSource == null)
+            {
+                // Can't fade without volume control
+                StopMusic();
                 return;
             }
         }
@@ -184,13 +232,13 @@ public class MusicChannel : IDisposable
         {
             lock (_lock)
             {
-                if (_soundOut == null || _soundOut.PlaybackState != PlaybackState.Playing)
+                if (_currentMusicSource == null || volumeSource == null)
                 {
                     break;
                 }
 
                 float newVolume = startVolume - (volumeStep * (i + 1));
-                _soundOut.Volume = Math.Max(0, newVolume);
+                volumeSource.Volume = Math.Max(0, newVolume);
             }
 
             await Task.Delay(stepDelay);
@@ -205,26 +253,7 @@ public class MusicChannel : IDisposable
     /// </summary>
     private void StopInternal()
     {
-        if (_soundOut != null)
-        {
-            try
-            {
-                if (_soundOut.PlaybackState == PlaybackState.Playing)
-                {
-                    _soundOut.Stop();
-                }
-
-                _soundOut.Stopped -= OnPlaybackStopped;
-            }
-            catch (Exception ex)
-            {
-                if (Program.DebugMode)
-                {
-                    GameConsole.Debug($"[MusicChannel] Error stopping: {ex.Message}");
-                }
-            }
-        }
-
+        _sourceProvider.SetSource(null); // Clear source provider (outputs silence)
         CleanupResources();
         _currentFile = null;
     }
@@ -236,8 +265,8 @@ public class MusicChannel : IDisposable
     {
         try
         {
-            _soundOut?.Dispose();
-            _soundOut = null;
+            _currentMusicSource?.Dispose();
+            _currentMusicSource = null;
         }
         catch { }
 
@@ -257,30 +286,6 @@ public class MusicChannel : IDisposable
     }
 
     /// <summary>
-    /// Handle playback stopped event
-    /// </summary>
-    private void OnPlaybackStopped(object? sender, PlaybackStoppedEventArgs e)
-    {
-        if (Program.DebugMode)
-        {
-            GameConsole.Debug($"[MusicChannel] Playback stopped: {Path.GetFileName(_currentFile ?? "unknown")}");
-        }
-
-        // Cleanup resources asynchronously to avoid blocking
-        Task.Run(() =>
-        {
-            lock (_lock)
-            {
-                if (!_disposed)
-                {
-                    CleanupResources();
-                    _currentFile = null;
-                }
-            }
-        });
-    }
-
-    /// <summary>
     /// Dispose of all resources
     /// </summary>
     public void Dispose()
@@ -294,6 +299,106 @@ public class MusicChannel : IDisposable
         }
 
         GC.SuppressFinalize(this);
+    }
+}
+
+/// <summary>
+/// Provides a continuous ISampleSource stream that outputs current music or silence
+/// </summary>
+internal class MusicSourceProvider : ISampleSource
+{
+    private ISampleSource? _currentSource;
+    private readonly object _lock = new();
+    private long _position;
+
+    public void SetSource(ISampleSource? source)
+    {
+        lock (_lock)
+        {
+            _currentSource = source;
+        }
+    }
+
+    public bool CanSeek => false;
+    public WaveFormat WaveFormat => new WaveFormat(44100, 32, 2, AudioEncoding.IeeeFloat); // Float format for ISampleSource
+    public long Position
+    {
+        get => _position;
+        set => throw new NotSupportedException("MusicSourceProvider does not support seeking");
+    }
+    public long Length => 0; // Infinite length for continuous stream
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        lock (_lock)
+        {
+            if (_currentSource == null)
+            {
+                // No music playing - output silence
+                Array.Clear(buffer, offset, count);
+                _position += count;
+                return count;
+            }
+
+            // Output current music
+            int read = _currentSource.Read(buffer, offset, count);
+            _position += read;
+            return read;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Don't dispose currentSource - managed by MusicChannel
+    }
+}
+
+/// <summary>
+/// Applies volume control to an ISampleSource
+/// </summary>
+public class VolumeSource : ISampleSource
+{
+    private readonly ISampleSource _source;
+    private float _volume = 1.0f;
+
+    public VolumeSource(ISampleSource source)
+    {
+        _source = source ?? throw new ArgumentNullException(nameof(source));
+    }
+
+    public float Volume
+    {
+        get => _volume;
+        set => _volume = Math.Clamp(value, 0.0f, 1.0f);
+    }
+
+    public bool CanSeek => _source.CanSeek;
+    public WaveFormat WaveFormat => _source.WaveFormat;
+    public long Position
+    {
+        get => _source.Position;
+        set => _source.Position = value;
+    }
+    public long Length => _source.Length;
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        int read = _source.Read(buffer, offset, count);
+        
+        if (_volume != 1.0f)
+        {
+            for (int i = 0; i < read; i++)
+            {
+                buffer[offset + i] *= _volume;
+            }
+        }
+
+        return read;
+    }
+
+    public void Dispose()
+    {
+        _source?.Dispose();
     }
 }
 

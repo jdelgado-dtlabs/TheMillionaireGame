@@ -101,6 +101,8 @@ namespace MillionaireGame.Forms.Options
             numTotalLifelines = new NumericUpDown();
             lblTotalLifelines = new Label();
             tabSounds = new TabPage();
+            tabControlSounds = new TabControl();
+            tabSoundpack = new TabPage();
             grpSoundPack = new GroupBox();
             dgvSoundPackInfo = new DataGridView();
             txtSearchSounds = new TextBox();
@@ -111,6 +113,12 @@ namespace MillionaireGame.Forms.Options
             btnImportPack = new Button();
             cmbSoundPack = new ComboBox();
             lblSoundPack = new Label();
+            tabMixer = new TabPage();
+            grpAudioDevice = new GroupBox();
+            cmbAudioDevice = new ComboBox();
+            lblAudioDevice = new Label();
+            btnRefreshDevices = new Button();
+            lblMixerInfo = new Label();
             btnOK = new Button();
             btnCancel = new Button();
             tabControl.SuspendLayout();
@@ -610,8 +618,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // tabSounds
             // 
-            tabSounds.AutoScroll = true;
-            tabSounds.Controls.Add(grpSoundPack);
+            tabSounds.Controls.Add(tabControlSounds);
             tabSounds.Location = new Point(4, 24);
             tabSounds.Name = "tabSounds";
             tabSounds.Padding = new Padding(3);
@@ -619,6 +626,28 @@ namespace MillionaireGame.Forms.Options
             tabSounds.TabIndex = 2;
             tabSounds.Text = "Sounds";
             tabSounds.UseVisualStyleBackColor = true;
+            // 
+            // tabControlSounds
+            // 
+            tabControlSounds.Controls.Add(tabSoundpack);
+            tabControlSounds.Controls.Add(tabMixer);
+            tabControlSounds.Dock = DockStyle.Fill;
+            tabControlSounds.Location = new Point(3, 3);
+            tabControlSounds.Name = "tabControlSounds";
+            tabControlSounds.SelectedIndex = 0;
+            tabControlSounds.Size = new Size(646, 453);
+            tabControlSounds.TabIndex = 0;
+            // 
+            // tabSoundpack
+            // 
+            tabSoundpack.Controls.Add(grpSoundPack);
+            tabSoundpack.Location = new Point(4, 24);
+            tabSoundpack.Name = "tabSoundpack";
+            tabSoundpack.Padding = new Padding(3);
+            tabSoundpack.Size = new Size(638, 425);
+            tabSoundpack.TabIndex = 0;
+            tabSoundpack.Text = "Soundpack";
+            tabSoundpack.UseVisualStyleBackColor = true;
             // 
             // grpSoundPack
             // 
@@ -637,6 +666,66 @@ namespace MillionaireGame.Forms.Options
             grpSoundPack.TabIndex = 0;
             grpSoundPack.TabStop = false;
             grpSoundPack.Text = "Sound Pack";
+            // 
+            // tabMixer
+            // 
+            tabMixer.Controls.Add(grpAudioDevice);
+            tabMixer.Controls.Add(lblMixerInfo);
+            tabMixer.Location = new Point(4, 24);
+            tabMixer.Name = "tabMixer";
+            tabMixer.Padding = new Padding(3);
+            tabMixer.Size = new Size(638, 425);
+            tabMixer.TabIndex = 1;
+            tabMixer.Text = "Mixer";
+            tabMixer.UseVisualStyleBackColor = true;
+            // 
+            // grpAudioDevice
+            // 
+            grpAudioDevice.Controls.Add(btnRefreshDevices);
+            grpAudioDevice.Controls.Add(lblAudioDevice);
+            grpAudioDevice.Controls.Add(cmbAudioDevice);
+            grpAudioDevice.Location = new Point(16, 60);
+            grpAudioDevice.Name = "grpAudioDevice";
+            grpAudioDevice.Size = new Size(600, 120);
+            grpAudioDevice.TabIndex = 1;
+            grpAudioDevice.TabStop = false;
+            grpAudioDevice.Text = "Audio Output";
+            // 
+            // lblAudioDevice
+            // 
+            lblAudioDevice.AutoSize = true;
+            lblAudioDevice.Location = new Point(16, 30);
+            lblAudioDevice.Name = "lblAudioDevice";
+            lblAudioDevice.Size = new Size(87, 15);
+            lblAudioDevice.TabIndex = 0;
+            lblAudioDevice.Text = "Output Device:";
+            // 
+            // cmbAudioDevice
+            // 
+            cmbAudioDevice.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbAudioDevice.FormattingEnabled = true;
+            cmbAudioDevice.Location = new Point(16, 50);
+            cmbAudioDevice.Name = "cmbAudioDevice";
+            cmbAudioDevice.Size = new Size(450, 23);
+            cmbAudioDevice.TabIndex = 1;
+            // 
+            // btnRefreshDevices
+            // 
+            btnRefreshDevices.Location = new Point(475, 49);
+            btnRefreshDevices.Name = "btnRefreshDevices";
+            btnRefreshDevices.Size = new Size(105, 25);
+            btnRefreshDevices.TabIndex = 2;
+            btnRefreshDevices.Text = "Refresh Devices";
+            btnRefreshDevices.UseVisualStyleBackColor = true;
+            // 
+            // lblMixerInfo
+            // 
+            lblMixerInfo.AutoSize = true;
+            lblMixerInfo.Location = new Point(16, 16);
+            lblMixerInfo.Name = "lblMixerInfo";
+            lblMixerInfo.Size = new Size(550, 30);
+            lblMixerInfo.TabIndex = 0;
+            lblMixerInfo.Text = "Configure audio output routing. Select the device where you want game sounds to play.\r\nChanges take effect immediately.";
             // 
             // lblSoundPack
             // 
@@ -937,6 +1026,12 @@ namespace MillionaireGame.Forms.Options
             grpLifeline1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).EndInit();
             tabSounds.ResumeLayout(false);
+            tabControlSounds.ResumeLayout(false);
+            tabSoundpack.ResumeLayout(false);
+            tabMixer.ResumeLayout(false);
+            tabMixer.PerformLayout();
+            grpAudioDevice.ResumeLayout(false);
+            grpAudioDevice.PerformLayout();
             grpSoundPack.ResumeLayout(false);
             tabAudience.ResumeLayout(false);
             grpAudienceServer.ResumeLayout(false);
@@ -1027,6 +1122,14 @@ namespace MillionaireGame.Forms.Options
         private TextBox txtSearchSounds;
         private Label lblSearchSounds;
         private Button btnPlaySelected;
+        private TabControl tabControlSounds;
+        private TabPage tabSoundpack;
+        private TabPage tabMixer;
+        private GroupBox grpAudioDevice;
+        private Label lblAudioDevice;
+        private ComboBox cmbAudioDevice;
+        private Button btnRefreshDevices;
+        private Label lblMixerInfo;
         private GroupBox grpConsole;
         private CheckBox chkShowConsole;
         private CheckBox chkShowWebServiceConsole;
