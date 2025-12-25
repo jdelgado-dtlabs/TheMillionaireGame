@@ -1019,7 +1019,7 @@ public partial class FFFControlPanel : UserControl
         GameConsole.Log("[FFF] Step 5 complete - Ready for Step 6");
     }
     
-    private async void btnWinner_Click(object? sender, EventArgs e)
+    private void btnWinner_Click(object? sender, EventArgs e)
     {
         if (_soundService == null || _rankings.Count == 0)
         {
@@ -1053,11 +1053,36 @@ public partial class FFFControlPanel : UserControl
             
             GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
-            await Task.Delay(3000);
-            GameConsole.Log("[FFF] FFFWinner finished");
             
-            GameConsole.Log("[FFF] Playing FFFWalkDown...");
-            _soundService.PlaySound(SoundEffect.FFFWalkDown);
+            // Play sounds sequentially in background
+            Task.Run(async () =>
+            {
+                await Task.Delay(3000); // Wait for FFFWinner to finish
+                GameConsole.Log("[FFF] FFFWinner finished");
+                
+                if (_soundService != null)
+                {
+                    GameConsole.Log("[FFF] Playing FFFWalkDown...");
+                    _soundService.PlaySound(SoundEffect.FFFWalkDown);
+                }
+                
+                // Update UI state on UI thread
+                if (InvokeRequired)
+                {
+                    Invoke(() =>
+                    {
+                        _currentState = FFFFlowState.WinnerAnnounced;
+                        UpdateUIState();
+                        GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                    });
+                }
+                else
+                {
+                    _currentState = FFFFlowState.WinnerAnnounced;
+                    UpdateUIState();
+                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                }
+            });
         }
         else
         {
@@ -1072,16 +1097,37 @@ public partial class FFFControlPanel : UserControl
             
             GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
-            await Task.Delay(3000);
-            GameConsole.Log("[FFF] FFFWinner finished");
             
-            GameConsole.Log("[FFF] Playing FFFWalkDown...");
-            _soundService.PlaySound(SoundEffect.FFFWalkDown);
+            // Play sounds sequentially in background
+            Task.Run(async () =>
+            {
+                await Task.Delay(3000); // Wait for FFFWinner to finish
+                GameConsole.Log("[FFF] FFFWinner finished");
+                
+                if (_soundService != null)
+                {
+                    GameConsole.Log("[FFF] Playing FFFWalkDown...");
+                    _soundService.PlaySound(SoundEffect.FFFWalkDown);
+                }
+                
+                // Update UI state on UI thread
+                if (InvokeRequired)
+                {
+                    Invoke(() =>
+                    {
+                        _currentState = FFFFlowState.WinnerAnnounced;
+                        UpdateUIState();
+                        GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                    });
+                }
+                else
+                {
+                    _currentState = FFFFlowState.WinnerAnnounced;
+                    UpdateUIState();
+                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                }
+            });
         }
-        
-        _currentState = FFFFlowState.WinnerAnnounced;
-        UpdateUIState();
-        GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
         
         // TODO: Notify main control panel of winner
     }
