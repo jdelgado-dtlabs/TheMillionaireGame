@@ -165,6 +165,8 @@ namespace MillionaireGame.Forms
                 new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
                 new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
                 new ToolStripSeparator(),
+                new ToolStripMenuItem("🔊 DSP Test (Audio Queue & Silence Detection)", null, DSPTestToolStripMenuItem_Click),
+                new ToolStripSeparator(),
                 new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
             

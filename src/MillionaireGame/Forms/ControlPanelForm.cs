@@ -3698,29 +3698,16 @@ public partial class ControlPanelForm : Form
             // Reload money tree settings and update risk mode button
             _gameService.MoneyTree.LoadSettings();
             UpdateRiskModeButton();
-            
-            // Update screen menu item enabled/disabled states
-            UpdateScreenMenuItemStates();
-            
-            // Check if preview orientation changed and update if preview is visible
-            if (_previewScreen != null && !_previewScreen.IsDisposed && _previewScreen.Visible)
-            {
-                var currentOrientation = _appSettings.Settings.PreviewOrientation == "Horizontal" 
-                    ? PreviewOrientation.Horizontal 
-                    : PreviewOrientation.Vertical;
-                
-                if (_lastPreviewOrientation != currentOrientation)
-                {
-                    // Orientation changed, recreate the preview window with dedicated instances
-                    _previewScreen.Close();
-                    _previewScreen = new PreviewScreenForm(_gameService, _screenService, currentOrientation);
-                    _lastPreviewOrientation = currentOrientation;
-                    _previewScreen.Show();
-                }
-            }
         };
         
-        optionsDialog.ShowDialog();
+        optionsDialog.ShowDialog(this);
+    }
+
+    private void DSPTestToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        GameConsole.Info("[ControlPanel] Opening DSP Test Dialog...");
+        using var dspTestDialog = new DSPTestDialog(_soundService);
+        dspTestDialog.ShowDialog(this);
     }
 
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)
