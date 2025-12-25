@@ -1,0 +1,319 @@
+using CSCore;
+using CSCore.SoundOut;
+using CSCore.Streams;
+using MillionaireGame.Utilities;
+
+namespace MillionaireGame.Services;
+
+/// <summary>
+/// Mixes multiple audio sources and routes to output devices.
+/// Designed for future multi-output support (system speakers + OBS/streaming).
+/// </summary>
+public class AudioMixer : IDisposable
+{
+    private ISoundOut? _systemOutput;
+    private MixingSampleSource? _mixer;
+    private readonly object _lock = new();
+    private bool _disposed = false;
+    private float _masterVolume = 1.0f;
+
+    // Future: Add additional outputs here
+    // private ISoundOut? _broadcastOutput;
+    // private ISoundOut? _recordingOutput;
+
+    /// <summary>
+    /// Initialize the mixer with source streams
+    /// </summary>
+    public void Initialize(ISampleSource musicSource, ISampleSource effectsSource)
+    {
+        lock (_lock)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(AudioMixer));
+
+            // Clean up existing resources
+            CleanupInternal();
+
+            try
+            {
+                // Create mixer that combines music and effects
+                _mixer = new MixingSampleSource(musicSource.WaveFormat);
+                _mixer.AddSource(musicSource);
+                _mixer.AddSource(effectsSource);
+
+                // Create system audio output
+                _systemOutput = new WasapiOut();
+                _systemOutput.Initialize(_mixer.ToWaveSource());
+                _systemOutput.Volume = _masterVolume;
+
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug("[AudioMixer] Initialized with system output");
+                }
+
+                // Future: Initialize additional outputs here
+                // _broadcastOutput = new WasapiOut(/* specific device */);
+                // _broadcastOutput.Initialize(CreateTappedStream(_mixer));
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[AudioMixer] Initialization failed: {ex.Message}");
+                CleanupInternal();
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Start audio playback through all outputs
+    /// </summary>
+    public void Start()
+    {
+        lock (_lock)
+        {
+            if (_systemOutput?.PlaybackState == PlaybackState.Stopped)
+            {
+                _systemOutput.Play();
+
+                // Future: Start additional outputs
+                // _broadcastOutput?.Play();
+                // _recordingOutput?.Play();
+
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug("[AudioMixer] Playback started");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Stop audio playback through all outputs
+    /// </summary>
+    public void Stop()
+    {
+        lock (_lock)
+        {
+            if (_systemOutput?.PlaybackState == PlaybackState.Playing)
+            {
+                _systemOutput.Stop();
+
+                // Future: Stop additional outputs
+                // _broadcastOutput?.Stop();
+                // _recordingOutput?.Stop();
+
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug("[AudioMixer] Playback stopped");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set master output volume (0.0 to 1.0)
+    /// </summary>
+    public void SetMasterVolume(float volume)
+    {
+        volume = Math.Clamp(volume, 0.0f, 1.0f);
+
+        lock (_lock)
+        {
+            _masterVolume = volume;
+
+            if (_systemOutput != null)
+            {
+                _systemOutput.Volume = volume;
+            }
+
+            // Future: Set volume for additional outputs
+            // if (_broadcastOutput != null) _broadcastOutput.Volume = volume;
+        }
+    }
+
+    /// <summary>
+    /// Check if mixer is currently playing
+    /// </summary>
+    public bool IsPlaying
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _systemOutput?.PlaybackState == PlaybackState.Playing;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Future: Add a new output destination for broadcasting
+    /// </summary>
+    /// <remarks>
+    /// Example usage when broadcasting is implemented:
+    /// - AddOutput("OBS", new WasapiOut(obsDeviceId));
+    /// - AddOutput("Recording", new WasapiOut(recordingDeviceId));
+    /// </remarks>
+    public void AddOutput(string name, ISoundOut output)
+    {
+        // TODO: Implement when broadcasting feature is added
+        // This will allow routing audio to OBS, virtual cables, etc.
+        throw new NotImplementedException("Multi-output routing will be implemented with broadcasting feature");
+    }
+
+    /// <summary>
+    /// Future: Create a tapped stream for additional outputs
+    /// </summary>
+    private ISampleSource CreateTappedStream(ISampleSource source)
+    {
+        // TODO: Implement audio tapping for multi-output
+        // This will duplicate the audio stream so it can go to multiple destinations
+        // without interfering with each other
+        return source;
+    }
+
+    /// <summary>
+    /// Cleanup resources - must be called within lock
+    /// </summary>
+    private void CleanupInternal()
+    {
+        try
+        {
+            _systemOutput?.Stop();
+            _systemOutput?.Dispose();
+            _systemOutput = null;
+        }
+        catch { }
+
+        try
+        {
+            _mixer?.Dispose();
+            _mixer = null;
+        }
+        catch { }
+
+        // Future: Cleanup additional outputs
+        // _broadcastOutput?.Dispose();
+        // _recordingOutput?.Dispose();
+    }
+
+    /// <summary>
+    /// Dispose of all resources
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+
+        lock (_lock)
+        {
+            _disposed = true;
+            CleanupInternal();
+        }
+
+        GC.SuppressFinalize(this);
+    }
+}
+
+/// <summary>
+/// Mixes multiple sample sources into a single output stream.
+/// Each source is mixed at equal volume (can be extended for per-source volume control).
+/// </summary>
+public class MixingSampleSource : ISampleSource
+{
+    private readonly WaveFormat _waveFormat;
+    private readonly List<ISampleSource> _sources = new();
+    private readonly object _lock = new();
+    private long _position;
+
+    public MixingSampleSource(WaveFormat waveFormat)
+    {
+        _waveFormat = waveFormat ?? throw new ArgumentNullException(nameof(waveFormat));
+    }
+
+    public void AddSource(ISampleSource source)
+    {
+        if (source == null)
+            throw new ArgumentNullException(nameof(source));
+
+        if (!source.WaveFormat.Equals(_waveFormat))
+            throw new ArgumentException("Source format must match mixer format");
+
+        lock (_lock)
+        {
+            _sources.Add(source);
+        }
+    }
+
+    public void RemoveSource(ISampleSource source)
+    {
+        lock (_lock)
+        {
+            _sources.Remove(source);
+        }
+    }
+
+    public bool CanSeek => false;
+
+    public WaveFormat WaveFormat => _waveFormat;
+
+    public long Position
+    {
+        get => _position;
+        set => throw new NotSupportedException("MixingSampleSource does not support seeking");
+    }
+
+    public long Length => 0; // Infinite length for live mixing
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        // Clear buffer
+        Array.Clear(buffer, offset, count);
+
+        int maxSamplesRead = 0;
+
+        lock (_lock)
+        {
+            // Mix all sources
+            float[] tempBuffer = new float[count];
+
+            foreach (var source in _sources.ToList()) // ToList to avoid modification during enumeration
+            {
+                Array.Clear(tempBuffer, 0, count);
+                int samplesRead = source.Read(tempBuffer, 0, count);
+
+                if (samplesRead > maxSamplesRead)
+                    maxSamplesRead = samplesRead;
+
+                // Add this source to the mix
+                for (int i = 0; i < samplesRead; i++)
+                {
+                    buffer[offset + i] += tempBuffer[i];
+                }
+            }
+
+            // Prevent clipping by normalizing if necessary
+            if (_sources.Count > 1)
+            {
+                float divisor = (float)Math.Sqrt(_sources.Count); // Simple mixing normalization
+                for (int i = 0; i < maxSamplesRead; i++)
+                {
+                    buffer[offset + i] /= divisor;
+                }
+            }
+        }
+
+        _position += maxSamplesRead;
+        return maxSamplesRead;
+    }
+
+    public void Dispose()
+    {
+        lock (_lock)
+        {
+            foreach (var source in _sources)
+            {
+                source?.Dispose();
+            }
+            _sources.Clear();
+        }
+    }
+}
