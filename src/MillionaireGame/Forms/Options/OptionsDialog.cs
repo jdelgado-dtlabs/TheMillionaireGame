@@ -882,18 +882,49 @@ public partial class OptionsDialog : Form
         _soundPackDataTable.Columns.Add("FullPath", typeof(string));
 
         // Bind to DataGridView (DataView already initialized in constructor)
+        dgvSoundPackInfo.AutoGenerateColumns = false;
         dgvSoundPackInfo.DataSource = _soundPackDataView;
 
-        // Configure columns
-        dgvSoundPackInfo.Columns["Key"].HeaderText = "Sound Key";
-        dgvSoundPackInfo.Columns["Key"].Width = 180;
-        dgvSoundPackInfo.Columns["FileName"].HeaderText = "File Name";
-        dgvSoundPackInfo.Columns["FileName"].Width = 200;
-        dgvSoundPackInfo.Columns["Status"].HeaderText = "Status";
-        dgvSoundPackInfo.Columns["Status"].Width = 80;
-        dgvSoundPackInfo.Columns["Category"].HeaderText = "Category";
-        dgvSoundPackInfo.Columns["Category"].Width = 150;
-        dgvSoundPackInfo.Columns["FullPath"].Visible = false; // Hidden but accessible
+        // Manually create columns
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Key",
+            HeaderText = "Sound Key",
+            DataPropertyName = "Key",
+            Width = 180
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "FileName",
+            HeaderText = "File Name",
+            DataPropertyName = "FileName",
+            Width = 200
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Status",
+            HeaderText = "Status",
+            DataPropertyName = "Status",
+            Width = 80
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Category",
+            HeaderText = "Category",
+            DataPropertyName = "Category",
+            Width = 150
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "FullPath",
+            HeaderText = "FullPath",
+            DataPropertyName = "FullPath",
+            Visible = false
+        });
 
         // Style status column with colors
         dgvSoundPackInfo.CellFormatting += (s, e) =>
