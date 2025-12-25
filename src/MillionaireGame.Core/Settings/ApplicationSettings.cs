@@ -59,6 +59,10 @@ public class ApplicationSettings
     public string SelectedSoundPack { get; set; } = "Default";
     public string? AudioOutputDevice { get; set; } = null; // null = System Default
 
+    // Audio Processing Settings
+    public SilenceDetectionSettings SilenceDetection { get; set; } = new();
+    public CrossfadeSettings Crossfade { get; set; } = new();
+
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;
     public bool ShowWebServiceConsole { get; set; } = false;
