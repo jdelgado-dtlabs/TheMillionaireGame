@@ -82,26 +82,63 @@ public partial class WebServerLogWindow : Form
     }
 
     /// <summary>
-    /// Logs a message to the window and file
+    /// Logs a message to the window and file with log level
     /// </summary>
-    public void Log(string message)
+    public void Log(string message, Utilities.LogLevel level = Utilities.LogLevel.INFO)
     {
         if (InvokeRequired)
         {
-            Invoke(new Action<string>(Log), message);
+            try
+            {
+                Invoke(new Action<string, Utilities.LogLevel>(Log), message, level);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Window was disposed, ignore
+                return;
+            }
             return;
         }
 
-        var timestamp = DateTime.Now.ToString("HH:mm:ss");
-        var formattedMessage = $"[{timestamp}] {message}\n";
-        
-        txtLog.AppendText(formattedMessage);
-        _logger.Log(message);
-
-        // Limit text length to prevent memory issues
-        if (txtLog.TextLength > 100000)
+        try
         {
-            txtLog.Text = txtLog.Text.Substring(txtLog.TextLength - 50000);
+            var timestamp = DateTime.Now.ToString("HH:mm:ss");
+            var levelStr = level switch
+            {
+                Utilities.LogLevel.DEBUG => "DEBUG",
+                Utilities.LogLevel.INFO => "INFO",
+                Utilities.LogLevel.WARN => "WARN",
+                Utilities.LogLevel.ERROR => "ERROR",
+                _ => "INFO"
+            };
+            var formattedMessage = $"[{timestamp}] [{levelStr}] {message}";
+
+            // Set color based on level
+            txtLog.SelectionStart = txtLog.TextLength;
+            txtLog.SelectionLength = 0;
+            txtLog.SelectionColor = level switch
+            {
+                Utilities.LogLevel.DEBUG => Color.Gray,
+                Utilities.LogLevel.INFO => Color.Lime,
+                Utilities.LogLevel.WARN => Color.Yellow,
+                Utilities.LogLevel.ERROR => Color.Red,
+                _ => Color.Lime
+            };
+            
+            txtLog.AppendText(formattedMessage + "\n");
+            txtLog.SelectionColor = txtLog.ForeColor; // Reset color
+            
+            _logger.Log($"[{levelStr}] {message}");
+
+            // Limit text length to prevent memory issues
+            if (txtLog.TextLength > 100000)
+            {
+                txtLog.Text = txtLog.Text.Substring(txtLog.TextLength - 50000);
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Window was disposed during operation, ignore
         }
     }
 

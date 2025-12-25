@@ -113,13 +113,13 @@ internal static class Program
                 GameConsole.SetWindow(gameLogWindow);
                 
                 // Test logging immediately
-                GameConsole.Log("===== TESTING GAMECONSOLE =====");
-                GameConsole.Log("THE MILLIONAIRE GAME - Debug Console");
-                GameConsole.Log($"Version: Debug Build");
-                GameConsole.Log($"Started: {DateTime.Now}");
+                GameConsole.Info("===== TESTING GAMECONSOLE =====");
+                GameConsole.Info("THE MILLIONAIRE GAME - Debug Console");
+                GameConsole.Info($"Version: Debug Build");
+                GameConsole.Info($"Started: {DateTime.Now}");
                 GameConsole.LogSeparator();
-                GameConsole.Log("Application initialized successfully.");
-                GameConsole.Log("");
+                GameConsole.Info("Application initialized successfully.");
+                GameConsole.Info("");
                 GameConsole.Log("If you see this, GameConsole.Log() is working!");
             }
         };

@@ -81,15 +81,15 @@ public partial class GameLogWindow : Form
     }
 
     /// <summary>
-    /// Logs a message to the window and file
+    /// Logs a message to the window and file with log level
     /// </summary>
-    public void Log(string message)
+    public void Log(string message, Utilities.LogLevel level = Utilities.LogLevel.INFO)
     {
         if (InvokeRequired)
         {
             try
             {
-                Invoke(new Action<string>(Log), message);
+                Invoke(new Action<string, Utilities.LogLevel>(Log), message, level);
             }
             catch (ObjectDisposedException)
             {
@@ -102,13 +102,35 @@ public partial class GameLogWindow : Form
         try
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
-            var formattedMessage = $"[{timestamp}] {message}\n";
+            var levelStr = level switch
+            {
+                Utilities.LogLevel.DEBUG => "DEBUG",
+                Utilities.LogLevel.INFO => "INFO",
+                Utilities.LogLevel.WARN => "WARN",
+                Utilities.LogLevel.ERROR => "ERROR",
+                _ => "INFO"
+            };
             
-            txtLog.AppendText(formattedMessage);
+            var formattedMessage = $"[{timestamp}] [{levelStr}] {message}\n";
+            
+            // Color code by log level
+            var color = level switch
+            {
+                Utilities.LogLevel.DEBUG => Color.Gray,
+                Utilities.LogLevel.INFO => Color.Lime,
+                Utilities.LogLevel.WARN => Color.Yellow,
+                Utilities.LogLevel.ERROR => Color.Red,
+                _ => Color.Lime
+            };
+            
             txtLog.SelectionStart = txtLog.TextLength;
+            txtLog.SelectionLength = 0;
+            txtLog.SelectionColor = color;
+            txtLog.AppendText(formattedMessage);
+            txtLog.SelectionColor = txtLog.ForeColor;
             txtLog.ScrollToCaret();
             
-            _logger.Log(message);
+            _logger.Log($"[{levelStr}] {message}");
 
             // Limit text length to prevent memory issues
             if (txtLog.TextLength > 100000)
@@ -125,9 +147,9 @@ public partial class GameLogWindow : Form
     /// <summary>
     /// Logs a formatted message
     /// </summary>
-    public void Log(string format, params object[] args)
+    public void Log(string format, Utilities.LogLevel level, params object[] args)
     {
-        Log(string.Format(format, args));
+        Log(string.Format(format, args), level);
     }
 
     /// <summary>

@@ -47,20 +47,26 @@ public static class WebServiceConsole
     }
 
     /// <summary>
-    /// Logs a message to the web service window
+    /// Logs a message to the web service window with log level
     /// </summary>
-    public static void Log(string message)
+    public static void Log(string message, LogLevel level = LogLevel.INFO)
     {
-        _logWindow?.Log(message);
+        _logWindow?.Log(message, level);
     }
 
     /// <summary>
     /// Logs a formatted message with arguments
     /// </summary>
-    public static void Log(string format, params object[] args)
+    public static void Log(string format, LogLevel level = LogLevel.INFO, params object[] args)
     {
-        _logWindow?.Log(format, args);
+        Log(string.Format(format, args), level);
     }
+
+    // Convenience methods for specific log levels
+    public static void Debug(string message) => Log(message, LogLevel.DEBUG);
+    public static void Info(string message) => Log(message, LogLevel.INFO);
+    public static void Warn(string message) => Log(message, LogLevel.WARN);
+    public static void Error(string message) => Log(message, LogLevel.ERROR);
 
     /// <summary>
     /// Logs a separator line

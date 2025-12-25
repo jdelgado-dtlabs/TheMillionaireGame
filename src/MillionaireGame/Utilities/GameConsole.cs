@@ -3,6 +3,17 @@ using MillionaireGame.Forms;
 namespace MillionaireGame.Utilities;
 
 /// <summary>
+/// Log level enumeration following Linux conventions
+/// </summary>
+public enum LogLevel
+{
+    DEBUG,  // Only shown in debug mode
+    INFO,   // Normal informational messages
+    WARN,   // Warning messages
+    ERROR   // Error messages
+}
+
+/// <summary>
 /// Manages a separate window for game logging
 /// </summary>
 public static class GameConsole
@@ -58,15 +69,19 @@ public static class GameConsole
     }
 
     /// <summary>
-    /// Logs a message to the game console window
+    /// Logs a message to the game console window with specified log level
     /// </summary>
-    public static void Log(string message)
+    public static void Log(string message, LogLevel level = LogLevel.INFO)
     {
+        // Skip DEBUG messages if not in debug mode
+        if (level == LogLevel.DEBUG && !Program.DebugMode)
+            return;
+
         lock (_lock)
         {
             if (_logWindow != null && !_logWindow.IsDisposed)
             {
-                _logWindow.Log(message);
+                _logWindow.Log(message, level);
             }
             else
             {
@@ -79,10 +94,16 @@ public static class GameConsole
     /// <summary>
     /// Logs a formatted message with arguments
     /// </summary>
-    public static void Log(string format, params object[] args)
+    public static void Log(string format, LogLevel level = LogLevel.INFO, params object[] args)
     {
-        _logWindow?.Log(format, args);
+        Log(string.Format(format, args), level);
     }
+
+    // Convenience methods for specific log levels
+    public static void Debug(string message) => Log(message, LogLevel.DEBUG);
+    public static void Info(string message) => Log(message, LogLevel.INFO);
+    public static void Warn(string message) => Log(message, LogLevel.WARN);
+    public static void Error(string message) => Log(message, LogLevel.ERROR);
 
     /// <summary>
     /// Logs a separator line

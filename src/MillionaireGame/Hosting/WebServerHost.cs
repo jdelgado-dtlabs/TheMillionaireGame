@@ -90,12 +90,12 @@ public class WebServerHost : IDisposable
                     logging.AddProvider(new WebServiceConsoleLoggerProvider());
                     
                     // Set minimum level to Information to see participant joins
-                    logging.SetMinimumLevel(LogLevel.Information);
+                    logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
                     
                     // Filter out noisy Microsoft logs
-                    logging.AddFilter("Microsoft.AspNetCore", LogLevel.Warning);
-                    logging.AddFilter("Microsoft.Hosting", LogLevel.Warning);
-                    logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+                    logging.AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Warning);
+                    logging.AddFilter("Microsoft.Hosting", Microsoft.Extensions.Logging.LogLevel.Warning);
+                    logging.AddFilter("Microsoft.EntityFrameworkCore", Microsoft.Extensions.Logging.LogLevel.Warning);
                 });
 
             _host = builder.Build();
@@ -107,11 +107,11 @@ public class WebServerHost : IDisposable
                 try
                 {
                     File.Delete(dbPath);
-                    WebServiceConsole.Log($"[WebServer] Deleted existing database: {dbPath}");
+                    WebServiceConsole.Info($"[WebServer] Deleted existing database: {dbPath}");
                 }
                 catch (Exception ex)
                 {
-                    WebServiceConsole.Log($"[WebServer] Could not delete database: {ex.Message}");
+                    WebServiceConsole.Warn($"[WebServer] Could not delete database: {ex.Message}");
                 }
             }
 
@@ -120,7 +120,7 @@ public class WebServerHost : IDisposable
             {
                 var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
                 context.Database.EnsureCreated();
-                WebServiceConsole.Log("[WebServer] Database created with clean state");
+                WebServiceConsole.Info("[WebServer] Database created with clean state");
             }
 
             await _host.StartAsync();
@@ -128,7 +128,7 @@ public class WebServerHost : IDisposable
             // Wait a moment for the server to fully initialize and start accepting requests
             // This prevents "message channel closed" errors when browsers connect too early
             await Task.Delay(500);
-            WebServiceConsole.Log("[WebServer] Server ready to accept connections");
+            WebServiceConsole.Info("[WebServer] Server ready to accept connections");
 
             ServerStarted?.Invoke(this, _baseUrl);
         }
@@ -303,9 +303,9 @@ internal class WebServiceConsoleLogger : ILogger
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+    public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => logLevel >= Microsoft.Extensions.Logging.LogLevel.Information;
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
             return;
@@ -313,21 +313,30 @@ internal class WebServiceConsoleLogger : ILogger
         var message = formatter(state, exception);
         var logPrefix = logLevel switch
         {
-            LogLevel.Information => "[INFO]",
-            LogLevel.Warning => "[WARN]",
-            LogLevel.Error => "[ERROR]",
-            LogLevel.Critical => "[CRITICAL]",
+            Microsoft.Extensions.Logging.LogLevel.Information => "[INFO]",
+            Microsoft.Extensions.Logging.LogLevel.Warning => "[WARN]",
+            Microsoft.Extensions.Logging.LogLevel.Error => "[ERROR]",
+            Microsoft.Extensions.Logging.LogLevel.Critical => "[CRITICAL]",
             _ => $"[{logLevel}]"
         };
 
         // Get short category name
         var shortCategory = _categoryName.Split('.').LastOrDefault() ?? _categoryName;
         
-        WebServiceConsole.Log($"{logPrefix} [{shortCategory}] {message}");
+        // Map ASP.NET log level to our LogLevel
+        var ourLevel = logLevel switch
+        {
+            Microsoft.Extensions.Logging.LogLevel.Warning => Utilities.LogLevel.WARN,
+            Microsoft.Extensions.Logging.LogLevel.Error => Utilities.LogLevel.ERROR,
+            Microsoft.Extensions.Logging.LogLevel.Critical => Utilities.LogLevel.ERROR,
+            _ => Utilities.LogLevel.INFO
+        };
+        
+        WebServiceConsole.Log($"{logPrefix} [{shortCategory}] {message}", ourLevel);
 
         if (exception != null)
         {
-            WebServiceConsole.Log($"  Exception: {exception.Message}");
+            WebServiceConsole.Error($"  Exception: {exception.Message}");
         }
     }
 }

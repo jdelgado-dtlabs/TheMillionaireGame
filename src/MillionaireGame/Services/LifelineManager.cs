@@ -234,11 +234,14 @@ public class LifelineManager
             case PAFStage.CallingIntro:
                 LogMessage?.Invoke("[Lifeline] PAF Stage 2: Starting 30-second countdown");
                 
-                _soundService.StopSound("paf_intro");
+                _ = Task.Run(async () =>
+                {
+                    await _soundService.StopAllSoundsAsync();
+                    _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
+                });
+                
                 _pafStage = PAFStage.CountingDown;
                 ButtonStateChanged?.Invoke(buttonNumber, Color.Red, true);
-                
-                _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
                 
                 _pafSecondsRemaining = 30;
                 
@@ -286,8 +289,11 @@ public class LifelineManager
         _pafTimer?.Dispose();
         _pafTimer = null;
         
-        _soundService.StopSound("paf_countdown");
-        _soundService.PlaySound(SoundEffect.LifelinePAFEndEarly);
+        _ = Task.Run(async () =>
+        {
+            await _soundService.StopAllSoundsAsync();
+            _soundService.PlaySound(SoundEffect.LifelinePAFEndEarly);
+        });
         
         CompletePAF();
     }
@@ -406,9 +412,9 @@ public class LifelineManager
         _ataStage = ATAStage.Voting;
         ButtonStateChanged?.Invoke(buttonNumber, Color.Red, true);
         
-        _soundService.PlaySound(SoundEffect.LifelineATAVote, "ata_vote");
+        await _soundService.StopAllSoundsAsync();
         await Task.Delay(500);
-        _soundService.StopSound("ata_intro");
+        _soundService.PlaySound(SoundEffect.LifelineATAVote, "ata_vote");
         
         _ataSecondsRemaining = 60;
         _ataTimer = new System.Windows.Forms.Timer();
@@ -432,8 +438,7 @@ public class LifelineManager
         
         _soundService.PlaySound(SoundEffect.LifelineATAEnd);
         await Task.Delay(500);
-        _soundService.StopSound("ata_intro");
-        _soundService.StopSound("ata_vote");
+        await _soundService.StopAllSoundsAsync();
         
         // Generate placeholder results: 100% on correct answer
         var finalResults = GeneratePlaceholderResults();
@@ -625,7 +630,7 @@ public class LifelineManager
                 _doubleDipStage = DoubleDipStage.SecondAttempt;
                 
                 // Stop DD start sound
-                _soundService.StopSound("dd_start");
+                await _soundService.StopAllSoundsAsync();
                 
                 LogMessage?.Invoke("[Lifeline] DD - Select your second answer");
                 return DoubleDipRevealResult.FirstAttemptWrong; // Special handling in RevealAnswer
@@ -645,8 +650,7 @@ public class LifelineManager
     private async Task CompleteDoubleDip()
     {
         // Stop DD sounds
-        _soundService.StopSound("dd_start");
-        _soundService.StopSound("dd_first");
+        await _soundService.StopAllSoundsAsync();
         await Task.Delay(100);
         
         // Mark as used
@@ -677,7 +681,7 @@ public class LifelineManager
             LogMessage?.Invoke("[Lifeline] ATH answer selected - completing ATH");
             
             // Stop bed music
-            _soundService.StopSound("ath_bed");
+            await _soundService.StopAllSoundsAsync();
             
             // Play end sound
             await Task.Delay(100);
@@ -719,7 +723,7 @@ public class LifelineManager
         }
         
         // Stop all sounds
-        _soundService.StopAllSounds();
+        await _soundService.StopAllSoundsAsync();
         
         // Wait 500ms
         await Task.Delay(500);

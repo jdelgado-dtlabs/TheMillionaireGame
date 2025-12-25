@@ -96,7 +96,7 @@ public class FFFClientService : IAsyncDisposable
         if (_connection == null || !_isConnected)
             throw new InvalidOperationException("Not connected to server");
         
-        GameConsole.Log($"[FFFClient] Starting question {questionId} with time limit {timeLimit}s");
+        GameConsole.Info($"[FFFClient] Starting question {questionId} with time limit {timeLimit}s");
         await _connection.InvokeAsync("StartQuestion", _sessionId, questionId, questionText, options, timeLimit * 1000); // Convert seconds to milliseconds
     }
     
@@ -108,7 +108,7 @@ public class FFFClientService : IAsyncDisposable
         if (_connection == null || !_isConnected)
             throw new InvalidOperationException("Not connected to server");
         
-        GameConsole.Log($"[FFFClient] Ending question {questionId}");
+        GameConsole.Info($"[FFFClient] Ending question {questionId}");
         await _connection.InvokeAsync("EndQuestion", _sessionId, questionId);
     }
     
@@ -119,7 +119,7 @@ public class FFFClientService : IAsyncDisposable
     {
         if (_connection == null || !_isConnected)
         {
-            GameConsole.Log("[FFFClient] Not connected, returning empty list");
+            GameConsole.Warn("[FFFClient] Not connected, returning empty list");
             return new List<ParticipantInfo>();
         }
         
@@ -140,7 +140,7 @@ public class FFFClientService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            GameConsole.Log($"[FFFClient] Error: {ex.Message}");
+            GameConsole.Error($"[FFFClient] Error: {ex.Message}");
             return new List<ParticipantInfo>();
         }
     }
@@ -174,9 +174,9 @@ public class FFFClientService : IAsyncDisposable
         
         try
         {
-            GameConsole.Log($"[FFFClient] Calling CalculateRankings for question {questionId}");
+            GameConsole.Debug($"[FFFClient] Calling CalculateRankings for question {questionId}");
             var result = await _connection.InvokeAsync<object>("CalculateRankings", _sessionId, questionId);
-            GameConsole.Log($"[FFFClient] Received rankings result type: {result?.GetType().Name ?? "null"}");
+            GameConsole.Debug($"[FFFClient] Received rankings result type: {result?.GetType().Name ?? "null"}");
             
             // Server returns: { Success, QuestionId, Winner, Rankings[], TotalSubmissions, CorrectSubmissions }
             // Extract the Rankings array
@@ -185,12 +185,12 @@ public class FFFClientService : IAsyncDisposable
                 if (jsonElement.TryGetProperty("Rankings", out JsonElement rankingsArray) ||
                     jsonElement.TryGetProperty("rankings", out rankingsArray))
                 {
-                    GameConsole.Log($"[FFFClient] Extracted Rankings property");
+                    GameConsole.Debug($"[FFFClient] Extracted Rankings property");
                     var rankings = ParseRankings(rankingsArray);
-                    GameConsole.Log($"[FFFClient] Parsed {rankings.Count} rankings");
+                    GameConsole.Debug($"[FFFClient] Parsed {rankings.Count} rankings");
                     foreach (var r in rankings)
                     {
-                        GameConsole.Log($"[FFFClient]   Rank {r.Rank}: {r.DisplayName}, IsCorrect={r.IsCorrect}, TimeElapsed={r.TimeElapsed}");
+                        GameConsole.Debug($"[FFFClient]   Rank {r.Rank}: {r.DisplayName}, IsCorrect={r.IsCorrect}, TimeElapsed={r.TimeElapsed}");
                     }
                     return rankings;
                 }
@@ -198,7 +198,7 @@ public class FFFClientService : IAsyncDisposable
             
             // Fallback to parsing entire result
             var allRankings = ParseRankings(result);
-            GameConsole.Log($"[FFFClient] Parsed {allRankings.Count} rankings (fallback)");
+            GameConsole.Debug($"[FFFClient] Parsed {allRankings.Count} rankings (fallback)");
             return allRankings;
         }
         catch
@@ -218,7 +218,7 @@ public class FFFClientService : IAsyncDisposable
             if (existing == null)
             {
                 _participants.Add(participant);
-                GameConsole.Log($"[FFFClient] Added participant to cache: {participant.DisplayName}");
+                GameConsole.Debug($"[FFFClient] Added participant to cache: {participant.DisplayName}");
             }
             
             ParticipantJoined?.Invoke(this, participant);
@@ -235,15 +235,15 @@ public class FFFClientService : IAsyncDisposable
     {
         try
         {
-            GameConsole.Log($"[FFFClient] OnAnswerSubmitted called with data type: {data?.GetType().Name}");
+            GameConsole.Debug($"[FFFClient] OnAnswerSubmitted called with data type: {data?.GetType().Name}");
             var answer = ParseAnswer(data);
-            GameConsole.Log($"[FFFClient] Parsed answer: ParticipantId={answer.ParticipantId}, DisplayName={answer.DisplayName}, Sequence={answer.AnswerSequence}");
+            GameConsole.Debug($"[FFFClient] Parsed answer: ParticipantId={answer.ParticipantId}, DisplayName={answer.DisplayName}, Sequence={answer.AnswerSequence}");
             AnswerSubmitted?.Invoke(this, answer);
-            GameConsole.Log($"[FFFClient] AnswerSubmitted event raised");
+            GameConsole.Debug($"[FFFClient] AnswerSubmitted event raised");
         }
         catch (Exception ex)
         {
-            GameConsole.Log($"[FFFClient] ERROR parsing answer submission: {ex.Message}");
+            GameConsole.Error($"[FFFClient] ERROR parsing answer submission: {ex.Message}");
         }
     }
     
@@ -264,12 +264,12 @@ public class FFFClientService : IAsyncDisposable
                 if (prop.Name.Equals("Id", StringComparison.OrdinalIgnoreCase))
                 {
                     id = prop.Value.GetString();
-                    GameConsole.Log($"[FFFClient] Found Id via enumeration: '{id}'");
+                    GameConsole.Debug($"[FFFClient] Found Id via enumeration: '{id}'");
                 }
                 else if (prop.Name.Equals("displayName", StringComparison.OrdinalIgnoreCase))
                 {
                     displayName = prop.Value.GetString();
-                    GameConsole.Log($"[FFFClient] Found displayName via enumeration: '{displayName}'");
+                    GameConsole.Debug($"[FFFClient] Found displayName via enumeration: '{displayName}'");
                 }
             }
             
@@ -277,7 +277,7 @@ public class FFFClientService : IAsyncDisposable
             displayName ??= "Unknown";
             var isActive = true;
             
-            GameConsole.Log($"[FFFClient] Final parsed: Id='{id}', DisplayName='{displayName}', IsActive={isActive}");
+            GameConsole.Debug($"[FFFClient] Final parsed: Id='{id}', DisplayName='{displayName}', IsActive={isActive}");
             
             return new ParticipantInfo
             {
@@ -300,7 +300,7 @@ public class FFFClientService : IAsyncDisposable
     private List<ParticipantInfo> ParseParticipants(object data)
     {
         var result = new List<ParticipantInfo>();
-        GameConsole.Log($"[FFFClient] ParseParticipants: data type = {data?.GetType().Name ?? "null"}");
+        GameConsole.Debug($"[FFFClient] ParseParticipants: data type = {data?.GetType().Name ?? "null"}");
         
         // Handle JsonElement arrays
         if (data is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
@@ -345,10 +345,10 @@ public class FFFClientService : IAsyncDisposable
         }
         else
         {
-            GameConsole.Log($"[FFFClient] Data type not recognized as enumerable: {data?.GetType().FullName ?? "null"}");
+            GameConsole.Warn($"[FFFClient] Data type not recognized as enumerable: {data?.GetType().FullName ?? "null"}");
         }
         
-        GameConsole.Log($"[FFFClient] Total parsed: {result.Count} participants");
+        GameConsole.Debug($"[FFFClient] Total parsed: {result.Count} participants");
         return result;
     }
     
@@ -423,7 +423,7 @@ public class FFFClientService : IAsyncDisposable
         // Handle JsonElement from SignalR
         if (data is JsonElement jsonElement)
         {
-            GameConsole.Log($"[FFFClient] ParseRanking: JsonElement with ValueKind={jsonElement.ValueKind}");
+            GameConsole.Debug($"[FFFClient] ParseRanking: JsonElement with ValueKind={jsonElement.ValueKind}");
             
             int? rank = null;
             string? participantId = null;
@@ -434,7 +434,7 @@ public class FFFClientService : IAsyncDisposable
             
             foreach (var prop in jsonElement.EnumerateObject())
             {
-                GameConsole.Log($"[FFFClient]   Property: {prop.Name} = {prop.Value}");
+                GameConsole.Debug($"[FFFClient]   Property: {prop.Name} = {prop.Value}");
                 
                 if (prop.Name.Equals("Rank", StringComparison.OrdinalIgnoreCase))
                 {
@@ -462,7 +462,7 @@ public class FFFClientService : IAsyncDisposable
                 }
             }
             
-            GameConsole.Log($"[FFFClient] ParseRanking result: Rank={rank}, DisplayName={displayName}, IsCorrect={isCorrect}, TimeElapsed={timeElapsed}");
+            GameConsole.Debug($"[FFFClient] ParseRanking result: Rank={rank}, DisplayName={displayName}, IsCorrect={isCorrect}, TimeElapsed={timeElapsed}");
             
             return new RankingResult
             {
@@ -495,11 +495,11 @@ public class FFFClientService : IAsyncDisposable
         // Handle JsonElement array from SignalR
         if (data is JsonElement jsonElement)
         {
-            GameConsole.Log($"[FFFClient] ParseRankings: JsonElement ValueKind={jsonElement.ValueKind}");
+            GameConsole.Debug($"[FFFClient] ParseRankings: JsonElement ValueKind={jsonElement.ValueKind}");
             
             if (jsonElement.ValueKind == JsonValueKind.Array)
             {
-                GameConsole.Log($"[FFFClient] ParseRankings: JsonElement array with {jsonElement.GetArrayLength()} items");
+                GameConsole.Debug($"[FFFClient] ParseRankings: JsonElement array with {jsonElement.GetArrayLength()} items");
                 foreach (var item in jsonElement.EnumerateArray())
                 {
                     try
@@ -508,20 +508,20 @@ public class FFFClientService : IAsyncDisposable
                     }
                     catch (Exception ex)
                     {
-                        GameConsole.Log($"[FFFClient] Error parsing ranking item: {ex.Message}");
+                        GameConsole.Error($"[FFFClient] Error parsing ranking item: {ex.Message}");
                     }
                 }
             }
             else
             {
-                GameConsole.Log($"[FFFClient] ParseRankings: Not an array, trying to parse as single item");
+                GameConsole.Debug($"[FFFClient] ParseRankings: Not an array, trying to parse as single item");
                 try
                 {
                     result.Add(ParseRanking(jsonElement));
                 }
                 catch (Exception ex)
                 {
-                    GameConsole.Log($"[FFFClient] Error parsing single ranking: {ex.Message}");
+                    GameConsole.Error($"[FFFClient] Error parsing single ranking: {ex.Message}");
                 }
             }
         }
