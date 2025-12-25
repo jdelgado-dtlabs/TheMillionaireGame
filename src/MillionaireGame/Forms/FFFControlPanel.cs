@@ -1051,9 +1051,6 @@ public partial class FFFControlPanel : UserControl
             
             // TODO Phase 4: Display winner celebration on TV
             
-            GameConsole.Log("[FFF] Playing FFFWinner...");
-            _soundService.PlaySound(SoundEffect.FFFWinner);
-            
             // Update UI immediately
             _currentState = FFFFlowState.WinnerAnnounced;
             UpdateUIState();
@@ -1063,13 +1060,15 @@ public partial class FFFControlPanel : UserControl
             {
                 try
                 {
-                    await Task.Delay(3000); // Wait for FFFWinner to finish
+                    GameConsole.Log("[FFF] Playing FFFWinner...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFWinner);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
                     {
                         GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
+                        await _soundService.PlaySoundAsync(SoundEffect.FFFWalkDown);
+                        GameConsole.Log("[FFF] FFFWalkDown finished");
                     }
                     
                     GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
@@ -1091,9 +1090,6 @@ public partial class FFFControlPanel : UserControl
             
             GameConsole.Log($"[FFF] Winner: {winner.DisplayName} ({winner.TimeElapsed / 1000.0:F2}s) - {correctAnswers.Count} correct answers");
             
-            GameConsole.Log("[FFF] Playing FFFWinner...");
-            _soundService.PlaySound(SoundEffect.FFFWinner);
-            
             // Update UI immediately
             _currentState = FFFFlowState.WinnerAnnounced;
             UpdateUIState();
@@ -1103,13 +1099,15 @@ public partial class FFFControlPanel : UserControl
             {
                 try
                 {
-                    await Task.Delay(3000); // Wait for FFFWinner to finish
+                    GameConsole.Log("[FFF] Playing FFFWinner...");
+                    await _soundService.PlaySoundAsync(SoundEffect.FFFWinner);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
                     {
                         GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
+                        await _soundService.PlaySoundAsync(SoundEffect.FFFWalkDown);
+                        GameConsole.Log("[FFF] FFFWalkDown finished");
                     }
                     
                     GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
