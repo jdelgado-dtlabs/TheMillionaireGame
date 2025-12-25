@@ -16,17 +16,29 @@ namespace MillionaireGame.Services;
 public class EffectsChannel : IDisposable
 {
     private readonly EffectsMixerSource _mixerSource;
+    private readonly AudioCueQueue _cueQueue;
     private readonly object _lock = new();
     private readonly SilenceDetectionSettings _silenceSettings;
+    private readonly CrossfadeSettings _crossfadeSettings;
     private bool _disposed = false;
     private float _volume = 1.0f;
 
-    public EffectsChannel(SilenceDetectionSettings? silenceSettings = null)
+    public EffectsChannel(SilenceDetectionSettings? silenceSettings = null, CrossfadeSettings? crossfadeSettings = null)
     {
         // Create a standard wave format (44.1kHz, 16-bit, stereo)
         var waveFormat = new WaveFormat(44100, 16, 2);
         _mixerSource = new EffectsMixerSource(waveFormat);
         _silenceSettings = silenceSettings ?? new SilenceDetectionSettings();
+        _crossfadeSettings = crossfadeSettings ?? new CrossfadeSettings();
+        
+        // Initialize audio cue queue with configured settings
+        // AudioCueQueue needs ISampleSource format (44.1kHz, 32-bit float, stereo)
+        var sampleFormat = new CSCore.WaveFormat(44100, 32, 2, AudioEncoding.IeeeFloat);
+        _cueQueue = new AudioCueQueue(
+            sampleFormat,
+            _crossfadeSettings.CrossfadeDurationMs,
+            _crossfadeSettings.QueueLimit
+        );
     }
 
     /// <summary>
@@ -222,6 +234,75 @@ public class EffectsChannel : IDisposable
     }
 
     /// <summary>
+    /// Queue an audio file for sequential playback with automatic crossfading
+    /// </summary>
+    /// <param name="filePath">Path to the audio file</param>
+    /// <param name="priority">Priority level (Normal or Immediate)</param>
+    /// <returns>True if queued successfully, false if queue is full</returns>
+    public bool QueueEffect(string filePath, AudioPriority priority = AudioPriority.Normal)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            if (Program.DebugMode)
+            {
+                GameConsole.Warn("[EffectsChannel] QueueEffect called with null/empty path");
+            }
+            return false;
+        }
+
+        if (!File.Exists(filePath))
+        {
+            if (Program.DebugMode)
+            {
+                GameConsole.Error($"[EffectsChannel] File not found for queue: {filePath}");
+            }
+            return false;
+        }
+
+        return _cueQueue.QueueAudio(filePath, priority);
+    }
+
+    /// <summary>
+    /// Clear all queued audio (does not stop current playback)
+    /// </summary>
+    public void ClearQueue()
+    {
+        _cueQueue.ClearQueue();
+    }
+
+    /// <summary>
+    /// Stop the queue and clear all queued audio
+    /// </summary>
+    public void StopQueue()
+    {
+        _cueQueue.Stop();
+    }
+
+    /// <summary>
+    /// Get the number of sounds currently in the queue
+    /// </summary>
+    public int GetQueueCount()
+    {
+        return _cueQueue.QueueCount;
+    }
+
+    /// <summary>
+    /// Check if the queue is currently playing audio
+    /// </summary>
+    public bool IsQueuePlaying()
+    {
+        return _cueQueue.IsPlaying;
+    }
+
+    /// <summary>
+    /// Check if a crossfade is currently in progress
+    /// </summary>
+    public bool IsQueueCrossfading()
+    {
+        return _cueQueue.IsCrossfading;
+    }
+
+    /// <summary>
     /// Dispose of all resources
     /// </summary>
     public void Dispose()
@@ -231,6 +312,7 @@ public class EffectsChannel : IDisposable
         lock (_lock)
         {
             _disposed = true;
+            _cueQueue?.Dispose();
             _mixerSource?.Dispose();
         }
 
