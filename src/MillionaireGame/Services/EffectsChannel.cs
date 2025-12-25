@@ -3,6 +3,7 @@ using CSCore.Codecs;
 using CSCore.Codecs.MP3;
 using CSCore.MediaFoundation;
 using CSCore.Streams.SampleConverter;
+using MillionaireGame.Core.Settings;
 using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Services;
@@ -16,14 +17,16 @@ public class EffectsChannel : IDisposable
 {
     private readonly EffectsMixerSource _mixerSource;
     private readonly object _lock = new();
+    private readonly SilenceDetectionSettings _silenceSettings;
     private bool _disposed = false;
     private float _volume = 1.0f;
 
-    public EffectsChannel()
+    public EffectsChannel(SilenceDetectionSettings? silenceSettings = null)
     {
         // Create a standard wave format (44.1kHz, 16-bit, stereo)
         var waveFormat = new WaveFormat(44100, 16, 2);
         _mixerSource = new EffectsMixerSource(waveFormat);
+        _silenceSettings = silenceSettings ?? new SilenceDetectionSettings();
     }
 
     /// <summary>
@@ -105,6 +108,28 @@ public class EffectsChannel : IDisposable
                 GameConsole.Debug($"[EffectsChannel] Codec CanSeek: {waveSource.CanSeek}, Position: {waveSource.Position}");
             }
             var sampleSource = waveSource.ToSampleSource();
+            
+            // Wrap with silence detector if enabled for effects
+            if (_silenceSettings.Enabled && _silenceSettings.ApplyToEffects)
+            {
+                var silenceDetector = new SilenceDetectorSource(
+                    sampleSource,
+                    _silenceSettings.ThresholdDb,
+                    _silenceSettings.SilenceDurationMs,
+                    _silenceSettings.FadeoutDurationMs
+                );
+                
+                // Log when silence is detected
+                silenceDetector.SilenceDetected += (s, e) =>
+                {
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Info($"[EffectsChannel] Effect '{id}' auto-completed via silence detection");
+                    }
+                };
+                
+                sampleSource = silenceDetector;
+            }
             
             // Apply volume
             var volumeSource = new VolumeSource(sampleSource);
