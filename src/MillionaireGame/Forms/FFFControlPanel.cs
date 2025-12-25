@@ -1054,7 +1054,11 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
             
-            // Play sounds sequentially in background
+            // Update UI immediately
+            _currentState = FFFFlowState.WinnerAnnounced;
+            UpdateUIState();
+            
+            // Play sounds sequentially in background - don't block on UI updates
             Task.Run(async () =>
             {
                 try
@@ -1068,32 +1072,7 @@ public partial class FFFControlPanel : UserControl
                         _soundService.PlaySound(SoundEffect.FFFWalkDown);
                     }
                     
-                    // Update UI state on UI thread - check if control still exists
-                    if (!IsDisposed && IsHandleCreated)
-                    {
-                        if (InvokeRequired)
-                        {
-                            Invoke(() =>
-                            {
-                                if (!IsDisposed)
-                                {
-                                    _currentState = FFFFlowState.WinnerAnnounced;
-                                    UpdateUIState();
-                                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
-                                }
-                            });
-                        }
-                        else
-                        {
-                            _currentState = FFFFlowState.WinnerAnnounced;
-                            UpdateUIState();
-                            GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
-                        }
-                    }
-                    else
-                    {
-                        GameConsole.Log("[FFF] Control disposed before completing winner announcement");
-                    }
+                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
                 }
                 catch (Exception ex)
                 {
@@ -1115,7 +1094,11 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Log("[FFF] Playing FFFWinner...");
             _soundService.PlaySound(SoundEffect.FFFWinner);
             
-            // Play sounds sequentially in background
+            // Update UI immediately
+            _currentState = FFFFlowState.WinnerAnnounced;
+            UpdateUIState();
+            
+            // Play sounds sequentially in background - don't block on UI updates
             Task.Run(async () =>
             {
                 try
@@ -1129,32 +1112,7 @@ public partial class FFFControlPanel : UserControl
                         _soundService.PlaySound(SoundEffect.FFFWalkDown);
                     }
                     
-                    // Update UI state on UI thread - check if control still exists
-                    if (!IsDisposed && IsHandleCreated)
-                    {
-                        if (InvokeRequired)
-                        {
-                            Invoke(() =>
-                            {
-                                if (!IsDisposed)
-                                {
-                                    _currentState = FFFFlowState.WinnerAnnounced;
-                                    UpdateUIState();
-                                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
-                                }
-                            });
-                        }
-                        else
-                        {
-                            _currentState = FFFFlowState.WinnerAnnounced;
-                            UpdateUIState();
-                            GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
-                        }
-                    }
-                    else
-                    {
-                        GameConsole.Log("[FFF] Control disposed before completing winner announcement");
-                    }
+                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
                 }
                 catch (Exception ex)
                 {
