@@ -1,12 +1,246 @@
-# Development Checkpoint - v0.7.2-2512
-**Date**: December 25, 2025 12:30 PM  
-**Version**: 0.7.2-2512 (Audio System FULLY OPERATIONAL)  
-**Branch**: master-csharp  
+# Development Checkpoint - v0.7.3-2512
+**Date**: December 25, 2025 2:45 PM  
+**Version**: 0.7.3-2512 (Audio System COMPLETE - DSP Planning READY)  
+**Branch**: feature/cscore-sound-system  
 **Author**: jdelgado-dtlabs
 
 ---
 
-## 🎉 MILESTONE: Audio System Fully Working
+## 📋 NEXT SESSION START HERE
+
+### What to Do When You Return
+
+**CURRENT STATE**: Audio system is **100% operational**. All planning documents complete for next phase.
+
+**READY TO START**: DSP Implementation Phase 1 - Core Infrastructure
+
+#### Quick Start Checklist
+1. ✅ Read [DSP_IMPLEMENTATION_PLAN.md](docs/active/DSP_IMPLEMENTATION_PLAN.md) (comprehensive 50-69 hour plan)
+2. ✅ Read [SILENCE_DETECTION_PROPOSAL.md](docs/active/SILENCE_DETECTION_PROPOSAL.md) (technical details)
+3. ✅ Verify you're on branch: `feature/cscore-sound-system`
+4. ✅ Create new branch (optional): `feature/dsp-implementation`
+5. 🚀 Start Phase 1: Create `SilenceDetectorSource.cs`
+
+#### Implementation Order (Phase 1 - First Session)
+
+**Task 1: Create `SilenceDetectorSource.cs`** (3 hours)
+- **Location**: `src/MillionaireGame/Services/SilenceDetectorSource.cs`
+- **Purpose**: ISampleSource wrapper that detects silence and applies fadeout
+- **Key Features**:
+  - Monitors amplitude during Read()
+  - Detects threshold crossing (e.g., -60dB)
+  - Requires sustained silence (e.g., 100ms)
+  - **Applies automatic fadeout** (20ms default) to prevent DC pops
+  - Fires `SilenceDetected` event
+  - Returns 0 after fadeout completes
+- **Reference**: See Pattern 1 in DSP_IMPLEMENTATION_PLAN.md lines 175-227
+- **Testing**: Create test audio with 1s content + 1s silence, verify detection
+
+**Task 2: Create `AudioCueQueue.cs`** (4 hours)
+- **Location**: `src/MillionaireGame/Services/AudioCueQueue.cs`
+- **Purpose**: Queue manager for sequential audio with automatic crossfading
+- **Key Features**:
+  - FIFO queue for normal priority
+  - Immediate interrupt for high priority
+  - **Automatic crossfade** between queued sounds (200ms default)
+  - Configurable crossfade duration
+  - Queue limit enforcement (10 default)
+  - Preview: count + estimated time
+- **Reference**: See Pattern 3 in DSP_IMPLEMENTATION_PLAN.md lines 267-375
+- **Testing**: Queue 3 sounds, verify seamless transitions, no gaps
+
+**Task 3: Create Settings Classes** (1 hour)
+- **Location**: `src/MillionaireGame.Core/Settings/SilenceDetectionSettings.cs`
+- **Location**: `src/MillionaireGame.Core/Settings/CrossfadeSettings.cs`
+- **Reference**: See Phase 3 in DSP_IMPLEMENTATION_PLAN.md lines 495-520
+- **Contents**:
+  ```csharp
+  public class SilenceDetectionSettings
+  {
+      public bool Enabled { get; set; } = true;
+      public float ThresholdDb { get; set; } = -60f;
+      public int SilenceDurationMs { get; set; } = 100;
+      public int FadeoutDurationMs { get; set; } = 20;
+      public bool ApplyToMusic { get; set; } = false;
+      public bool ApplyToEffects { get; set; } = true;
+  }
+  
+  public class CrossfadeSettings
+  {
+      public bool Enabled { get; set; } = true;
+      public int CrossfadeDurationMs { get; set; } = 200;
+      public int QueueLimit { get; set; } = 10;
+      public bool AutoCrossfade { get; set; } = true;
+  }
+  ```
+
+#### Why These Features?
+
+**Silence Detection with Fadeout:**
+- ❌ **Problem**: Audio files have long silent tails (1-2 seconds of dead air)
+- ✅ **Solution**: Auto-detect silence, stop early with smooth fadeout
+- 💡 **Benefit**: Faster audio response, no DC pops/clicks, professional sound
+
+**Audio Cue Queue with Crossfading:**
+- ❌ **Problem**: Manual timing code required between sequential sounds, causes gaps
+- ✅ **Solution**: Queue sounds, automatic crossfade transitions
+- 💡 **Benefit**: No timing bugs, seamless audio, simplified game logic
+
+**Example Before/After:**
+```csharp
+// ❌ OLD: Manual timing, prone to gaps and timing bugs
+PlaySound("reveal_a");
+await Task.Delay(3200);  // Hope this is right!
+PlaySound("reveal_b");
+await Task.Delay(2800);
+PlaySound("reveal_c");
+
+// ✅ NEW: Just queue, system handles everything
+QueueSound("reveal_a");
+QueueSound("reveal_b");
+QueueSound("reveal_c");
+// Automatic crossfades, no gaps, no code!
+```
+
+#### Key Files to Reference
+
+1. **[DSP_IMPLEMENTATION_PLAN.md](docs/active/DSP_IMPLEMENTATION_PLAN.md)**
+   - Complete 50-69 hour implementation plan
+   - Architecture diagrams
+   - Code patterns for all classes
+   - UI mockups
+   - Testing checklist
+   - **Lines 175-227**: SilenceDetectorSource pattern with fadeout
+   - **Lines 267-375**: AudioCueQueue pattern with crossfading
+
+2. **[SILENCE_DETECTION_PROPOSAL.md](docs/active/SILENCE_DETECTION_PROPOSAL.md)**
+   - Detailed technical design for silence detection
+   - Amplitude threshold calculations (dB to linear)
+   - Sustained silence algorithm
+   - Fadeout implementation details
+   - Testing strategy
+   - Performance considerations
+
+3. **Current Working Files** (for reference):
+   - `src/MillionaireGame/Services/EffectsChannel.cs` - where to integrate SilenceDetector & Queue
+   - `src/MillionaireGame/Services/MusicChannel.cs` - where to integrate SilenceDetector
+   - `src/MillionaireGame/Services/SoundService.cs` - public API for queue methods
+   - `src/MillionaireGame.Core/Settings/ApplicationSettings.cs` - add new settings
+
+#### Integration Notes
+
+**SilenceDetectorSource Integration:**
+```csharp
+// In EffectsChannel.PlayEffect():
+ISampleSource waveSource = new MediaFoundationDecoder(filePath).ToSampleSource();
+
+// Wrap with silence detector FIRST (if enabled)
+if (_silenceDetectionSettings.Enabled)
+{
+    var detector = new SilenceDetectorSource(
+        waveSource,
+        _silenceDetectionSettings.ThresholdDb,
+        _silenceDetectionSettings.SilenceDurationMs,
+        _silenceDetectionSettings.FadeoutDurationMs  // NEW - prevents pops
+    );
+    detector.SilenceDetected += (s, e) => GameConsole.WriteLine("Silence detected!");
+    waveSource = detector;
+}
+
+// Then DSP (future), then volume, then fadeout...
+```
+
+**AudioCueQueue Integration:**
+```csharp
+// In EffectsChannel (new field):
+private AudioCueQueue _cueQueue;
+
+// New method:
+public void QueueEffect(string filePath, AudioPriority priority = AudioPriority.Normal)
+{
+    _cueQueue.QueueAudio(filePath, priority);
+}
+
+// Modify GetOutputStream() to return _cueQueue as ISampleSource
+```
+
+#### Timeline & Estimates
+
+**Phase 1: Core Infrastructure** - 14-19 hours
+- SilenceDetectorSource (with fadeout): 3 hours ← START HERE
+- AudioCueQueue (with crossfading): 4 hours ← THEN THIS
+- Equalizer class: 3 hours (defer to later session)
+- Compressor class: 4 hours (defer to later session)
+- Limiter class: 3 hours (defer to later session)
+- DSPProcessor wrapper: 2 hours (defer to later session)
+- Testing: 2 hours
+
+**Recommended First Session Goal:**
+- Complete SilenceDetectorSource: 3 hours
+- Complete AudioCueQueue: 4 hours
+- Create settings classes: 1 hour
+- Basic integration testing: 1 hour
+- **Total: 9 hours** (full day session)
+
+#### Success Criteria (First Session)
+
+- ✅ SilenceDetectorSource.cs compiles without errors
+- ✅ AudioCueQueue.cs compiles without errors
+- ✅ Settings classes created
+- ✅ Basic unit tests pass (silence detection triggers correctly)
+- ✅ Basic queue test passes (2 sounds crossfade seamlessly)
+- ✅ Debug logging shows fadeout applying correctly
+- ✅ No DC pops/clicks when audio stops
+
+#### Potential Issues & Solutions
+
+**Issue 1: Fadeout too long/short**
+- Adjust `FadeoutDurationMs` (try 10ms, 20ms, 50ms)
+- Listen for clicks (too short) or abrupt stops (too long)
+- 20ms is good default
+
+**Issue 2: Silence detection triggers too early**
+- Raise threshold (try -50dB instead of -60dB)
+- Increase silence duration (try 200ms instead of 100ms)
+
+**Issue 3: Crossfade sounds weird**
+- Check equal-power crossfade vs linear
+- Try different crossfade durations (100-500ms)
+- Verify both sources reading correctly
+
+**Issue 4: Queue not clearing**
+- Verify completion detection (Read() returns 0)
+- Check for circular references
+- Add debug logging for queue state
+
+#### Build & Test Commands
+
+```powershell
+# Build solution
+cd "C:\Users\djtam\OneDrive\Documents\Coding\Project\Millionaire\TheMillionaireGame"
+dotnet build src/TheMillionaireGame.sln
+
+# Run application
+cd src/MillionaireGame
+dotnet run
+
+# Or use compiled exe:
+cd bin/Debug/net8.0
+Start-Process .\MillionaireGame.exe
+```
+
+#### Debug Logging
+
+Enable debug mode to see all audio processing logs:
+- SoundService: "Creating SilenceDetectorSource..."
+- SilenceDetectorSource: "Silence detected after X samples"
+- SilenceDetectorSource: "Applying fadeout over X samples"
+- AudioCueQueue: "Queued sound: X, queue size: Y"
+- AudioCueQueue: "Starting crossfade from X to Y"
+
+---
+
+## 🎉 MILESTONE: Audio System Fully Working (COMPLETED)
 
 ### Completed - December 25, 2025 12:30 PM
 
