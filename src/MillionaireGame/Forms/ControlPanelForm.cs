@@ -2836,7 +2836,7 @@ public partial class ControlPanelForm : Form
         }
         
         // Play without loop and store the identifier for later stopping
-        _currentFinalAnswerKey = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
+        _currentFinalAnswerKey = _soundService.PlaySoundByKey(soundKey, loop: false);
     }
 
     private void PlayLoseSound(int? questionNumber = null)
@@ -3023,7 +3023,7 @@ public partial class ControlPanelForm : Form
         }
         
         // Play without loop and store the identifier for later stopping
-        _currentLightsDownIdentifier = _soundService.PlaySoundByKeyWithIdentifier(soundKey, loop: false);
+        _currentLightsDownIdentifier = _soundService.PlaySoundByKey(soundKey, loop: false);
     }
     
     private async void ProcessNormalReveal(bool isCorrect)
