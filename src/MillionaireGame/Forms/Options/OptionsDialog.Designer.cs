@@ -102,7 +102,10 @@ namespace MillionaireGame.Forms.Options
             lblTotalLifelines = new Label();
             tabSounds = new TabPage();
             grpSoundPack = new GroupBox();
-            lstSoundPackInfo = new ListBox();
+            dgvSoundPackInfo = new DataGridView();
+            txtSearchSounds = new TextBox();
+            lblSearchSounds = new Label();
+            btnPlaySelected = new Button();
             btnExportExample = new Button();
             btnRemovePack = new Button();
             btnImportPack = new Button();
@@ -125,6 +128,7 @@ namespace MillionaireGame.Forms.Options
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
             grpSoundPack.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvSoundPackInfo).BeginInit();
             tabAudience.SuspendLayout();
             grpAudienceServer.SuspendLayout();
             SuspendLayout();
@@ -618,17 +622,30 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpSoundPack
             // 
-            grpSoundPack.Controls.Add(lstSoundPackInfo);
+            grpSoundPack.Controls.Add(btnPlaySelected);
+            grpSoundPack.Controls.Add(lblSearchSounds);
+            grpSoundPack.Controls.Add(txtSearchSounds);
+            grpSoundPack.Controls.Add(dgvSoundPackInfo);
             grpSoundPack.Controls.Add(btnExportExample);
             grpSoundPack.Controls.Add(btnRemovePack);
             grpSoundPack.Controls.Add(btnImportPack);
             grpSoundPack.Controls.Add(cmbSoundPack);
+            grpSoundPack.Controls.Add(lblSoundPack);
             grpSoundPack.Location = new Point(16, 16);
             grpSoundPack.Name = "grpSoundPack";
             grpSoundPack.Size = new Size(620, 420);
             grpSoundPack.TabIndex = 0;
             grpSoundPack.TabStop = false;
             grpSoundPack.Text = "Sound Pack";
+            // 
+            // lblSoundPack
+            // 
+            lblSoundPack.AutoSize = true;
+            lblSoundPack.Location = new Point(16, 28);
+            lblSoundPack.Name = "lblSoundPack";
+            lblSoundPack.Size = new Size(70, 15);
+            lblSoundPack.TabIndex = 0;
+            lblSoundPack.Text = "Sound Pack:";
             // 
             // cmbSoundPack
             // 
@@ -637,10 +654,8 @@ namespace MillionaireGame.Forms.Options
             cmbSoundPack.Location = new Point(90, 25);
             cmbSoundPack.Name = "cmbSoundPack";
             cmbSoundPack.Size = new Size(200, 23);
-            cmbSoundPack.TabIndex = 0;
+            cmbSoundPack.TabIndex = 1;
             cmbSoundPack.SelectedIndexChanged += cmbSoundPack_SelectedIndexChanged;
-            // 
-            // 
             // 
             // btnImportPack
             // 
@@ -672,15 +687,50 @@ namespace MillionaireGame.Forms.Options
             btnExportExample.UseVisualStyleBackColor = true;
             btnExportExample.Click += btnExportExample_Click;
             // 
-            // lstSoundPackInfo
+            // lblSearchSounds
             // 
-            lstSoundPackInfo.FormattingEnabled = true;
-            lstSoundPackInfo.IntegralHeight = false;
-            lstSoundPackInfo.Location = new Point(16, 60);
-            lstSoundPackInfo.Name = "lstSoundPackInfo";
-            lstSoundPackInfo.SelectionMode = SelectionMode.None;
-            lstSoundPackInfo.Size = new Size(588, 345);
-            lstSoundPackInfo.TabIndex = 5;
+            lblSearchSounds.AutoSize = true;
+            lblSearchSounds.Location = new Point(16, 63);
+            lblSearchSounds.Name = "lblSearchSounds";
+            lblSearchSounds.Size = new Size(45, 15);
+            lblSearchSounds.TabIndex = 5;
+            lblSearchSounds.Text = "Search:";
+            // 
+            // txtSearchSounds
+            // 
+            txtSearchSounds.Location = new Point(70, 60);
+            txtSearchSounds.Name = "txtSearchSounds";
+            txtSearchSounds.PlaceholderText = "Filter by key or filename...";
+            txtSearchSounds.Size = new Size(400, 23);
+            txtSearchSounds.TabIndex = 6;
+            txtSearchSounds.TextChanged += txtSearchSounds_TextChanged;
+            // 
+            // btnPlaySelected
+            // 
+            btnPlaySelected.Location = new Point(480, 59);
+            btnPlaySelected.Name = "btnPlaySelected";
+            btnPlaySelected.Size = new Size(124, 25);
+            btnPlaySelected.TabIndex = 7;
+            btnPlaySelected.Text = "▶ Play Selected";
+            btnPlaySelected.UseVisualStyleBackColor = true;
+            btnPlaySelected.Click += btnPlaySelected_Click;
+            // 
+            // dgvSoundPackInfo
+            // 
+            dgvSoundPackInfo.AllowUserToAddRows = false;
+            dgvSoundPackInfo.AllowUserToDeleteRows = false;
+            dgvSoundPackInfo.AllowUserToResizeRows = false;
+            dgvSoundPackInfo.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvSoundPackInfo.BackgroundColor = System.Drawing.SystemColors.Window;
+            dgvSoundPackInfo.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvSoundPackInfo.Location = new Point(16, 95);
+            dgvSoundPackInfo.MultiSelect = false;
+            dgvSoundPackInfo.Name = "dgvSoundPackInfo";
+            dgvSoundPackInfo.ReadOnly = true;
+            dgvSoundPackInfo.RowHeadersVisible = false;
+            dgvSoundPackInfo.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvSoundPackInfo.Size = new Size(588, 310);
+            dgvSoundPackInfo.TabIndex = 8;
             // 
             // tabAudience
             // 
@@ -973,7 +1023,10 @@ namespace MillionaireGame.Forms.Options
         private Button btnImportPack;
         private Button btnRemovePack;
         private Button btnExportExample;
-        private ListBox lstSoundPackInfo;
+        private DataGridView dgvSoundPackInfo;
+        private TextBox txtSearchSounds;
+        private Label lblSearchSounds;
+        private Button btnPlaySelected;
         private GroupBox grpConsole;
         private CheckBox chkShowConsole;
         private CheckBox chkShowWebServiceConsole;
