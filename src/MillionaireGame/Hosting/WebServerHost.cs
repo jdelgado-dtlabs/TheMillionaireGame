@@ -125,6 +125,11 @@ public class WebServerHost : IDisposable
 
             await _host.StartAsync();
 
+            // Wait a moment for the server to fully initialize and start accepting requests
+            // This prevents "message channel closed" errors when browsers connect too early
+            await Task.Delay(500);
+            WebServiceConsole.Log("[WebServer] Server ready to accept connections");
+
             ServerStarted?.Invoke(this, _baseUrl);
         }
         catch (Exception ex)
