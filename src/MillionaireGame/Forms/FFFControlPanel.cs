@@ -733,13 +733,9 @@ public partial class FFFControlPanel : UserControl
         UpdateUIState();
         GameConsole.Log("[FFF] Step 2 complete - Ready for Step 3");
         
-        // Play in background with Immediate priority (stops any previous sounds)
-        Task.Run(async () =>
-        {
-            GameConsole.Log("[FFF] Playing FFFReadQuestion...");
-            _soundService.QueueSound(SoundEffect.FFFReadQuestion, AudioPriority.Immediate);
-            GameConsole.Log("[FFF] FFFReadQuestion finished");
-        });
+        // Play with Immediate priority (stops any previous sounds)
+        GameConsole.Log("[FFF] Playing FFFReadQuestion...");
+        _soundService.QueueSound(SoundEffect.FFFReadQuestion, AudioPriority.Immediate);
     }
     
     private async void btnRevealAnswers_Click(object? sender, EventArgs e)
@@ -761,14 +757,13 @@ public partial class FFFControlPanel : UserControl
         _currentState = FFFFlowState.AnswersRevealing;
         UpdateUIState();
         
-        // Play sounds sequentially in background thread - randomize/transmit AFTER cue plays
+        // Play FFFThreeNotes with Immediate priority (stops FFFReadQuestion if still playing)
+        GameConsole.Log("[FFF] Playing FFFThreeNotes...");
+        _soundService.QueueSound(SoundEffect.FFFThreeNotes, AudioPriority.Immediate);
+        
+        // Randomize and transmit question in background after sound plays
         Task.Run(async () =>
         {
-            // Play FFFThreeNotes with Immediate priority (stops FFFReadQuestion if still playing)
-            GameConsole.Log("[FFF] Playing FFFThreeNotes...");
-            _soundService.QueueSound(SoundEffect.FFFThreeNotes, AudioPriority.Immediate);
-            GameConsole.Log("[FFF] FFFThreeNotes finished");
-            
             // NOW randomize answer positions (after cue finishes)
             var answers = new List<string>
             {
@@ -911,46 +906,28 @@ public partial class FFFControlPanel : UserControl
         // Note: FFFReadAnswers continues playing in background during all reveals
         var clickCount = _revealCorrectClickCount; // Capture for async use
         
-        Task.Run(async () =>
+        switch (clickCount)
         {
-            switch (clickCount)
-            {
-                case 1:
-                    GameConsole.Log("[FFF] Playing FFFOrder1...");
-                    _soundService.PlaySound(SoundEffect.FFFOrder1);
-                    break;
-                case 2:
-                    GameConsole.Log("[FFF] Playing FFFOrder2...");
-                    _soundService.PlaySound(SoundEffect.FFFOrder2);
-                    break;
-                case 3:
-                    GameConsole.Log("[FFF] Playing FFFOrder3...");
-                    _soundService.PlaySound(SoundEffect.FFFOrder3);
-                    break;
-                case 4:
-                    GameConsole.Log("[FFF] Playing FFFOrder4...");
-                    _soundService.PlaySound(SoundEffect.FFFOrder4);
-                    
-                    // After final sound, move to next state
-                    if (InvokeRequired)
-                    {
-                        Invoke(() =>
-                        {
-                            // Calculate rankings if not already done
-                            if (_rankings.Count == 0 && _submissions.Count > 0)
-                            {
-                                CalculateRankings();
-                            }
-                            
-                            GameConsole.Log("[FFF] Step 4 complete - Ready for Step 5");
-                            
-                            // Move to winners shown state
-                            _currentState = FFFFlowState.WinnersShown;
-                            _revealCorrectClickCount = 0; // Reset for next round
-                            UpdateUIState();
-                        });
-                    }
-                    else
+            case 1:
+                GameConsole.Log("[FFF] Playing FFFOrder1...");
+                _soundService.PlaySound(SoundEffect.FFFOrder1);
+                break;
+            case 2:
+                GameConsole.Log("[FFF] Playing FFFOrder2...");
+                _soundService.PlaySound(SoundEffect.FFFOrder2);
+                break;
+            case 3:
+                GameConsole.Log("[FFF] Playing FFFOrder3...");
+                _soundService.PlaySound(SoundEffect.FFFOrder3);
+                break;
+            case 4:
+                GameConsole.Log("[FFF] Playing FFFOrder4...");
+                _soundService.PlaySound(SoundEffect.FFFOrder4);
+                
+                // After final sound, move to next state
+                if (InvokeRequired)
+                {
+                    Invoke(() =>
                     {
                         // Calculate rankings if not already done
                         if (_rankings.Count == 0 && _submissions.Count > 0)
@@ -964,10 +941,25 @@ public partial class FFFControlPanel : UserControl
                         _currentState = FFFFlowState.WinnersShown;
                         _revealCorrectClickCount = 0; // Reset for next round
                         UpdateUIState();
+                    });
+                }
+                else
+                {
+                    // Calculate rankings if not already done
+                    if (_rankings.Count == 0 && _submissions.Count > 0)
+                    {
+                        CalculateRankings();
                     }
-                    break;
-            }
-        });
+                    
+                    GameConsole.Log("[FFF] Step 4 complete - Ready for Step 5");
+                    
+                    // Move to winners shown state
+                    _currentState = FFFFlowState.WinnersShown;
+                    _revealCorrectClickCount = 0; // Reset for next round
+                    UpdateUIState();
+                }
+                break;
+        }
     }
     
     private void CalculateRankings()
@@ -1061,30 +1053,25 @@ public partial class FFFControlPanel : UserControl
             _currentState = FFFFlowState.WinnerAnnounced;
             UpdateUIState();
             
-            // Play sounds sequentially in background - don't block on UI updates
-            Task.Run(async () =>
+            // Play winner sounds sequentially
+            try
             {
-                try
+                // Immediate priority stops FFFReadAnswers (playing from Step 3)
+                GameConsole.Log("[FFF] Playing FFFWinner...");
+                _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
+                
+                if (_soundService != null)
                 {
-                    // Immediate priority stops FFFReadAnswers (playing from Step 3)
-                    GameConsole.Log("[FFF] Playing FFFWinner...");
-                    _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
-                    GameConsole.Log("[FFF] FFFWinner finished");
-                    
-                    if (_soundService != null)
-                    {
-                        GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
-                        GameConsole.Log("[FFF] FFFWalkDown finished");
-                    }
-                    
-                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                    GameConsole.Log("[FFF] Playing FFFWalkDown...");
+                    _soundService.PlaySound(SoundEffect.FFFWalkDown);
                 }
-                catch (Exception ex)
-                {
-                    GameConsole.Log($"[FFF] Error in winner announcement: {ex.Message}");
-                }
-            });
+                
+                GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[FFF] Error in winner announcement: {ex.Message}");
+            }
         }
         else
         {
@@ -1101,30 +1088,25 @@ public partial class FFFControlPanel : UserControl
             _currentState = FFFFlowState.WinnerAnnounced;
             UpdateUIState();
             
-            // Play sounds sequentially in background - don't block on UI updates
-            Task.Run(async () =>
+            // Play winner sounds sequentially
+            try
             {
-                try
+                // Immediate priority stops FFFReadAnswers (playing from Step 3)
+                GameConsole.Log("[FFF] Playing FFFWinner...");
+                _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
+                
+                if (_soundService != null)
                 {
-                    // Immediate priority stops FFFReadAnswers (playing from Step 3)
-                    GameConsole.Log("[FFF] Playing FFFWinner...");
-                    _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
-                    GameConsole.Log("[FFF] FFFWinner finished");
-                    
-                    if (_soundService != null)
-                    {
-                        GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
-                        GameConsole.Log("[FFF] FFFWalkDown finished");
-                    }
-                    
-                    GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+                    GameConsole.Log("[FFF] Playing FFFWalkDown...");
+                    _soundService.PlaySound(SoundEffect.FFFWalkDown);
                 }
-                catch (Exception ex)
-                {
-                    GameConsole.Log($"[FFF] Error in winner announcement: {ex.Message}");
-                }
-            });
+                
+                GameConsole.Log("[FFF] Step 6 complete - FFF Round finished");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[FFF] Error in winner announcement: {ex.Message}");
+            }
         }
         
         // TODO: Notify main control panel of winner
