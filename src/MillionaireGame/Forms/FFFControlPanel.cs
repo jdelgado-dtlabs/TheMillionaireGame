@@ -643,13 +643,23 @@ public partial class FFFControlPanel : UserControl
         
         GameConsole.Log("[FFF] Step 1: Intro/Explain started");
         
-        // Play FFFLightsDown, then FFFExplain
+        // Queue FFFLightsDown and FFFExplain for seamless playback
         // TODO Phase 4: Update TV screen with FFF title
         Task.Run(async () =>
         {
-            GameConsole.Log("[FFF] Playing FFFLightsDown...");
-            await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFLightsDown));
-            GameConsole.Log("[FFF] FFFLightsDown finished");
+            GameConsole.Log("[FFF] Queueing FFFLightsDown and FFFExplain...");
+            
+            // Queue both sounds upfront for seamless crossfade
+            _soundService.QueueSound(SoundEffect.FFFLightsDown, AudioPriority.Normal);
+            _soundService.QueueSound(SoundEffect.FFFExplain, AudioPriority.Normal);
+            
+            // Wait for LightsDown to finish (FFFExplain will be queued and waiting)
+            GameConsole.Log("[FFF] Waiting for FFFLightsDown to complete...");
+            while (_soundService.GetTotalSoundCount() > 1)
+            {
+                await Task.Delay(100);
+            }
+            GameConsole.Log("[FFF] FFFLightsDown finished, FFFExplain now playing");
             
             // Move to next state immediately after LightsDown
             if (InvokeRequired)
@@ -668,8 +678,11 @@ public partial class FFFControlPanel : UserControl
                 GameConsole.Log("[FFF] Step 1 complete - Ready for Step 2");
             }
             
-            GameConsole.Log("[FFF] Playing FFFExplain...");
-            await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFExplain));
+            // Wait for FFFExplain to finish
+            while (_soundService.IsQueuePlaying())
+            {
+                await Task.Delay(100);
+            }
             GameConsole.Log("[FFF] FFFExplain finished");
         });
     }
