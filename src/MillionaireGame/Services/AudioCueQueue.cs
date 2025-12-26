@@ -289,6 +289,65 @@ namespace MillionaireGame.Services
         }
 
         /// <summary>
+        /// Skip current sound and crossfade to next queued sound (if available)
+        /// If no next sound, fades out current. Uses normal crossfade duration.
+        /// </summary>
+        public void SkipToNext()
+        {
+            lock (_lock)
+            {
+                if (_currentCue == null)
+                {
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Warn("[AudioCueQueue] SkipToNext: Nothing playing");
+                    }
+                    return;
+                }
+
+                // Check if we have a next sound to skip to
+                bool hasNext = _nextCue != null || _normalQueue.Count > 0;
+
+                if (hasNext)
+                {
+                    // If next cue not prepared, prepare it now
+                    if (_nextCue == null && _normalQueue.Count > 0)
+                    {
+                        _nextCue = _normalQueue.Dequeue();
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Debug($"[AudioCueQueue] Prepared next for skip: {System.IO.Path.GetFileName(_nextCue.FilePath)}");
+                        }
+                    }
+
+                    // Trigger immediate crossfade to next sound (uses configured crossfade duration)
+                    if (_nextCue != null && !_crossfading)
+                    {
+                        _crossfading = true;
+                        _crossfadePosition = 0;
+
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Info(
+                                $"[AudioCueQueue] Skipping: {System.IO.Path.GetFileName(_currentCue.FilePath)} → " +
+                                $"{System.IO.Path.GetFileName(_nextCue.FilePath)}"
+                            );
+                        }
+                    }
+                }
+                else
+                {
+                    // No next sound, just fadeout current (use 50ms for quick skip)
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Info($"[AudioCueQueue] No next sound, fading out current (50ms)");
+                    }
+                    StopWithFadeout(50);
+                }
+            }
+        }
+
+        /// <summary>
         /// Reads audio samples from the queue, handling crossfades automatically
         /// </summary>
         public int Read(float[] buffer, int offset, int count)

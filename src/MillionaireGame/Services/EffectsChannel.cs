@@ -186,6 +186,14 @@ public class EffectsChannel : IDisposable
     }
 
     /// <summary>
+    /// Skip to next queued sound with crossfade
+    /// </summary>
+    public void SkipToNext()
+    {
+        _cueQueue.SkipToNext();
+    }
+
+    /// <summary>
     /// Get the number of sounds currently in the queue (waiting)
     /// </summary>
     public int GetQueueCount()
