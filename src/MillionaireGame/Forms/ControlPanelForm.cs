@@ -1121,8 +1121,13 @@ public partial class ControlPanelForm : Form
             // For Q1-5, wait for lights down sound then load question
             if (questionNumber >= 1 && questionNumber <= 5)
             {
-                // Wait for lights down sound to finish (4 seconds) before loading question
-                await Task.Delay(4000, token);
+                // Wait for lights down sound to finish (monitor queue instead of fixed delay)
+                GameConsole.Debug("[LightsDown] Waiting for lights down sound to finish...");
+                while (_soundService.IsQueuePlaying())
+                {
+                    await Task.Delay(100, token);
+                }
+                GameConsole.Debug("[LightsDown] Lights down sound finished");
                 
                 // Load question after delay - this updates all screens
                 await LoadNewQuestion();
@@ -3029,11 +3034,12 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            GameConsole.Log($"[Sound] Playing lights down sound for Q{questionNumber}: {soundKey}");
+            GameConsole.Log($"[Sound] Queueing lights down sound for Q{questionNumber}: {soundKey}");
         }
         
-        // Play without loop and store the identifier for later stopping
-        _currentLightsDownIdentifier = _soundService.PlaySoundByKey(soundKey, loop: false);
+        // Queue without loop (crossfades with previous sound automatically)
+        _soundService.QueueSoundByKey(soundKey, AudioPriority.Normal);
+        // Note: Can't track individual queued sounds, so identifier not set
     }
     
     private async void ProcessNormalReveal(bool isCorrect)
