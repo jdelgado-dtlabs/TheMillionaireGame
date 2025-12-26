@@ -564,13 +564,8 @@ public partial class ControlPanelForm : Form
 
     private void OnWebServerError(object? sender, Exception ex)
     {
-        if (InvokeRequired)
-        {
-            Invoke(new Action(() => OnWebServerError(sender, ex)));
-            return;
-        }
-        
-        // Log to WebService console
+        // Both WebServiceConsole and GameConsole are thread-safe with internal queuing
+        // No UI thread marshalling needed
         WebServiceConsole.Error($"❌ Error: {ex.Message}");
         GameConsole.Error($"[Web Server] {ex.Message}");
     }
@@ -2080,11 +2075,9 @@ public partial class ControlPanelForm : Form
         // Open FFF Window to manage Fastest Finger First
         if (_fffWindow == null || _fffWindow.IsDisposed)
         {
-            // Always use localhost for the client connection, even if server listens on 0.0.0.0
-            var serverPort = _webServerHost != null && _webServerHost.IsRunning
-                ? new Uri(_webServerHost.BaseUrl).Port
-                : _appSettings.Settings.AudienceServerPort;
-            
+            // Always use localhost for internal connections, regardless of what IP the web server listens on
+            // The web server may listen on 0.0.0.0, 192.168.x.x, etc., but we always connect via localhost
+            var serverPort = _appSettings.Settings.AudienceServerPort;
             var serverUrl = $"http://127.0.0.1:{serverPort}";
             
             // Check if web server is actually running
