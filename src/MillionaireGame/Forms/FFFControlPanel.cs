@@ -738,7 +738,7 @@ public partial class FFFControlPanel : UserControl
         {
             _soundService.StopAllSounds();
             GameConsole.Log("[FFF] Playing FFFReadQuestion...");
-            await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFReadQuestion));
+            _soundService.PlaySound(SoundEffect.FFFReadQuestion);
             GameConsole.Log("[FFF] FFFReadQuestion finished");
         });
     }
@@ -770,7 +770,7 @@ public partial class FFFControlPanel : UserControl
             
             // Play FFFThreeNotes first (the cue sound)
             GameConsole.Log("[FFF] Playing FFFThreeNotes...");
-            await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFThreeNotes));
+            _soundService.PlaySound(SoundEffect.FFFThreeNotes);
             GameConsole.Log("[FFF] FFFThreeNotes finished");
             
             // NOW randomize answer positions (after cue finishes)
@@ -921,19 +921,19 @@ public partial class FFFControlPanel : UserControl
             {
                 case 1:
                     GameConsole.Log("[FFF] Playing FFFOrder1...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFOrder1));
+                    _soundService.PlaySound(SoundEffect.FFFOrder1);
                     break;
                 case 2:
                     GameConsole.Log("[FFF] Playing FFFOrder2...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFOrder2));
+                    _soundService.PlaySound(SoundEffect.FFFOrder2);
                     break;
                 case 3:
                     GameConsole.Log("[FFF] Playing FFFOrder3...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFOrder3));
+                    _soundService.PlaySound(SoundEffect.FFFOrder3);
                     break;
                 case 4:
                     GameConsole.Log("[FFF] Playing FFFOrder4...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFOrder4));
+                    _soundService.PlaySound(SoundEffect.FFFOrder4);
                     
                     // After final sound, move to next state
                     if (InvokeRequired)
@@ -1074,13 +1074,13 @@ public partial class FFFControlPanel : UserControl
                 try
                 {
                     GameConsole.Log("[FFF] Playing FFFWinner...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFWinner));
+                    _soundService.PlaySound(SoundEffect.FFFWinner);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
                     {
                         GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFWalkDown));
+                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
                         GameConsole.Log("[FFF] FFFWalkDown finished");
                     }
                     
@@ -1113,13 +1113,13 @@ public partial class FFFControlPanel : UserControl
                 try
                 {
                     GameConsole.Log("[FFF] Playing FFFWinner...");
-                    await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFWinner));
+                    _soundService.PlaySound(SoundEffect.FFFWinner);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
                     {
                         GameConsole.Log("[FFF] Playing FFFWalkDown...");
-                        await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFWalkDown));
+                        _soundService.PlaySound(SoundEffect.FFFWalkDown);
                         GameConsole.Log("[FFF] FFFWalkDown finished");
                     }
                     
