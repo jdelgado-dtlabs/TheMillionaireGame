@@ -42,6 +42,11 @@ namespace MillionaireGame.Services
         private int _silenceSampleCount = 0;
         private int _silenceDurationSamples = 0;
         private float _silenceThresholdAmplitude = 0f;
+        
+        // Manual fadeout state
+        private bool _fadingOut = false;
+        private int _fadeoutPosition = 0;
+        private int _fadeoutDurationSamples = 0;
 
         /// <summary>
         /// Gets the number of sounds currently queued (waiting)
@@ -231,7 +236,7 @@ namespace MillionaireGame.Services
         }
 
         /// <summary>
-        /// Stops all playback and clears the queue
+        /// Stops all playback and clears the queue (abrupt stop)
         /// </summary>
         public void Stop()
         {
@@ -239,11 +244,46 @@ namespace MillionaireGame.Services
             {
                 _currentCue?.Dispose();
                 _currentCue = null;
+                _fadingOut = false;
+                _fadeoutPosition = 0;
                 ClearQueueInternal(); // Use internal version to avoid nested lock
 
                 if (Program.DebugMode)
                 {
-                    GameConsole.Warn("[AudioCueQueue] Stopped");
+                    GameConsole.Warn("[AudioCueQueue] Stopped (abrupt)");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fades out current audio and clears queue (smooth stop)
+        /// </summary>
+        /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 200ms, minimum: 10ms)</param>
+        public void StopWithFadeout(int fadeoutDurationMs = 200)
+        {
+            lock (_lock)
+            {
+                if (_currentCue == null)
+                {
+                    // Nothing playing, just clear queue
+                    ClearQueueInternal();
+                    return;
+                }
+
+                // Ensure minimum fadeout duration to avoid division by zero
+                fadeoutDurationMs = Math.Max(10, fadeoutDurationMs);
+
+                // Trigger manual fadeout
+                _fadingOut = true;
+                _fadeoutPosition = 0;
+                _fadeoutDurationSamples = (int)(fadeoutDurationMs * _waveFormat.SampleRate / 1000.0);
+                
+                // Clear queue so nothing plays after fadeout
+                ClearQueueInternal();
+
+                if (Program.DebugMode)
+                {
+                    GameConsole.Info($"[AudioCueQueue] Fading out to silence ({fadeoutDurationMs}ms)...");
                 }
             }
         }
@@ -264,7 +304,7 @@ namespace MillionaireGame.Services
                 }
 
             // Handle crossfading between current and next cue
-            if (_crossfading && _nextCue != null)
+            if (_crossfading && _nextCue != null && _currentCue != null)
             {
                 float[] currentBuffer = new float[count];
                 float[] nextBuffer = new float[count];
@@ -331,6 +371,42 @@ namespace MillionaireGame.Services
             {
                 // Normal playback from current cue
                 int read = _currentCue.Source.Read(buffer, offset, count);
+
+                // Handle manual fadeout (only if not crossfading)
+                if (_fadingOut && read > 0 && _fadeoutDurationSamples > 0)
+                {
+                    for (int i = 0; i < read; i++)
+                    {
+                        if (_fadeoutPosition < _fadeoutDurationSamples)
+                        {
+                            // Linear fadeout from 1.0 to 0.0
+                            float fadeGain = 1.0f - ((float)_fadeoutPosition / _fadeoutDurationSamples);
+                            buffer[offset + i] *= fadeGain;
+                            _fadeoutPosition++;
+                        }
+                        else
+                        {
+                            // Fadeout complete, fill rest with silence
+                            buffer[offset + i] = 0f;
+                        }
+                    }
+
+                    // If fadeout complete, stop playback
+                    if (_fadeoutPosition >= _fadeoutDurationSamples)
+                    {
+                        _currentCue?.Dispose();
+                        _currentCue = null;
+                        _fadingOut = false;
+                        _fadeoutPosition = 0;
+
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Info("[AudioCueQueue] Fadeout complete, stopped");
+                        }
+                    }
+
+                    return read;
+                }
 
                 // Monitor amplitude for silence detection (if enabled and not crossfading)
                 if (read > 0 && _silenceSettings != null && _silenceSettings.Enabled && !_crossfading)

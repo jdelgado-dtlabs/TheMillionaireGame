@@ -169,11 +169,20 @@ public class EffectsChannel : IDisposable
     }
 
     /// <summary>
-    /// Stop the queue and clear all queued audio
+    /// Stop the queue and clear all queued audio (abrupt stop)
     /// </summary>
     public void StopQueue()
     {
         _cueQueue.Stop();
+    }
+
+    /// <summary>
+    /// Fade out current audio and clear queue (smooth stop)
+    /// </summary>
+    /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 200ms)</param>
+    public void StopQueueWithFadeout(int fadeoutDurationMs = 200)
+    {
+        _cueQueue.StopWithFadeout(fadeoutDurationMs);
     }
 
     /// <summary>
