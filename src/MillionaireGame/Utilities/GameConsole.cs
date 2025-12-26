@@ -1,4 +1,5 @@
 using MillionaireGame.Forms;
+using System.Collections.Concurrent;
 
 namespace MillionaireGame.Utilities;
 
@@ -14,17 +15,63 @@ public enum LogLevel
 }
 
 /// <summary>
-/// Manages a separate window for game logging
+/// Manages a separate window for game logging with async background processing
 /// </summary>
 public static class GameConsole
 {
     private static GameLogWindow? _logWindow;
     private static readonly object _lock = new object();
+    private static readonly ConcurrentQueue<(string message, LogLevel level)> _logQueue = new();
+    private static readonly CancellationTokenSource _cts = new();
+    private static readonly Task _logTask;
+    
+    static GameConsole()
+    {
+        // Start background thread to process log messages
+        _logTask = Task.Run(ProcessLogQueue, _cts.Token);
+    }
 
     /// <summary>
     /// Gets whether the console window is currently visible
     /// </summary>
     public static bool IsVisible => _logWindow != null && _logWindow.Visible;
+
+    /// <summary>
+    /// Background task that processes queued log messages
+    /// </summary>
+    private static async Task ProcessLogQueue()
+    {
+        while (!_cts.Token.IsCancellationRequested)
+        {
+            try
+            {
+                if (_logQueue.TryDequeue(out var logEntry))
+                {
+                    // Process log message
+                    lock (_lock)
+                    {
+                        if (_logWindow != null && !_logWindow.IsDisposed)
+                        {
+                            _logWindow.Log(logEntry.message, logEntry.level);
+                        }
+                    }
+                }
+                else
+                {
+                    // No messages - wait a bit before checking again
+                    await Task.Delay(10, _cts.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GameConsole] Error processing log: {ex.Message}");
+            }
+        }
+    }
 
     /// <summary>
     /// Sets the log window instance (called from Program.cs)
@@ -70,6 +117,7 @@ public static class GameConsole
 
     /// <summary>
     /// Logs a message to the game console window with specified log level
+    /// Non-blocking - queues message for background processing
     /// </summary>
     public static void Log(string message, LogLevel level = LogLevel.INFO)
     {
@@ -77,18 +125,8 @@ public static class GameConsole
         if (level == LogLevel.DEBUG && !Program.DebugMode)
             return;
 
-        lock (_lock)
-        {
-            if (_logWindow != null && !_logWindow.IsDisposed)
-            {
-                _logWindow.Log(message, level);
-            }
-            else
-            {
-                // Fallback to debug output if window not available
-                System.Diagnostics.Debug.WriteLine($"[GameConsole] Window not available: {message}");
-            }
-        }
+        // Queue message for async processing - never blocks
+        _logQueue.Enqueue((message, level));
     }
 
     /// <summary>

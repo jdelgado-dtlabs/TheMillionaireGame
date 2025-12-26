@@ -12,9 +12,10 @@ public class CrossfadeSettings
 
     /// <summary>
     /// Duration of crossfade transitions in milliseconds
-    /// Typical values: 100ms (quick), 200ms (smooth), 500ms (slow/dramatic)
+    /// Typical values: 50ms (instant), 100ms (quick), 200ms (smooth), 500ms (slow/dramatic)
+    /// Default: 50ms for near-instantaneous transitions
     /// </summary>
-    public int CrossfadeDurationMs { get; set; } = 200;
+    public int CrossfadeDurationMs { get; set; } = 50;
 
     /// <summary>
     /// Maximum number of sounds that can be queued

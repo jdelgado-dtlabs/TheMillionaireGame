@@ -2,6 +2,7 @@ using CSCore;
 using CSCore.Codecs;
 using CSCore.Codecs.MP3;
 using CSCore.MediaFoundation;
+using MillionaireGame.Core.Settings;
 using System;
 using System.Collections.Generic;
 
@@ -10,15 +11,16 @@ using MillionaireGame.Utilities;
 namespace MillionaireGame.Services
 {
     /// <summary>
-    /// Queue manager for sequential audio playback with automatic crossfading.
+    /// Queue manager for sequential audio playback with automatic crossfading and integrated silence detection.
     /// Manages FIFO queue of audio files and seamlessly transitions between them
-    /// using configurable crossfade durations.
+    /// using configurable crossfade durations. Automatically detects silence and triggers crossfades.
     /// </summary>
     /// <remarks>
     /// Key Features:
     /// - FIFO queue for normal priority sounds
     /// - Immediate interrupt capability for high priority
-    /// - Automatic crossfade between queued sounds (200ms default)
+    /// - Automatic crossfade between queued sounds (50ms default)
+    /// - Integrated silence detection (auto-crossfade when < -40dB for 100ms)
     /// - Configurable crossfade duration
     /// - Queue limit enforcement (10 default)
     /// - Preview: count + estimated time
@@ -28,26 +30,50 @@ namespace MillionaireGame.Services
         private readonly Queue<AudioCue> _normalQueue = new();
         private readonly int _queueLimit;
         private readonly int _crossfadeDurationSamples;
+        private readonly SilenceDetectionSettings? _silenceSettings;
+        private readonly object _lock = new object(); // Thread safety for queue operations
         private AudioCue? _currentCue;
         private AudioCue? _nextCue;
         private bool _crossfading = false;
         private int _crossfadePosition = 0;
         private WaveFormat _waveFormat;
+        
+        // Silence detection state
+        private int _silenceSampleCount = 0;
+        private int _silenceDurationSamples = 0;
+        private float _silenceThresholdAmplitude = 0f;
 
         /// <summary>
-        /// Gets the number of sounds currently queued
+        /// Gets the number of sounds currently queued (waiting)
         /// </summary>
-        public int QueueCount => _normalQueue.Count;
+        public int QueueCount { get { lock (_lock) return _normalQueue.Count; } }
+
+        /// <summary>
+        /// Gets the total number of sounds (playing + next + queued)
+        /// </summary>
+        public int TotalSoundCount 
+        { 
+            get 
+            { 
+                lock (_lock) 
+                {
+                    int count = _normalQueue.Count;
+                    if (_currentCue != null) count++;
+                    if (_nextCue != null && !_crossfading) count++; // Don't double-count during crossfade
+                    return count;
+                }
+            } 
+        }
 
         /// <summary>
         /// Gets whether the queue is currently playing audio
         /// </summary>
-        public bool IsPlaying => _currentCue != null;
+        public bool IsPlaying { get { lock (_lock) return _currentCue != null; } }
 
         /// <summary>
         /// Gets whether a crossfade is currently in progress
         /// </summary>
-        public bool IsCrossfading => _crossfading;
+        public bool IsCrossfading { get { lock (_lock) return _crossfading; } }
 
         /// <summary>
         /// Initializes a new instance of the AudioCueQueue class
@@ -55,17 +81,24 @@ namespace MillionaireGame.Services
         /// <param name="waveFormat">The wave format for audio playback</param>
         /// <param name="crossfadeDurationMs">Duration of crossfades in milliseconds (default: 200ms)</param>
         /// <param name="queueLimit">Maximum number of sounds that can be queued (default: 10)</param>
-        public AudioCueQueue(WaveFormat waveFormat, int crossfadeDurationMs = 200, int queueLimit = 10)
+        /// <param name="silenceSettings">Optional silence detection settings to apply to queued audio</param>
+        public AudioCueQueue(WaveFormat waveFormat, int crossfadeDurationMs = 50, int queueLimit = 10, SilenceDetectionSettings? silenceSettings = null)
         {
             _waveFormat = waveFormat ?? throw new ArgumentNullException(nameof(waveFormat));
             _queueLimit = queueLimit;
             _crossfadeDurationSamples = (int)(crossfadeDurationMs * waveFormat.SampleRate / 1000.0);
+            _silenceSettings = silenceSettings ?? new SilenceDetectionSettings();
+            
+            // Calculate silence detection thresholds
+            _silenceDurationSamples = (int)(_silenceSettings.SilenceDurationMs * waveFormat.SampleRate / 1000.0);
+            _silenceThresholdAmplitude = (float)Math.Pow(10, _silenceSettings.ThresholdDb / 20.0);
 
             if (Program.DebugMode)
             {
                 GameConsole.Debug(
                     $"[AudioCueQueue] Created: crossfade={crossfadeDurationMs}ms ({_crossfadeDurationSamples} samples), " +
-                    $"queueLimit={queueLimit}"
+                    $"queueLimit={queueLimit}, silenceThreshold={_silenceSettings.ThresholdDb}dB ({_silenceThresholdAmplitude:F6}), " +
+                    $"silenceDuration={_silenceSettings.SilenceDurationMs}ms ({_silenceDurationSamples} samples)"
                 );
             }
         }
@@ -78,88 +111,94 @@ namespace MillionaireGame.Services
         /// <returns>True if queued successfully, false if queue is full</returns>
         public bool QueueAudio(string filePath, AudioPriority priority = AudioPriority.Normal)
         {
-            if (priority == AudioPriority.Normal && _normalQueue.Count >= _queueLimit)
+            lock (_lock)
             {
-                if (Program.DebugMode)
-                {
-                    GameConsole.Warn(
-                        $"[AudioCueQueue] Queue full ({_queueLimit}), rejecting: {System.IO.Path.GetFileName(filePath)}"
-                    );
-                }
-                return false;
-            }
-
-            try
-            {
-                var cue = new AudioCue(filePath, priority, _waveFormat);
-
-                if (priority == AudioPriority.Immediate)
+                if (priority == AudioPriority.Normal && _normalQueue.Count >= _queueLimit)
                 {
                     if (Program.DebugMode)
                     {
                         GameConsole.Warn(
-                            $"[AudioCueQueue] IMMEDIATE priority: {System.IO.Path.GetFileName(filePath)}, interrupting current"
+                            $"[AudioCueQueue] Queue full ({_queueLimit}), rejecting: {System.IO.Path.GetFileName(filePath)}"
                         );
                     }
+                    return false;
+                }
 
-                    // Interrupt current, start crossfade immediately
-                    if (_currentCue != null)
+                try
+                {
+                    var cue = new AudioCue(filePath, priority, _waveFormat, _silenceSettings);
+
+                    if (priority == AudioPriority.Immediate)
                     {
-                        _nextCue = cue;
-                        _crossfading = true;
-                        _crossfadePosition = 0;
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Warn(
+                                $"[AudioCueQueue] IMMEDIATE priority: {System.IO.Path.GetFileName(filePath)}, interrupting current"
+                            );
+                        }
+
+                        // Interrupt current, start crossfade immediately
+                        if (_currentCue != null)
+                        {
+                            _nextCue = cue;
+                            _crossfading = true;
+                            _crossfadePosition = 0;
+                            _silenceSampleCount = 0; // Reset for crossfade
+                        }
+                        else
+                        {
+                            _currentCue = cue;
+                            _silenceSampleCount = 0; // Reset silence detection for new sound
+                        }
                     }
                     else
                     {
-                        _currentCue = cue;
-                    }
-                }
-                else
-                {
-                    _normalQueue.Enqueue(cue);
+                        _normalQueue.Enqueue(cue);
 
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Debug(
-                            $"[AudioCueQueue] Queued: {System.IO.Path.GetFileName(filePath)}, queue size: {_normalQueue.Count}"
-                        );
-                    }
-
-                    // If no current cue, start immediately
-                    if (_currentCue == null)
-                    {
-                        _currentCue = _normalQueue.Dequeue();
-                        if (Program.DebugMode)
-                        {
-                            GameConsole.Info(
-                                $"[AudioCueQueue] Starting playback: {System.IO.Path.GetFileName(_currentCue.FilePath)}"
-                            );
-                        }
-                    }
-                    // If queue has items and not already crossfading, prepare next transition
-                    else if (_normalQueue.Count > 0 && !_crossfading && _nextCue == null)
-                    {
-                        _nextCue = _normalQueue.Dequeue();
                         if (Program.DebugMode)
                         {
                             GameConsole.Debug(
-                                $"[AudioCueQueue] Prepared next: {System.IO.Path.GetFileName(_nextCue.FilePath)}"
+                                $"[AudioCueQueue] Queued: {System.IO.Path.GetFileName(filePath)}, queue size: {_normalQueue.Count}"
                             );
                         }
-                    }
-                }
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                if (Program.DebugMode)
-                {
-                    GameConsole.Error(
-                        $"[AudioCueQueue] ERROR loading {System.IO.Path.GetFileName(filePath)}: {ex.Message}"
-                    );
+                        // If no current cue, start immediately
+                        if (_currentCue == null)
+                        {
+                            _currentCue = _normalQueue.Dequeue();
+                            _silenceSampleCount = 0; // Reset silence detection for new sound
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Info(
+                                    $"[AudioCueQueue] Starting playback: {System.IO.Path.GetFileName(_currentCue.FilePath)}"
+                                );
+                            }
+                        }
+                        // If queue has items and not already crossfading, prepare next transition
+                        else if (_normalQueue.Count > 0 && !_crossfading && _nextCue == null)
+                        {
+                            _nextCue = _normalQueue.Dequeue();
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Debug(
+                                    $"[AudioCueQueue] Prepared next: {System.IO.Path.GetFileName(_nextCue.FilePath)}"
+                                );
+                            }
+                        }
+                    }
+
+                    return true;
                 }
-                return false;
+                catch (Exception ex)
+                {
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Error(
+                            $"[AudioCueQueue] ERROR loading {System.IO.Path.GetFileName(filePath)}: {ex.Message}"
+                        );
+                    }
+                    return false;
+                }
             }
         }
 
@@ -167,6 +206,17 @@ namespace MillionaireGame.Services
         /// Clears all queued sounds (does not stop current playback)
         /// </summary>
         public void ClearQueue()
+        {
+            lock (_lock)
+            {
+                ClearQueueInternal();
+            }
+        }
+
+        /// <summary>
+        /// Internal queue clearing without lock (must be called within lock)
+        /// </summary>
+        private void ClearQueueInternal()
         {
             _normalQueue.Clear();
             _nextCue?.Dispose();
@@ -185,13 +235,16 @@ namespace MillionaireGame.Services
         /// </summary>
         public void Stop()
         {
-            _currentCue?.Dispose();
-            _currentCue = null;
-            ClearQueue();
-
-            if (Program.DebugMode)
+            lock (_lock)
             {
-                GameConsole.Warn("[AudioCueQueue] Stopped");
+                _currentCue?.Dispose();
+                _currentCue = null;
+                ClearQueueInternal(); // Use internal version to avoid nested lock
+
+                if (Program.DebugMode)
+                {
+                    GameConsole.Warn("[AudioCueQueue] Stopped");
+                }
             }
         }
 
@@ -200,10 +253,15 @@ namespace MillionaireGame.Services
         /// </summary>
         public int Read(float[] buffer, int offset, int count)
         {
-            if (_currentCue == null)
+            lock (_lock)
             {
-                return 0;
-            }
+                if (_currentCue == null)
+                {
+                    // Return silence instead of 0 to keep queue active in mixer
+                    // This prevents the mixer from removing the queue when idle
+                    Array.Clear(buffer, offset, count);
+                    return count;
+                }
 
             // Handle crossfading between current and next cue
             if (_crossfading && _nextCue != null)
@@ -248,6 +306,7 @@ namespace MillionaireGame.Services
                         _nextCue = null;
                         _crossfading = false;
                         _crossfadePosition = 0;
+                        _silenceSampleCount = 0; // Reset silence detection for new track
 
                         // Check if more in queue
                         if (_normalQueue.Count > 0)
@@ -273,43 +332,119 @@ namespace MillionaireGame.Services
                 // Normal playback from current cue
                 int read = _currentCue.Source.Read(buffer, offset, count);
 
+                // Monitor amplitude for silence detection (if enabled and not crossfading)
+                if (read > 0 && _silenceSettings != null && _silenceSettings.Enabled && !_crossfading)
+                {
+                    // Calculate RMS amplitude of this buffer
+                    float sumSquares = 0f;
+                    for (int i = 0; i < read; i++)
+                    {
+                        float sample = buffer[offset + i];
+                        sumSquares += sample * sample;
+                    }
+                    float rms = (float)Math.Sqrt(sumSquares / read);
+                    
+                    // Check if below silence threshold
+                    if (rms < _silenceThresholdAmplitude)
+                    {
+                        _silenceSampleCount += read;
+                        
+                        // If silence sustained long enough, trigger crossfade
+                        if (_silenceSampleCount >= _silenceDurationSamples)
+                        {
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Info(
+                                    $"[AudioCueQueue] Silence detected ({_silenceSettings.SilenceDurationMs}ms at {_silenceSettings.ThresholdDb}dB), " +
+                                    $"starting {(_nextCue != null || _normalQueue.Count > 0 ? "crossfade to next" : "fadeout")}"
+                                );
+                            }
+                            
+                            // If we have a next cue or queue items, start crossfade
+                            if (_nextCue != null || _normalQueue.Count > 0)
+                            {
+                                // Prepare next cue if not already prepared
+                                if (_nextCue == null && _normalQueue.Count > 0)
+                                {
+                                    _nextCue = _normalQueue.Dequeue();
+                                    if (Program.DebugMode)
+                                    {
+                                        GameConsole.Debug(
+                                            $"[AudioCueQueue] Prepared next: {System.IO.Path.GetFileName(_nextCue.FilePath)}"
+                                        );
+                                    }
+                                }
+                                
+                                // Start crossfade
+                                _crossfading = true;
+                                _crossfadePosition = 0;
+                                _silenceSampleCount = 0;
+                            }
+                            else
+                            {
+                                // Nothing queued - apply fadeout to current, then it will naturally complete
+                                // This prevents abrupt stops
+                                if (Program.DebugMode)
+                                {
+                                    GameConsole.Debug("[AudioCueQueue] Applying fadeout (no items in queue)");
+                                }
+                                
+                                // Apply a short fadeout to current buffer
+                                int fadeoutSamples = Math.Min(read, (int)(_silenceSettings.FadeoutDurationMs * _waveFormat.SampleRate / 1000.0));
+                                for (int i = 0; i < fadeoutSamples; i++)
+                                {
+                                    float fadeGain = 1.0f - ((float)i / fadeoutSamples);
+                                    buffer[offset + i] *= fadeGain;
+                                }
+                                
+                                // Mark current as complete
+                                _currentCue?.Dispose();
+                                _currentCue = null;
+                                _silenceSampleCount = 0;
+                                
+                                // Return silence for remaining buffer
+                                if (read < count)
+                                {
+                                    Array.Clear(buffer, offset + read, count - read);
+                                }
+                                return count;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Reset silence counter when audio is above threshold
+                        _silenceSampleCount = 0;
+                    }
+                }
+
                 // If current cue finished
                 if (read == 0)
                 {
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Info(
-                            $"[AudioCueQueue] Finished: {System.IO.Path.GetFileName(_currentCue.FilePath)}"
-                        );
-                    }
-
-                    _currentCue.Dispose();
+                    // Don't log from audio thread - causes UI freezes
+                    _currentCue?.Dispose();
                     _currentCue = null;
+                    _silenceSampleCount = 0;
 
                     // If next cue is waiting, start it
                     if (_nextCue != null)
                     {
                         _currentCue = _nextCue;
                         _nextCue = null;
-                        if (Program.DebugMode)
-                        {
-                            GameConsole.Info(
-                                $"[AudioCueQueue] Starting: {System.IO.Path.GetFileName(_currentCue.FilePath)}"
-                            );
-                        }
                         return Read(buffer, offset, count); // Recursive read from new cue
                     }
                     // If queue has items, start next
                     else if (_normalQueue.Count > 0)
                     {
                         _currentCue = _normalQueue.Dequeue();
-                        if (Program.DebugMode)
-                        {
-                            GameConsole.Info(
-                                $"[AudioCueQueue] Starting: {System.IO.Path.GetFileName(_currentCue.FilePath)}"
-                            );
-                        }
+                        // Don't log from audio thread - causes freezes
                         return Read(buffer, offset, count); // Recursive read from new cue
+                    }
+                    // Nothing queued - return silence to stay active in mixer
+                    else
+                    {
+                        Array.Clear(buffer, offset, count);
+                        return count;
                     }
                 }
                 // If current cue is near end and we have a next cue, start crossfade
@@ -321,6 +456,7 @@ namespace MillionaireGame.Services
                     {
                         _crossfading = true;
                         _crossfadePosition = 0;
+                        _silenceSampleCount = 0;
                         if (Program.DebugMode)
                         {
                             GameConsole.Debug(
@@ -333,6 +469,7 @@ namespace MillionaireGame.Services
 
                 return read;
             }
+        }
         }
 
         public long Position
@@ -368,7 +505,7 @@ namespace MillionaireGame.Services
         public AudioPriority Priority { get; }
         public ISampleSource Source { get; }
 
-        public AudioCue(string filePath, AudioPriority priority, WaveFormat targetFormat)
+        public AudioCue(string filePath, AudioPriority priority, WaveFormat targetFormat, SilenceDetectionSettings? silenceSettings = null)
         {
             FilePath = filePath;
             Priority = priority;
@@ -398,6 +535,8 @@ namespace MillionaireGame.Services
                 waveSource = waveSource.ChangeSampleRate(targetFormat.SampleRate);
             }
 
+            // Silence detection is now integrated into AudioCueQueue.Read()
+            // No need to wrap individual sources
             Source = waveSource;
         }
 

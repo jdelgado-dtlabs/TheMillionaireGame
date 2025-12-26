@@ -160,6 +160,7 @@ namespace MillionaireGame.Forms
             gameToolStripMenuItem.Name = "gameToolStripMenuItem";
             gameToolStripMenuItem.Size = new Size(62, 24);
             gameToolStripMenuItem.Text = "Game";
+            #if DEBUG
             gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
                 new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
                 new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
@@ -169,6 +170,15 @@ namespace MillionaireGame.Forms
                 new ToolStripSeparator(),
                 new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
+            #else
+            gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
+                new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
+                new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
+            });
+            #endif
             
             // 
             // screensToolStripMenuItem

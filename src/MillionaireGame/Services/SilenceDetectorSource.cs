@@ -86,31 +86,40 @@ namespace MillionaireGame.Services
             // If currently fading out, apply gain ramp
             if (_fadingOut)
             {
+                int samplesProcessed = 0;
+                bool fadeoutJustCompleted = false;
+                
                 for (int i = offset; i < offset + read; i++)
                 {
-                    // Linear fadeout from 1.0 to 0.0
-                    float fadeGain = 1.0f - ((float)_fadeoutPosition / _fadeoutSamples);
-                    buffer[i] *= Math.Max(0, fadeGain);
-                    _fadeoutPosition++;
-
-                    // Check if fadeout complete
+                    // Check if fadeout complete before processing this sample
                     if (_fadeoutPosition >= _fadeoutSamples)
                     {
+                        // Fadeout complete - signal EOF immediately
                         _silenceDetected = true;
                         _fadingOut = false;
-
-                        if (Program.DebugMode)
-                        {
-                            GameConsole.Debug(
-                                "[SilenceDetector] Fadeout complete, stopping playback"
-                            );
-                        }
-
-                        // Return partial buffer up to fadeout completion
-                        return i - offset + 1;
+                        fadeoutJustCompleted = true;
+                        
+                        // Log AFTER the loop, outside audio thread hot path
+                        break;
                     }
+
+                    // Linear fadeout from 1.0 to 0.0 (with safety check)
+                    float fadeGain = (_fadeoutSamples > 0) 
+                        ? 1.0f - ((float)_fadeoutPosition / _fadeoutSamples)
+                        : 0.0f;
+                    buffer[i] *= Math.Max(0, fadeGain);
+                    _fadeoutPosition++;
+                    samplesProcessed++;
                 }
-                return read;
+                
+                // Log completion AFTER exiting the loop
+                if (fadeoutJustCompleted && Program.DebugMode)
+                {
+                    float fadeoutMs = (_fadeoutSamples * 1000.0f) / _source.WaveFormat.SampleRate;
+                    GameConsole.Info($"[SilenceDetector] Fadeout complete ({fadeoutMs:F0}ms), stopping playback");
+                }
+                
+                return fadeoutJustCompleted ? 0 : read;
             }
 
             // Analyze amplitude of samples read
@@ -130,34 +139,28 @@ namespace MillionaireGame.Services
                 _consecutiveSilentSamples += read;
 
                 // Check if silence sustained long enough
-                if (_consecutiveSilentSamples >= _silenceDurationSamples)
+                if (_consecutiveSilentSamples >= _silenceDurationSamples && !_fadingOut)
                 {
                     // Start fadeout instead of abrupt stop (prevents DC pops!)
                     _fadingOut = true;
                     _fadeoutPosition = 0;
-
+                    
+                    // Log OUTSIDE the hot path - safe to call here as we only trigger once
                     if (Program.DebugMode)
                     {
-                        float silenceDurationSeconds = _consecutiveSilentSamples / (float)WaveFormat.SampleRate;
-                        GameConsole.Info(
-                            $"[SilenceDetector] Silence detected after {_consecutiveSilentSamples} samples " +
-                            $"({silenceDurationSeconds:F2}s), starting fadeout"
-                        );
+                        float silenceMs = (_silenceDurationSamples * 1000.0f) / _source.WaveFormat.SampleRate;
+                        float thresholdDb = 20.0f * (float)Math.Log10(_thresholdAmplitude);
+                        float fadeoutMs = (_fadeoutSamples * 1000.0f) / _source.WaveFormat.SampleRate;
+                        GameConsole.Info($"[SilenceDetector] Silence detected ({silenceMs:F0}ms at {thresholdDb:F1} dB), starting {fadeoutMs:F0}ms fadeout");
                     }
-
-                    // Fire event to notify listeners
-                    SilenceDetected?.Invoke(this, EventArgs.Empty);
+                    
+                    // Notify listeners asynchronously (don't block audio thread)
+                    Task.Run(() => SilenceDetected?.Invoke(this, EventArgs.Empty));
                 }
             }
             else
             {
                 // Reset counter if audio detected (above threshold)
-                if (_consecutiveSilentSamples > 0 && Program.DebugMode)
-                {
-                    GameConsole.Debug(
-                        $"[SilenceDetector] Audio detected (amplitude: {maxAmplitude:F6}), resetting silence counter"
-                    );
-                }
                 _consecutiveSilentSamples = 0;
             }
 

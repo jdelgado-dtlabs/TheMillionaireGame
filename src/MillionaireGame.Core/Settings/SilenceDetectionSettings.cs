@@ -1,7 +1,9 @@
 namespace MillionaireGame.Core.Settings;
 
 /// <summary>
-/// Settings for automatic silence detection in audio playback
+/// Settings for automatic silence detection in audio playback.
+/// Integrated into AudioCueQueue for automatic track advancement.
+/// When audio drops below threshold for specified duration, triggers crossfade to next track.
 /// </summary>
 public class SilenceDetectionSettings
 {
@@ -14,13 +16,13 @@ public class SilenceDetectionSettings
     /// Amplitude threshold in dB below which audio is considered silent
     /// Typical values: -60dB (very sensitive), -40dB (moderate), -20dB (only loud silence)
     /// </summary>
-    public float ThresholdDb { get; set; } = -60f;
+    public float ThresholdDb { get; set; } = -40f;
 
     /// <summary>
     /// Duration in milliseconds that silence must be sustained before auto-completion
     /// Prevents false triggers during brief pauses in audio
     /// </summary>
-    public int SilenceDurationMs { get; set; } = 100;
+    public int SilenceDurationMs { get; set; } = 250;
 
     /// <summary>
     /// Fadeout duration in milliseconds applied when silence is detected

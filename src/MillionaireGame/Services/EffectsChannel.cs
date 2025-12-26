@@ -31,14 +31,22 @@ public class EffectsChannel : IDisposable
         _silenceSettings = silenceSettings ?? new SilenceDetectionSettings();
         _crossfadeSettings = crossfadeSettings ?? new CrossfadeSettings();
         
-        // Initialize audio cue queue with configured settings
+        // Initialize audio cue queue with configured settings including silence detection
         // AudioCueQueue needs ISampleSource format (44.1kHz, 32-bit float, stereo)
         var sampleFormat = new CSCore.WaveFormat(44100, 32, 2, AudioEncoding.IeeeFloat);
         _cueQueue = new AudioCueQueue(
             sampleFormat,
             _crossfadeSettings.CrossfadeDurationMs,
-            _crossfadeSettings.QueueLimit
+            _crossfadeSettings.QueueLimit,
+            _silenceSettings  // Pass silence settings to queue
         );
+        
+        // CRITICAL: Add the queue's output stream to the mixer so queued audio plays through
+        // Use a special identifier so it persists and isn't removed like normal effects
+        _mixerSource.AddEffect("__queue__", _cueQueue);
+        
+        // Always log this critical initialization step
+        GameConsole.Info("[EffectsChannel] Audio queue connected to mixer");
     }
 
     /// <summary>
@@ -55,8 +63,12 @@ public class EffectsChannel : IDisposable
     public int ActiveEffectCount => _mixerSource.GetActiveEffectCount();
 
     /// <summary>
-    /// Play a sound effect
+    /// Play a sound effect immediately (interrupts queue with crossfade).
+    /// Wrapper for QueueEffect with Immediate priority for backward compatibility.
     /// </summary>
+    /// <param name="filePath">Path to the audio file</param>
+    /// <param name="identifier">Optional identifier (not used in queue mode)</param>
+    /// <returns>Identifier for the sound (always returns filePath for compatibility)</returns>
     public string PlayEffect(string filePath, string? identifier = null)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -77,135 +89,34 @@ public class EffectsChannel : IDisposable
             return string.Empty;
         }
 
-        try
-        {
-            string id = identifier ?? Guid.NewGuid().ToString();
-
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug($"[EffectsChannel] Starting playback: {Path.GetFileName(filePath)} (id: {id})");
-                GameConsole.Debug($"[EffectsChannel] Full path: {filePath}");
-                GameConsole.Debug($"[EffectsChannel] Loading codec...");
-            }
-            
-            // Try MediaFoundation decoder first for MP3 files
-            IWaveSource waveSource;
-            if (filePath.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    waveSource = new MediaFoundationDecoder(filePath);
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Debug($"[EffectsChannel] Using MediaFoundationDecoder for MP3");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Warn($"[EffectsChannel] MediaFoundation failed ({ex.Message}), falling back to DmoMp3Decoder");
-                    }
-                    waveSource = new DmoMp3Decoder(filePath);
-                }
-            }
-            else
-            {
-                waveSource = CodecFactory.Instance.GetCodec(filePath);
-            }
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug($"[EffectsChannel] Codec loaded: Format={waveSource.WaveFormat}, Length={waveSource.Length}");
-                GameConsole.Debug($"[EffectsChannel] Codec CanSeek: {waveSource.CanSeek}, Position: {waveSource.Position}");
-            }
-            var sampleSource = waveSource.ToSampleSource();
-            
-            // Wrap with silence detector if enabled for effects
-            if (_silenceSettings.Enabled && _silenceSettings.ApplyToEffects)
-            {
-                var silenceDetector = new SilenceDetectorSource(
-                    sampleSource,
-                    _silenceSettings.ThresholdDb,
-                    _silenceSettings.SilenceDurationMs,
-                    _silenceSettings.FadeoutDurationMs
-                );
-                
-                // Log when silence is detected
-                silenceDetector.SilenceDetected += (s, e) =>
-                {
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Info($"[EffectsChannel] Effect '{id}' auto-completed via silence detection");
-                    }
-                };
-                
-                sampleSource = silenceDetector;
-            }
-            
-            // Apply volume
-            var volumeSource = new VolumeSource(sampleSource);
-            volumeSource.Volume = _volume;
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug($"[EffectsChannel] Volume set to: {_volume}");
-                GameConsole.Debug($"[EffectsChannel] Adding to mixer source...");
-            }
-            
-            _mixerSource.AddEffect(id, volumeSource);
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug($"[EffectsChannel] Added to mixer successfully. Active effects: {ActiveEffectCount}");
-            }
-
-            return id;
-        }
-        catch (Exception ex)
-        {
-            GameConsole.Error($"[EffectsChannel] Error playing effect: {ex.Message}");
-            return string.Empty;
-        }
+        // Use Immediate priority to interrupt current playback with crossfade
+        bool queued = QueueEffect(filePath, AudioPriority.Immediate);
+        
+        return queued ? (identifier ?? filePath) : string.Empty;
     }
 
     /// <summary>
-    /// Stop a specific effect by identifier
+    /// Stop a specific effect by identifier (not supported in queue mode)
     /// </summary>
     public void StopEffect(string identifier)
     {
-        if (string.IsNullOrEmpty(identifier)) return;
-
-        _mixerSource.RemoveEffect(identifier);
-
         if (Program.DebugMode)
         {
-            GameConsole.Debug($"[EffectsChannel] Stopped effect: {identifier}");
+            GameConsole.Warn("[EffectsChannel] StopEffect not supported in queue mode - use StopQueue() instead");
         }
     }
 
     /// <summary>
-    /// Stop all currently playing effects
+    /// Stop all currently playing effects (clears queue and stops playback)
     /// </summary>
     public void StopAllEffects()
     {
-        int count = _mixerSource.GetActiveEffectCount();
-        _mixerSource.RemoveAllEffects();
-
+        StopQueue();
         if (Program.DebugMode)
         {
-            GameConsole.Debug($"[EffectsChannel] Stopped {count} effect(s)");
+            GameConsole.Debug("[EffectsChannel] Stopped all effects (cleared queue)");
         }
     }
-
-    /// <summary>
-    /// Check if a specific effect is currently playing
-    /// </summary>
-    public bool IsEffectPlaying(string identifier)
-    {
-        return _mixerSource.HasEffect(identifier);
-    }
-
     /// <summary>
     /// Set effects volume (0.0 to 1.0)
     /// </summary>
@@ -221,20 +132,7 @@ public class EffectsChannel : IDisposable
     }
 
     /// <summary>
-    /// Clear completed effects from memory
-    /// </summary>
-    public void ClearCompleted()
-    {
-        int cleared = _mixerSource.ClearCompleted();
-
-        if (Program.DebugMode && cleared > 0)
-        {
-            GameConsole.Debug($"[EffectsChannel] Cleared {cleared} completed effect(s)");
-        }
-    }
-
-    /// <summary>
-    /// Queue an audio file for sequential playback with automatic crossfading
+    /// Queue an audio file for sequential playback with automatic crossfading and silence detection
     /// </summary>
     /// <param name="filePath">Path to the audio file</param>
     /// <param name="priority">Priority level (Normal or Immediate)</param>
@@ -279,11 +177,19 @@ public class EffectsChannel : IDisposable
     }
 
     /// <summary>
-    /// Get the number of sounds currently in the queue
+    /// Get the number of sounds currently in the queue (waiting)
     /// </summary>
     public int GetQueueCount()
     {
         return _cueQueue.QueueCount;
+    }
+
+    /// <summary>
+    /// Get the total number of sounds (playing + next + queued)
+    /// </summary>
+    public int GetTotalSoundCount()
+    {
+        return _cueQueue.TotalSoundCount;
     }
 
     /// <summary>
@@ -329,6 +235,8 @@ internal class EffectsMixerSource : ISampleSource
     private readonly Dictionary<string, EffectStream> _effects = new();
     private readonly object _lock = new();
     private long _position;
+    private int _silenceLogCounter = 0; // Rate limiter for silence logging
+    private int _audioLogCounter = 0; // Rate limiter for audio logging
 
     private class EffectStream
     {
@@ -450,18 +358,24 @@ internal class EffectsMixerSource : ISampleSource
 
     public int Read(float[] buffer, int offset, int count)
     {
-        if (Program.DebugMode && _effects.Count > 0)
-        {
-            GameConsole.Debug($"[EffectsMixerSource] Read() called: count={count}, active effects={_effects.Count}");
-        }
+        // Collect logging data without calling GameConsole inside lock
+        int activeEffectsCount = 0;
+        float maxAmplitude = 0;
+        int samplesReturned = 0;
+        var completedEffects = new List<string>();
         
         // Clear buffer
         Array.Clear(buffer, offset, count);
 
         int maxSamplesRead = count; // Always output full buffer (silence if no effects)
 
+        // Collect sources to dispose OUTSIDE the lock
+        var sourcesToDispose = new List<ISampleSource>();
+        
         lock (_lock)
         {
+            activeEffectsCount = _effects.Count;
+            
             if (_effects.Count == 0)
             {
                 // No effects playing - return silence
@@ -482,34 +396,13 @@ internal class EffectsMixerSource : ISampleSource
 
                 if (samplesRead == 0)
                 {
-                    // Effect completed
+                    // Effect completed - mark for removal
                     effect.IsCompleted = true;
                     effectsToRemove.Add(kvp.Key);
-
-                    if (Program.DebugMode)
-                    {
-                        GameConsole.Debug($"[EffectsMixerSource] Effect completed: {kvp.Key}");
-                    }
+                    completedEffects.Add(kvp.Key);
                 }
                 else
                 {
-                    // Check if buffer has actual audio data
-                    float maxSample = 0;
-                    for (int i = 0; i < samplesRead; i++)
-                    {
-                        if (Math.Abs(tempBuffer[i]) > maxSample)
-                            maxSample = Math.Abs(tempBuffer[i]);
-                    }
-                    
-                    if (Program.DebugMode && maxSample > 0)
-                    {
-                        GameConsole.Debug($"[EffectsMixerSource] Read {samplesRead} samples, max amplitude: {maxSample:F4}");
-                    }
-                    else if (Program.DebugMode && maxSample == 0)
-                    {
-                        GameConsole.Debug($"[EffectsMixerSource] WARNING: Read {samplesRead} samples but all are ZERO (silence)");
-                    }
-                    
                     // Add this effect to the mix
                     for (int i = 0; i < samplesRead; i++)
                     {
@@ -518,12 +411,15 @@ internal class EffectsMixerSource : ISampleSource
                 }
             }
 
-            // Remove completed effects
+            // Remove completed effects and collect sources for disposal
             foreach (var id in effectsToRemove)
             {
                 if (_effects.TryGetValue(id, out var effect))
                 {
-                    effect.Source?.Dispose();
+                    if (effect.Source != null)
+                    {
+                        sourcesToDispose.Add(effect.Source);
+                    }
                     _effects.Remove(id);
                 }
             }
@@ -536,6 +432,63 @@ internal class EffectsMixerSource : ISampleSource
                 {
                     buffer[offset + i] /= divisor;
                 }
+            }
+            
+            samplesReturned = maxSamplesRead;
+        }
+        
+        // Dispose sources OUTSIDE the lock to prevent blocking
+        foreach (var source in sourcesToDispose)
+        {
+            try
+            {
+                source.Dispose();
+            }
+            catch (Exception ex)
+            {
+                if (Program.DebugMode)
+                {
+                    GameConsole.Warn($"[EffectsMixer] Error disposing source: {ex.Message}");
+                }
+            }
+        }
+        
+        // Calculate max amplitude and log OUTSIDE the lock
+        if (Program.DebugMode && activeEffectsCount > 0)
+        {
+            for (int i = offset; i < offset + samplesReturned; i++)
+            {
+                if (Math.Abs(buffer[i]) > maxAmplitude)
+                    maxAmplitude = Math.Abs(buffer[i]);
+            }
+            
+            if (maxAmplitude > 0)
+            {
+                // Rate limit audio logging - log every 20th call (still ~2-5 times per second)
+                _audioLogCounter++;
+                if (_audioLogCounter >= 20)
+                {
+                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples, {activeEffectsCount} active, max: {maxAmplitude:F4} (logged 1/20 calls)");
+                    _audioLogCounter = 0;
+                }
+                _silenceLogCounter = 0; // Reset silence counter when we have audio
+            }
+            else if (samplesReturned > 0)
+            {
+                // Only log silence every 100th call to avoid flooding logs
+                _silenceLogCounter++;
+                if (_silenceLogCounter >= 100)
+                {
+                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples (SILENCE), {activeEffectsCount} active (logged 1/100 calls)");
+                    _silenceLogCounter = 0;
+                }
+                _audioLogCounter = 0; // Reset audio counter when silent
+            }
+            
+            // Always log completed effects
+            foreach (var id in completedEffects)
+            {
+                GameConsole.Debug($"[EffectsMixer] Effect completed: {id}");
             }
         }
 
