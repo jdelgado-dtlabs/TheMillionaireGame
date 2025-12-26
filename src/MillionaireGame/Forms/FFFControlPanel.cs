@@ -733,12 +733,11 @@ public partial class FFFControlPanel : UserControl
         UpdateUIState();
         GameConsole.Log("[FFF] Step 2 complete - Ready for Step 3");
         
-        // Stop sounds and play in background (can be interrupted by next button)
+        // Play in background with Immediate priority (stops any previous sounds)
         Task.Run(async () =>
         {
-            _soundService.StopAllSounds();
             GameConsole.Log("[FFF] Playing FFFReadQuestion...");
-            _soundService.PlaySound(SoundEffect.FFFReadQuestion);
+            _soundService.QueueSound(SoundEffect.FFFReadQuestion, AudioPriority.Immediate);
             GameConsole.Log("[FFF] FFFReadQuestion finished");
         });
     }
@@ -765,12 +764,9 @@ public partial class FFFControlPanel : UserControl
         // Play sounds sequentially in background thread - randomize/transmit AFTER cue plays
         Task.Run(async () =>
         {
-            // Stop all sounds (end FFFReadQuestion if still playing)
-            _soundService.StopAllSounds();
-            
-            // Play FFFThreeNotes first (the cue sound)
+            // Play FFFThreeNotes with Immediate priority (stops FFFReadQuestion if still playing)
             GameConsole.Log("[FFF] Playing FFFThreeNotes...");
-            _soundService.PlaySound(SoundEffect.FFFThreeNotes);
+            _soundService.QueueSound(SoundEffect.FFFThreeNotes, AudioPriority.Immediate);
             GameConsole.Log("[FFF] FFFThreeNotes finished");
             
             // NOW randomize answer positions (after cue finishes)
@@ -1050,9 +1046,6 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
-        // Stop FFFReadAnswers (playing in background from Step 3)
-        _soundService.StopAllSounds();
-        
         if (correctAnswers.Count == 1)
         {
             // Only 1 winner - auto-win
@@ -1073,8 +1066,9 @@ public partial class FFFControlPanel : UserControl
             {
                 try
                 {
+                    // Immediate priority stops FFFReadAnswers (playing from Step 3)
                     GameConsole.Log("[FFF] Playing FFFWinner...");
-                    _soundService.PlaySound(SoundEffect.FFFWinner);
+                    _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
@@ -1112,8 +1106,9 @@ public partial class FFFControlPanel : UserControl
             {
                 try
                 {
+                    // Immediate priority stops FFFReadAnswers (playing from Step 3)
                     GameConsole.Log("[FFF] Playing FFFWinner...");
-                    _soundService.PlaySound(SoundEffect.FFFWinner);
+                    _soundService.QueueSound(SoundEffect.FFFWinner, AudioPriority.Immediate);
                     GameConsole.Log("[FFF] FFFWinner finished");
                     
                     if (_soundService != null)
