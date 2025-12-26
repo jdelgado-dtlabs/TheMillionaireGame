@@ -303,23 +303,37 @@ public partial class OptionsDialog : Form
         // Save audio device selection
         if (cmbAudioDevice.SelectedItem is Services.AudioDeviceInfo selectedDevice)
         {
-            _settings.AudioOutputDevice = selectedDevice.IsDefault ? null : selectedDevice.DeviceId;
+            // Get the new device ID (null for default)
+            var newDeviceId = selectedDevice.IsDefault ? null : selectedDevice.DeviceId;
             
-            // Apply device change to SoundService immediately
-            try
+            // Only apply device change if it actually changed
+            if (newDeviceId != _settings.AudioOutputDevice)
             {
-                var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
-                soundService?.SetAudioOutputDevice(_settings.AudioOutputDevice);
+                _settings.AudioOutputDevice = newDeviceId;
                 
-                if (Program.DebugMode)
+                // Apply device change to SoundService immediately
+                try
                 {
-                    GameConsole.Debug($"[OptionsDialog] Audio output device changed to: {selectedDevice.FriendlyName}");
+                    var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+                    soundService?.SetAudioOutputDevice(_settings.AudioOutputDevice);
+                    
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Debug($"[OptionsDialog] Audio output device changed to: {selectedDevice.FriendlyName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to change audio device: {ex.Message}", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show($"Failed to change audio device: {ex.Message}", "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug($"[OptionsDialog] Audio device unchanged: {selectedDevice.FriendlyName}");
+                }
             }
         }
 
@@ -718,14 +732,18 @@ public partial class OptionsDialog : Form
 
     private void chkShowWebServiceConsole_CheckedChanged(object sender, EventArgs e)
     {
-        // Update WebService console visibility immediately
-        if (chkShowWebServiceConsole.Checked)
+        // Only update WebService console visibility if web server is running
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        if (controlPanel?.IsWebServerRunning == true)
         {
-            WebServiceConsole.Show();
-        }
-        else
-        {
-            WebServiceConsole.Hide();
+            if (chkShowWebServiceConsole.Checked)
+            {
+                WebServiceConsole.Show();
+            }
+            else
+            {
+                WebServiceConsole.Hide();
+            }
         }
         MarkChanged();
     }

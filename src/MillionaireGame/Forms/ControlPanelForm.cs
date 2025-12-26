@@ -117,6 +117,7 @@ public partial class ControlPanelForm : Form
     // Web server for audience participation
     private WebServerHost? _webServerHost;
     public WebServerHost? WebServerHost => _webServerHost;
+    public bool IsWebServerRunning => _webServerHost != null && _webServerHost.IsRunning;
 
     // Helper methods to access stop images from Designer
     private static Image? GetRedStopImage()
@@ -321,12 +322,16 @@ public partial class ControlPanelForm : Form
         // Initialize web server host first
         InitializeWebServer();
         
-        // Initialize WebService console if enabled (before auto-start so it doesn't steal focus)
+        // Initialize WebService console only if web server will be started
+        // (before auto-start so it doesn't steal focus)
 #if DEBUG
         // Always show in debug mode
-        WebServiceConsole.Show();
+        if (_appSettings.Settings.AudienceServerAutoStart)
+        {
+            WebServiceConsole.Show();
+        }
 #else
-        if (_appSettings.Settings.ShowWebServiceConsole)
+        if (_appSettings.Settings.ShowWebServiceConsole && _appSettings.Settings.AudienceServerAutoStart)
         {
             WebServiceConsole.Show();
         }
@@ -535,6 +540,16 @@ public partial class ControlPanelForm : Form
             return;
         }
         
+        // Show WebService console when server starts
+#if DEBUG
+        WebServiceConsole.Show();
+#else
+        if (_appSettings.Settings.ShowWebServiceConsole)
+        {
+            WebServiceConsole.Show();
+        }
+#endif
+        
         // Log to WebService console
         WebServiceConsole.LogSeparator();
         WebServiceConsole.Info("✓ Server started successfully");
@@ -557,6 +572,9 @@ public partial class ControlPanelForm : Form
         WebServiceConsole.LogSeparator();
         WebServiceConsole.Info("Server stopped");
         WebServiceConsole.LogSeparator();
+        
+        // Hide WebService console when server stops
+        WebServiceConsole.Hide();
         
         // Reset title
         Text = "The Millionaire Game - Control Panel";

@@ -741,27 +741,27 @@ public partial class FFFControlPanel : UserControl
             return;
         }
         
-        // Randomly select a question from loaded questions if not already selected
-        if (_currentQuestion == null)
+        // ALWAYS select a new random question when Show Question is clicked
+        if (_questions == null || _questions.Count == 0)
         {
-            if (_questions == null || _questions.Count == 0)
-            {
-                GameConsole.Log("[FFF] ERROR: No questions loaded. Please wait for questions to load on startup.");
-                return;
-            }
-            
-            var random = new Random();
-            var index = random.Next(_questions.Count);
-            _currentQuestion = _questions[index];
-            
-            // Display question
-            txtQuestionDisplay.Text = _currentQuestion.QuestionText;
-            txtOption1.Text = _currentQuestion.AnswerA;
-            txtOption2.Text = _currentQuestion.AnswerB;
-            txtOption3.Text = _currentQuestion.AnswerC;
-            txtOption4.Text = _currentQuestion.AnswerD;
-            lblCorrectOrder.Text = $"Correct Order: {_currentQuestion.CorrectOrder}";
+            GameConsole.Error("[FFF] No questions loaded. Please click Load Questions first.");
+            return;
         }
+        
+        // Select random question
+        var random = new Random();
+        var index = random.Next(_questions.Count);
+        _currentQuestion = _questions[index];
+        
+        GameConsole.Log($"[FFF] Selected question ID: {_currentQuestion.Id}, Text: {_currentQuestion.QuestionText}");
+        
+        // Display question in control panel (for host reference)
+        txtQuestionDisplay.Text = _currentQuestion.QuestionText;
+        txtOption1.Text = _currentQuestion.AnswerA;
+        txtOption2.Text = _currentQuestion.AnswerB;
+        txtOption3.Text = _currentQuestion.AnswerC;
+        txtOption4.Text = _currentQuestion.AnswerD;
+        lblCorrectOrder.Text = $"Correct Order: {_currentQuestion.CorrectOrder}";
         
         if (_soundService == null)
         {
@@ -1096,7 +1096,44 @@ public partial class FFFControlPanel : UserControl
         
         if (correctAnswers.Count == 0)
         {
-            GameConsole.Error("[FFF] No correct answers - no winner to announce");
+            // NO WINNERS SCENARIO - All participants answered incorrectly
+            GameConsole.Warn("[FFF] No correct answers - handling no-winner scenario");
+            
+            // Stop all sounds first
+            _soundService.StopAllSounds(fadeout: false);
+            GameConsole.Log("[FFF] All sounds stopped");
+            
+            // Display "No Winners" message
+            lblWinner.Text = "Winner: ❌ No Winners";
+            lblWinner.ForeColor = Color.Red;
+            GameConsole.Log("[FFF] Displaying 'No Winners' message");
+            
+            // TODO: Show empty strap on TV screen with "No Winners" text (Phase 4 - Screen Animations)
+            
+            // Play Q01to05Wrong sound effect
+            GameConsole.Log("[FFF] Playing Q01to05Wrong sound...");
+            _soundService.PlaySound(SoundEffect.Q01to05Wrong, loop: false);
+            
+            // Update state to allow retry
+            _currentState = FFFFlowState.QuestionReady;
+            
+            // Clear submissions and rankings to prepare for new question
+            _submissions.Clear();
+            _rankings.Clear();
+            lstAnswers.Items.Clear();
+            lstRankings.Items.Clear();
+            lblAnswerCount.Text = "0 Answers";
+            
+            // Reset reveal click counter
+            _revealCorrectClickCount = 0;
+            btnRevealCorrect.Text = "4. Reveal Correct";
+            
+            GameConsole.Log("[FFF] No-winner scenario complete - ready to select new question");
+            GameConsole.Info("[FFF] ⚠️ All participants failed - select a new question to retry");
+            
+            // Update UI to enable Show Questions button
+            UpdateUIState();
+            
             return;
         }
         

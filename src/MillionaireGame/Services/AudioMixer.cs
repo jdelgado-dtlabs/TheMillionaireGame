@@ -102,10 +102,11 @@ public class AudioMixer : IDisposable
     }
 
     /// <summary>
-    /// Change the audio output device without disposing the mixer
+    /// Change the audio output device without disposing the mixer or channel connections.
+    /// Only swaps the WasapiOut device - all channel state is preserved.
     /// </summary>
-    /// <param name="musicSource">Music channel audio source</param>
-    /// <param name="effectsSource">Effects channel audio source</param>
+    /// <param name="musicSource">Music channel audio source (not used, kept for compatibility)</param>
+    /// <param name="effectsSource">Effects channel audio source (not used, kept for compatibility)</param>
     /// <param name="deviceId">Optional audio output device ID (null for system default)</param>
     public void ChangeDevice(ISampleSource musicSource, ISampleSource effectsSource, string? deviceId = null)
     {
@@ -114,25 +115,38 @@ public class AudioMixer : IDisposable
             if (_disposed)
                 throw new ObjectDisposedException(nameof(AudioMixer));
 
-            // Stop current playback
-            bool wasPlaying = _systemOutput?.PlaybackState == PlaybackState.Playing;
-            
-            if (wasPlaying)
+            // CRITICAL: Check if mixer exists - if not, do full initialization
+            if (_mixer == null)
             {
-                Stop();
+                if (Program.DebugMode)
+                {
+                    GameConsole.Warn("[AudioMixer] Mixer not initialized, performing full initialization");
+                }
+                Initialize(musicSource, effectsSource, deviceId);
+                return;
             }
 
-            // Clean up and reinitialize with new device
-            CleanupInternal();
+            // Remember playback state
+            bool wasPlaying = _systemOutput?.PlaybackState == PlaybackState.Playing;
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[AudioMixer] ChangeDevice called - wasPlaying: {wasPlaying}");
+            }
 
             try
             {
-                // Create mixer that combines music and effects
-                _mixer = new MixingSampleSource(musicSource.WaveFormat);
-                _mixer.AddSource(musicSource);
-                _mixer.AddSource(effectsSource);
+                // Stop current output
+                if (wasPlaying)
+                {
+                    _systemOutput?.Stop();
+                }
 
-                // Create system audio output with new device
+                // Dispose ONLY the WasapiOut - keep the mixer and all channel connections intact
+                _systemOutput?.Dispose();
+                _systemOutput = null;
+
+                // Create new WasapiOut with new device
                 if (string.IsNullOrWhiteSpace(deviceId))
                 {
                     _systemOutput = new WasapiOut();
@@ -165,6 +179,7 @@ public class AudioMixer : IDisposable
                     }
                 }
 
+                // Initialize with EXISTING mixer (preserves all channel connections and state)
                 _systemOutput.Initialize(_mixer.ToWaveSource());
                 _systemOutput.Volume = _masterVolume;
 
@@ -174,16 +189,18 @@ public class AudioMixer : IDisposable
                     GameConsole.Debug($"[AudioMixer] Device changed to: {deviceName}");
                 }
 
-                // Restart playback if it was playing before
-                if (wasPlaying)
+                // Always restart playback (even if nothing was playing, mixer needs to be active)
+                Start();
+                
+                if (Program.DebugMode)
                 {
-                    Start();
+                    GameConsole.Debug($"[AudioMixer] Device change complete - mixer connections preserved");
                 }
             }
             catch (Exception ex)
             {
                 GameConsole.Error($"[AudioMixer] Device change failed: {ex.Message}");
-                CleanupInternal();
+                // Don't cleanup - try to preserve existing state
                 throw;
             }
         }
