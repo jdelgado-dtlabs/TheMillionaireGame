@@ -841,7 +841,7 @@ public partial class FFFControlPanel : UserControl
             
             // Now play FFFThinking (20 seconds)
             GameConsole.Log("[FFF] Playing FFFThinking (20s)...");
-            await Task.Run(() => _soundService.PlaySound(SoundEffect.FFFThinking));
+            _soundService.PlaySound(SoundEffect.FFFThinking);
             
             if (InvokeRequired)
             {
