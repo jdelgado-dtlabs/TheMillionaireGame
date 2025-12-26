@@ -179,8 +179,8 @@ public class EffectsChannel : IDisposable
     /// <summary>
     /// Fade out current audio and clear queue (smooth stop)
     /// </summary>
-    /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 200ms)</param>
-    public void StopQueueWithFadeout(int fadeoutDurationMs = 200)
+    /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 50ms)</param>
+    public void StopQueueWithFadeout(int fadeoutDurationMs = 50)
     {
         _cueQueue.StopWithFadeout(fadeoutDurationMs);
     }

@@ -258,8 +258,8 @@ namespace MillionaireGame.Services
         /// <summary>
         /// Fades out current audio and clears queue (smooth stop)
         /// </summary>
-        /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 200ms, minimum: 10ms)</param>
-        public void StopWithFadeout(int fadeoutDurationMs = 200)
+        /// <param name="fadeoutDurationMs">Duration of fadeout in milliseconds (default: 50ms, minimum: 10ms)</param>
+        public void StopWithFadeout(int fadeoutDurationMs = 50)
         {
             lock (_lock)
             {
