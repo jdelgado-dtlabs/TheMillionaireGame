@@ -150,9 +150,15 @@ public class GameService
         
         // Use MoneyTreeService to get formatted values
         _gameState.CurrentValue = _moneyTreeService.GetFormattedValue(displayLevel);
-        _gameState.CorrectValue = _moneyTreeService.GetFormattedValue(level + 1);
+        
+        // Calculate "If Correct" value (what you win for answering current question correctly)
+        if (level == 0)
+            _gameState.CorrectValue = "$0"; // Game not started yet
+        else
+            _gameState.CorrectValue = _moneyTreeService.GetFormattedValue(level); // Current question's prize
+        
         _gameState.WrongValue = _moneyTreeService.GetWrongValue(level, isRiskMode);
-        _gameState.DropValue = _moneyTreeService.GetDropValue(level, isRiskMode);
+        _gameState.DropValue = _moneyTreeService.GetDropValue(displayLevel, isRiskMode); // What you've already won
         _gameState.QuestionsLeft = (15 - level).ToString();
     }
 

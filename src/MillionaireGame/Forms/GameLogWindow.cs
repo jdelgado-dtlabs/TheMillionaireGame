@@ -89,7 +89,8 @@ public partial class GameLogWindow : Form
         {
             try
             {
-                Invoke(new Action<string, Utilities.LogLevel>(Log), message, level);
+                // Use BeginInvoke (async) to prevent blocking the audio thread
+                BeginInvoke(new Action<string, Utilities.LogLevel>(Log), message, level);
             }
             catch (ObjectDisposedException)
             {

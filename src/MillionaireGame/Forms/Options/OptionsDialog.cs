@@ -5,6 +5,7 @@ using MillionaireGame.Utilities;
 using MillionaireGame.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Management;
+using System.Data;
 
 namespace MillionaireGame.Forms.Options;
 
@@ -14,6 +15,8 @@ public partial class OptionsDialog : Form
     private readonly ApplicationSettingsManager _settingsManager;
     private readonly MoneyTreeService _moneyTreeService;
     private bool _hasChanges;
+    private readonly DataTable _soundPackDataTable = new DataTable();
+    private readonly DataView _soundPackDataView;
     
     /// <summary>
     /// Event fired when settings are applied (via Apply button or OK button)
@@ -25,6 +28,10 @@ public partial class OptionsDialog : Form
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
         _moneyTreeService = new MoneyTreeService(); // Load money tree settings
+        
+        // Initialize DataView before InitializeComponent (which may trigger events)
+        _soundPackDataView = new DataView(_soundPackDataTable);
+        
         InitializeComponent();
         IconHelper.ApplyToForm(this);
         
@@ -46,6 +53,12 @@ public partial class OptionsDialog : Form
         
         // Handle form closing to respect user's choice about unsaved changes
         FormClosing += OptionsDialog_FormClosing;
+        
+        // Initialize soundpack DataGridView
+        InitializeSoundPackDataGrid();
+        
+        // Wire up audio device refresh button
+        btnRefreshDevices.Click += (s, e) => LoadAudioDevices();
         
         LoadSettings();
     }
@@ -97,6 +110,12 @@ public partial class OptionsDialog : Form
         {
             cmbSoundPack.SelectedIndex = 0; // Default to first pack if selected pack not found
         }
+        
+        // Load audio devices for mixer
+        LoadAudioDevices();
+        
+        // Load audio settings (silence detection, crossfade, processing)
+        LoadAudioSettings();
         
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
@@ -283,6 +302,46 @@ public partial class OptionsDialog : Form
         {
             _settings.SelectedSoundPack = cmbSoundPack.SelectedItem.ToString() ?? "Default";
         }
+        
+        // Save audio device selection
+        if (cmbAudioDevice.SelectedItem is Services.AudioDeviceInfo selectedDevice)
+        {
+            // Get the new device ID (null for default)
+            var newDeviceId = selectedDevice.IsDefault ? null : selectedDevice.DeviceId;
+            
+            // Only apply device change if it actually changed
+            if (newDeviceId != _settings.AudioOutputDevice)
+            {
+                _settings.AudioOutputDevice = newDeviceId;
+                
+                // Apply device change to SoundService immediately
+                try
+                {
+                    var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+                    soundService?.SetAudioOutputDevice(_settings.AudioOutputDevice);
+                    
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Debug($"[OptionsDialog] Audio output device changed to: {selectedDevice.FriendlyName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to change audio device: {ex.Message}", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug($"[OptionsDialog] Audio device unchanged: {selectedDevice.FriendlyName}");
+                }
+            }
+        }
+
+        // Save audio settings (silence detection, crossfade, processing)
+        SaveAudioSettings();
 
         // Console settings (only save in release mode, debug is always true)
 #if !DEBUG
@@ -679,14 +738,18 @@ public partial class OptionsDialog : Form
 
     private void chkShowWebServiceConsole_CheckedChanged(object sender, EventArgs e)
     {
-        // Update WebService console visibility immediately
-        if (chkShowWebServiceConsole.Checked)
+        // Only update WebService console visibility if web server is running
+        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
+        if (controlPanel?.IsWebServerRunning == true)
         {
-            WebServiceConsole.Show();
-        }
-        else
-        {
-            WebServiceConsole.Hide();
+            if (chkShowWebServiceConsole.Checked)
+            {
+                WebServiceConsole.Show();
+            }
+            else
+            {
+                WebServiceConsole.Hide();
+            }
         }
         MarkChanged();
     }
@@ -696,6 +759,152 @@ public partial class OptionsDialog : Form
     {
         MarkChanged();
     }
+
+    #region Audio Settings Event Handlers
+
+    private void chkEnableSilenceDetection_CheckedChanged(object sender, EventArgs e)
+    {
+        var enabled = chkEnableSilenceDetection.Checked;
+        trackBarSilenceThreshold.Enabled = enabled;
+        numSilenceDuration.Enabled = enabled;
+        numInitialDelay.Enabled = enabled;
+        numFadeoutDuration.Enabled = enabled;
+        MarkChanged();
+    }
+
+    private void trackBarSilenceThreshold_ValueChanged(object sender, EventArgs e)
+    {
+        lblSilenceThresholdValue.Text = $"{trackBarSilenceThreshold.Value} dB";
+        MarkChanged();
+    }
+
+    private void chkEnableCrossfade_CheckedChanged(object sender, EventArgs e)
+    {
+        numCrossfadeDuration.Enabled = chkEnableCrossfade.Checked;
+        MarkChanged();
+    }
+
+    private void trackBarGain_ValueChanged(object sender, EventArgs e)
+    {
+        if (sender == trackBarMasterGain)
+        {
+            var value = trackBarMasterGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblMasterGainValue.Text = $"{sign}{value} dB";
+        }
+        else if (sender == trackBarEffectsGain)
+        {
+            var value = trackBarEffectsGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblEffectsGainValue.Text = $"{sign}{value} dB";
+        }
+        else if (sender == trackBarMusicGain)
+        {
+            var value = trackBarMusicGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblMusicGainValue.Text = $"{sign}{value} dB";
+        }
+        MarkChanged();
+    }
+
+    private void LoadAudioSettings()
+    {
+        // Silence Detection Settings
+        chkEnableSilenceDetection.Checked = _settings.SilenceDetection.Enabled;
+        trackBarSilenceThreshold.Value = (int)_settings.SilenceDetection.ThresholdDb;
+        numSilenceDuration.Value = _settings.SilenceDetection.SilenceDurationMs;
+        numInitialDelay.Value = _settings.SilenceDetection.InitialDelayMs;
+        numFadeoutDuration.Value = _settings.SilenceDetection.FadeoutDurationMs;
+
+        // Update threshold label
+        lblSilenceThresholdValue.Text = $"{trackBarSilenceThreshold.Value} dB";
+
+        // Enable/disable controls based on checkbox
+        var silenceEnabled = chkEnableSilenceDetection.Checked;
+        trackBarSilenceThreshold.Enabled = silenceEnabled;
+        numSilenceDuration.Enabled = silenceEnabled;
+        numInitialDelay.Enabled = silenceEnabled;
+        numFadeoutDuration.Enabled = silenceEnabled;
+
+        // Crossfade Settings
+        chkEnableCrossfade.Checked = _settings.Crossfade.Enabled;
+        numCrossfadeDuration.Value = _settings.Crossfade.CrossfadeDurationMs;
+
+        // Enable/disable crossfade duration based on checkbox
+        numCrossfadeDuration.Enabled = chkEnableCrossfade.Checked;
+
+        // Audio Processing Settings
+        trackBarMasterGain.Value = (int)_settings.AudioProcessing.MasterGainDb;
+        trackBarEffectsGain.Value = (int)_settings.AudioProcessing.EffectsGainDb;
+        trackBarMusicGain.Value = (int)_settings.AudioProcessing.MusicGainDb;
+        chkEnableLimiter.Checked = _settings.AudioProcessing.EnableLimiter;
+
+        // Update gain labels
+        UpdateAllGainLabels();
+    }
+
+    private void SaveAudioSettings()
+    {
+        // Silence Detection Settings
+        _settings.SilenceDetection.Enabled = chkEnableSilenceDetection.Checked;
+        _settings.SilenceDetection.ThresholdDb = trackBarSilenceThreshold.Value;
+        _settings.SilenceDetection.SilenceDurationMs = (int)numSilenceDuration.Value;
+        _settings.SilenceDetection.InitialDelayMs = (int)numInitialDelay.Value;
+        _settings.SilenceDetection.FadeoutDurationMs = (int)numFadeoutDuration.Value;
+
+        // Crossfade Settings
+        _settings.Crossfade.Enabled = chkEnableCrossfade.Checked;
+        _settings.Crossfade.CrossfadeDurationMs = (int)numCrossfadeDuration.Value;
+
+        // Audio Processing Settings
+        _settings.AudioProcessing.MasterGainDb = (float)trackBarMasterGain.Value;
+        _settings.AudioProcessing.EffectsGainDb = (float)trackBarEffectsGain.Value;
+        _settings.AudioProcessing.MusicGainDb = (float)trackBarMusicGain.Value;
+        _settings.AudioProcessing.EnableLimiter = chkEnableLimiter.Checked;
+
+        // Apply audio settings to SoundService
+        ApplyAudioSettings();
+    }
+
+    private void ApplyAudioSettings()
+    {
+        try
+        {
+            // Notify SoundService to reload settings
+            var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+            if (soundService != null)
+            {
+                // SoundService will automatically pick up the new settings from ApplicationSettings.Instance
+                // No explicit refresh needed as it already references the singleton
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug("[OptionsDialog] Audio settings applied successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to apply audio settings: {ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void UpdateAllGainLabels()
+    {
+        var masterValue = trackBarMasterGain.Value;
+        var masterSign = masterValue >= 0 ? "+" : "";
+        lblMasterGainValue.Text = $"{masterSign}{masterValue} dB";
+
+        var effectsValue = trackBarEffectsGain.Value;
+        var effectsSign = effectsValue >= 0 ? "+" : "";
+        lblEffectsGainValue.Text = $"{effectsSign}{effectsValue} dB";
+
+        var musicValue = trackBarMusicGain.Value;
+        var musicSign = musicValue >= 0 ? "+" : "";
+        lblMusicGainValue.Text = $"{musicSign}{musicValue} dB";
+    }
+
+    #endregion
 
     // Soundpack management methods
     private void LoadAvailableSoundPacks()
@@ -735,6 +944,52 @@ public partial class OptionsDialog : Form
         }
     }
 
+    private void LoadAudioDevices()
+    {
+        try
+        {
+            var devices = Services.AudioDeviceManager.GetAudioOutputDevices();
+            cmbAudioDevice.Items.Clear();
+            
+            foreach (var device in devices)
+            {
+                cmbAudioDevice.Items.Add(device);
+            }
+            
+            // Select current device or default
+            var currentDeviceId = _settings.AudioOutputDevice;
+            if (string.IsNullOrWhiteSpace(currentDeviceId))
+            {
+                // Select system default
+                cmbAudioDevice.SelectedIndex = 0;
+            }
+            else
+            {
+                // Find matching device
+                for (int i = 0; i < cmbAudioDevice.Items.Count; i++)
+                {
+                    if (cmbAudioDevice.Items[i] is Services.AudioDeviceInfo device && 
+                        device.DeviceId == currentDeviceId)
+                    {
+                        cmbAudioDevice.SelectedIndex = i;
+                        break;
+                    }
+                }
+                
+                // If not found, select default
+                if (cmbAudioDevice.SelectedIndex == -1 && cmbAudioDevice.Items.Count > 0)
+                {
+                    cmbAudioDevice.SelectedIndex = 0;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error loading audio devices: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     private void cmbSoundPack_SelectedIndexChanged(object sender, EventArgs e)
     {
         try
@@ -744,14 +999,16 @@ public partial class OptionsDialog : Form
             var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
             if (soundService == null)
             {
-                lstSoundPackInfo.Items.Add("Error: Sound service not available");
+                MessageBox.Show("Sound service not available", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             
             var soundPackManager = soundService.GetSoundPackManager();
             if (soundPackManager == null)
             {
-                lstSoundPackInfo.Items.Add("Error: Sound pack manager not available");
+                MessageBox.Show("Sound pack manager not available", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             
@@ -767,20 +1024,21 @@ public partial class OptionsDialog : Form
                 }
                 else
                 {
-                    lstSoundPackInfo.Items.Clear();
-                    lstSoundPackInfo.Items.Add($"No sounds found in pack '{selectedPack}'");
+                    _soundPackDataTable.Clear();
+                    MessageBox.Show($"No sounds found in pack '{selectedPack}'", "Information",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             else
             {
-                lstSoundPackInfo.Items.Clear();
-                lstSoundPackInfo.Items.Add($"Failed to load soundpack '{selectedPack}'");
+                _soundPackDataTable.Clear();
+                MessageBox.Show($"Failed to load soundpack '{selectedPack}'", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         catch (Exception ex)
         {
-            lstSoundPackInfo.Items.Clear();
-            lstSoundPackInfo.Items.Add($"Error: {ex.Message}");
+            _soundPackDataTable.Clear();
             MessageBox.Show($"Error loading soundpack: {ex.Message}\n\n{ex.StackTrace}", "Error", 
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -788,71 +1046,231 @@ public partial class OptionsDialog : Form
 
     private void UpdateSoundPackInfo(IReadOnlyDictionary<string, string> sounds)
     {
-        lstSoundPackInfo.Items.Clear();
+        _soundPackDataTable.Clear();
 
         if (sounds == null || sounds.Count == 0)
         {
-            lstSoundPackInfo.Items.Add("No sounds loaded");
             return;
         }
 
-        // Group sounds by category
-        var categories = new Dictionary<string, List<string>>
-        {
-            ["General/Broadcast"] = new List<string>(),
-            ["Fastest Finger First"] = new List<string>(),
-            ["Lifelines"] = new List<string>(),
-            ["Question Lights Down"] = new List<string>(),
-            ["Question Bed Music"] = new List<string>(),
-            ["Final Answer"] = new List<string>(),
-            ["Correct Answer"] = new List<string>(),
-            ["Wrong Answer"] = new List<string>()
-        };
+        var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+        var soundPackManager = soundService?.GetSoundPackManager();
+        var packDirectory = soundPackManager != null 
+            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "sounds", soundPackManager.CurrentPackName)
+            : string.Empty;
 
-        // Categorize sounds (skip empty sound paths)
-        foreach (var sound in sounds)
+        foreach (var sound in sounds.OrderBy(s => s.Key))
         {
-            // Skip sounds with empty file paths
-            if (string.IsNullOrWhiteSpace(sound.Value))
-                continue;
+            var key = sound.Key;
+            var relativePath = sound.Value;
+            var fileName = Path.GetFileName(relativePath);
+            var fullPath = !string.IsNullOrWhiteSpace(packDirectory) && !string.IsNullOrWhiteSpace(relativePath)
+                ? Path.Combine(packDirectory, relativePath)
+                : string.Empty;
 
-            string key = sound.Key;
-            string fileName = Path.GetFileName(sound.Value);
-            
-            if (key.Contains("Host") || key.Contains("Opening") || key.Contains("Explain") || 
-                key.Contains("Quit") || key.Contains("Walk") || key.Contains("Game") || 
-                key.Contains("Close") || key.Contains("Commercial") || key.Contains("Risk") ||
-                key.Contains("Random") || key.Contains("Safety") || key.Contains("ToHotSeat"))
-                categories["General/Broadcast"].Add($"  {key}: {fileName}");
-            else if (key.Contains("FFF") || key.Contains("Fastest"))
-                categories["Fastest Finger First"].Add($"  {key}: {fileName}");
-            else if (key.Contains("5050") || key.Contains("PAF") || key.Contains("ATA") || 
-                     key.Contains("Switch") || key.Contains("Lifeline") || key.Contains("Double"))
-                categories["Lifelines"].Add($"  {key}: {fileName}");
-            else if (key.Contains("LightsDown"))
-                categories["Question Lights Down"].Add($"  {key}: {fileName}");
-            else if (key.Contains("Bed"))
-                categories["Question Bed Music"].Add($"  {key}: {fileName}");
-            else if (key.Contains("Final"))
-                categories["Final Answer"].Add($"  {key}: {fileName}");
-            else if (key.Contains("Correct"))
-                categories["Correct Answer"].Add($"  {key}: {fileName}");
-            else if (key.Contains("Wrong"))
-                categories["Wrong Answer"].Add($"  {key}: {fileName}");
-        }
-
-        // Display categorized sounds
-        foreach (var category in categories)
-        {
-            if (category.Value.Count > 0)
+            // Determine status
+            string status;
+            if (string.IsNullOrWhiteSpace(relativePath))
             {
-                lstSoundPackInfo.Items.Add($"[{category.Key}]");
-                foreach (var sound in category.Value.OrderBy(s => s))
-                {
-                    lstSoundPackInfo.Items.Add(sound);
-                }
-                lstSoundPackInfo.Items.Add(""); // Empty line between categories
+                status = "❌ Empty";
             }
+            else if (string.IsNullOrWhiteSpace(fullPath) || !File.Exists(fullPath))
+            {
+                status = "⚠️ Missing";
+            }
+            else
+            {
+                status = "✅ OK";
+            }
+
+            // Categorize sound
+            string category = CategorizeSound(key);
+
+            _soundPackDataTable.Rows.Add(key, fileName, status, category, fullPath);
+        }
+    }
+
+    private string CategorizeSound(string key)
+    {
+        if (key.Contains("Host") || key.Contains("Opening") || key.Contains("Explain") ||
+            key.Contains("Quit") || key.Contains("Walk") || key.Contains("Game") ||
+            key.Contains("Close") || key.Contains("Commercial") || key.Contains("Risk") ||
+            key.Contains("Random") || key.Contains("Safety") || key.Contains("ToHotSeat"))
+            return "General/Broadcast";
+        else if (key.Contains("FFF") || key.Contains("Fastest"))
+            return "Fastest Finger First";
+        else if (key.Contains("5050") || key.Contains("PAF") || key.Contains("ATA") ||
+                 key.Contains("Switch") || key.Contains("Lifeline") || key.Contains("Double") ||
+                 key.Contains("ATH"))
+            return "Lifelines";
+        else if (key.Contains("LightsDown"))
+            return "Lights Down";
+        else if (key.Contains("Bed"))
+            return "Bed Music";
+        else if (key.Contains("Final"))
+            return "Final Answer";
+        else if (key.Contains("Correct"))
+            return "Correct Answer";
+        else if (key.Contains("Wrong"))
+            return "Wrong Answer";
+        else
+            return "Other";
+    }
+
+    private void InitializeSoundPackDataGrid()
+    {
+        // Setup DataTable columns
+        _soundPackDataTable.Columns.Add("Key", typeof(string));
+        _soundPackDataTable.Columns.Add("FileName", typeof(string));
+        _soundPackDataTable.Columns.Add("Status", typeof(string));
+        _soundPackDataTable.Columns.Add("Category", typeof(string));
+        _soundPackDataTable.Columns.Add("FullPath", typeof(string));
+
+        // Bind to DataGridView (DataView already initialized in constructor)
+        dgvSoundPackInfo.AutoGenerateColumns = false;
+        dgvSoundPackInfo.DataSource = _soundPackDataView;
+
+        // Manually create columns
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Key",
+            HeaderText = "Sound Key",
+            DataPropertyName = "Key",
+            Width = 180
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "FileName",
+            HeaderText = "File Name",
+            DataPropertyName = "FileName",
+            Width = 200
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Status",
+            HeaderText = "Status",
+            DataPropertyName = "Status",
+            Width = 80
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "Category",
+            HeaderText = "Category",
+            DataPropertyName = "Category",
+            Width = 150
+        });
+
+        dgvSoundPackInfo.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = "FullPath",
+            HeaderText = "FullPath",
+            DataPropertyName = "FullPath",
+            Visible = false
+        });
+
+        // Style status column with colors
+        dgvSoundPackInfo.CellFormatting += (s, e) =>
+        {
+            if (e.ColumnIndex == dgvSoundPackInfo.Columns["Status"].Index && e.Value != null)
+            {
+                var status = e.Value.ToString();
+                if (status?.StartsWith("✅") == true)
+                {
+                    e.CellStyle.ForeColor = Color.Green;
+                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                }
+                else if (status?.StartsWith("⚠️") == true)
+                {
+                    e.CellStyle.ForeColor = Color.Orange;
+                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                }
+                else if (status?.StartsWith("❌") == true)
+                {
+                    e.CellStyle.ForeColor = Color.Red;
+                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                }
+            }
+        };
+    }
+
+    private void txtSearchSounds_TextChanged(object? sender, EventArgs e)
+    {
+        var searchText = txtSearchSounds.Text;
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            _soundPackDataView.RowFilter = string.Empty;
+        }
+        else
+        {
+            // Filter by key or filename
+            _soundPackDataView.RowFilter = $"Key LIKE '%{searchText.Replace("'", "''")}%' OR FileName LIKE '%{searchText.Replace("'", "''")}%'";
+        }
+    }
+
+    private void btnPlaySelected_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (dgvSoundPackInfo.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a sound to play.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedRow = dgvSoundPackInfo.SelectedRows[0];
+            var key = selectedRow.Cells["Key"].Value?.ToString();
+            var status = selectedRow.Cells["Status"].Value?.ToString();
+            var fullPath = selectedRow.Cells["FullPath"].Value?.ToString();
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                MessageBox.Show("Invalid sound key.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (status?.StartsWith("❌") == true || status?.StartsWith("⚠️") == true)
+            {
+                MessageBox.Show($"Cannot play this sound - file is missing or invalid.\n\nPath: {fullPath}",
+                    "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+            if (soundService == null)
+            {
+                MessageBox.Show("Sound service not available.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Play the sound using the soundpack key
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[OptionsDialog] Play button clicked for key: {key}");
+                GameConsole.Debug($"[OptionsDialog] File path: {fullPath}");
+            }
+            
+            var resultId = soundService.PlaySoundByKey(key, loop: false);
+            
+            if (Program.DebugMode)
+            {
+                GameConsole.Debug($"[OptionsDialog] PlaySoundByKey returned: {(string.IsNullOrEmpty(resultId) ? "EMPTY" : resultId)}");
+            }
+
+            if (Program.DebugMode)
+            {
+                GameConsole.Info($"[OptionsDialog] Testing sound: {key}");
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error playing sound: {ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

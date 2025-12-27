@@ -90,7 +90,8 @@ public partial class WebServerLogWindow : Form
         {
             try
             {
-                Invoke(new Action<string, Utilities.LogLevel>(Log), message, level);
+                // Use BeginInvoke for async, non-blocking marshaling to UI thread
+                BeginInvoke(new Action<string, Utilities.LogLevel>(Log), message, level);
             }
             catch (ObjectDisposedException)
             {
@@ -157,7 +158,8 @@ public partial class WebServerLogWindow : Form
     {
         if (InvokeRequired)
         {
-            Invoke(new Action(LogSeparator));
+            // Use BeginInvoke for async, non-blocking marshaling to UI thread
+            BeginInvoke(new Action(LogSeparator));
             return;
         }
 

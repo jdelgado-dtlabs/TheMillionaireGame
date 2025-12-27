@@ -227,11 +227,14 @@ public partial class FFFWindow : Form
         btnFFFIntro.BackColor = Color.DodgerBlue;
         btnFFFIntro.Enabled = false;
         
-        // Play FFFLightsDown sound
-        _soundService?.PlaySound(SoundEffect.FFFLightsDown, loop: false);
+        // Queue FFFLightsDown sound
+        _soundService?.QueueSound(SoundEffect.FFFLightsDown, AudioPriority.Normal);
         
-        // Wait for sound to finish (approximately 3 seconds)
-        await Task.Delay(3000);
+        // Wait for sound to finish (monitor queue instead of fixed delay)
+        while (_soundService?.IsQueuePlaying() == true)
+        {
+            await Task.Delay(100); // Check every 100ms
+        }
         
         // Set to "completed" (grey) and enable next step (green)
         btnFFFIntro.BackColor = Color.Gray;
@@ -296,11 +299,17 @@ public partial class FFFWindow : Form
         _animationTimer.Tick += AnimationTimer_Tick;
         _animationTimer.Start();
         
-        // Play FFFRandomPicker sound
-        _soundService?.PlaySound(SoundEffect.FFFRandomPicker, loop: false);
+        // Queue BOTH sounds - they'll play sequentially with automatic crossfade!
+        _soundService?.QueueSound(SoundEffect.FFFRandomPicker, AudioPriority.Normal);
+        _soundService?.QueueSound(SoundEffect.FFFWinner, AudioPriority.Normal);
         
-        // Wait for the 5-second duration of the sound
-        await Task.Delay(5000);
+        // Wait for random picker sound to finish before stopping animation
+        // (Winner sound will be queued and waiting)
+        int initialQueueSize = _soundService?.GetTotalSoundCount() ?? 0;
+        while ((_soundService?.GetTotalSoundCount() ?? 0) > 1) // Wait until only winner sound remains
+        {
+            await Task.Delay(100);
+        }
         
         // Stop animation
         _animationTimer?.Stop();
@@ -320,11 +329,11 @@ public partial class FFFWindow : Form
         // Show winner on TV with blinking effect
         await ShowWinnerOnTV(winnerIndex, SelectedPlayerName);
         
-        // Play winner sound
-        _soundService?.PlaySound(SoundEffect.FFFWinner, loop: false);
-        
-        // Wait for winner sound to finish (approximately 5 seconds)
-        await Task.Delay(5000);
+        // Winner sound is already queued and playing - just wait for it to finish
+        while (_soundService?.IsQueuePlaying() == true)
+        {
+            await Task.Delay(100);
+        }
         
         // Clear TV screen
         ClearTVScreen();

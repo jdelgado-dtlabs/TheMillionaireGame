@@ -57,6 +57,12 @@ public class ApplicationSettings
 
     // Sound Pack Settings
     public string SelectedSoundPack { get; set; } = "Default";
+    public string? AudioOutputDevice { get; set; } = null; // null = System Default
+
+    // Audio Processing Settings
+    public SilenceDetectionSettings SilenceDetection { get; set; } = new();
+    public CrossfadeSettings Crossfade { get; set; } = new();
+    public AudioProcessingSettings AudioProcessing { get; set; } = new();
 
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;
@@ -155,7 +161,7 @@ public class ApplicationSettingsManager
     {
         if (!File.Exists(_filePath))
         {
-            Settings = new ApplicationSettings();
+            // Settings already initialized with defaults in constructor
             return;
         }
 
@@ -166,14 +172,87 @@ public class ApplicationSettingsManager
             var loadedSettings = (ApplicationSettings?)serializer.Deserialize(reader);
             if (loadedSettings != null)
             {
-                Settings = loadedSettings;
+                // CRITICAL: Update properties instead of replacing Settings object
+                // This maintains references held by SoundService -> EffectsChannel -> AudioCueQueue
+                CopySettingsProperties(loadedSettings, Settings);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading application settings from XML: {ex.Message}");
-            Settings = new ApplicationSettings();
+            // Keep defaults that were initialized in constructor
         }
+    }
+
+    /// <summary>
+    /// Copy all properties from source to destination settings object.
+    /// Maintains object references for audio settings.
+    /// </summary>
+    private void CopySettingsProperties(ApplicationSettings source, ApplicationSettings destination)
+    {
+        // Copy simple properties
+        destination.TotalLifelines = source.TotalLifelines;
+        destination.Lifeline1 = source.Lifeline1;
+        destination.Lifeline2 = source.Lifeline2;
+        destination.Lifeline3 = source.Lifeline3;
+        destination.Lifeline4 = source.Lifeline4;
+        destination.Lifeline1Available = source.Lifeline1Available;
+        destination.Lifeline2Available = source.Lifeline2Available;
+        destination.Lifeline3Available = source.Lifeline3Available;
+        destination.Lifeline4Available = source.Lifeline4Available;
+        destination.WinningStrapTexture = source.WinningStrapTexture;
+        destination.QuestionsTexture = source.QuestionsTexture;
+        destination.EnablePreviewAutomatically = source.EnablePreviewAutomatically;
+        destination.PreviewOrientation = source.PreviewOrientation;
+        destination.FullScreenHostScreenEnable = source.FullScreenHostScreenEnable;
+        destination.FullScreenHostScreenMonitor = source.FullScreenHostScreenMonitor;
+        destination.FullScreenGuestScreenEnable = source.FullScreenGuestScreenEnable;
+        destination.FullScreenGuestScreenMonitor = source.FullScreenGuestScreenMonitor;
+        destination.FullScreenTVScreenEnable = source.FullScreenTVScreenEnable;
+        destination.FullScreenTVScreenMonitor = source.FullScreenTVScreenMonitor;
+        destination.ClearHostMessagesAtNewQuestion = source.ClearHostMessagesAtNewQuestion;
+        destination.ShowAnswerOnlyOnHostScreenAtFinal = source.ShowAnswerOnlyOnHostScreenAtFinal;
+        destination.AutoHideQuestionAtPlusOne = source.AutoHideQuestionAtPlusOne;
+        destination.AutoShowTotalWinnings = source.AutoShowTotalWinnings;
+        destination.AutoHideQuestionAtWalkAway = source.AutoHideQuestionAtWalkAway;
+        destination.HideAnswerInControlPanelAtNewQ = source.HideAnswerInControlPanelAtNewQ;
+        destination.ATAIsAlwaysCorrect = source.ATAIsAlwaysCorrect;
+        destination.FFFPort = source.FFFPort;
+        destination.FFFPlayer1Name = source.FFFPlayer1Name;
+        destination.FFFPlayer2Name = source.FFFPlayer2Name;
+        destination.FFFPlayer3Name = source.FFFPlayer3Name;
+        destination.FFFPlayer4Name = source.FFFPlayer4Name;
+        destination.FFFPlayer5Name = source.FFFPlayer5Name;
+        destination.FFFPlayer6Name = source.FFFPlayer6Name;
+        destination.FFFPlayer7Name = source.FFFPlayer7Name;
+        destination.FFFPlayer8Name = source.FFFPlayer8Name;
+        destination.SelectedSoundPack = source.SelectedSoundPack;
+        destination.AudioOutputDevice = source.AudioOutputDevice;
+        destination.ShowConsole = source.ShowConsole;
+        destination.ShowWebServiceConsole = source.ShowWebServiceConsole;
+        destination.AudienceServerIP = source.AudienceServerIP;
+        destination.AudienceServerPort = source.AudienceServerPort;
+        destination.AudienceServerAutoStart = source.AudienceServerAutoStart;
+
+        // Copy audio settings properties (maintain object references)
+        destination.SilenceDetection.Enabled = source.SilenceDetection.Enabled;
+        destination.SilenceDetection.ThresholdDb = source.SilenceDetection.ThresholdDb;
+        destination.SilenceDetection.SilenceDurationMs = source.SilenceDetection.SilenceDurationMs;
+        destination.SilenceDetection.FadeoutDurationMs = source.SilenceDetection.FadeoutDurationMs;
+        destination.SilenceDetection.InitialDelayMs = source.SilenceDetection.InitialDelayMs;
+        destination.SilenceDetection.ApplyToMusic = source.SilenceDetection.ApplyToMusic;
+        destination.SilenceDetection.ApplyToEffects = source.SilenceDetection.ApplyToEffects;
+
+        destination.Crossfade.Enabled = source.Crossfade.Enabled;
+        destination.Crossfade.CrossfadeDurationMs = source.Crossfade.CrossfadeDurationMs;
+        destination.Crossfade.QueueLimit = source.Crossfade.QueueLimit;
+        destination.Crossfade.AutoCrossfade = source.Crossfade.AutoCrossfade;
+
+        destination.AudioProcessing.MasterGainDb = source.AudioProcessing.MasterGainDb;
+        destination.AudioProcessing.EffectsGainDb = source.AudioProcessing.EffectsGainDb;
+        destination.AudioProcessing.MusicGainDb = source.AudioProcessing.MusicGainDb;
+        destination.AudioProcessing.EnableLimiter = source.AudioProcessing.EnableLimiter;
+        destination.AudioProcessing.LimiterCeilingDb = source.AudioProcessing.LimiterCeilingDb;
     }
 
     /// <summary>

@@ -2,6 +2,32 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.5.3-2512] - 2025-12-26
+
+### Fixed
+- **FFF Winner Detection and Display** ✅ COMPLETE
+  - **Ranking Algorithm**: Fixed to rank correct answers first (by time), then incorrect answers
+  - **Winner Display**: Only fastest correct answer marked with ✓, slower correct marked with ✗ and "(too slow)"
+  - **Button Flow**: Show Winners button now appears only when >1 correct answer exists
+  - **Visual Indicators**: Clear distinction between winner (✓), eliminated (✗ too slow), and incorrect (✗ incorrect)
+  
+- **Audio System - MusicChannel Stop Bug** ✅ COMPLETE
+  - **Root Cause**: _currentMusicIdentifier only set when loop=true, causing StopSound() to fail for non-looping music
+  - **Fix**: Always set _currentMusicIdentifier for music sounds regardless of loop parameter
+  - **Impact**: FFFReadCorrectOrder music now stops immediately when Winner button clicked
+  - **Location**: SoundService.cs line 137 - Removed conditional identifier setting
+
+### Changed
+- **FFFControlPanel.cs**:
+  * CalculateRankings() now separates correct/incorrect answers before sorting by time
+  * UpdateRankings() shows status text instead of premature winner display
+  * UpdateUIState() enables Show Winners button only when multiple correct answers exist
+  * Visual display shows only Rank 1 as winner (✓), all others as eliminated (✗)
+  
+- **SoundService.cs**:
+  * PlaySound(SoundEffect, bool loop) now always sets _currentMusicIdentifier for music sounds
+  * Enables StopSound() to work correctly for both looping and non-looping music
+
 ## [v0.5.2-2512] - 2025-12-23
 
 ### Added

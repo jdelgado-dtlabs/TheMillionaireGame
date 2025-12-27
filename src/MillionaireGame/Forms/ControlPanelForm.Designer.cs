@@ -15,14 +15,44 @@ namespace MillionaireGame.Forms
                 // Stop and dispose web server
                 if (_webServerHost != null)
                 {
+                    Form? shutdownDialog = null;
                     try
                     {
+                        // Show shutdown status dialog
+                        shutdownDialog = new Form
+                        {
+                            Text = "Closing Application",
+                            FormBorderStyle = FormBorderStyle.FixedDialog,
+                            StartPosition = FormStartPosition.CenterScreen,
+                            Size = new Size(300, 100),
+                            MaximizeBox = false,
+                            MinimizeBox = false,
+                            ControlBox = true,
+                            ShowInTaskbar = false,
+                            TopMost = true
+                        };
+                        var label = new Label
+                        {
+                            Text = "Shutting down WebService...",
+                            AutoSize = false,
+                            TextAlign = ContentAlignment.MiddleCenter,
+                            Dock = DockStyle.Fill
+                        };
+                        shutdownDialog.Controls.Add(label);
+                        shutdownDialog.Show();
+                        Application.DoEvents();
+                        
                         _webServerHost.StopAsync().Wait(TimeSpan.FromSeconds(5));
                         _webServerHost.Dispose();
                     }
                     catch
                     {
                         // Ignore errors during shutdown
+                    }
+                    finally
+                    {
+                        shutdownDialog?.Close();
+                        shutdownDialog?.Dispose();
                     }
                 }
 
@@ -61,6 +91,7 @@ namespace MillionaireGame.Forms
             btnReveal = new Button();
             btnWalk = new Button();
             btnClosing = new Button();
+            btnFadeOutAudio = new Button();
             btnStopAudio = new Button();
             btnResetRound = new Button();
             btnResetGame = new Button();
@@ -121,7 +152,7 @@ namespace MillionaireGame.Forms
                 helpToolStripMenuItem});
             menuStrip.Location = new Point(0, 0);
             menuStrip.Name = "menuStrip";
-            menuStrip.Size = new Size(1000, 28);
+            menuStrip.Size = new Size(880, 28);
             menuStrip.TabIndex = 0;
             
             // 
@@ -130,6 +161,17 @@ namespace MillionaireGame.Forms
             gameToolStripMenuItem.Name = "gameToolStripMenuItem";
             gameToolStripMenuItem.Size = new Size(62, 24);
             gameToolStripMenuItem.Text = "Game";
+            #if DEBUG
+            gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
+                new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
+                new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("🔊 DSP Test (Audio Queue & Silence Detection)", null, DSPTestToolStripMenuItem_Click),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
+            });
+            #else
             gameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
                 new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
                 new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
@@ -137,6 +179,7 @@ namespace MillionaireGame.Forms
                 new ToolStripSeparator(),
                 new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
+            #endif
             
             // 
             // screensToolStripMenuItem
@@ -447,6 +490,23 @@ namespace MillionaireGame.Forms
             btnClosing.Click += btnClosing_Click;
             
             // 
+            // btnFadeOutAudio
+            // 
+            btnFadeOutAudio.BackColor = Color.DarkRed;
+            btnFadeOutAudio.FlatAppearance.BorderColor = Color.Black;
+            btnFadeOutAudio.FlatAppearance.BorderSize = 2;
+            btnFadeOutAudio.FlatStyle = FlatStyle.Flat;
+            btnFadeOutAudio.ForeColor = Color.White;
+            btnFadeOutAudio.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnFadeOutAudio.Location = new Point(580, 245);
+            btnFadeOutAudio.Name = "btnFadeOutAudio";
+            btnFadeOutAudio.Size = new Size(250, 45);
+            btnFadeOutAudio.TabIndex = 19;
+            btnFadeOutAudio.Text = "🔉 FADE OUT ALL SOUNDS";
+            btnFadeOutAudio.UseVisualStyleBackColor = false;
+            btnFadeOutAudio.Click += btnFadeOutAudio_Click;
+            
+            // 
             // btnStopAudio
             // 
             btnStopAudio.BackColor = Color.DarkRed;
@@ -455,7 +515,7 @@ namespace MillionaireGame.Forms
             btnStopAudio.FlatStyle = FlatStyle.Flat;
             btnStopAudio.ForeColor = Color.White;
             btnStopAudio.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnStopAudio.Location = new Point(580, 245);
+            btnStopAudio.Location = new Point(580, 295);
             btnStopAudio.Name = "btnStopAudio";
             btnStopAudio.Size = new Size(250, 45);
             btnStopAudio.TabIndex = 20;
@@ -473,7 +533,7 @@ namespace MillionaireGame.Forms
             btnResetRound.FlatStyle = FlatStyle.Flat;
             btnResetRound.ForeColor = Color.Black;
             btnResetRound.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnResetRound.Location = new Point(580, 485);
+            btnResetRound.Location = new Point(580, 535);
             btnResetRound.Name = "btnResetRound";
             btnResetRound.Size = new Size(120, 45);
             btnResetRound.TabIndex = 50;
@@ -495,7 +555,7 @@ namespace MillionaireGame.Forms
             btnResetGame.FlatStyle = FlatStyle.Flat;
             btnResetGame.ForeColor = Color.Black;
             btnResetGame.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnResetGame.Location = new Point(710, 485);
+            btnResetGame.Location = new Point(710, 535);
             btnResetGame.Name = "btnResetGame";
             btnResetGame.Size = new Size(120, 45);
             btnResetGame.TabIndex = 51;
@@ -513,7 +573,7 @@ namespace MillionaireGame.Forms
             // 
             nmrLevel.Font = new Font("Segoe UI", 11F);
             nmrLevel.Location = new Point(120, 245);
-            nmrLevel.Maximum = new decimal(new int[] { 14, 0, 0, 0 });
+            nmrLevel.Maximum = new decimal(new int[] { 15, 0, 0, 0 });
             nmrLevel.Name = "nmrLevel";
             nmrLevel.Size = new Size(65, 32);
             nmrLevel.TabIndex = 21;
@@ -609,7 +669,7 @@ namespace MillionaireGame.Forms
             // 
             // txtID
             // 
-            txtID.Location = new Point(840, 326);
+            txtID.Location = new Point(840, 376);
             txtID.Name = "txtID";
             txtID.ReadOnly = true;
             txtID.Size = new Size(60, 27);
@@ -654,7 +714,7 @@ namespace MillionaireGame.Forms
             lblDropLabel.Name = "lblDropLabel";
             lblDropLabel.Size = new Size(60, 20);
             lblDropLabel.TabIndex = 34;
-            lblDropLabel.Text = "If Drop:";
+            lblDropLabel.Text = "If Walk:";
             
             // 
             // lblQLeftLabel
@@ -674,7 +734,7 @@ namespace MillionaireGame.Forms
             btnLifeline1.FlatAppearance.BorderSize = 2;
             btnLifeline1.FlatStyle = FlatStyle.Flat;
             btnLifeline1.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline1.Location = new Point(580, 300);
+            btnLifeline1.Location = new Point(580, 350);
             btnLifeline1.Name = "btnLifeline1";
             btnLifeline1.Size = new Size(120, 40);
             btnLifeline1.TabIndex = 36;
@@ -690,7 +750,7 @@ namespace MillionaireGame.Forms
             btnLifeline2.FlatAppearance.BorderSize = 2;
             btnLifeline2.FlatStyle = FlatStyle.Flat;
             btnLifeline2.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline2.Location = new Point(580, 345);
+            btnLifeline2.Location = new Point(580, 395);
             btnLifeline2.Name = "btnLifeline2";
             btnLifeline2.Size = new Size(120, 40);
             btnLifeline2.TabIndex = 37;
@@ -706,7 +766,7 @@ namespace MillionaireGame.Forms
             btnLifeline3.FlatAppearance.BorderSize = 2;
             btnLifeline3.FlatStyle = FlatStyle.Flat;
             btnLifeline3.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline3.Location = new Point(580, 390);
+            btnLifeline3.Location = new Point(580, 440);
             btnLifeline3.Name = "btnLifeline3";
             btnLifeline3.Size = new Size(120, 40);
             btnLifeline3.TabIndex = 38;
@@ -722,7 +782,7 @@ namespace MillionaireGame.Forms
             btnLifeline4.FlatAppearance.BorderSize = 2;
             btnLifeline4.FlatStyle = FlatStyle.Flat;
             btnLifeline4.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnLifeline4.Location = new Point(580, 435);
+            btnLifeline4.Location = new Point(580, 485);
             btnLifeline4.Name = "btnLifeline4";
             btnLifeline4.Size = new Size(120, 40);
             btnLifeline4.TabIndex = 39;
@@ -736,7 +796,7 @@ namespace MillionaireGame.Forms
             chkShowQuestion.AutoSize = true;
             chkShowQuestion.Checked = false;
             chkShowQuestion.CheckState = CheckState.Unchecked;
-            chkShowQuestion.Location = new Point(12, 505);
+            chkShowQuestion.Location = new Point(12, 555);
             chkShowQuestion.Name = "chkShowQuestion";
             chkShowQuestion.Size = new Size(190, 24);
             chkShowQuestion.TabIndex = 40;
@@ -750,7 +810,7 @@ namespace MillionaireGame.Forms
             chkShowWinnings.AutoSize = true;
             chkShowWinnings.Checked = false;
             chkShowWinnings.CheckState = CheckState.Unchecked;
-            chkShowWinnings.Location = new Point(12, 535);
+            chkShowWinnings.Location = new Point(12, 585);
             chkShowWinnings.Name = "chkShowWinnings";
             chkShowWinnings.Size = new Size(200, 24);
             chkShowWinnings.TabIndex = 43;
@@ -762,7 +822,7 @@ namespace MillionaireGame.Forms
             // chkCorrectAnswer
             // 
             chkCorrectAnswer.AutoSize = true;
-            chkCorrectAnswer.Location = new Point(220, 505);
+            chkCorrectAnswer.Location = new Point(220, 555);
             chkCorrectAnswer.Name = "chkCorrectAnswer";
             chkCorrectAnswer.Size = new Size(235, 24);
             chkCorrectAnswer.TabIndex = 41;
@@ -780,7 +840,7 @@ namespace MillionaireGame.Forms
             btnShowMoneyTree.FlatStyle = FlatStyle.Flat;
             btnShowMoneyTree.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnShowMoneyTree.ForeColor = Color.White;
-            btnShowMoneyTree.Location = new Point(710, 300);
+            btnShowMoneyTree.Location = new Point(710, 350);
             btnShowMoneyTree.Name = "btnShowMoneyTree";
             btnShowMoneyTree.Size = new Size(120, 85);
             btnShowMoneyTree.TabIndex = 42;
@@ -797,7 +857,7 @@ namespace MillionaireGame.Forms
             btnActivateRiskMode.FlatAppearance.BorderSize = 2;
             btnActivateRiskMode.FlatStyle = FlatStyle.Flat;
             btnActivateRiskMode.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            btnActivateRiskMode.Location = new Point(710, 390);
+            btnActivateRiskMode.Location = new Point(710, 440);
             btnActivateRiskMode.Name = "btnActivateRiskMode";
             btnActivateRiskMode.Size = new Size(120, 85);
             btnActivateRiskMode.TabIndex = 43;
@@ -811,7 +871,7 @@ namespace MillionaireGame.Forms
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(980, 570);
+            ClientSize = new Size(880, 620);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Controls.Add(btnShowMoneyTree);
@@ -840,6 +900,7 @@ namespace MillionaireGame.Forms
             Controls.Add(nmrLevel);
             Controls.Add(btnResetRound);
             Controls.Add(btnResetGame);
+            Controls.Add(btnFadeOutAudio);
             Controls.Add(btnStopAudio);
             Controls.Add(btnClosing);
             Controls.Add(btnWalk);
@@ -863,6 +924,7 @@ namespace MillionaireGame.Forms
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
             Name = "ControlPanelForm";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Millionaire Game";
             Load += ControlPanelForm_Load;
             ((System.ComponentModel.ISupportInitialize)nmrLevel).EndInit();
@@ -910,6 +972,7 @@ namespace MillionaireGame.Forms
         private Button btnReveal;
         private Button btnWalk;
         private Button btnClosing;
+        private Button btnFadeOutAudio;
         private Button btnStopAudio;
         private Button btnResetRound;
         private Button btnResetGame;
