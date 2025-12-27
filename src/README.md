@@ -4,21 +4,23 @@
 
 ## 🎮 Welcome to The Millionaire Game - Modern C# Edition!
 
-**Version**: 0.7-2512 (December 2025)
+**Version**: 0.8.0-2512 (December 2025)
 
 This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture, maintainability, and a complete web-based audience participation system (WAPS).
 
 ### 🔄 Current Status
 
-**Version 0.7-2512 Features:**
+**Version 0.8.0-2512 Features:**
 - ✅ Core models and data structures
 - ✅ Settings management with XML persistence
 - ✅ Database layer with question repository
 - ✅ Game logic services
 - ✅ Complete Control Panel UI
 - ✅ Progressive answer reveal system
-- ✅ Sound engine with soundpack system (123 audio files)
-- ✅ Audio transitions with 500ms timing
+- ✅ **CSCore audio system with DSP** (silence detection, audio queue, crossfading)
+- ✅ **Audio Settings UI** (complete configuration in Options dialog)
+- ✅ **Shutdown system with progress dialog** (component-level visibility, GameConsole logging)
+- ✅ Audio transitions with automatic silence-based progression
 - ✅ Lifeline implementations (50:50, Phone-a-Friend, Ask the Audience)
 - ✅ Dynamic lifeline assignment via settings
 - ✅ Host, Guest, and TV screen implementations
@@ -144,7 +146,10 @@ src/
 - ✅ Complete Control Panel UI with game flow management
 - ✅ Progressive answer reveal system (Question → A → B → C → D)
 - ✅ Multiple screen support (Host, Guest, TV/Audience)
-- ✅ Question-specific sound system with audio transitions
+- ✅ **CSCore audio system with DSP** (silence detection, audio queue with crossfading, no manual timing)
+- ✅ **Audio Settings UI** (comprehensive configuration in Options dialog)
+- ✅ **Shutdown progress dialog** (real-time component tracking, GameConsole logging)
+- ✅ Question-specific sound system with automatic silence-based transitions
 - ✅ Three lifelines: 50:50, Phone-a-Friend (30s timer), Ask the Audience (2min timer)
 - ✅ Risk Mode (2nd safety net disabled)
 - ✅ Free Safety Net Mode

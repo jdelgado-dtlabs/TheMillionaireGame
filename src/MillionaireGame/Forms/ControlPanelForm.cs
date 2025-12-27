@@ -118,6 +118,9 @@ public partial class ControlPanelForm : Form
     private WebServerHost? _webServerHost;
     public WebServerHost? WebServerHost => _webServerHost;
     public bool IsWebServerRunning => _webServerHost != null && _webServerHost.IsRunning;
+    
+    // Shutdown flag to prevent re-entry
+    private bool _isShuttingDown = false;
 
     // Helper methods to access stop images from Designer
     private static Image? GetRedStopImage()
@@ -182,8 +185,245 @@ public partial class ControlPanelForm : Form
     
     private void ControlPanelForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
-        // Just exit - don't try to clean up sounds, let OS handle it
-        Application.Exit();
+        // Prevent re-entry
+        if (_isShuttingDown)
+            return;
+            
+        // Don't allow normal closing - we need to run async shutdown
+        if (e.CloseReason == CloseReason.UserClosing || e.CloseReason == CloseReason.ApplicationExitCall)
+        {
+            _isShuttingDown = true;
+            e.Cancel = true;
+            
+            // Run shutdown sequence in background
+            Task.Run(async () => await ShutdownApplicationAsync());
+        }
+    }
+
+    /// <summary>
+    /// Properly shut down all application components with progress tracking
+    /// </summary>
+    private async Task ShutdownApplicationAsync()
+    {
+        ShutdownProgressDialog? progressDialog = null;
+        var globalStopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        try
+        {
+            // Create and show progress dialog on UI thread
+            await Task.Run(() =>
+            {
+                Invoke(new Action(() =>
+                {
+                    progressDialog = new ShutdownProgressDialog();
+                    progressDialog.Show();
+                }));
+            });
+
+            if (progressDialog == null)
+            {
+                GameConsole.Error("[Shutdown] Failed to create progress dialog");
+                ForceApplicationExit();
+                return;
+            }
+
+            GameConsole.Info("========================================");
+            GameConsole.Info("[Shutdown] Beginning application shutdown");
+            GameConsole.Info("========================================");
+
+            // Step 1: Stop audio playback
+            var stepStopwatch = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                progressDialog.UpdateStatus("Stopping audio playback...");
+                await _soundService.StopAllSoundsAsync();
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Stop Audio Playback", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Stop Audio Playback", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error stopping audio: {ex.Message}");
+            }
+
+            // Step 2: Dispose audio system
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Disposing audio system...");
+                _soundService.Dispose();
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Dispose Audio System", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Dispose Audio System", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error disposing audio: {ex.Message}");
+            }
+
+            // Step 3: Stop web server if running
+            if (_webServerHost != null)
+            {
+                stepStopwatch.Restart();
+                try
+                {
+                    progressDialog.UpdateStatus("Stopping web server...");
+                    await _webServerHost.StopAsync();
+                    stepStopwatch.Stop();
+                    progressDialog.AddStep("Stop Web Server", true, stepStopwatch.ElapsedMilliseconds);
+                }
+                catch (Exception ex)
+                {
+                    stepStopwatch.Stop();
+                    progressDialog.AddStep("Stop Web Server", false, stepStopwatch.ElapsedMilliseconds);
+                    progressDialog.AddMessage($"  Error: {ex.Message}");
+                    GameConsole.Error($"[Shutdown] Error stopping web server: {ex.Message}");
+                }
+            }
+            else
+            {
+                progressDialog.AddMessage("Web server not running - skipped");
+            }
+
+            // Step 4: Close child windows
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Closing child windows...");
+                await Task.Run(() =>
+                {
+                    Invoke(new Action(() =>
+                    {
+                        // Close FFF window if open
+                        if (_fffWindow != null && !_fffWindow.IsDisposed)
+                        {
+                            _fffWindow.Close();
+                            _fffWindow.Dispose();
+                        }
+                    }));
+                });
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Close Child Windows", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Close Child Windows", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error closing child windows: {ex.Message}");
+            }
+
+            // Step 5: Stop timers
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Stopping timers...");
+                _moneyTreeDemoTimer?.Stop();
+                _safetyNetAnimationTimer?.Stop();
+                _closingTimer?.Stop();
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Stop Timers", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Stop Timers", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error stopping timers: {ex.Message}");
+            }
+
+            // Step 6: Dispose lifeline manager
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Disposing lifeline manager...");
+                _lifelineManager?.Dispose();
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Dispose Lifeline Manager", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Dispose Lifeline Manager", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error disposing lifeline manager: {ex.Message}");
+            }
+
+            // Step 7: Shutdown console windows
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Shutting down console windows...");
+                GameConsole.Shutdown();
+                WebServiceConsole.Shutdown();
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Shutdown Consoles", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Shutdown Consoles", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+            }
+
+            globalStopwatch.Stop();
+            progressDialog.AddMessage("");
+            progressDialog.AddMessage($"Total shutdown time: {globalStopwatch.ElapsedMilliseconds}ms");
+
+            // Mark as complete
+            progressDialog.Complete();
+
+            // Wait for dialog to auto-close or force close
+            await Task.Delay(2000);
+
+            // Check if user requested force close
+            if (progressDialog.ForceClose)
+            {
+                ForceApplicationExit();
+            }
+            else
+            {
+                // Normal exit
+                Invoke(new Action(() =>
+                {
+                    Application.Exit();
+                }));
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[Shutdown] CRITICAL ERROR during shutdown: {ex.Message}");
+            GameConsole.Error($"[Shutdown] Stack trace: {ex.StackTrace}");
+            
+            if (progressDialog != null)
+            {
+                progressDialog.Failed(ex.Message);
+                await Task.Delay(3000); // Give user time to read error
+            }
+
+            ForceApplicationExit();
+        }
+    }
+
+    /// <summary>
+    /// Force immediate application exit when normal shutdown fails
+    /// </summary>
+    private void ForceApplicationExit()
+    {
+        try
+        {
+            GameConsole.Error("[Shutdown] Force exiting application");
+            Environment.Exit(1);
+        }
+        catch
+        {
+            // Last resort - kill the process
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
+        }
     }
 
     private void SetupEventHandlers()

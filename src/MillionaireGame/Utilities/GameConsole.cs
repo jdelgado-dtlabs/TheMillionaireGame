@@ -150,4 +150,45 @@ public static class GameConsole
     {
         _logWindow?.LogSeparator();
     }
+
+    /// <summary>
+    /// Shutdown the logging system and flush pending messages
+    /// </summary>
+    public static void Shutdown()
+    {
+        try
+        {
+            // Signal cancellation
+            _cts.Cancel();
+
+            // Wait for log task to complete (up to 1 second)
+            _logTask.Wait(1000);
+
+            // Close window
+            lock (_lock)
+            {
+                if (_logWindow != null && !_logWindow.IsDisposed)
+                {
+                    try
+                    {
+                        _logWindow.Invoke(new Action(() =>
+                        {
+                            _logWindow.Close();
+                            _logWindow.Dispose();
+                        }));
+                    }
+                    catch
+                    {
+                        // Window might already be disposed
+                    }
+                }
+                _logWindow = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Can't log to GameConsole here, just fail silently
+            System.Diagnostics.Debug.WriteLine($"GameConsole shutdown error: {ex.Message}");
+        }
+    }
 }

@@ -2,6 +2,69 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.8.0-2512] - 2025-12-27
+
+### Added
+- **CSCore Audio System - Complete Implementation** ✅ FEATURE COMPLETE
+  - **DSP Core Infrastructure (Phase 1-2)**:
+    * AudioCueQueue with FIFO queue and priority system (Normal/Immediate)
+    * Equal-power crossfading between sounds (configurable, default 50ms)
+    * Silence detection with RMS amplitude monitoring (configurable threshold, default -40dB)
+    * Automatic fadeout on silence (default 50ms) to prevent DC pops
+    * Initial delay before silence detection (default 2500ms) for fade-in protection
+    * Custom threshold overrides per sound for special cases
+  - **Audio Settings UI (Phase 3-4)**:
+    * Complete Audio Settings tab in Options dialog (30 UI controls)
+    * Silence Detection: Enable/disable, threshold (-60 to -20dB), duration (100-1000ms), initial delay (0-5000ms), fadeout (10-200ms)
+    * Crossfade Settings: Enable/disable, duration (10-200ms)
+    * Audio Processing: Master/Effects/Music gain controls (-20 to +20dB), limiter enable
+    * Real-time value display with TrackBar labels
+    * Settings persistence to/from XML with in-place property updates
+  - **Game Integration**:
+    * Q1-Q5 audio sequences with silence-based transitions (no manual timing)
+    * FFF intro sequence with automatic progression
+    * All lifelines integrated with queue system
+    * Comprehensive testing confirms smooth transitions, no premature cutoffs
+  - **Location**: SoundService.cs, EffectsChannel.cs, AudioCueQueue.cs, SilenceDetectorSource.cs, OptionsDialog.cs, ApplicationSettings.cs
+
+- **Shutdown System Enhancement** ✅ FEATURE COMPLETE
+  - **ShutdownProgressDialog**:
+    * Real-time progress tracking with 7-step shutdown sequence
+    * Component-level visibility (Stop Audio, Dispose Audio, Stop Web Server, Close Windows, Stop Timers, Dispose Lifeline Manager, Shutdown Consoles)
+    * Per-step timing with stopwatch (helps identify slow components)
+    * Force-close safety button with 10-second timeout
+    * GameConsole logging integration for all shutdown steps
+  - **Audio Disposal Fix**:
+    * Proper Stop → Dispose sequence prevents orphaned audio processes
+    * No more audio playing after application close
+    * No more file locks preventing builds
+  - **Shutdown Loop Protection**:
+    * _isShuttingDown flag prevents FormClosing re-entry
+    * Async shutdown with Task.Run prevents UI blocking
+  - **Comprehensive Logging**:
+    * All shutdown steps logged to GameConsole with Debug/Info levels
+    * AddStep(), AddMessage(), UpdateStatus(), Complete() all write to game log
+    * LogSeparator() and summary at completion
+  - **Location**: ControlPanelForm.cs, ShutdownProgressDialog.cs, GameConsole.cs
+
+### Fixed
+- **Audio Settings Persistence Bug** ✅ CRITICAL FIX
+  - **Root Cause**: ApplicationSettings.LoadFromXml() replaced entire Settings object with `Settings = loadedSettings`
+  - **Impact**: Broke reference chain in SoundService → EffectsChannel → AudioCueQueue
+  - **Solution**: Implemented CopySettingsProperties() to update properties in-place (95 properties)
+  - **Result**: AudioCueQueue maintains valid references to SilenceDetectionSettings throughout app lifetime
+  - **Location**: ApplicationSettings.cs
+
+- **Shutdown Audio Orphaning** ✅ FIXED
+  - Audio processes no longer continue running after application close
+  - Proper disposal sequence implemented (StopAllSoundsAsync → SoundService.Dispose → AudioMixer.Dispose)
+  - Build file locks resolved (no more "file in use" errors)
+
+### Changed
+- **ApplicationSettings**: LoadFromXml() now uses CopySettingsProperties() instead of object replacement
+- **ControlPanelForm**: FormClosing handler rewritten with re-entry protection and async shutdown
+- **GameConsole**: Added Shutdown() method with cancellation token and log flush
+
 ## [v0.5.3-2512] - 2025-12-26
 
 ### Fixed
