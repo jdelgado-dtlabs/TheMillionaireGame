@@ -63,9 +63,7 @@
 
 ---
 
-## 🔧 Important Improvements (Should Complete)
-
-### 3. FFF Online Graphics Enhancement 🟢
+### 3. WAPS Lobby and State Change Updates 🔴
 **Status**: Partially Complete (Offline graphics done)  
 **Estimated Time**: 3-4 hours  
 **Priority**: MEDIUM
@@ -177,9 +175,69 @@
 
 ---
 
+### 4. FFF Online Graphics Enhancement 🟢
+**Status**: Partially Complete (Offline graphics done)  
+**Estimated Time**: 3-4 hours  
+**Priority**: MEDIUM
+
+**Requirements**:
+- [ ] Wire up FFFGraphics.cs for FFF Online mode
+- [ ] Implement TV screen rendering for FFF Online questions
+- [ ] Show contestant straps during question
+- [ ] Animate selection/highlighting when winner determined
+- [ ] Match visual style between offline and online modes
+- [ ] Test with 2-8 participants
+
+**Acceptance Criteria**:
+- FFF Online displays contestants with graphic straps (not colored rectangles)
+- Winner is visually highlighted
+- Consistent look with FFF Offline mode
+
+**Blockers**: Depends on FFF Online integration (Task #1)
+
+---
+
+## 📦 Completed Tasks (Archived)
+
+### ✅ Question Editor CSV Features
+**Status**: COMPLETE  
+**Completed**: December 27, 2025  
+**Time Taken**: ~45 minutes  
+**Priority**: LOW-MEDIUM
+
+**Implemented**:
+- [x] CSV Import button (ImportQuestionsForm.cs)
+- [x] CSV Export button (ExportQuestionsForm.cs)
+- [x] CSV format validation on import
+- [x] Error handling for malformed files
+- [x] Proper CSV escaping (quotes, commas)
+- [x] ATA percentages in export
+- [x] Error reporting with line numbers
+
+**Result**: Users can now import and export questions via CSV with full validation and error reporting.
+
+---
+
+### ✅ Sound Pack Removal
+**Status**: COMPLETE  
+**Completed**: December 27, 2025  
+**Time Taken**: ~15 minutes  
+**Priority**: LOW
+
+**Implemented**:
+- [x] "Remove Sound Pack" in OptionsDialog.cs
+- [x] Confirmation dialog before removal
+- [x] Restore default sounds if current pack removed
+- [x] Update UI to reflect removal
+- [x] Protection for Default pack (cannot be removed)
+
+**Result**: Users can remove installed sound packs with proper confirmation and automatic fallback to Default.
+
+---
+
 ## 🔍 Testing & Quality Assurance
 
-### 7. End-to-End Testing
+### 5. End-to-End Testing
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
@@ -243,13 +301,13 @@
 
 ---
 
-### 8. Bug Fixes
+### 6. Bug Fixes
 **Estimated Time**: 4 hours  
 **Reserved for issues found during testing**
 
 ---
 
-### 9. Documentation Updates
+### 7. Documentation Updates
 **Estimated Time**: 2 hours
 
 **Documents to Update**:
@@ -319,8 +377,9 @@ These items are explicitly NOT required for v1.0 release:
 | Category | Tasks | Complete | Remaining | % Done |
 |----------|-------|----------|-----------|--------|
 | Critical Path | 3 | 0 | 3 | 0% |
-| Important | 3 | 2 | 1 | 67% |
+| Important | 1 | 0 | 1 | 0% |
 | Testing & QA | 3 | 0 | 3 | 0% |
+| Completed (Archived) | 2 | 2 | 0 | 100% |
 | **Total** | **9** | **2** | **7** | **22%** |
 
 **Estimated Total Hours**: 19-27 hours  
