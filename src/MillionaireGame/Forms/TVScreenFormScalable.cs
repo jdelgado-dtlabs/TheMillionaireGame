@@ -83,7 +83,6 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         
         Text = "TV Screen (Scalable)";
         BackColor = Color.Black;
-        TransparencyKey = Color.Black; // Make black background transparent for chroma keying
         
         // Save initial state for fullscreen toggle
         SaveWindowState();
