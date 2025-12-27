@@ -1386,7 +1386,10 @@ public partial class OptionsDialog : Form
             
             if (soundPackManager != null)
             {
-                // TODO: Implement RemoveSoundPack in SoundPackManager
+                // TODO [PRE-1.0]: Implement RemoveSoundPack in SoundPackManager
+                // Status: Not started, estimated 1 hour
+                // Priority: LOW (Task #5 in PRE_1.0_FINAL_CHECKLIST.md)
+                // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for requirements
                 MessageBox.Show("Pack removal will be implemented in a future update.", 
                     "Not Yet Implemented", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 

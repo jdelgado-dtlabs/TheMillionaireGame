@@ -507,7 +507,11 @@ public class LifelineManager
     private Dictionary<string, int> GeneratePlaceholderResults()
     {
         // Placeholder: 100% on correct answer
-        // TODO: Replace with real voting results from database/API
+        // TODO [PRE-1.0 - CRITICAL]: Replace with real voting results from WAPS database
+        // Status: Not started, estimated 2-3 hours
+        // Priority: HIGH (Task #2 in PRE_1.0_FINAL_CHECKLIST.md)
+        // Implementation: Query WAPS database for actual participant votes
+        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for detailed requirements
         var votes = new Dictionary<string, int>
         {
             { "A", 0 },

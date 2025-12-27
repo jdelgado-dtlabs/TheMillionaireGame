@@ -132,19 +132,24 @@ public class HotkeyHandler
             {
                 case Keys.D1:
                 case Keys.NumPad1:
-                    // TODO: Lifeline 1
+                    // TODO [POST-1.0]: Lifeline 1 hotkey mapping
+                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
+                    // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
                     return true;
                 case Keys.D2:
                 case Keys.NumPad2:
-                    // TODO: Lifeline 2
+                    // TODO [POST-1.0]: Lifeline 2 hotkey mapping
+                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
                     return true;
                 case Keys.D3:
                 case Keys.NumPad3:
-                    // TODO: Lifeline 3
+                    // TODO [POST-1.0]: Lifeline 3 hotkey mapping
+                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
                     return true;
                 case Keys.D4:
                 case Keys.NumPad4:
-                    // TODO: Lifeline 4
+                    // TODO [POST-1.0]: Lifeline 4 hotkey mapping
+                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
                     return true;
             }
         }

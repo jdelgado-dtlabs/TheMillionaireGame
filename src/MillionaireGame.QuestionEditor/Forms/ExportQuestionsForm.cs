@@ -42,7 +42,10 @@ public partial class ExportQuestionsForm : Form
 
         try
         {
-            // TODO: Implement CSV export logic
+            // TODO [PRE-1.0]: Implement CSV export logic
+            // Status: Not started, estimated 2-3 hours
+            // Priority: LOW-MEDIUM (Task #4 in PRE_1.0_FINAL_CHECKLIST.md)
+            // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for requirements
             MessageBox.Show("Export functionality will be implemented soon.", "Info",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             

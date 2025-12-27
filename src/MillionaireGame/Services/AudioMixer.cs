@@ -314,8 +314,10 @@ public class AudioMixer : IDisposable
     /// </remarks>
     public void AddOutput(string name, ISoundOut output)
     {
-        // TODO: Implement when broadcasting feature is added
+        // TODO [POST-1.0]: Implement when OBS/streaming feature is added (v1.1 target)
+        // Status: Deferred - Advanced feature for power users
         // This will allow routing audio to OBS, virtual cables, etc.
+        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
         throw new NotImplementedException("Multi-output routing will be implemented with broadcasting feature");
     }
 
@@ -324,7 +326,8 @@ public class AudioMixer : IDisposable
     /// </summary>
     private ISampleSource CreateTappedStream(ISampleSource source)
     {
-        // TODO: Implement audio tapping for multi-output
+        // TODO [POST-1.0]: Implement audio tapping for multi-output (v1.1 target)
+        // Status: Deferred - Required for OBS/streaming integration
         // This will duplicate the audio stream so it can go to multiple destinations
         // without interfering with each other
         return source;
