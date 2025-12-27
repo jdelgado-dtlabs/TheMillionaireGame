@@ -542,19 +542,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     
     private void DrawFFFDisplay(System.Drawing.Graphics g)
     {
-        // Draw FFF background image
-        var backgroundImage = FFFGraphics.GetBackground();
-        if (backgroundImage != null)
-        {
-            // Draw full-screen background
-            var bgBounds = ScaleRect(0, 0, 1920, 1080);
-            g.DrawImage(backgroundImage, bgBounds);
-        }
-        else
-        {
-            // Fallback to solid color if image not found
-            g.Clear(Color.FromArgb(0, 0, 51)); // Dark blue background
-        }
+        // No background for FFF display - alpha keyed/transparent
+        // Background will be added as a game-wide option later
         
         // Show winner with large text
         if (_fffShowWinner && !string.IsNullOrEmpty(_fffWinnerName))
