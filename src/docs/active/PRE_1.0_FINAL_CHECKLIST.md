@@ -123,9 +123,63 @@
 
 ---
 
+### 6. WAPS Lobby and State Change Updates 🔴
+**Status**: Not Started  
+**Estimated Time**: 4-5 hours  
+**Priority**: HIGH
+
+**Requirements**:
+
+**Application Start & Lobby States**:
+- [ ] Initial lobby on first entry (allows users to verify/test browser functions)
+- [ ] Game start on "Host Intro" → Transition to Waiting Lobby
+- [ ] New users after game start → Automatically enter Waiting Lobby
+
+**FFF Game Flow (9 states)**:
+- [ ] State 1: "Pick Player" clicked → FFF Lobby ("Get ready to play!")
+- [ ] State 2: Question reveal → Display question and answer options
+- [ ] State 3: Timer expires with response → "Calculating your response..."
+- [ ] State 3a: Timer expires without response → "Thanks for participating!"
+- [ ] State 4: Correct order revealed → Show result ("Correct!" or "Incorrect") with time if correct
+- [ ] State 5: Winner revealed → Winner: "You Win! Head up to the stage to play Who Wants to be a Millionaire!"
+- [ ] State 5a: Non-winners → "Thanks for participating!"
+- [ ] State 6: FFF Control Panel closed → Return all to Waiting Lobby
+
+**ATA (Ask the Audience) Flow (4 states)**:
+- [ ] State 1: ATA activated → "Get ready to vote!"
+- [ ] State 2: Voting begins → Display question and 4 answers with vote buttons
+- [ ] State 3: Submit vote → User can select one answer and submit
+- [ ] State 4: Voting complete → Display results graph with user's vote highlighted
+- [ ] State 5: ATA complete → Return to Waiting Lobby
+
+**Game Complete**:
+- [ ] Display "Thank you for participating! Please close your browser to clear this from your device."
+- [ ] Auto-disconnect from web service
+- [ ] Clear cache on browser close or 10-minute timer
+- [ ] Force window close if possible
+
+**Technical Implementation**:
+- [ ] Create GameStateType enum (Lobby, Waiting, FFFActive, FFFCalculating, FFFResults, ATAReady, ATAVoting, ATAResults, GameComplete)
+- [ ] Implement SignalR hub method: BroadcastGameState(GameStateType state, object data)
+- [ ] Web client JavaScript: Handle state transitions and update UI accordingly
+- [ ] Update ControlPanelForm/FFFControlPanel to broadcast state changes
+- [ ] Update LifelineManager to broadcast ATA state changes
+- [ ] Test state synchronization with 10+ concurrent clients
+
+**Acceptance Criteria**:
+- All web clients receive state updates in real-time
+- UI transitions smoothly between game states
+- No clients stuck in incorrect states
+- Clear visual feedback at every stage
+- Automatic cleanup on game completion
+
+**Blockers**: None (SignalR infrastructure complete)
+
+---
+
 ## 🔍 Testing & Quality Assurance
 
-### 6. End-to-End Testing
+### 7. End-to-End Testing
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
@@ -155,13 +209,47 @@
 
 ---
 
-### 7. Bug Fixes
+### 7. End-to-End Testing
+**Estimated Time**: 4 hours
+
+**Test Scenarios**:
+- [ ] Complete game from question 1 to win (£1,000,000)
+- [ ] Complete game with walk away
+- [ ] Complete game with wrong answer
+- [ ] All lifelines (50:50, PAF, ATA) with real voting
+- [ ] FFF Offline with 2-8 players
+- [ ] FFF Online with web participants
+- [ ] Risk Mode gameplay
+- [ ] Free Safety Net Mode
+- [ ] Monitor selection and full-screen
+- [ ] Sound playback for all cues
+- [ ] Settings persistence and loading
+- [ ] Web client state transitions (all lobby states)
+
+**Performance Tests**:
+- [ ] 50+ concurrent web participants
+- [ ] Answer submission load testing
+- [ ] Vote aggregation accuracy with high concurrency
+- [ ] Memory leaks during extended gameplay
+- [ ] State synchronization with rapid state changes
+
+**Compatibility Tests**:
+- [ ] Windows 10 x64
+- [ ] Windows 11 x64
+- [ ] SQL Server Express 2019+
+- [ ] SQLite database operations
+- [ ] Multiple browsers (Chrome, Edge, Firefox, Safari)
+- [ ] Mobile devices (iOS, Android)
+
+---
+
+### 8. Bug Fixes
 **Estimated Time**: 4 hours  
 **Reserved for issues found during testing**
 
 ---
 
-### 8. Documentation Updates
+### 9. Documentation Updates
 **Estimated Time**: 2 hours
 
 **Documents to Update**:
@@ -230,13 +318,13 @@ These items are explicitly NOT required for v1.0 release:
 
 | Category | Tasks | Complete | Remaining | % Done |
 |----------|-------|----------|-----------|--------|
-| Critical Path | 2 | 0 | 2 | 0% |
-| Important | 3 | 0 | 3 | 0% |
+| Critical Path | 3 | 0 | 3 | 0% |
+| Important | 3 | 2 | 1 | 67% |
 | Testing & QA | 3 | 0 | 3 | 0% |
-| **Total** | **8** | **0** | **8** | **0%** |
+| **Total** | **9** | **2** | **7** | **22%** |
 
-**Estimated Total Hours**: 15-22 hours  
-**Target Completion**: January 10, 2026 (assuming 10-15 hours/week)
+**Estimated Total Hours**: 19-27 hours  
+**Target Completion**: January 15, 2026 (assuming 10-15 hours/week)
 
 **Note**: FFF Online mostly complete (~80%), only TV animations and web client state integration remaining.
 
@@ -245,19 +333,19 @@ These items are explicitly NOT required for v1.0 release:
 ## 📋 Weekly Milestones
 
 ### Week 1 (Dec 29 - Jan 4)
+- [ ] WAPS Lobby and State Updates - Phase 1 (3 hours): Enum, SignalR methods, basic states
 - [ ] FFF Online TV Screen Animations (2 hours)
-- [ ] FFF Online Web Client State Integration (1 hour)
 - [ ] Real ATA Voting Integration (3 hours)
-- [ ] CSV Import/Export (3 hours)
 
-**Target**: 9 hours, 50% complete
+**Target**: 8 hours, 40% complete
 
 ### Week 2 (Jan 5 - Jan 11)
+- [ ] WAPS Lobby and State Updates - Phase 2 (2 hours): FFF state flow, ATA flow
+- [ ] FFF Online Web Client State Integration (1 hour)
 - [ ] FFF Online Graphics Enhancement (3 hours)
-- [ ] Sound Pack Removal (1 hour)
 - [ ] End-to-End Testing - Phase 1 (2 hours)
 
-**Target**: 6 hours, 75% complete
+**Target**: 8 hours, 70% complete
 
 ### Week 3 (Jan 12 - Jan 18)
 - [ ] End-to-End Testing - Phase 2 (2 hours)
@@ -274,12 +362,14 @@ These items are explicitly NOT required for v1.0 release:
 Version 1.0 is ready for release when:
 
 ### Functionality
+- [ ] WAPS lobby and state management complete (all 13+ states)
 - [ ] FFF Online TV animations complete
 - [ ] FFF Online web client state integration complete
 - [ ] Real ATA voting displays accurate percentages
 - [ ] All lifelines function correctly
 - [ ] FFF Offline and Online modes work independently
 - [ ] Main game flow from Q1-Q15 works flawlessly
+- [ ] Web clients transition smoothly between all game states
 
 ### Quality
 - [ ] Zero critical bugs in production code paths
@@ -312,13 +402,15 @@ Version 1.0 is ready for release when:
 - Real ATA voting integration (database query complexity)
 - FFF Online TV animations (depends on existing implementation)
 - FFF Online graphics enhancement (requires FFFGraphics.cs integration)
+- WAPS lobby state management (complex state machine with 13+ states)
 - End-to-end testing (may reveal unexpected issues)
 
 ### High Risk
-- None (FFF Online integration already complete)
+- None
 
 ### Critical Path Dependencies
 - FFF Online Graphics Enhancement depends on TV Animations completion
+- WAPS state management affects both FFF and ATA flows
 - End-to-end testing depends on all features being complete
 - Release depends on successful testing and bug fixes
 
@@ -354,11 +446,21 @@ Version 1.0 is ready for release when:
 ## 📝 Changelog
 
 **December 27, 2025**:
+- Added Task #6: WAPS Lobby and State Change Updates (4-5 hours, HIGH priority)
+  * 13+ distinct client states across application, FFF, ATA, and game completion
+  * Comprehensive state machine for web client experience
+  * Automatic lobby management and cleanup
+- Renumbered Testing & QA tasks (7, 8, 9)
+- Updated progress tracking: 9 total tasks, 2 complete (22% done), 19-27 hours remaining
+- Adjusted weekly milestones to include WAPS state work
+- Updated Definition of Done to include state management
+- Updated risk assessment with WAPS state complexity
+- Extended target completion to January 15, 2026
+
+**Previous Updates**:
 - Marked FFF Online as mostly complete (~80% done)
 - Remaining: TV screen animations and web client state integration
 - Moved "Hotkey Mapping" to Post-1.0 (will develop with Stream Deck integration)
 - Moved "Lifeline Icon Polish" to Post-1.0 (eliminated - current setup sufficient)
-- Reduced total task count from 10 to 8
-- Updated time estimates: 15-22 hours remaining (down from 20-30 hours)
-- Adjusted weekly milestones to reflect changes
-- Updated risk assessment (removed "High Risk" category)
+- Marked CSV Import/Export complete (Task #4)
+- Marked Sound Pack Removal complete (Task #5)
