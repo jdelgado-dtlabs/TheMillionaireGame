@@ -783,8 +783,7 @@ public partial class FFFControlPanel : UserControl
         
         GameConsole.Log("[FFF] Step 2: Show Question started");
         
-        // Display question on TV screen using regular game Q/A straps
-        // Convert FFFQuestion to Question for display
+        // Display ONLY question text on TV screen (no answers yet)
         var displayQuestion = new MillionaireGame.Core.Models.Question
         {
             QuestionText = _currentQuestion.QuestionText,
@@ -795,11 +794,8 @@ public partial class FFFControlPanel : UserControl
             CorrectAnswer = "A" // Not used for FFF display
         };
         _screenService?.UpdateQuestion(displayQuestion);
-        _screenService?.ShowAnswer("A");
-        _screenService?.ShowAnswer("B");
-        _screenService?.ShowAnswer("C");
-        _screenService?.ShowAnswer("D");
-        GameConsole.Log("[FFF] Question and answers displayed on TV");
+        // Do NOT show answers yet - wait for Reveal Answers button
+        GameConsole.Log("[FFF] Question displayed on TV (answers hidden)");
         
         // Change state immediately - enables next button
         _currentState = FFFFlowState.QuestionShown;
@@ -881,8 +877,12 @@ public partial class FFFControlPanel : UserControl
                 GameConsole.Warn("[FFF] SignalR client not connected - skipping transmission");
             }
             
-            // TODO [PRE-1.0]: Display answers on TV screen (FFF Online animations)
-            // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
+            // Display answers on TV in normal order (A, B, C, D)
+            _screenService?.ShowAnswer("A");
+            _screenService?.ShowAnswer("B");
+            _screenService?.ShowAnswer("C");
+            _screenService?.ShowAnswer("D");
+            GameConsole.Log("[FFF] Answers displayed on TV in original order");
             
             // Only proceed if transmission was successful
             // Update state and start timer
@@ -983,15 +983,41 @@ public partial class FFFControlPanel : UserControl
         // Note: FFFReadCorrectOrder continues playing in background during all reveals
         var clickCount = _revealCorrectClickCount; // Capture for async use
         
-        // Get correct order and reveal the answer at this position
+        // Reveal answer in correct order position
+        // Example: If correct order is "C,D,B,A", click 1 shows C in position A, click 2 shows D in position B, etc.
         if (_currentQuestion != null && !string.IsNullOrEmpty(_currentQuestion.CorrectOrder))
         {
             var correctOrder = _currentQuestion.CorrectOrder.Split(',').Select(s => s.Trim()).ToArray();
             if (clickCount <= correctOrder.Length)
             {
-                var answerLetter = correctOrder[clickCount - 1];
-                _screenService?.ShowAnswer(answerLetter);
-                GameConsole.Log($"[FFF] Revealed answer {clickCount}: {answerLetter}");
+                var answerLetter = correctOrder[clickCount - 1]; // Which answer (A, B, C, or D)
+                var position = clickCount; // Which position (1=A, 2=B, 3=C, 4=D)
+                var positionLetter = position switch { 1 => "A", 2 => "B", 3 => "C", 4 => "D", _ => "A" };
+                
+                // Get the text of the answer we're revealing
+                var answerText = answerLetter switch
+                {
+                    "A" => _currentQuestion.AnswerA,
+                    "B" => _currentQuestion.AnswerB,
+                    "C" => _currentQuestion.AnswerC,
+                    "D" => _currentQuestion.AnswerD,
+                    _ => ""
+                };
+                
+                // Update the Question object to show this answer in the target position
+                var reorderedQuestion = new MillionaireGame.Core.Models.Question
+                {
+                    QuestionText = _currentQuestion.QuestionText,
+                    AnswerA = clickCount >= 1 ? GetAnswerTextForPosition(1, correctOrder) : _currentQuestion.AnswerA,
+                    AnswerB = clickCount >= 2 ? GetAnswerTextForPosition(2, correctOrder) : _currentQuestion.AnswerB,
+                    AnswerC = clickCount >= 3 ? GetAnswerTextForPosition(3, correctOrder) : _currentQuestion.AnswerC,
+                    AnswerD = clickCount >= 4 ? GetAnswerTextForPosition(4, correctOrder) : _currentQuestion.AnswerD,
+                    CorrectAnswer = "A"
+                };
+                
+                _screenService?.UpdateQuestion(reorderedQuestion);
+                _screenService?.ShowAnswer(positionLetter);
+                GameConsole.Log($"[FFF] Revealed position {position} ({positionLetter}): Answer {answerLetter} text = '{answerText}'");
             }
         }
         
@@ -1047,6 +1073,27 @@ public partial class FFFControlPanel : UserControl
                     UpdateUIState();
                 break;
         }
+    }
+    
+    /// <summary>
+    /// Helper method to get answer text for a specific position during correct order reveal
+    /// </summary>
+    private string GetAnswerTextForPosition(int position, string[] correctOrder)
+    {
+        if (_currentQuestion == null || position < 1 || position > correctOrder.Length)
+            return string.Empty;
+            
+        // Get which answer letter should be in this position
+        var answerLetter = correctOrder[position - 1]; // position 1 = index 0
+        
+        return answerLetter switch
+        {
+            "A" => _currentQuestion.AnswerA,
+            "B" => _currentQuestion.AnswerB,
+            "C" => _currentQuestion.AnswerC,
+            "D" => _currentQuestion.AnswerD,
+            _ => string.Empty
+        };
     }
     
     private void CalculateRankings()
