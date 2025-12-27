@@ -103,6 +103,33 @@ namespace MillionaireGame.Forms.Options
             tabSounds = new TabPage();
             tabControlSounds = new TabControl();
             tabSoundpack = new TabPage();
+            tabAudio = new TabPage();
+            grpSilenceDetection = new GroupBox();
+            trackBarSilenceThreshold = new TrackBar();
+            lblSilenceThreshold = new Label();
+            lblSilenceThresholdValue = new Label();
+            numSilenceDuration = new NumericUpDown();
+            lblSilenceDuration = new Label();
+            numInitialDelay = new NumericUpDown();
+            lblInitialDelay = new Label();
+            numFadeoutDuration = new NumericUpDown();
+            lblFadeoutDuration = new Label();
+            chkEnableSilenceDetection = new CheckBox();
+            grpCrossfade = new GroupBox();
+            numCrossfadeDuration = new NumericUpDown();
+            lblCrossfadeDuration = new Label();
+            chkEnableCrossfade = new CheckBox();
+            grpAudioProcessing = new GroupBox();
+            trackBarMasterGain = new TrackBar();
+            lblMasterGain = new Label();
+            lblMasterGainValue = new Label();
+            trackBarEffectsGain = new TrackBar();
+            lblEffectsGain = new Label();
+            lblEffectsGainValue = new Label();
+            trackBarMusicGain = new TrackBar();
+            lblMusicGain = new Label();
+            lblMusicGainValue = new Label();
+            chkEnableLimiter = new CheckBox();
             grpSoundPack = new GroupBox();
             dgvSoundPackInfo = new DataGridView();
             txtSearchSounds = new TextBox();
@@ -135,8 +162,20 @@ namespace MillionaireGame.Forms.Options
             grpLifeline1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
+            tabAudio.SuspendLayout();
             grpSoundPack.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvSoundPackInfo).BeginInit();
+            grpSilenceDetection.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarSilenceThreshold).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numSilenceDuration).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numInitialDelay).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numFadeoutDuration).BeginInit();
+            grpCrossfade.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numCrossfadeDuration).BeginInit();
+            grpAudioProcessing.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarMasterGain).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarEffectsGain).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarMusicGain).BeginInit();
             tabAudience.SuspendLayout();
             grpAudienceServer.SuspendLayout();
             SuspendLayout();
@@ -630,6 +669,7 @@ namespace MillionaireGame.Forms.Options
             // tabControlSounds
             // 
             tabControlSounds.Controls.Add(tabSoundpack);
+            tabControlSounds.Controls.Add(tabAudio);
             tabControlSounds.Controls.Add(tabMixer);
             tabControlSounds.Dock = DockStyle.Fill;
             tabControlSounds.Location = new Point(3, 3);
@@ -666,6 +706,307 @@ namespace MillionaireGame.Forms.Options
             grpSoundPack.TabIndex = 0;
             grpSoundPack.TabStop = false;
             grpSoundPack.Text = "Sound Pack";
+            // 
+            // tabAudio
+            // 
+            tabAudio.AutoScroll = true;
+            tabAudio.Controls.Add(grpAudioProcessing);
+            tabAudio.Controls.Add(grpCrossfade);
+            tabAudio.Controls.Add(grpSilenceDetection);
+            tabAudio.Location = new Point(4, 24);
+            tabAudio.Name = "tabAudio";
+            tabAudio.Padding = new Padding(3);
+            tabAudio.Size = new Size(638, 425);
+            tabAudio.TabIndex = 1;
+            tabAudio.Text = "Audio Settings";
+            tabAudio.UseVisualStyleBackColor = true;
+            // 
+            // grpSilenceDetection
+            // 
+            grpSilenceDetection.Controls.Add(chkEnableSilenceDetection);
+            grpSilenceDetection.Controls.Add(lblSilenceThreshold);
+            grpSilenceDetection.Controls.Add(trackBarSilenceThreshold);
+            grpSilenceDetection.Controls.Add(lblSilenceThresholdValue);
+            grpSilenceDetection.Controls.Add(lblSilenceDuration);
+            grpSilenceDetection.Controls.Add(numSilenceDuration);
+            grpSilenceDetection.Controls.Add(lblInitialDelay);
+            grpSilenceDetection.Controls.Add(numInitialDelay);
+            grpSilenceDetection.Controls.Add(lblFadeoutDuration);
+            grpSilenceDetection.Controls.Add(numFadeoutDuration);
+            grpSilenceDetection.Location = new Point(16, 16);
+            grpSilenceDetection.Name = "grpSilenceDetection";
+            grpSilenceDetection.Size = new Size(600, 180);
+            grpSilenceDetection.TabIndex = 0;
+            grpSilenceDetection.TabStop = false;
+            grpSilenceDetection.Text = "Silence Detection";
+            // 
+            // chkEnableSilenceDetection
+            // 
+            chkEnableSilenceDetection.AutoSize = true;
+            chkEnableSilenceDetection.Location = new Point(16, 25);
+            chkEnableSilenceDetection.Name = "chkEnableSilenceDetection";
+            chkEnableSilenceDetection.Size = new Size(189, 19);
+            chkEnableSilenceDetection.TabIndex = 0;
+            chkEnableSilenceDetection.Text = "Enable Silence Detection";
+            chkEnableSilenceDetection.UseVisualStyleBackColor = true;
+            chkEnableSilenceDetection.CheckedChanged += chkEnableSilenceDetection_CheckedChanged;
+            // 
+            // lblSilenceThreshold
+            // 
+            lblSilenceThreshold.AutoSize = true;
+            lblSilenceThreshold.Location = new Point(16, 55);
+            lblSilenceThreshold.Name = "lblSilenceThreshold";
+            lblSilenceThreshold.Size = new Size(95, 15);
+            lblSilenceThreshold.TabIndex = 1;
+            lblSilenceThreshold.Text = "Threshold (dB):";
+            // 
+            // trackBarSilenceThreshold
+            // 
+            trackBarSilenceThreshold.Location = new Point(120, 50);
+            trackBarSilenceThreshold.Maximum = -20;
+            trackBarSilenceThreshold.Minimum = -60;
+            trackBarSilenceThreshold.Name = "trackBarSilenceThreshold";
+            trackBarSilenceThreshold.Size = new Size(400, 45);
+            trackBarSilenceThreshold.TabIndex = 2;
+            trackBarSilenceThreshold.TickFrequency = 5;
+            trackBarSilenceThreshold.Value = -40;
+            trackBarSilenceThreshold.ValueChanged += trackBarSilenceThreshold_ValueChanged;
+            // 
+            // lblSilenceThresholdValue
+            // 
+            lblSilenceThresholdValue.Location = new Point(525, 55);
+            lblSilenceThresholdValue.Name = "lblSilenceThresholdValue";
+            lblSilenceThresholdValue.Size = new Size(60, 15);
+            lblSilenceThresholdValue.TabIndex = 3;
+            lblSilenceThresholdValue.Text = "-40 dB";
+            lblSilenceThresholdValue.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // lblSilenceDuration
+            // 
+            lblSilenceDuration.AutoSize = true;
+            lblSilenceDuration.Location = new Point(16, 100);
+            lblSilenceDuration.Name = "lblSilenceDuration";
+            lblSilenceDuration.Size = new Size(137, 15);
+            lblSilenceDuration.TabIndex = 4;
+            lblSilenceDuration.Text = "Silence Duration (ms):";
+            // 
+            // numSilenceDuration
+            // 
+            numSilenceDuration.Increment = new decimal(new int[] { 50, 0, 0, 0 });
+            numSilenceDuration.Location = new Point(160, 98);
+            numSilenceDuration.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
+            numSilenceDuration.Minimum = new decimal(new int[] { 100, 0, 0, 0 });
+            numSilenceDuration.Name = "numSilenceDuration";
+            numSilenceDuration.Size = new Size(80, 23);
+            numSilenceDuration.TabIndex = 5;
+            numSilenceDuration.Value = new decimal(new int[] { 250, 0, 0, 0 });
+            numSilenceDuration.ValueChanged += Control_Changed;
+            // 
+            // lblInitialDelay
+            // 
+            lblInitialDelay.AutoSize = true;
+            lblInitialDelay.Location = new Point(260, 100);
+            lblInitialDelay.Name = "lblInitialDelay";
+            lblInitialDelay.Size = new Size(110, 15);
+            lblInitialDelay.TabIndex = 6;
+            lblInitialDelay.Text = "Initial Delay (ms):";
+            // 
+            // numInitialDelay
+            // 
+            numInitialDelay.Increment = new decimal(new int[] { 100, 0, 0, 0 });
+            numInitialDelay.Location = new Point(375, 98);
+            numInitialDelay.Maximum = new decimal(new int[] { 5000, 0, 0, 0 });
+            numInitialDelay.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+            numInitialDelay.Name = "numInitialDelay";
+            numInitialDelay.Size = new Size(80, 23);
+            numInitialDelay.TabIndex = 7;
+            numInitialDelay.Value = new decimal(new int[] { 2500, 0, 0, 0 });
+            numInitialDelay.ValueChanged += Control_Changed;
+            // 
+            // lblFadeoutDuration
+            // 
+            lblFadeoutDuration.AutoSize = true;
+            lblFadeoutDuration.Location = new Point(16, 135);
+            lblFadeoutDuration.Name = "lblFadeoutDuration";
+            lblFadeoutDuration.Size = new Size(138, 15);
+            lblFadeoutDuration.TabIndex = 8;
+            lblFadeoutDuration.Text = "Fadeout Duration (ms):";
+            // 
+            // numFadeoutDuration
+            // 
+            numFadeoutDuration.Increment = new decimal(new int[] { 5, 0, 0, 0 });
+            numFadeoutDuration.Location = new Point(160, 133);
+            numFadeoutDuration.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            numFadeoutDuration.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            numFadeoutDuration.Name = "numFadeoutDuration";
+            numFadeoutDuration.Size = new Size(80, 23);
+            numFadeoutDuration.TabIndex = 9;
+            numFadeoutDuration.Value = new decimal(new int[] { 50, 0, 0, 0 });
+            numFadeoutDuration.ValueChanged += Control_Changed;
+            // 
+            // grpCrossfade
+            // 
+            grpCrossfade.Controls.Add(chkEnableCrossfade);
+            grpCrossfade.Controls.Add(lblCrossfadeDuration);
+            grpCrossfade.Controls.Add(numCrossfadeDuration);
+            grpCrossfade.Location = new Point(16, 210);
+            grpCrossfade.Name = "grpCrossfade";
+            grpCrossfade.Size = new Size(600, 90);
+            grpCrossfade.TabIndex = 1;
+            grpCrossfade.TabStop = false;
+            grpCrossfade.Text = "Crossfade Settings";
+            // 
+            // chkEnableCrossfade
+            // 
+            chkEnableCrossfade.AutoSize = true;
+            chkEnableCrossfade.Location = new Point(16, 25);
+            chkEnableCrossfade.Name = "chkEnableCrossfade";
+            chkEnableCrossfade.Size = new Size(129, 19);
+            chkEnableCrossfade.TabIndex = 0;
+            chkEnableCrossfade.Text = "Enable Crossfade";
+            chkEnableCrossfade.UseVisualStyleBackColor = true;
+            chkEnableCrossfade.CheckedChanged += chkEnableCrossfade_CheckedChanged;
+            // 
+            // lblCrossfadeDuration
+            // 
+            lblCrossfadeDuration.AutoSize = true;
+            lblCrossfadeDuration.Location = new Point(16, 55);
+            lblCrossfadeDuration.Name = "lblCrossfadeDuration";
+            lblCrossfadeDuration.Size = new Size(147, 15);
+            lblCrossfadeDuration.TabIndex = 1;
+            lblCrossfadeDuration.Text = "Crossfade Duration (ms):";
+            // 
+            // numCrossfadeDuration
+            // 
+            numCrossfadeDuration.Increment = new decimal(new int[] { 10, 0, 0, 0 });
+            numCrossfadeDuration.Location = new Point(170, 53);
+            numCrossfadeDuration.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            numCrossfadeDuration.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
+            numCrossfadeDuration.Name = "numCrossfadeDuration";
+            numCrossfadeDuration.Size = new Size(80, 23);
+            numCrossfadeDuration.TabIndex = 2;
+            numCrossfadeDuration.Value = new decimal(new int[] { 50, 0, 0, 0 });
+            numCrossfadeDuration.ValueChanged += Control_Changed;
+            // 
+            // grpAudioProcessing
+            // 
+            grpAudioProcessing.Controls.Add(lblMasterGain);
+            grpAudioProcessing.Controls.Add(trackBarMasterGain);
+            grpAudioProcessing.Controls.Add(lblMasterGainValue);
+            grpAudioProcessing.Controls.Add(lblEffectsGain);
+            grpAudioProcessing.Controls.Add(trackBarEffectsGain);
+            grpAudioProcessing.Controls.Add(lblEffectsGainValue);
+            grpAudioProcessing.Controls.Add(lblMusicGain);
+            grpAudioProcessing.Controls.Add(trackBarMusicGain);
+            grpAudioProcessing.Controls.Add(lblMusicGainValue);
+            grpAudioProcessing.Controls.Add(chkEnableLimiter);
+            grpAudioProcessing.Location = new Point(16, 310);
+            grpAudioProcessing.Name = "grpAudioProcessing";
+            grpAudioProcessing.Size = new Size(600, 220);
+            grpAudioProcessing.TabIndex = 2;
+            grpAudioProcessing.TabStop = false;
+            grpAudioProcessing.Text = "Audio Processing";
+            // 
+            // lblMasterGain
+            // 
+            lblMasterGain.AutoSize = true;
+            lblMasterGain.Location = new Point(16, 30);
+            lblMasterGain.Name = "lblMasterGain";
+            lblMasterGain.Size = new Size(96, 15);
+            lblMasterGain.TabIndex = 0;
+            lblMasterGain.Text = "Master Gain (dB):";
+            // 
+            // trackBarMasterGain
+            // 
+            trackBarMasterGain.Location = new Point(120, 25);
+            trackBarMasterGain.Maximum = 20;
+            trackBarMasterGain.Minimum = -20;
+            trackBarMasterGain.Name = "trackBarMasterGain";
+            trackBarMasterGain.Size = new Size(400, 45);
+            trackBarMasterGain.TabIndex = 1;
+            trackBarMasterGain.TickFrequency = 5;
+            trackBarMasterGain.Value = 0;
+            trackBarMasterGain.ValueChanged += trackBarGain_ValueChanged;
+            // 
+            // lblMasterGainValue
+            // 
+            lblMasterGainValue.Location = new Point(525, 30);
+            lblMasterGainValue.Name = "lblMasterGainValue";
+            lblMasterGainValue.Size = new Size(60, 15);
+            lblMasterGainValue.TabIndex = 2;
+            lblMasterGainValue.Text = "0 dB";
+            lblMasterGainValue.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // lblEffectsGain
+            // 
+            lblEffectsGain.AutoSize = true;
+            lblEffectsGain.Location = new Point(16, 85);
+            lblEffectsGain.Name = "lblEffectsGain";
+            lblEffectsGain.Size = new Size(97, 15);
+            lblEffectsGain.TabIndex = 3;
+            lblEffectsGain.Text = "Effects Gain (dB):";
+            // 
+            // trackBarEffectsGain
+            // 
+            trackBarEffectsGain.Location = new Point(120, 80);
+            trackBarEffectsGain.Maximum = 20;
+            trackBarEffectsGain.Minimum = -20;
+            trackBarEffectsGain.Name = "trackBarEffectsGain";
+            trackBarEffectsGain.Size = new Size(400, 45);
+            trackBarEffectsGain.TabIndex = 4;
+            trackBarEffectsGain.TickFrequency = 5;
+            trackBarEffectsGain.Value = 0;
+            trackBarEffectsGain.ValueChanged += trackBarGain_ValueChanged;
+            // 
+            // lblEffectsGainValue
+            // 
+            lblEffectsGainValue.Location = new Point(525, 85);
+            lblEffectsGainValue.Name = "lblEffectsGainValue";
+            lblEffectsGainValue.Size = new Size(60, 15);
+            lblEffectsGainValue.TabIndex = 5;
+            lblEffectsGainValue.Text = "0 dB";
+            lblEffectsGainValue.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // lblMusicGain
+            // 
+            lblMusicGain.AutoSize = true;
+            lblMusicGain.Location = new Point(16, 140);
+            lblMusicGain.Name = "lblMusicGain";
+            lblMusicGain.Size = new Size(92, 15);
+            lblMusicGain.TabIndex = 6;
+            lblMusicGain.Text = "Music Gain (dB):";
+            // 
+            // trackBarMusicGain
+            // 
+            trackBarMusicGain.Location = new Point(120, 135);
+            trackBarMusicGain.Maximum = 20;
+            trackBarMusicGain.Minimum = -20;
+            trackBarMusicGain.Name = "trackBarMusicGain";
+            trackBarMusicGain.Size = new Size(400, 45);
+            trackBarMusicGain.TabIndex = 7;
+            trackBarMusicGain.TickFrequency = 5;
+            trackBarMusicGain.Value = 0;
+            trackBarMusicGain.ValueChanged += trackBarGain_ValueChanged;
+            // 
+            // lblMusicGainValue
+            // 
+            lblMusicGainValue.Location = new Point(525, 140);
+            lblMusicGainValue.Name = "lblMusicGainValue";
+            lblMusicGainValue.Size = new Size(60, 15);
+            lblMusicGainValue.TabIndex = 8;
+            lblMusicGainValue.Text = "0 dB";
+            lblMusicGainValue.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // chkEnableLimiter
+            // 
+            chkEnableLimiter.AutoSize = true;
+            chkEnableLimiter.Location = new Point(16, 185);
+            chkEnableLimiter.Name = "chkEnableLimiter";
+            chkEnableLimiter.Size = new Size(106, 19);
+            chkEnableLimiter.TabIndex = 9;
+            chkEnableLimiter.Text = "Enable Limiter";
+            chkEnableLimiter.UseVisualStyleBackColor = true;
+            chkEnableLimiter.CheckedChanged += Control_Changed;
             // 
             // tabMixer
             // 
@@ -1028,6 +1369,21 @@ namespace MillionaireGame.Forms.Options
             tabSounds.ResumeLayout(false);
             tabControlSounds.ResumeLayout(false);
             tabSoundpack.ResumeLayout(false);
+            tabAudio.ResumeLayout(false);
+            grpSilenceDetection.ResumeLayout(false);
+            grpSilenceDetection.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarSilenceThreshold).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numSilenceDuration).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numInitialDelay).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numFadeoutDuration).EndInit();
+            grpCrossfade.ResumeLayout(false);
+            grpCrossfade.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numCrossfadeDuration).EndInit();
+            grpAudioProcessing.ResumeLayout(false);
+            grpAudioProcessing.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)trackBarMasterGain).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarEffectsGain).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBarMusicGain).EndInit();
             tabMixer.ResumeLayout(false);
             tabMixer.PerformLayout();
             grpAudioDevice.ResumeLayout(false);
@@ -1124,8 +1480,35 @@ namespace MillionaireGame.Forms.Options
         private Button btnPlaySelected;
         private TabControl tabControlSounds;
         private TabPage tabSoundpack;
+        private TabPage tabAudio;
         private TabPage tabMixer;
         private GroupBox grpAudioDevice;
+        private GroupBox grpSilenceDetection;
+        private TrackBar trackBarSilenceThreshold;
+        private Label lblSilenceThreshold;
+        private Label lblSilenceThresholdValue;
+        private NumericUpDown numSilenceDuration;
+        private Label lblSilenceDuration;
+        private NumericUpDown numInitialDelay;
+        private Label lblInitialDelay;
+        private NumericUpDown numFadeoutDuration;
+        private Label lblFadeoutDuration;
+        private CheckBox chkEnableSilenceDetection;
+        private GroupBox grpCrossfade;
+        private NumericUpDown numCrossfadeDuration;
+        private Label lblCrossfadeDuration;
+        private CheckBox chkEnableCrossfade;
+        private GroupBox grpAudioProcessing;
+        private TrackBar trackBarMasterGain;
+        private Label lblMasterGain;
+        private Label lblMasterGainValue;
+        private TrackBar trackBarEffectsGain;
+        private Label lblEffectsGain;
+        private Label lblEffectsGainValue;
+        private TrackBar trackBarMusicGain;
+        private Label lblMusicGain;
+        private Label lblMusicGainValue;
+        private CheckBox chkEnableLimiter;
         private Label lblAudioDevice;
         private ComboBox cmbAudioDevice;
         private Button btnRefreshDevices;

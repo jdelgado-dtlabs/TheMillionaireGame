@@ -114,6 +114,9 @@ public partial class OptionsDialog : Form
         // Load audio devices for mixer
         LoadAudioDevices();
         
+        // Load audio settings (silence detection, crossfade, processing)
+        LoadAudioSettings();
+        
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
         chkShowWebServiceConsole.Checked = _settings.ShowWebServiceConsole;
@@ -336,6 +339,9 @@ public partial class OptionsDialog : Form
                 }
             }
         }
+
+        // Save audio settings (silence detection, crossfade, processing)
+        SaveAudioSettings();
 
         // Console settings (only save in release mode, debug is always true)
 #if !DEBUG
@@ -753,6 +759,152 @@ public partial class OptionsDialog : Form
     {
         MarkChanged();
     }
+
+    #region Audio Settings Event Handlers
+
+    private void chkEnableSilenceDetection_CheckedChanged(object sender, EventArgs e)
+    {
+        var enabled = chkEnableSilenceDetection.Checked;
+        trackBarSilenceThreshold.Enabled = enabled;
+        numSilenceDuration.Enabled = enabled;
+        numInitialDelay.Enabled = enabled;
+        numFadeoutDuration.Enabled = enabled;
+        MarkChanged();
+    }
+
+    private void trackBarSilenceThreshold_ValueChanged(object sender, EventArgs e)
+    {
+        lblSilenceThresholdValue.Text = $"{trackBarSilenceThreshold.Value} dB";
+        MarkChanged();
+    }
+
+    private void chkEnableCrossfade_CheckedChanged(object sender, EventArgs e)
+    {
+        numCrossfadeDuration.Enabled = chkEnableCrossfade.Checked;
+        MarkChanged();
+    }
+
+    private void trackBarGain_ValueChanged(object sender, EventArgs e)
+    {
+        if (sender == trackBarMasterGain)
+        {
+            var value = trackBarMasterGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblMasterGainValue.Text = $"{sign}{value} dB";
+        }
+        else if (sender == trackBarEffectsGain)
+        {
+            var value = trackBarEffectsGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblEffectsGainValue.Text = $"{sign}{value} dB";
+        }
+        else if (sender == trackBarMusicGain)
+        {
+            var value = trackBarMusicGain.Value;
+            var sign = value >= 0 ? "+" : "";
+            lblMusicGainValue.Text = $"{sign}{value} dB";
+        }
+        MarkChanged();
+    }
+
+    private void LoadAudioSettings()
+    {
+        // Silence Detection Settings
+        chkEnableSilenceDetection.Checked = _settings.SilenceDetection.Enabled;
+        trackBarSilenceThreshold.Value = (int)_settings.SilenceDetection.ThresholdDb;
+        numSilenceDuration.Value = _settings.SilenceDetection.SilenceDurationMs;
+        numInitialDelay.Value = _settings.SilenceDetection.InitialDelayMs;
+        numFadeoutDuration.Value = _settings.SilenceDetection.FadeoutDurationMs;
+
+        // Update threshold label
+        lblSilenceThresholdValue.Text = $"{trackBarSilenceThreshold.Value} dB";
+
+        // Enable/disable controls based on checkbox
+        var silenceEnabled = chkEnableSilenceDetection.Checked;
+        trackBarSilenceThreshold.Enabled = silenceEnabled;
+        numSilenceDuration.Enabled = silenceEnabled;
+        numInitialDelay.Enabled = silenceEnabled;
+        numFadeoutDuration.Enabled = silenceEnabled;
+
+        // Crossfade Settings
+        chkEnableCrossfade.Checked = _settings.Crossfade.Enabled;
+        numCrossfadeDuration.Value = _settings.Crossfade.CrossfadeDurationMs;
+
+        // Enable/disable crossfade duration based on checkbox
+        numCrossfadeDuration.Enabled = chkEnableCrossfade.Checked;
+
+        // Audio Processing Settings
+        trackBarMasterGain.Value = (int)_settings.AudioProcessing.MasterGainDb;
+        trackBarEffectsGain.Value = (int)_settings.AudioProcessing.EffectsGainDb;
+        trackBarMusicGain.Value = (int)_settings.AudioProcessing.MusicGainDb;
+        chkEnableLimiter.Checked = _settings.AudioProcessing.EnableLimiter;
+
+        // Update gain labels
+        UpdateAllGainLabels();
+    }
+
+    private void SaveAudioSettings()
+    {
+        // Silence Detection Settings
+        _settings.SilenceDetection.Enabled = chkEnableSilenceDetection.Checked;
+        _settings.SilenceDetection.ThresholdDb = trackBarSilenceThreshold.Value;
+        _settings.SilenceDetection.SilenceDurationMs = (int)numSilenceDuration.Value;
+        _settings.SilenceDetection.InitialDelayMs = (int)numInitialDelay.Value;
+        _settings.SilenceDetection.FadeoutDurationMs = (int)numFadeoutDuration.Value;
+
+        // Crossfade Settings
+        _settings.Crossfade.Enabled = chkEnableCrossfade.Checked;
+        _settings.Crossfade.CrossfadeDurationMs = (int)numCrossfadeDuration.Value;
+
+        // Audio Processing Settings
+        _settings.AudioProcessing.MasterGainDb = (float)trackBarMasterGain.Value;
+        _settings.AudioProcessing.EffectsGainDb = (float)trackBarEffectsGain.Value;
+        _settings.AudioProcessing.MusicGainDb = (float)trackBarMusicGain.Value;
+        _settings.AudioProcessing.EnableLimiter = chkEnableLimiter.Checked;
+
+        // Apply audio settings to SoundService
+        ApplyAudioSettings();
+    }
+
+    private void ApplyAudioSettings()
+    {
+        try
+        {
+            // Notify SoundService to reload settings
+            var soundService = Program.ServiceProvider?.GetRequiredService<Services.SoundService>();
+            if (soundService != null)
+            {
+                // SoundService will automatically pick up the new settings from ApplicationSettings.Instance
+                // No explicit refresh needed as it already references the singleton
+                if (Program.DebugMode)
+                {
+                    GameConsole.Debug("[OptionsDialog] Audio settings applied successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to apply audio settings: {ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void UpdateAllGainLabels()
+    {
+        var masterValue = trackBarMasterGain.Value;
+        var masterSign = masterValue >= 0 ? "+" : "";
+        lblMasterGainValue.Text = $"{masterSign}{masterValue} dB";
+
+        var effectsValue = trackBarEffectsGain.Value;
+        var effectsSign = effectsValue >= 0 ? "+" : "";
+        lblEffectsGainValue.Text = $"{effectsSign}{effectsValue} dB";
+
+        var musicValue = trackBarMusicGain.Value;
+        var musicSign = musicValue >= 0 ? "+" : "";
+        lblMusicGainValue.Text = $"{musicSign}{musicValue} dB";
+    }
+
+    #endregion
 
     // Soundpack management methods
     private void LoadAvailableSoundPacks()
