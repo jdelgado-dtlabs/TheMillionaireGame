@@ -794,8 +794,9 @@ public partial class FFFControlPanel : UserControl
             CorrectAnswer = "A" // Not used for FFF display
         };
         _screenService?.UpdateQuestion(displayQuestion);
+        _screenService?.ShowQuestion(true); // Make question visible on TV screen
         // Do NOT show answers yet - wait for Reveal Answers button
-        GameConsole.Log("[FFF] Question displayed on TV (answers hidden)");
+        GameConsole.Log($"[FFF] Question displayed on TV (answers hidden). A:{displayQuestion.AnswerA}, B:{displayQuestion.AnswerB}, C:{displayQuestion.AnswerC}, D:{displayQuestion.AnswerD}");
         
         // Change state immediately - enables next button
         _currentState = FFFFlowState.QuestionShown;
@@ -878,11 +879,25 @@ public partial class FFFControlPanel : UserControl
             }
             
             // Display answers on TV in normal order (A, B, C, D)
-            _screenService?.ShowAnswer("A");
-            _screenService?.ShowAnswer("B");
-            _screenService?.ShowAnswer("C");
-            _screenService?.ShowAnswer("D");
-            GameConsole.Log("[FFF] Answers displayed on TV in original order");
+            if (InvokeRequired)
+            {
+                Invoke(() =>
+                {
+                    _screenService?.ShowAnswer("A");
+                    _screenService?.ShowAnswer("B");
+                    _screenService?.ShowAnswer("C");
+                    _screenService?.ShowAnswer("D");
+                    GameConsole.Log("[FFF] Answers displayed on TV in original order");
+                });
+            }
+            else
+            {
+                _screenService?.ShowAnswer("A");
+                _screenService?.ShowAnswer("B");
+                _screenService?.ShowAnswer("C");
+                _screenService?.ShowAnswer("D");
+                GameConsole.Log("[FFF] Answers displayed on TV in original order");
+            }
             
             // Only proceed if transmission was successful
             // Update state and start timer
