@@ -7,30 +7,33 @@
 
 ## 🎯 Critical Path (Must Complete for v1.0)
 
-### 1. FFF Online as "Game Within a Game" Feature 🔴
-**Status**: Not Started  
-**Estimated Time**: 4-6 hours  
-**Priority**: HIGHEST
+### 1. FFF Online as "Game Within a Game" Feature �
+**Status**: Mostly Complete - TV Animations & Web Client State Integration Remaining  
+**Estimated Time**: 2-3 hours (remaining work)  
+**Priority**: MEDIUM-HIGH
 
-**Requirements**:
-- [ ] Create FFF_ONLINE_FLOW_DOCUMENT.md defining architecture
-- [ ] Clarify FFF Online as optional pre-game activity (not Hot Seat replacement)
-- [ ] Design control panel integration (tab vs separate window)
-- [ ] Define separation between FFF Offline (local) and FFF Online (web)
-- [ ] Wire up FFFControlPanel into main Control Panel
-- [ ] Implement screen animations for FFF Online
-- [ ] Reuse FFFGraphics.cs for contestant display
-- [ ] Test end-to-end flow: Participants join → Question starts → Answers submitted → Winner calculated
-- [ ] Add graphics after basic flow works
+**Completed**:
+- [x] FFF Online platform fully built with WAPS integration
+- [x] Control panel integration complete
+- [x] Separation between FFF Offline (local) and FFF Online (web)
+- [x] FFFControlPanel wired into main Control Panel
+- [x] End-to-end flow tested: Participants join → Question starts → Answers submitted → Winner calculated
+- [x] WAPS infrastructure complete and operational
+
+**Remaining Requirements**:
+- [ ] Implement TV screen animations for FFF Online
+- [ ] Integrate FFF Online process states into web client UI
+  * Show current phase (waiting, question active, answering, results)
+  * Display state transitions to participants
+  * Visual feedback for each game phase
 
 **Acceptance Criteria**:
-- Host can launch FFF Online from Control Panel
-- Web participants can join and answer questions
-- TV screen displays FFF Online question and participants
-- Winner is identified and displayed
-- No conflicts with main game state
+- TV screen displays animated FFF Online sequences
+- Web participants see current FFF phase on their devices
+- State changes are communicated clearly to all participants
+- Smooth transitions between FFF phases
 
-**Blockers**: None (WAPS infrastructure complete)
+**Blockers**: None
 
 ---
 
@@ -38,6 +41,8 @@
 **Status**: Not Started  
 **Estimated Time**: 2-3 hours  
 **Priority**: HIGH
+
+---
 
 **Requirements**:
 - [ ] Replace placeholder results in LifelineManager.cs line 491
@@ -58,32 +63,9 @@
 
 ---
 
-### 3. Hotkey Mapping for Lifelines 🟡
-**Status**: Not Started  
-**Estimated Time**: 1-2 hours  
-**Priority**: MEDIUM
-
-**Requirements**:
-- [ ] Implement F8 → Lifeline Button 1 (HotkeyHandler.cs:135)
-- [ ] Implement F9 → Lifeline Button 2 (HotkeyHandler.cs:139)
-- [ ] Implement F10 → Lifeline Button 3 (HotkeyHandler.cs:143)
-- [ ] Implement F11 → Lifeline Button 4 (HotkeyHandler.cs:147)
-- [ ] Test with dynamic lifeline assignments (different lifelines per slot)
-- [ ] Ensure hotkeys respect button enabled/disabled state
-- [ ] Verify hotkeys don't fire when button in cooldown/standby
-
-**Acceptance Criteria**:
-- F8-F11 keys activate corresponding lifeline buttons
-- Hotkeys work regardless of which lifeline type is assigned
-- Hotkeys respect all button state protections
-
-**Blockers**: None
-
----
-
 ## 🔧 Important Improvements (Should Complete)
 
-### 4. FFF Online Graphics Enhancement 🟢
+### 3. FFF Online Graphics Enhancement 🟢
 **Status**: Partially Complete (Offline graphics done)  
 **Estimated Time**: 3-4 hours  
 **Priority**: MEDIUM
@@ -105,7 +87,7 @@
 
 ---
 
-### 5. Question Editor CSV Features 🟢
+### 4. Question Editor CSV Features 🟢
 **Status**: UI exists, functionality incomplete  
 **Estimated Time**: 2-3 hours  
 **Priority**: LOW-MEDIUM
@@ -129,7 +111,7 @@
 
 ---
 
-### 6. Sound Pack Removal 🟢
+### 5. Sound Pack Removal 🟢
 **Status**: Not Implemented  
 **Estimated Time**: 1 hour  
 **Priority**: LOW
@@ -150,30 +132,9 @@
 
 ---
 
-### 7. Lifeline Icon Polish 🟢
-**Status**: Basic implementation complete, polish pending  
-**Estimated Time**: 1-2 hours  
-**Priority**: LOW-MEDIUM
-
-**Requirements**:
-- [ ] Complete lifeline image loading (ControlPanelForm.cs:307)
-- [ ] Visual updates when lifeline used (ControlPanelForm.cs:682)
-- [ ] Ensure icon states sync across all screens
-- [ ] Test state transitions (Hidden→Normal→Bling→Used)
-- [ ] Verify positioning on Host/Guest/TV screens
-
-**Acceptance Criteria**:
-- Lifeline icons load correctly on all screens
-- Icons update immediately when lifeline used
-- State synchronization is reliable
-
-**Blockers**: None
-
----
-
 ## 🔍 Testing & Quality Assurance
 
-### 8. End-to-End Testing
+### 6. End-to-End Testing
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
@@ -203,13 +164,13 @@
 
 ---
 
-### 9. Bug Fixes
+### 7. Bug Fixes
 **Estimated Time**: 4 hours  
 **Reserved for issues found during testing**
 
 ---
 
-### 10. Documentation Updates
+### 8. Documentation Updates
 **Estimated Time**: 2 hours
 
 **Documents to Update**:
@@ -225,6 +186,18 @@
 ## ⏸️ Deferred to Post-1.0
 
 These items are explicitly NOT required for v1.0 release:
+
+### Hotkey Mapping for Lifelines
+- Implement F8-F11 → Lifeline Buttons 1-4
+- **Reason**: Will be developed in tandem with Elgato Stream Deck integration
+- **Post-1.0 Priority**: Medium (v1.2 target)
+- **Reference**: HotkeyHandler.cs lines 135, 139, 143, 147
+
+### Lifeline Icon Polish
+- Complete lifeline image loading, visual updates when used
+- **Reason**: Current setup works well, additional complexity not needed
+- **Post-1.0 Priority**: None (eliminated)
+- **Reference**: ControlPanelForm.cs lines 307, 682
 
 ### Hot Seat Integration
 - Winner proceeds from FFF to hot seat automatically
@@ -271,41 +244,42 @@ These items are explicitly NOT required for v1.0 release:
 
 | Category | Tasks | Complete | Remaining | % Done |
 |----------|-------|----------|-----------|--------|
-| Critical Path | 3 | 0 | 3 | 0% |
-| Important | 4 | 0 | 4 | 0% |
+| Critical Path | 2 | 0 | 2 | 0% |
+| Important | 3 | 0 | 3 | 0% |
 | Testing & QA | 3 | 0 | 3 | 0% |
-| **Total** | **10** | **0** | **10** | **0%** |
+| **Total** | **8** | **0** | **8** | **0%** |
 
-**Estimated Total Hours**: 20-30 hours  
-**Target Completion**: January 15, 2026 (assuming 10-15 hours/week)
+**Estimated Total Hours**: 15-22 hours  
+**Target Completion**: January 10, 2026 (assuming 10-15 hours/week)
+
+**Note**: FFF Online mostly complete (~80%), only TV animations and web client state integration remaining.
 
 ---
 
 ## 📋 Weekly Milestones
 
 ### Week 1 (Dec 29 - Jan 4)
-- [ ] Create FFF_ONLINE_FLOW_DOCUMENT.md (2 hours)
-- [ ] FFF Online Integration - Phase 1 (4 hours)
+- [ ] FFF Online TV Screen Animations (2 hours)
+- [ ] FFF Online Web Client State Integration (1 hour)
 - [ ] Real ATA Voting Integration (3 hours)
-- [ ] Hotkey Mapping (2 hours)
+- [ ] CSV Import/Export (3 hours)
 
-**Target**: 11 hours, 40% complete
+**Target**: 9 hours, 50% complete
 
 ### Week 2 (Jan 5 - Jan 11)
 - [ ] FFF Online Graphics Enhancement (3 hours)
-- [ ] CSV Import/Export (3 hours)
-- [ ] Lifeline Icon Polish (2 hours)
 - [ ] Sound Pack Removal (1 hour)
+- [ ] End-to-End Testing - Phase 1 (2 hours)
 
-**Target**: 9 hours, 70% complete
+**Target**: 6 hours, 75% complete
 
 ### Week 3 (Jan 12 - Jan 18)
-- [ ] End-to-End Testing (4 hours)
+- [ ] End-to-End Testing - Phase 2 (2 hours)
 - [ ] Bug Fixes (4 hours)
 - [ ] Documentation Updates (2 hours)
-- [ ] Final Polish & Release Prep (2 hours)
+- [ ] Final Polish & Release Prep (1 hour)
 
-**Target**: 12 hours, 100% complete
+**Target**: 9 hours, 100% complete
 
 ---
 
@@ -314,10 +288,10 @@ These items are explicitly NOT required for v1.0 release:
 Version 1.0 is ready for release when:
 
 ### Functionality
-- [ ] FFF Online works end-to-end with web participants
+- [ ] FFF Online TV animations complete
+- [ ] FFF Online web client state integration complete
 - [ ] Real ATA voting displays accurate percentages
 - [ ] All lifelines function correctly
-- [ ] Hotkeys F8-F11 activate lifelines
 - [ ] FFF Offline and Online modes work independently
 - [ ] Main game flow from Q1-Q15 works flawlessly
 
@@ -344,22 +318,21 @@ Version 1.0 is ready for release when:
 ## 🚨 Risk Assessment
 
 ### Low Risk
-- Hotkey mapping (simple implementation)
+- FFF Online web client state integration (SignalR already implemented)
 - CSV Import/Export (standard file I/O)
 - Sound pack removal (straightforward feature)
 
 ### Medium Risk
 - Real ATA voting integration (database query complexity)
-- FFF Online graphics (depends on existing implementation)
+- FFF Online TV animations (depends on existing implementation)
+- FFF Online graphics enhancement (requires FFFGraphics.cs integration)
 - End-to-end testing (may reveal unexpected issues)
 
 ### High Risk
-- FFF Online integration (complex UI/state management)
-  - **Mitigation**: Create detailed flow document first
-  - **Mitigation**: Test incrementally, one screen at a time
+- None (FFF Online integration already complete)
 
 ### Critical Path Dependencies
-- FFF Online Graphics depends on FFF Online Integration
+- FFF Online Graphics Enhancement depends on TV Animations completion
 - End-to-end testing depends on all features being complete
 - Release depends on successful testing and bug fixes
 
@@ -387,5 +360,19 @@ Version 1.0 is ready for release when:
 ---
 
 *Document Created*: December 24, 2025  
-*Last Updated*: December 24, 2025  
+*Last Updated*: December 27, 2025  
 *Next Review*: Weekly during development
+
+---
+
+## 📝 Changelog
+
+**December 27, 2025**:
+- Marked FFF Online as mostly complete (~80% done)
+- Remaining: TV screen animations and web client state integration
+- Moved "Hotkey Mapping" to Post-1.0 (will develop with Stream Deck integration)
+- Moved "Lifeline Icon Polish" to Post-1.0 (eliminated - current setup sufficient)
+- Reduced total task count from 10 to 8
+- Updated time estimates: 15-22 hours remaining (down from 20-30 hours)
+- Adjusted weekly milestones to reflect changes
+- Updated risk assessment (removed "High Risk" category)
