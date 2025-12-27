@@ -1,5 +1,12 @@
 # FFF Online Window Rebuild Plan
 
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+**Estimated Time:** 4-6 hours
+**Date:** December 2025
+
+---
+
 ## Executive Summary
 This document outlines the plan to rebuild the **FFF Online Control Panel** component to match the game flow described in [FFF_ONLINE_FLOW_DOCUMENT.md](FFF_ONLINE_FLOW_DOCUMENT.md) and to align the user experience with the main [ControlPanelForm](../../MillionaireGame/Forms/ControlPanelForm.cs).
 

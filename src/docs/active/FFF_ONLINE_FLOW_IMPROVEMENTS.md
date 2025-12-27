@@ -1,5 +1,11 @@
 # FFF Online Web Client Flow Improvements
 
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+**Date:** December 2025
+
+---
+
 ## Current Issues
 After timer expires, the question with response stays on screen with no feedback to participants.
 

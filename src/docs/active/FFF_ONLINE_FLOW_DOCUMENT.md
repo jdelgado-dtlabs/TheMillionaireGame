@@ -1,4 +1,12 @@
-FFF or Fastest Finger First is a game within a game feature that is used to deterimine which participant gets to be abel to play the main game. It is part of the overall flow of the game show format, often seen in quiz shows like "Who Wants to Be a Millionaire?".
+# FFF Online Flow Document
+
+**Status:** 📋 DESIGN REFERENCE (Implementation Ongoing)
+**Date:** December 2025
+**Purpose:** Design specification for FFF (Fastest Finger First) feature
+
+---
+
+FFF or Fastest Finger First is a game within a game feature that is used to determine which participant gets to be able to play the main game. It is part of the overall flow of the game show format, often seen in quiz shows like "Who Wants to Be a Millionaire?".
 
 The way we intend to implement FFF in our application is as follows:
 1. **Audience Participation**: All participants will be given a question at the start of the game.
