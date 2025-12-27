@@ -17,6 +17,7 @@
     <FileVersion>0.2.2512.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
     <EnableDefaultItems>true</EnableDefaultItems>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

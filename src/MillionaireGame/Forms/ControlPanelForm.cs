@@ -2056,53 +2056,9 @@ public partial class ControlPanelForm : Form
         }
     }
 
+    // DEPRECATED: Manual reset button (btnResetGame_Click) - Automated sequences handle all resets
+    // See: docs/archive/ControlPanelForm_cs_NOTES.md for archived implementation
     
-    // DEPRECATED: Reset button removed from UI - automated sequences handle all resets
-    // Keeping this method commented out for reference in case manual reset is needed in future
-    /*
-    private async void btnResetGame_Click(object? sender, EventArgs e)
-    {
-        // If automated sequence is running, cancel it
-        if (_isAutomatedSequenceRunning)
-        {
-            _isAutomatedSequenceRunning = false;
-            _automatedSequenceCts?.Cancel();
-            _automatedSequenceCts?.Dispose();
-            _automatedSequenceCts = null;
-            
-            // Stop all sounds before showing dialog
-            await _soundService.StopAllSoundsAsync();
-            
-            // Clean up all timers
-            _lifelineManager?.Reset();
-            
-            _closingTimer?.Stop();
-            _closingTimer?.Dispose();
-            _closingTimer = null;
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Info("[Reset] Cancelled automated sequence and cleaned up timers");
-            }
-        }
-        
-        // Stop all sounds before resetting
-        await _soundService.StopAllSoundsAsync();
-        
-        // Reset lifeline state
-        _lifelineManager?.Reset();
-        
-        // Reset closing timer
-        _closingTimer?.Stop();
-        _closingTimer?.Dispose();
-        _closingTimer = null;
-        
-        _gameService.ResetGame();
-        _firstRoundCompleted = true; // Mark that at least one round has been completed
-        ResetAllControls();
-    }
-    */
-
     private void btnLifeline1_Click(object? sender, EventArgs e)
     {
         _ = Task.Run(async () => await HandleLifelineClickAsync(1, btnLifeline1));
