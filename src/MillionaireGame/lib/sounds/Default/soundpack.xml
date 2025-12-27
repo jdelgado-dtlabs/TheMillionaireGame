@@ -54,9 +54,7 @@
     <Sound Key="ATAStart" File="ata_start.mp3" />
     <Sound Key="ATAVote" File="ata_vote.mp3" />
     <Sound Key="ATAEnd" File="ata_end.mp3" />
-    <Sound Key="SwitchActivate" File="stq_start.mp3" />
-    <Sound Key="SwitchShowCorrect" File="stq_reveal_correct_answer.mp3" />
-    <Sound Key="SwitchClear" File="stq_new_question_flip.mp3" />
+    <Sound Key="SwitchFlip" File="stq_new_question_flip.mp3" />
     <Sound Key="ATHBed" File="host_bed.mp3" />
     <Sound Key="ATHEnd" File="host_end.mp3" />
     <Sound Key="DoubleDipStart" File="doubledip_start.mp3" />

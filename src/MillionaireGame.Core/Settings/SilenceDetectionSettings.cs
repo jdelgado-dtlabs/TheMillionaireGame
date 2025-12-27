@@ -31,6 +31,13 @@ public class SilenceDetectionSettings
     public int FadeoutDurationMs { get; set; } = 20;
 
     /// <summary>
+    /// Initial delay in milliseconds before silence detection begins
+    /// Prevents false triggers on sounds with slow ramp-ups or quiet intros
+    /// Recommended: 2000-2500ms for sounds with gradual fade-ins or short sounds that need to play completely
+    /// </summary>
+    public int InitialDelayMs { get; set; } = 2500;
+
+    /// <summary>
     /// Apply silence detection to music channel (looping bed music)
     /// Generally should be false since music loops continuously
     /// </summary>

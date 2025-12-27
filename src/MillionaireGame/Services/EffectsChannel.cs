@@ -23,7 +23,8 @@ public class EffectsChannel : IDisposable
     private bool _disposed = false;
     private float _volume = 1.0f;
 
-    public EffectsChannel(SilenceDetectionSettings? silenceSettings = null, CrossfadeSettings? crossfadeSettings = null)
+    public EffectsChannel(SilenceDetectionSettings? silenceSettings = null, 
+        CrossfadeSettings? crossfadeSettings = null)
     {
         // Create a standard wave format (44.1kHz, 16-bit, stereo)
         var waveFormat = new WaveFormat(44100, 16, 2);
@@ -136,8 +137,9 @@ public class EffectsChannel : IDisposable
     /// </summary>
     /// <param name="filePath">Path to the audio file</param>
     /// <param name="priority">Priority level (Normal or Immediate)</param>
+    /// <param name="customThresholdDb">Optional custom silence detection threshold in dB (e.g., -30 for lights down sounds)</param>
     /// <returns>True if queued successfully, false if queue is full</returns>
-    public bool QueueEffect(string filePath, AudioPriority priority = AudioPriority.Normal)
+    public bool QueueEffect(string filePath, AudioPriority priority = AudioPriority.Normal, double? customThresholdDb = null)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -157,7 +159,7 @@ public class EffectsChannel : IDisposable
             return false;
         }
 
-        return _cueQueue.QueueAudio(filePath, priority);
+        return _cueQueue.QueueAudio(filePath, priority, customThresholdDb);
     }
 
     /// <summary>

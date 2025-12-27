@@ -42,6 +42,7 @@ public class MoneyTreeControl : UserControl
 
     /// <summary>
     /// Updates the money tree display for the current level
+    /// Level should be the display level (already calculated with GetDisplayLevel)
     /// </summary>
     public void SetCurrentLevel(int level)
     {
@@ -113,12 +114,17 @@ public class MoneyTreeControl : UserControl
             var panel = _levelPanels[i];
             var level = panel.Level;
 
-            if (level == _currentLevel + 1) // +1 because CurrentLevel is 0-based
+            // Tree shows what you've won, not what you're playing for
+            // _currentLevel is already the display level (calculated with -1 and floored at 0)
+            // so just use it directly
+            var displayLevel = _currentLevel;
+
+            if (level == displayLevel)
             {
-                // Current question - highlight
+                // Current winnings level - highlight
                 panel.SetState(MoneyTreeLevelState.Current);
             }
-            else if (level < _currentLevel + 1)
+            else if (level < displayLevel)
             {
                 // Passed levels - dimmed
                 panel.SetState(MoneyTreeLevelState.Passed);

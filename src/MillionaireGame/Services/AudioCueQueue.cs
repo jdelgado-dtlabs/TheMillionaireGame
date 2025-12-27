@@ -42,6 +42,11 @@ namespace MillionaireGame.Services
         private int _silenceSampleCount = 0;
         private int _silenceDurationSamples = 0;
         private float _silenceThresholdAmplitude = 0f;
+        private int _currentCueSamplesProcessed = 0;
+        private int _initialDelaySamples = 0;
+        
+        // Per-cue threshold overrides (maps cue to custom threshold amplitude)
+        private readonly Dictionary<AudioCue, float> _cueThresholdOverrides = new();
         
         // Manual fadeout state
         private bool _fadingOut = false;
@@ -87,7 +92,8 @@ namespace MillionaireGame.Services
         /// <param name="crossfadeDurationMs">Duration of crossfades in milliseconds (default: 200ms)</param>
         /// <param name="queueLimit">Maximum number of sounds that can be queued (default: 10)</param>
         /// <param name="silenceSettings">Optional silence detection settings to apply to queued audio</param>
-        public AudioCueQueue(WaveFormat waveFormat, int crossfadeDurationMs = 50, int queueLimit = 10, SilenceDetectionSettings? silenceSettings = null)
+        public AudioCueQueue(WaveFormat waveFormat, int crossfadeDurationMs = 50, int queueLimit = 10, 
+            SilenceDetectionSettings? silenceSettings = null)
         {
             _waveFormat = waveFormat ?? throw new ArgumentNullException(nameof(waveFormat));
             _queueLimit = queueLimit;
@@ -97,13 +103,15 @@ namespace MillionaireGame.Services
             // Calculate silence detection thresholds
             _silenceDurationSamples = (int)(_silenceSettings.SilenceDurationMs * waveFormat.SampleRate / 1000.0);
             _silenceThresholdAmplitude = (float)Math.Pow(10, _silenceSettings.ThresholdDb / 20.0);
+            _initialDelaySamples = (int)(_silenceSettings.InitialDelayMs * waveFormat.SampleRate / 1000.0);
 
             if (Program.DebugMode)
             {
                 GameConsole.Debug(
                     $"[AudioCueQueue] Created: crossfade={crossfadeDurationMs}ms ({_crossfadeDurationSamples} samples), " +
                     $"queueLimit={queueLimit}, silenceThreshold={_silenceSettings.ThresholdDb}dB ({_silenceThresholdAmplitude:F6}), " +
-                    $"silenceDuration={_silenceSettings.SilenceDurationMs}ms ({_silenceDurationSamples} samples)"
+                    $"silenceDuration={_silenceSettings.SilenceDurationMs}ms ({_silenceDurationSamples} samples), " +
+                    $"initialDelay={_silenceSettings.InitialDelayMs}ms ({_initialDelaySamples} samples)"
                 );
             }
         }
@@ -113,8 +121,9 @@ namespace MillionaireGame.Services
         /// </summary>
         /// <param name="filePath">Path to the audio file</param>
         /// <param name="priority">Priority level (Normal or Immediate)</param>
+        /// <param name="customThresholdDb">Optional custom silence detection threshold in dB (e.g., -30 for lights down sounds)</param>
         /// <returns>True if queued successfully, false if queue is full</returns>
-        public bool QueueAudio(string filePath, AudioPriority priority = AudioPriority.Normal)
+        public bool QueueAudio(string filePath, AudioPriority priority = AudioPriority.Normal, double? customThresholdDb = null)
         {
             lock (_lock)
             {
@@ -132,6 +141,20 @@ namespace MillionaireGame.Services
                 try
                 {
                     var cue = new AudioCue(filePath, priority, _waveFormat, _silenceSettings);
+                    
+                    // Store custom threshold override if provided
+                    if (customThresholdDb.HasValue)
+                    {
+                        float customThresholdAmplitude = (float)Math.Pow(10, customThresholdDb.Value / 20.0);
+                        _cueThresholdOverrides[cue] = customThresholdAmplitude;
+                        
+                        if (Program.DebugMode)
+                        {
+                            GameConsole.Debug(
+                                $"[AudioCueQueue] Custom threshold for {System.IO.Path.GetFileName(filePath)}: {customThresholdDb.Value}dB ({customThresholdAmplitude:F6})"
+                            );
+                        }
+                    }
 
                     if (priority == AudioPriority.Immediate)
                     {
@@ -154,6 +177,7 @@ namespace MillionaireGame.Services
                         {
                             _currentCue = cue;
                             _silenceSampleCount = 0; // Reset silence detection for new sound
+                            _currentCueSamplesProcessed = 0; // Reset initial delay
                         }
                     }
                     else
@@ -172,6 +196,7 @@ namespace MillionaireGame.Services
                         {
                             _currentCue = _normalQueue.Dequeue();
                             _silenceSampleCount = 0; // Reset silence detection for new sound
+                            _currentCueSamplesProcessed = 0; // Reset initial delay
                             if (Program.DebugMode)
                             {
                                 GameConsole.Info(
@@ -242,8 +267,12 @@ namespace MillionaireGame.Services
         {
             lock (_lock)
             {
-                _currentCue?.Dispose();
-                _currentCue = null;
+                if (_currentCue != null)
+                {
+                    _cueThresholdOverrides.Remove(_currentCue); // Clean up threshold override
+                    _currentCue.Dispose();
+                    _currentCue = null;
+                }
                 _fadingOut = false;
                 _fadeoutPosition = 0;
                 ClearQueueInternal(); // Use internal version to avoid nested lock
@@ -400,12 +429,15 @@ namespace MillionaireGame.Services
                         }
 
                         // Crossfade complete, switch to next
+                        var oldCue = _currentCue;
                         _currentCue.Dispose();
+                        _cueThresholdOverrides.Remove(oldCue); // Clean up threshold override
                         _currentCue = _nextCue;
                         _nextCue = null;
                         _crossfading = false;
                         _crossfadePosition = 0;
                         _silenceSampleCount = 0; // Reset silence detection for new track
+                        _currentCueSamplesProcessed = 0;
 
                         // Check if more in queue
                         if (_normalQueue.Count > 0)
@@ -453,8 +485,12 @@ namespace MillionaireGame.Services
                     // If fadeout complete, stop playback
                     if (_fadeoutPosition >= _fadeoutDurationSamples)
                     {
-                        _currentCue?.Dispose();
-                        _currentCue = null;
+                        if (_currentCue != null)
+                        {
+                            _cueThresholdOverrides.Remove(_currentCue); // Clean up threshold override
+                            _currentCue.Dispose();
+                            _currentCue = null;
+                        }
                         _fadingOut = false;
                         _fadeoutPosition = 0;
 
@@ -470,6 +506,17 @@ namespace MillionaireGame.Services
                 // Monitor amplitude for silence detection (if enabled and not crossfading)
                 if (read > 0 && _silenceSettings != null && _silenceSettings.Enabled && !_crossfading)
                 {
+                    _currentCueSamplesProcessed += read;
+                    
+                    if (_currentCueSamplesProcessed > _initialDelaySamples)
+                    {
+                    // Get the threshold for this cue (custom or default)
+                    float thresholdAmplitude = _silenceThresholdAmplitude;
+                    if (_currentCue != null && _cueThresholdOverrides.TryGetValue(_currentCue, out float customThreshold))
+                    {
+                        thresholdAmplitude = customThreshold;
+                    }
+                    
                     // Calculate RMS amplitude of this buffer
                     float sumSquares = 0f;
                     for (int i = 0; i < read; i++)
@@ -480,7 +527,7 @@ namespace MillionaireGame.Services
                     float rms = (float)Math.Sqrt(sumSquares / read);
                     
                     // Check if below silence threshold
-                    if (rms < _silenceThresholdAmplitude)
+                    if (rms < thresholdAmplitude)
                     {
                         _silenceSampleCount += read;
                         
@@ -533,8 +580,12 @@ namespace MillionaireGame.Services
                                 }
                                 
                                 // Mark current as complete
-                                _currentCue?.Dispose();
-                                _currentCue = null;
+                                if (_currentCue != null)
+                                {
+                                    _cueThresholdOverrides.Remove(_currentCue); // Clean up threshold override
+                                    _currentCue.Dispose();
+                                    _currentCue = null;
+                                }
                                 _silenceSampleCount = 0;
                                 
                                 // Return silence for remaining buffer
@@ -551,15 +602,21 @@ namespace MillionaireGame.Services
                         // Reset silence counter when audio is above threshold
                         _silenceSampleCount = 0;
                     }
+                    }
                 }
 
                 // If current cue finished
                 if (read == 0)
                 {
                     // Don't log from audio thread - causes UI freezes
-                    _currentCue?.Dispose();
-                    _currentCue = null;
+                    if (_currentCue != null)
+                    {
+                        _cueThresholdOverrides.Remove(_currentCue); // Clean up threshold override
+                        _currentCue.Dispose();
+                        _currentCue = null;
+                    }
                     _silenceSampleCount = 0;
+                    _currentCueSamplesProcessed = 0;
 
                     // If next cue is waiting, start it
                     if (_nextCue != null)
@@ -621,13 +678,23 @@ namespace MillionaireGame.Services
 
         public void Dispose()
         {
-            _currentCue?.Dispose();
-            _nextCue?.Dispose();
+            if (_currentCue != null)
+            {
+                _cueThresholdOverrides.Remove(_currentCue);
+                _currentCue.Dispose();
+            }
+            if (_nextCue != null)
+            {
+                _cueThresholdOverrides.Remove(_nextCue);
+                _nextCue.Dispose();
+            }
             foreach (var cue in _normalQueue)
             {
+                _cueThresholdOverrides.Remove(cue);
                 cue.Dispose();
             }
             _normalQueue.Clear();
+            _cueThresholdOverrides.Clear();
         }
     }
 
@@ -640,7 +707,8 @@ namespace MillionaireGame.Services
         public AudioPriority Priority { get; }
         public ISampleSource Source { get; }
 
-        public AudioCue(string filePath, AudioPriority priority, WaveFormat targetFormat, SilenceDetectionSettings? silenceSettings = null)
+        public AudioCue(string filePath, AudioPriority priority, WaveFormat targetFormat, 
+            SilenceDetectionSettings? silenceSettings = null)
         {
             FilePath = filePath;
             Priority = priority;
@@ -670,8 +738,8 @@ namespace MillionaireGame.Services
                 waveSource = waveSource.ChangeSampleRate(targetFormat.SampleRate);
             }
 
-            // Silence detection is now integrated into AudioCueQueue.Read()
-            // No need to wrap individual sources
+            // Audio files should be pre-normalized before import
+            // Silence detection is integrated into AudioCueQueue.Read()
             Source = waveSource;
         }
 

@@ -24,6 +24,8 @@ namespace MillionaireGame.Services
         private readonly float _thresholdAmplitude;
         private readonly int _silenceDurationSamples;
         private readonly int _fadeoutSamples;
+        private readonly int _initialDelaySamples;
+        private int _totalSamplesProcessed = 0;
         private int _consecutiveSilentSamples = 0;
         private bool _silenceDetected = false;
         private bool _fadingOut = false;
@@ -41,7 +43,8 @@ namespace MillionaireGame.Services
         /// <param name="thresholdDb">Silence threshold in dB (e.g., -60dB = very quiet)</param>
         /// <param name="silenceDurationMs">Duration in milliseconds that silence must be sustained</param>
         /// <param name="fadeoutDurationMs">Fadeout duration in milliseconds to prevent DC pops (default: 20ms)</param>
-        public SilenceDetectorSource(ISampleSource source, float thresholdDb, int silenceDurationMs, int fadeoutDurationMs = 20)
+        /// <param name="initialDelayMs">Initial delay before silence detection begins (default: 1000ms)</param>
+        public SilenceDetectorSource(ISampleSource source, float thresholdDb, int silenceDurationMs, int fadeoutDurationMs = 20, int initialDelayMs = 1000)
         {
             _source = source ?? throw new ArgumentNullException(nameof(source));
 
@@ -53,13 +56,15 @@ namespace MillionaireGame.Services
             // Convert milliseconds to sample count
             _silenceDurationSamples = (int)(silenceDurationMs * source.WaveFormat.SampleRate / 1000.0);
             _fadeoutSamples = (int)(fadeoutDurationMs * source.WaveFormat.SampleRate / 1000.0);
+            _initialDelaySamples = (int)(initialDelayMs * source.WaveFormat.SampleRate / 1000.0);
 
             if (Program.DebugMode)
             {
                 GameConsole.Debug(
                     $"[SilenceDetector] Created: threshold={thresholdDb}dB ({_thresholdAmplitude:F6}), " +
                     $"duration={silenceDurationMs}ms ({_silenceDurationSamples} samples), " +
-                    $"fadeout={fadeoutDurationMs}ms ({_fadeoutSamples} samples)"
+                    $"fadeout={fadeoutDurationMs}ms ({_fadeoutSamples} samples), " +
+                    $"initialDelay={initialDelayMs}ms ({_initialDelaySamples} samples)"
                 );
             }
         }
@@ -82,6 +87,9 @@ namespace MillionaireGame.Services
             {
                 return 0;
             }
+
+            // Track total samples processed
+            _totalSamplesProcessed += read;
 
             // If currently fading out, apply gain ramp
             if (_fadingOut)
@@ -120,6 +128,12 @@ namespace MillionaireGame.Services
                 }
                 
                 return fadeoutJustCompleted ? 0 : read;
+            }
+
+            // Skip silence detection during initial delay (prevents false triggers on slow ramp-ups)
+            if (_totalSamplesProcessed < _initialDelaySamples)
+            {
+                return read;
             }
 
             // Analyze amplitude of samples read

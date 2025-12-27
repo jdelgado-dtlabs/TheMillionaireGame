@@ -18,13 +18,13 @@ public class LifelineManager
     // PAF state tracking
     private PAFStage _pafStage = PAFStage.NotStarted;
     private int _pafLifelineButtonNumber = 0;
-    private System.Windows.Forms.Timer? _pafTimer;
+    private System.Threading.Timer? _pafTimer;
     private int _pafSecondsRemaining = 30;
     
     // ATA state tracking
     private ATAStage _ataStage = ATAStage.NotStarted;
     private int _ataLifelineButtonNumber = 0;
-    private System.Windows.Forms.Timer? _ataTimer;
+    private System.Threading.Timer? _ataTimer;
     private int _ataSecondsRemaining = 120;
     private string _ataCorrectAnswer = "";
     private Random _random = new Random();
@@ -134,6 +134,9 @@ public class LifelineManager
             case LifelineType.AskTheAudience when _ataStage != ATAStage.NotStarted:
                 HandleATAStageClick(buttonNumber);
                 break;
+            case LifelineType.AskTheHost when _athStage != ATHStage.NotStarted:
+                HandleATHStageClick(buttonNumber);
+                break;
             case LifelineType.DoubleDip when _doubleDipStage != DoubleDipStage.NotStarted:
                 HandleDoubleDipStageClick(buttonNumber);
                 break;
@@ -148,8 +151,7 @@ public class LifelineManager
         return type switch
         {
             LifelineType.PlusOne => _pafStage != PAFStage.NotStarted,
-            LifelineType.AskTheAudience => _ataStage != ATAStage.NotStarted,
-            LifelineType.DoubleDip => _doubleDipStage != DoubleDipStage.NotStarted,
+            LifelineType.AskTheAudience => _ataStage != ATAStage.NotStarted,            LifelineType.AskTheHost => _athStage != ATHStage.NotStarted,            LifelineType.DoubleDip => _doubleDipStage != DoubleDipStage.NotStarted,
             _ => false
         };
     }
@@ -209,6 +211,9 @@ public class LifelineManager
     {
         LogMessage?.Invoke("[Lifeline] Phone a Friend (PAF) activated - Stage 1: Calling intro");
         
+        // Stop bed music for multi-stage lifeline
+        _soundService.StopMusic();
+        
         _pafStage = PAFStage.CallingIntro;
         _pafLifelineButtonNumber = buttonNumber;
         ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
@@ -234,11 +239,8 @@ public class LifelineManager
             case PAFStage.CallingIntro:
                 LogMessage?.Invoke("[Lifeline] PAF Stage 2: Starting 30-second countdown");
                 
-                _ = Task.Run(async () =>
-                {
-                    await _soundService.StopAllSoundsAsync();
-                    _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
-                });
+                // IMMEDIATE priority will auto-stop previous sound
+                _soundService.PlaySound(SoundEffect.LifelinePAFCountdown, "paf_countdown");
                 
                 _pafStage = PAFStage.CountingDown;
                 ButtonStateChanged?.Invoke(buttonNumber, Color.Red, true);
@@ -248,10 +250,11 @@ public class LifelineManager
                 // Show initial countdown on screens
                 _screenService.ShowPAFTimer(_pafSecondsRemaining, "Countdown");
                 
-                _pafTimer = new System.Windows.Forms.Timer();
-                _pafTimer.Interval = 1000;
-                _pafTimer.Tick += PAFTimer_Tick;
-                _pafTimer.Start();
+                _pafTimer = new System.Threading.Timer(
+                    PAFTimer_Tick,
+                    null,
+                    1000,  // Start after 1 second
+                    1000); // Repeat every 1 second
                 break;
                 
             case PAFStage.CountingDown:
@@ -264,36 +267,37 @@ public class LifelineManager
         }
     }
     
-    private void PAFTimer_Tick(object? sender, EventArgs e)
+    private void PAFTimer_Tick(object? state)
     {
         // Guard: Exit if already completed (prevents queued timer events from firing)
         if (_pafStage == PAFStage.Completed)
+        {
+            _pafTimer?.Dispose();
             return;
+        }
             
         _pafSecondsRemaining--;
+        
+        LogMessage?.Invoke($"[PAF] Timer tick: {_pafSecondsRemaining} seconds remaining");
         
         // Update screens with current countdown
         _screenService.ShowPAFTimer(_pafSecondsRemaining, "Countdown");
         
-        LogMessage?.Invoke($"[PAF] Countdown: {_pafSecondsRemaining} seconds remaining");
-        
         if (_pafSecondsRemaining <= 0)
         {
+            LogMessage?.Invoke("[PAF] Timer reached 0, completing PAF");
             CompletePAF();
         }
     }
     
     private void EndPAFEarly(int buttonNumber)
     {
-        _pafTimer?.Stop();
+        _pafTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _pafTimer?.Dispose();
         _pafTimer = null;
         
-        _ = Task.Run(async () =>
-        {
-            await _soundService.StopAllSoundsAsync();
-            _soundService.PlaySound(SoundEffect.LifelinePAFEndEarly);
-        });
+        // IMMEDIATE priority will auto-stop countdown sound
+        _soundService.PlaySound(SoundEffect.LifelinePAFEndEarly);
         
         CompletePAF();
     }
@@ -303,7 +307,7 @@ public class LifelineManager
         // Set stage first so any queued timer ticks will exit early
         _pafStage = PAFStage.Completed;
         
-        _pafTimer?.Stop();
+        _pafTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _pafTimer?.Dispose();
         _pafTimer = null;
         
@@ -331,6 +335,9 @@ public class LifelineManager
     {
         LogMessage?.Invoke("[Lifeline] Ask the Audience (ATA) activated - Stage 1: Intro (120 seconds)");
         
+        // Stop bed music for multi-stage lifeline
+        _soundService.StopMusic();
+        
         _ataStage = ATAStage.Intro;
         _ataLifelineButtonNumber = buttonNumber;
         _ataCorrectAnswer = _screenService.GetCorrectAnswer();
@@ -342,10 +349,11 @@ public class LifelineManager
         await PlayLifelineSoundAsync(SoundEffect.LifelineATAStart, "ata_intro");
         
         _ataSecondsRemaining = 120;
-        _ataTimer = new System.Windows.Forms.Timer();
-        _ataTimer.Interval = 1000;
-        _ataTimer.Tick += ATATimer_Tick;
-        _ataTimer.Start();
+        _ataTimer = new System.Threading.Timer(
+            ATATimer_Tick,
+            null,
+            1000,  // Start after 1 second
+            1000); // Repeat every 1 second
         
         _screenService.ActivateLifeline(lifeline);
         _screenService.ShowATATimer(_ataSecondsRemaining, "Intro");
@@ -368,16 +376,19 @@ public class LifelineManager
         }
     }
     
-    private void ATATimer_Tick(object? sender, EventArgs e)
+    private void ATATimer_Tick(object? state)
     {
         // Guard: Exit if already completed (prevents queued timer events from firing)
         if (_ataStage == ATAStage.Completed)
+        {
+            _ataTimer?.Dispose();
             return;
+        }
             
         _ataSecondsRemaining--;
         
         var stageName = _ataStage == ATAStage.Intro ? "Intro" : "Voting";
-        LogMessage?.Invoke($"[ATA] {stageName} Countdown: {_ataSecondsRemaining} seconds remaining");
+        LogMessage?.Invoke($"[ATA] Timer tick - {stageName}: {_ataSecondsRemaining} seconds remaining");
         
         _screenService.ShowATATimer(_ataSecondsRemaining, stageName);
         
@@ -390,6 +401,7 @@ public class LifelineManager
         
         if (_ataSecondsRemaining <= 0)
         {
+            LogMessage?.Invoke($"[ATA] Timer reached 0 at {stageName} stage");
             if (_ataStage == ATAStage.Intro)
             {
                 StartATAVoting(_ataLifelineButtonNumber);
@@ -403,7 +415,7 @@ public class LifelineManager
     
     private async void StartATAVoting(int buttonNumber)
     {
-        _ataTimer?.Stop();
+        _ataTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _ataTimer?.Dispose();
         _ataTimer = null;
         
@@ -412,15 +424,15 @@ public class LifelineManager
         _ataStage = ATAStage.Voting;
         ButtonStateChanged?.Invoke(buttonNumber, Color.Red, true);
         
-        await _soundService.StopAllSoundsAsync();
-        await Task.Delay(500);
+        // IMMEDIATE priority will auto-stop intro sound
         _soundService.PlaySound(SoundEffect.LifelineATAVote, "ata_vote");
         
         _ataSecondsRemaining = 60;
-        _ataTimer = new System.Windows.Forms.Timer();
-        _ataTimer.Interval = 1000;
-        _ataTimer.Tick += ATATimer_Tick;
-        _ataTimer.Start();
+        _ataTimer = new System.Threading.Timer(
+            ATATimer_Tick,
+            null,
+            1000,  // Start after 1 second
+            1000); // Repeat every 1 second
         
         _screenService.ShowATATimer(_ataSecondsRemaining, "Voting");
         
@@ -432,13 +444,15 @@ public class LifelineManager
         // Set stage first so any queued timer ticks will exit early
         _ataStage = ATAStage.Completed;
         
-        _ataTimer?.Stop();
+        _ataTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _ataTimer?.Dispose();
         _ataTimer = null;
         
+        // Play ending sound (IMMEDIATE priority will stop previous sounds automatically)
         _soundService.PlaySound(SoundEffect.LifelineATAEnd);
-        await Task.Delay(500);
-        await _soundService.StopAllSoundsAsync();
+        
+        // Wait for sound to complete (ATAEnd is ~3 seconds)
+        await Task.Delay(3500);
         
         // Generate placeholder results: 100% on correct answer
         var finalResults = GeneratePlaceholderResults();
@@ -518,6 +532,9 @@ public class LifelineManager
         
         LogMessage?.Invoke($"[Lifeline] Switch the Question (STQ) activated at Q{currentQuestionNumber}");
         
+        // Play flip sound effect
+        _soundService.PlaySound(SoundEffect.SwitchFlip);
+        
         _screenService.ActivateLifeline(lifeline);
         
         _gameService.UseLifeline(lifeline.Type);
@@ -550,6 +567,9 @@ public class LifelineManager
         
         LogMessage?.Invoke($"[Lifeline] Ask the Host (ATH) activated at Q{currentQuestionNumber}");
         
+        // Stop bed music for multi-stage lifeline
+        _soundService.StopMusic();
+        
         _athStage = ATHStage.Active;
         _athLifelineButtonNumber = buttonNumber;
         
@@ -561,8 +581,8 @@ public class LifelineManager
         
         _screenService.ActivateLifeline(lifeline);
         
-        // Disable button - ATH is now active until player selects an answer
-        ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, false);
+        // Keep button enabled (blue) - click again to play ATHEnd and complete
+        ButtonStateChanged?.Invoke(buttonNumber, Color.Blue, true);
         
         // Don't reveal the answer - let the host speak in the real game
         LogMessage?.Invoke($"[Lifeline] ATH - Waiting for host response...");
@@ -629,8 +649,7 @@ public class LifelineManager
                 LogMessage?.Invoke($"[Lifeline] DD First answer '{answer}' is WRONG - allowing second attempt");
                 _doubleDipStage = DoubleDipStage.SecondAttempt;
                 
-                // Stop DD start sound
-                await _soundService.StopAllSoundsAsync();
+                // DD start sound will stop naturally when answer reveal plays (IMMEDIATE priority)
                 
                 LogMessage?.Invoke("[Lifeline] DD - Select your second answer");
                 return DoubleDipRevealResult.FirstAttemptWrong; // Special handling in RevealAnswer
@@ -649,9 +668,7 @@ public class LifelineManager
     
     private async Task CompleteDoubleDip()
     {
-        // Stop DD sounds
-        await _soundService.StopAllSoundsAsync();
-        await Task.Delay(100);
+        // DD sounds will stop naturally when next sound plays (IMMEDIATE priority)
         
         // Mark as used
         _gameService.UseLifeline(LifelineType.DoubleDip);
@@ -672,39 +689,34 @@ public class LifelineManager
     }
     
     /// <summary>
-    /// Check if ATH is active, and if so, complete it when answer is selected
+    /// Handle second click on ATH button to complete the lifeline
+    /// Plays ATHEnd and marks the lifeline as used
     /// </summary>
-    public async Task<bool> HandleAskTheHostAnswerAsync()
+    private void HandleATHStageClick(int buttonNumber)
     {
-        if (_athStage == ATHStage.Active)
+        if (_athStage != ATHStage.Active)
         {
-            LogMessage?.Invoke("[Lifeline] ATH answer selected - completing ATH");
-            
-            // Stop bed music
-            await _soundService.StopAllSoundsAsync();
-            
-            // Play end sound
-            await Task.Delay(100);
-            _soundService.PlaySound(SoundEffect.LifelineATHEnd);
-            
-            // Mark as used
-            _gameService.UseLifeline(LifelineType.AskTheHost);
-            
-            // Update icon to Used state
-            _screenService.SetLifelineIcon(_athLifelineButtonNumber, LifelineType.AskTheHost, LifelineIconState.Used);
-            
-            // Reset other lifeline buttons from standby
-            _isMultiStageActive = false;
-            SetOtherButtonsToStandby?.Invoke(_athLifelineButtonNumber, false);
-            
-            // Button already disabled, just mark as completed
-            _athStage = ATHStage.Completed;
-            
-            LogMessage?.Invoke("[Lifeline] ATH completed");
-            return true;
+            LogMessage?.Invoke($"[Lifeline] ATH stage click ignored - not in active state");
+            return;
         }
         
-        return false;
+        LogMessage?.Invoke($"[Lifeline] ATH - Second button click, ending lifeline");
+        
+        // Play ATH end sound (immediate priority to stop the bed music)
+        _soundService.PlaySound(SoundEffect.LifelineATHEnd);
+        
+        // Mark lifeline as used and disable button
+        _gameService.UseLifeline(LifelineType.AskTheHost);
+        _screenService.SetLifelineIcon(buttonNumber, LifelineType.AskTheHost, LifelineIconState.Used);
+        ButtonStateChanged?.Invoke(buttonNumber, Color.Gray, false);
+        
+        // Reset multi-stage state
+        _isMultiStageActive = false;
+        SetOtherButtonsToStandby?.Invoke(buttonNumber, false);
+        
+        _athStage = ATHStage.Completed;
+        
+        LogMessage?.Invoke($"[Lifeline] ATH completed - answer buttons resume normal operation");
     }
 
     #endregion
@@ -722,11 +734,7 @@ public class LifelineManager
             LogMessage?.Invoke($"[BedMusic] Q{questionNumber} lifeline will trigger bed music restart after correct answer");
         }
         
-        // Stop all sounds
-        await _soundService.StopAllSoundsAsync();
-        
-        // Wait 500ms
-        await Task.Delay(500);
+        // IMMEDIATE priority will auto-stop current sounds
         
         // Play the lifeline sound
         if (loop && key != null)
@@ -748,9 +756,9 @@ public class LifelineManager
     /// </summary>
     public void Dispose()
     {
-        _pafTimer?.Stop();
+        _pafTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _pafTimer?.Dispose();
-        _ataTimer?.Stop();
+        _ataTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _ataTimer?.Dispose();
     }
     
@@ -760,10 +768,10 @@ public class LifelineManager
     public void Reset()
     {
         // Stop and dispose timers
-        _pafTimer?.Stop();
+        _pafTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _pafTimer?.Dispose();
         _pafTimer = null;
-        _ataTimer?.Stop();
+        _ataTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         _ataTimer?.Dispose();
         _ataTimer = null;
         

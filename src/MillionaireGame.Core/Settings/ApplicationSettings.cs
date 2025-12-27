@@ -62,6 +62,7 @@ public class ApplicationSettings
     // Audio Processing Settings
     public SilenceDetectionSettings SilenceDetection { get; set; } = new();
     public CrossfadeSettings Crossfade { get; set; } = new();
+    public AudioProcessingSettings AudioProcessing { get; set; } = new();
 
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;

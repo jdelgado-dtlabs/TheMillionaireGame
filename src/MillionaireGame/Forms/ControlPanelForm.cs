@@ -240,12 +240,14 @@ public partial class ControlPanelForm : Form
     
     private void OnLifelineRequestAsyncOperation(Func<Task> operation)
     {
-        // Execute the async operation (typically LoadNewQuestion for STQ)
+        // Execute the async operation (typically LoadAndDisplayQuestionAsync for STQ)
+        // Use core method without audio handling - lifeline handles its own sound
+        // Note: Bed music continues playing, no need to restart it
         Task.Run(async () =>
         {
-            await LoadNewQuestion();
+            await LoadAndDisplayQuestionAsync();
             
-            // After STQ loads new question, set up for progressive answer reveal
+            // Set up for progressive answer reveal
             // This ensures the Question button is enabled to reveal answers one by one
             this.Invoke(() =>
             {
@@ -604,8 +606,9 @@ public partial class ControlPanelForm : Form
         UpdateMoneyDisplay();
         UpdateRiskModeButton();
         
-        // Update money tree on all screens
-        UpdateMoneyTreeOnScreens(e.NewLevel);
+        // Update money tree on all screens - show winnings (level - 1), not current level
+        var displayLevel = _gameService.MoneyTree.GetDisplayLevel(e.NewLevel, _gameService.State.GameWin);
+        UpdateMoneyTreeOnScreens(displayLevel);
     }
 
     private void OnModeChanged(object? sender, GameModeChangedEventArgs e)
@@ -787,8 +790,8 @@ public partial class ControlPanelForm : Form
             {
                 GameConsole.Debug("[NewQuestion] Button clicked, _answerRevealStep = 0");
                 
-                // Get current question number to determine if we need to stop sounds
-                var currentQuestionNumber = (int)nmrLevel.Value + 1;
+                // Get current question number to determine if we need to stop sounds (now 1-indexed)
+                var currentQuestionNumber = (int)nmrLevel.Value;
                 
                 // Only stop sounds for Q6+ (lights down sound)
                 // For Q1-5, bed music continues playing
@@ -898,7 +901,11 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    private async Task LoadNewQuestion()
+    /// <summary>
+    /// Core method to load and display a question without audio handling.
+    /// Use this for lifelines like Switch the Question where audio is handled separately.
+    /// </summary>
+    private async Task LoadAndDisplayQuestionAsync()
     {
         // Clear any pending safety net lock-in when starting a new question
         _pendingSafetyNetLevel = 0;
@@ -909,7 +916,7 @@ public partial class ControlPanelForm : Form
         try
         {
             // Use the question number directly from the control (user may have manually set it)
-            var currentQuestion = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
+            var currentQuestion = (int)nmrLevel.Value; // Already 1-indexed (0=not started, 1-15=questions)
             
             // Map current question number to difficulty level (1-4)
             // Q1-5 = Level 1, Q6-10 = Level 2, Q11-14 = Level 3, Q15 = Level 4
@@ -988,7 +995,8 @@ public partial class ControlPanelForm : Form
                         // Reset answer selection
                         ResetAnswerColors();
                         _currentAnswer = string.Empty;
-                        _answerRevealStep = 0; // Reset for new question
+                        // Note: _answerRevealStep is managed by callers (btnNewQuestion_Click, lights down, STQ)
+                        // Do NOT reset it here to avoid race conditions with caller's state management
                         
                         // Enable answer buttons now that a question is loaded and set to orange
                         btnA.Enabled = true;
@@ -1011,11 +1019,20 @@ public partial class ControlPanelForm : Form
                 });
             }
 
-            // Broadcast question to all screens
-            _screenService.UpdateQuestion(question);
+            // Broadcast question to all screens (ensure on UI thread for cross-thread safety)
+            if (!IsDisposed && IsHandleCreated)
+            {
+                BeginInvoke(() =>
+                {
+                    if (!IsDisposed)
+                    {
+                        _screenService.UpdateQuestion(question);
+                    }
+                });
+            }
 
             // Get question number for audio logic
-            var questionNumber = (int)nmrLevel.Value + 1;
+            var questionNumber = (int)nmrLevel.Value;
             
             // Question button remains enabled for progressive reveal
             // Will be disabled after all 4 answers are shown
@@ -1035,24 +1052,37 @@ public partial class ControlPanelForm : Form
                 btnClosing.Enabled = false;
                 btnClosing.BackColor = Color.Gray;
             }
-            
-            // For Q1-5: Don't stop lights down or restart bed music (continuous quick round)
-            // For Q6+: Stop lights down, then play question-specific bed music
-            if (questionNumber >= 6)
-            {
-                _ = Task.Run(async () =>
-                {
-                    await _soundService.StopAllSoundsAsync();
-                    if (!IsDisposed)
-                    {
-                        PlayQuestionBed();
-                    }
-                });
-            }
         }
         catch (Exception ex)
         {
             GameConsole.Error($"[Question] Error loading question: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Wrapper method that loads a new question with full audio handling (stops sounds, plays bed music).
+    /// Use this for normal question progression.
+    /// </summary>
+    private async Task LoadNewQuestion()
+    {
+        // Load and display the question
+        await LoadAndDisplayQuestionAsync();
+        
+        // Handle audio separately based on question number (now 1-indexed)
+        var questionNumber = (int)nmrLevel.Value;
+        
+        // For Q1-5: Don't stop lights down or restart bed music (continuous quick round)
+        // For Q6+: Stop lights down, then play question-specific bed music
+        if (questionNumber >= 6)
+        {
+            _ = Task.Run(async () =>
+            {
+                await _soundService.StopAllSoundsAsync();
+                if (!IsDisposed)
+                {
+                    PlayQuestionBed();
+                }
+            });
         }
     }
 
@@ -1078,6 +1108,12 @@ public partial class ControlPanelForm : Form
 
     private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
+        // Only increment for first question (0→1). After that, ProcessNormalReveal handles increment.
+        if (nmrLevel.Value == 0)
+        {
+            nmrLevel.Value++;
+        }
+        
         // Cancel any previous lights down operation
         _lightsDownCts?.Cancel();
         _lightsDownCts?.Dispose();
@@ -1114,7 +1150,7 @@ public partial class ControlPanelForm : Form
             btnShowMoneyTree.Enabled = true;
         }
         
-        var questionNumber = (int)nmrLevel.Value + 1;
+        var questionNumber = (int)nmrLevel.Value; // Now 1-indexed
         
         try
         {
@@ -1131,28 +1167,25 @@ public partial class ControlPanelForm : Form
                 PlayLightsDownSound();
             }
             
-            // For Q1-5, wait for lights down sound then load question
-            if (questionNumber >= 1 && questionNumber <= 5)
+            // Wait for lights down sound to finish (monitor queue instead of fixed delay)
+            GameConsole.Debug("[LightsDown] Waiting for lights down sound to finish...");
+            while (_soundService.IsQueuePlaying())
             {
-                // Wait for lights down sound to finish (monitor queue instead of fixed delay)
-                GameConsole.Debug("[LightsDown] Waiting for lights down sound to finish...");
-                while (_soundService.IsQueuePlaying())
-                {
-                    await Task.Delay(100, token);
-                }
-                GameConsole.Debug("[LightsDown] Lights down sound finished");
+                await Task.Delay(100, token);
+            }
+            GameConsole.Debug("[LightsDown] Lights down sound finished");
+            
+            // Load question - this updates all screens
+            await LoadNewQuestion();
+            
+            // For all questions (Q1-15), show question immediately after lights down
+            if (!token.IsCancellationRequested && !IsDisposed)
+            {
+                _answerRevealStep = 1; // Question shown, ready to reveal answers
+                chkShowQuestion.Checked = true;
                 
-                // Load question after delay - this updates all screens
-                await LoadNewQuestion();
-                
-                if (!token.IsCancellationRequested && !IsDisposed)
-                {
-                    _answerRevealStep = 1; // Question shown, ready to reveal answers
-                    chkShowQuestion.Checked = true;
-                    
-                    // Start bed music for Q1-5
-                    PlayQuestionBed();
-                }
+                // Start appropriate bed music for question level
+                PlayQuestionBed();
             }
         }
         catch (OperationCanceledException)
@@ -1170,17 +1203,6 @@ public partial class ControlPanelForm : Form
             // Disable risk mode button after first lights down (grey)
             btnActivateRiskMode.Enabled = false;
             btnActivateRiskMode.BackColor = Color.Gray;
-        }
-        else
-        {
-            // For Q6+, reset answer reveal state so Question button works properly
-            _answerRevealStep = 0;
-            
-            // Disable Show Winnings checkbox for Q6+ (show question instead)
-            if (chkShowWinnings.Checked)
-            {
-                chkShowWinnings.Checked = false;
-            }
         }
         
         // Enable Question button (green) for all questions after lights down
@@ -1388,8 +1410,8 @@ public partial class ControlPanelForm : Form
         _automatedSequenceCts = new CancellationTokenSource();
         var token = _automatedSequenceCts.Token;
         
-        // Use current question level to determine which quit sound to play
-        var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
+        // Use current question level to determine which quit sound to play (now 1-indexed)
+        var questionNumber = (int)nmrLevel.Value;
         var quitSound = questionNumber <= 10 ? SoundEffect.QuitSmall : SoundEffect.QuitLarge;
         var quitSoundId = "quit_sound";
         
@@ -1987,8 +2009,8 @@ public partial class ControlPanelForm : Form
     /// </summary>
     private async Task PlayLifelineSoundAsync(SoundEffect soundEffect, string? identifier = null, bool loop = false)
     {
-        // For Q1-5, track that bed music should be restarted after answer is revealed
-        var questionNumber = (int)nmrLevel.Value + 1;
+        // For Q1-5, track that bed music should be restarted after answer is revealed (now 1-indexed)
+        var questionNumber = (int)nmrLevel.Value;
         if (questionNumber >= 1 && questionNumber <= 5)
         {
             _shouldRestartBedMusic = true;
@@ -2201,8 +2223,8 @@ public partial class ControlPanelForm : Form
         // Store final winnings for screen display
         _finalWinningsAmount = winnings;
         
-        // Use current question level to determine which walk away sound to play
-        var questionNumber = (int)nmrLevel.Value + 1; // Convert 0-indexed to 1-indexed
+        // Use current question level to determine which walk away sound to play (now 1-indexed)
+        var questionNumber = (int)nmrLevel.Value;
         var walkAwaySound = questionNumber <= 10 ? SoundEffect.WalkAwaySmall : SoundEffect.WalkAwayLarge;
         var walkAwaySoundId = "walkaway_sound";
         
@@ -2478,6 +2500,12 @@ public partial class ControlPanelForm : Form
         btnClosing.BackColor = Color.Gray;
     }
 
+    private void btnFadeOutAudio_Click(object? sender, EventArgs e)
+    {
+        // Fade out all sounds over 1.5 seconds
+        _soundService.StopAllSounds(fadeout: true, fadeoutDurationMs: 1500);
+    }
+
     private void btnStopAudio_Click(object? sender, EventArgs e)
     {
         // Run on background thread to prevent UI deadlock
@@ -2681,40 +2709,8 @@ public partial class ControlPanelForm : Form
 
     private void SelectAnswer(string answer)
     {
-        // Check if Ask the Host is active - run in background
-        if (_lifelineManager != null)
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    bool athActive = await _lifelineManager.HandleAskTheHostAnswerAsync();
-                    if (athActive)
-                    {
-                        // ATH was active and is now completed
-                        // Continue with normal answer selection on UI thread
-                        if (!IsDisposed && IsHandleCreated)
-                        {
-                            BeginInvoke(() => ContinueAnswerSelection(answer));
-                        }
-                        return;
-                    }
-                    
-                    // ATH not active, continue immediately on UI thread
-                    if (!IsDisposed && IsHandleCreated)
-                    {
-                        BeginInvoke(() => ContinueAnswerSelection(answer));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    GameConsole.Log($"[SelectAnswer] Error checking ATH: {ex.Message}");
-                }
-            });
-            return; // Exit early, continuation handled in background task
-        }
-        
-        // No lifeline manager - continue immediately
+        // ATH is now handled by second button click, not answer selection
+        // Proceed directly with answer selection
         ContinueAnswerSelection(answer);
     }
     
@@ -2785,8 +2781,8 @@ public partial class ControlPanelForm : Form
 
         // Sound behavior changes based on question level:
         // Q1-5: Don't stop sounds, Q6+: Stop sounds
-        // Q1-4: Don't play final answer, Q5+: Play final answer
-        var questionNumber = (int)nmrLevel.Value + 1;
+        // Q1-4: Don't play final answer, Q5+: Play final answer (now 1-indexed)
+        var questionNumber = (int)nmrLevel.Value;
         
         if (questionNumber >= 6)
         {
@@ -2820,7 +2816,7 @@ public partial class ControlPanelForm : Form
 
     private void PlayFinalAnswerSound()
     {
-        var questionNumber = _gameService.State.CurrentLevel + 1; // Convert 0-indexed to 1-indexed
+        var questionNumber = _gameService.State.CurrentLevel; // Now 1-indexed
         
         if (Program.DebugMode)
         {
@@ -2867,7 +2863,7 @@ public partial class ControlPanelForm : Form
 
     private void PlayLoseSound(int? questionNumber = null)
     {
-        var currentQuestion = questionNumber ?? (_gameService.State.CurrentLevel + 1); // Convert 0-indexed to 1-indexed
+        var currentQuestion = questionNumber ?? _gameService.State.CurrentLevel; // Now 1-indexed
         
         if (Program.DebugMode)
         {
@@ -2913,8 +2909,8 @@ public partial class ControlPanelForm : Form
 
     private void PlayCorrectSound(int? questionNumber = null)
     {
-        // Use passed questionNumber or fall back to nmrLevel
-        var currentQuestion = questionNumber ?? ((int)nmrLevel.Value + 1);
+        // Use passed questionNumber or fall back to nmrLevel (now 1-indexed)
+        var currentQuestion = questionNumber ?? ((int)nmrLevel.Value);
         var isRiskMode = _gameService.State.Mode == GameMode.Risk;
         
         if (Program.DebugMode)
@@ -2961,7 +2957,7 @@ public partial class ControlPanelForm : Form
 
     private void PlayQuestionBed()
     {
-        var questionNumber = (int)nmrLevel.Value + 1; // Use current control value, convert 0-indexed to 1-indexed
+        var questionNumber = (int)nmrLevel.Value; // Now 1-indexed
         
         if (Program.DebugMode)
         {
@@ -3007,7 +3003,7 @@ public partial class ControlPanelForm : Form
 
     private void PlayLightsDownSound()
     {
-        var questionNumber = (int)nmrLevel.Value + 1; // Use current control value, convert 0-indexed to 1-indexed
+        var questionNumber = (int)nmrLevel.Value; // Now 1-indexed
         
         if (Program.DebugMode)
         {
@@ -3048,8 +3044,8 @@ public partial class ControlPanelForm : Form
             GameConsole.Log($"[Sound] Queueing lights down sound for Q{questionNumber}: {soundKey}");
         }
         
-        // Queue without loop (crossfades with previous sound automatically)
-        _soundService.QueueSoundByKey(soundKey, AudioPriority.Normal);
+        // Queue with custom threshold (-35dB instead of default -40dB, +5dB tolerance) to prevent premature silence detection on quiet tails
+        _soundService.QueueSoundByKey(soundKey, AudioPriority.Normal, customThresholdDb: -35.0);
         // Note: Can't track individual queued sounds, so identifier not set
     }
     
@@ -3071,13 +3067,20 @@ public partial class ControlPanelForm : Form
 
             GameConsole.Debug("[ProcessNormalReveal] Set answer color");
 
-            // Capture current question number BEFORE advancing level
-            var currentQuestionNumber = (int)nmrLevel.Value + 1;
+            // Current question number (nmrLevel is now 1-indexed)
+            var currentQuestionNumber = (int)nmrLevel.Value;
 
             GameConsole.Debug($"[ProcessNormalReveal] Current question: {currentQuestionNumber}");
 
+            // If this is Q15, set GameWin flag immediately so money tree shows level 15
+            if (currentQuestionNumber == 15)
+            {
+                _gameService.State.GameWin = true;
+                _gameService.RefreshMoneyValues(); // Update CurrentValue to $1,000,000 for winning strap
+            }
+
             // Advance to next level (but not beyond question 15)
-            if (_gameService.State.CurrentLevel < 14)
+            if (_gameService.State.CurrentLevel < 15)
             {
                 _gameService.ChangeLevel(_gameService.State.CurrentLevel + 1);
                 GameConsole.Debug($"[ProcessNormalReveal] Advanced to level {_gameService.State.CurrentLevel}");
@@ -3088,8 +3091,8 @@ public partial class ControlPanelForm : Form
             Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true));
 
             // Handle sounds based on question level
-            // Q1-4: Bed music keeps playing, don't stop
-            // Q5+: Stop all sounds before playing correct sound
+            // Q1-4: Bed music keeps playing, simple correct sound over bed
+            // Q5+: Stop all sounds before playing custom correct answer sound
             if (currentQuestionNumber >= 5)
             {
                 GameConsole.Debug($"[ProcessNormalReveal] Q{currentQuestionNumber}: Stopping all sounds");
@@ -3159,8 +3162,8 @@ public partial class ControlPanelForm : Form
         else
         {
             GameConsole.Debug("[ProcessNormalReveal] Wrong answer path");
-            // Capture current question number for lose sound
-            var currentQuestionNumber = (int)nmrLevel.Value + 1;
+            // Capture current question number for lose sound (1-indexed)
+            var currentQuestionNumber = (int)nmrLevel.Value;
             
             _gameOutcome = GameOutcome.Wrong; // Track that player answered incorrectly
             _shouldRestartBedMusic = false; // Don't restart bed music on wrong answer
@@ -3271,6 +3274,13 @@ public partial class ControlPanelForm : Form
     private void HandleQ15Win()
     {
         _gameService.State.GameWin = true; // Set flag immediately when Q15 is answered correctly
+        
+        // Ensure level is set to 15 (with 1-indexed system, Q15 = level 15)
+        if (_gameService.State.CurrentLevel != 15)
+        {
+            _gameService.ChangeLevel(15);
+        }
+        
         _gameService.RefreshMoneyValues(); // Update CurrentValue to show top prize
         UpdateMoneyDisplay(); // Update control panel display to show $1,000,000
         UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin)); // Update money tree to level 15
@@ -3560,8 +3570,8 @@ public partial class ControlPanelForm : Form
                 // Green - active mode (clickable)
                 // Only apply to visible buttons that are in standby (orange)
                 // Grey/disabled buttons (used lifelines) are left alone
-                // Check if Q15 - if so, disable STQ lifeline
-                var currentQuestionNumber = (int)nmrLevel.Value + 1;
+                // Check if Q15 - if so, disable STQ lifeline (now 1-indexed)
+                var currentQuestionNumber = (int)nmrLevel.Value;
                 var isQ15 = (currentQuestionNumber == 15);
                 
                 if (btnLifeline1.Visible && btnLifeline1.BackColor == Color.Orange)

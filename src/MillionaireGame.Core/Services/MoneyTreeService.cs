@@ -233,12 +233,14 @@ public class MoneyTreeService
 
     /// <summary>
     /// Gets the display level for winnings and money tree, considering GameWin flag
-    /// If GameWin is true, always show level 15 (top prize)
-    /// Otherwise, show the current level
+    /// Tree shows what you've won, not what you're playing for
+    /// If GameWin is true, show level 15 (top prize won)
+    /// Otherwise, show currentLevel - 1 (winnings), floored at 0
     /// </summary>
     public int GetDisplayLevel(int currentLevel, bool gameWin)
     {
-        return gameWin ? 15 : currentLevel;
+        if (gameWin) return 15; // Show top prize
+        return Math.Max(0, currentLevel - 1); // Show winnings, never negative
     }
 
     /// <summary>
