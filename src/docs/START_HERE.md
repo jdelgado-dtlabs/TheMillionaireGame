@@ -1,14 +1,17 @@
 # 🚀 START HERE - Next Session Guide
 
-**Last Updated**: December 25, 2025 (Evening)  
-**Current Branch**: `feature/cscore-sound-system`  
-**Status**: ✅ **DSP Phase 1 & 2 COMPLETE**
+**Last Updated**: December 27, 2025  
+**Current Branch**: `master-csharp`  
+**Status**: ✅ **Workspace Reorganized | CSV Import/Export Complete | Sound Pack Removal Complete**
 
 ---
 
 ## ⚡ Quick Status
 
 **What's Done:**
+- ✅ Workspace reorganized (VB.NET → archive-vbnet/, docs → src/docs/)
+- ✅ CSV Import/Export for Question Editor
+- ✅ Sound Pack Removal UI integration
 - ✅ Unified queue-only audio architecture
 - ✅ 50ms crossfades (instant feel, smooth sound)
 - ✅ 250ms silence detection (responsive auto-advance)
@@ -18,7 +21,7 @@
 - ✅ Fully tested and documented
 
 **What's Next:**
-Choose one of three paths forward (see below)
+See PRE_1.0_FINAL_CHECKLIST.md - 6 tasks remaining before v1.0 (13-20 hours estimated)
 
 ---
 
@@ -75,11 +78,17 @@ QueueSound(SoundEffect.FFFExplain);
 
 ## 📖 FULL DOCUMENTATION
 
-**Main Checkpoint File:**
-`CHECKPOINT_2025-12-25_FINAL.md` - Complete session summary with all details
+**Documentation Structure:**
+- `src/docs/sessions/` - Session checkpoints (CHECKPOINT_*.md files)
+- `src/docs/reference/` - Technical references (MIGRATION, THREADING, Troubleshooting)
+- `src/docs/guides/` - User guides (CSV Import/Export)
+- `src/docs/active/` - Current work plans (PRE_1.0_FINAL_CHECKLIST.md, DSP plans)
+- `archive-vbnet/` - Original VB.NET implementation (reference only, scheduled for v1.0 removal)
 
-**Phase Plan:**
-`src/docs/active/DSP_IMPLEMENTATION_PLAN.md` - Updated with Phase 1 & 2 status
+**Main References:**
+- Root README.md - Project overview with GitHub Wiki link
+- `PRE_1.0_FINAL_CHECKLIST.md` - 6 remaining tasks (13-20 hours)
+- `CHECKPOINT_2025-12-27.md` - Latest session summary
 
 **Quick API Reference:**
 ```csharp

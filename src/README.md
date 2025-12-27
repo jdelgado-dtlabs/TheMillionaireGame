@@ -20,6 +20,7 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ **CSCore audio system with DSP** (silence detection, audio queue, crossfading)
 - ✅ **Audio Settings UI** (complete configuration in Options dialog)
 - ✅ **Shutdown system with progress dialog** (component-level visibility, GameConsole logging)
+- ✅ **Question Editor** with CSV import/export and sound pack management
 - ✅ Audio transitions with automatic silence-based progression
 - ✅ Lifeline implementations (50:50, Phone-a-Friend, Ask the Audience)
 - ✅ Dynamic lifeline assignment via settings
@@ -27,7 +28,6 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ Money tree graphical display with animations
 - ✅ Dual currency support with per-level selection
 - ✅ Game state management
-- ✅ Question Editor with CSV import/export
 - ✅ Monitor selection with WMI metadata
 - ✅ Full-screen mode with auto-show capabilities
 - ✅ Web-Based Audience Participation System (WAPS)
@@ -36,6 +36,7 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ QR code joining for mobile devices
 - ✅ Progressive Web App (PWA) for cross-platform support
 - ✅ Device telemetry and privacy-compliant data collection
+- ✅ **Workspace reorganization** (clean structure, VB.NET archived)
 - 🚧 Real ATA voting integration (placeholder results currently)
 - 🚧 FFF Online as independent "game within a game" feature
 - 🚧 Switch the Question lifeline (pending)

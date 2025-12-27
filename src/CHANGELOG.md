@@ -4,7 +4,21 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [v0.8.0-2512] - 2025-12-27
 
+### Changed
+- **Workspace Reorganization**:
+  * All VB.NET projects moved to `archive-vbnet/` folder (scheduled for removal at v1.0)
+  * Documentation consolidated in `src/docs/` with organized structure (sessions/, reference/, guides/)
+  * New root README.md with GitHub Wiki reference for comprehensive documentation
+  * Removed obsolete FFF_BACKUP folders (OneDrive merge recovery backups no longer needed)
+  * Clean workspace structure: archive-vbnet/, src/, and configuration files only at root
+
 ### Added
+- **Question Editor Enhancements** ✅ FEATURE COMPLETE
+  * CSV Import: Full parsing with validation, error reporting by line number, support for quoted fields
+  * CSV Export: Proper escaping of quotes and commas, includes all question data and ATA percentages
+  * Sound Pack Removal: UI integration with confirmation dialog, prevents deletion of Default pack
+  * Location: ImportQuestionsForm.cs, ExportQuestionsForm.cs, OptionsDialog.cs
+
 - **CSCore Audio System - Complete Implementation** ✅ FEATURE COMPLETE
   - **DSP Core Infrastructure (Phase 1-2)**:
     * AudioCueQueue with FIFO queue and priority system (Normal/Immediate)
