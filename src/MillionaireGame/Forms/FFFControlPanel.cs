@@ -1219,37 +1219,56 @@ public partial class FFFControlPanel : UserControl
         
         lblWinner.ForeColor = Color.Gold;
         
-        // Highlight the winner on TV for 3 seconds, then show full winner celebration
-        Task.Run(async () =>
+        // Display winner on TV
+        // If we skipped Show Winners (single correct answer), go directly to Winner screen
+        // If we came from Show Winners (multiple correct), highlight first then show Winner screen
+        var correctCount = correctAnswers.Count;
+        
+        if (correctCount == 1)
         {
-            try
+            // Single winner - go directly to Winner screen
+            GameConsole.Log($"[FFF] Single winner - displaying Winner screen immediately");
+            _screenService?.ShowFFFWinner(winner.DisplayName);
+        }
+        else
+        {
+            // Multiple winners - highlight the fastest, wait 3 seconds, then show Winner screen
+            Task.Run(async () =>
             {
-                // Find winner's index in the displayed list
-                var correctWinners = _rankings.Where(r => r.IsCorrect)
-                                              .OrderBy(r => r.DisplayName)
-                                              .Take(8)
-                                              .ToList();
-                var winnerIndex = correctWinners.FindIndex(r => r.DisplayName == winner.DisplayName);
-                
-                if (winnerIndex >= 0)
+                try
                 {
-                    _screenService?.HighlightFFFContestant(winnerIndex, isWinner: true);
-                    GameConsole.Log($"[FFF] Highlighted winner at index {winnerIndex}");
+                    // Find winner's index in the displayed list (alphabetically sorted)
+                    var correctWinners = _rankings.Where(r => r.IsCorrect)
+                                                  .OrderBy(r => r.DisplayName)
+                                                  .Take(8)
+                                                  .ToList();
+                    var winnerIndex = correctWinners.FindIndex(r => r.DisplayName == winner.DisplayName);
                     
-                    // Wait 3 seconds
-                    await Task.Delay(3000);
-                    
-                    // Show full winner screen with name and time
-                    var timeText = $"{winner.TimeElapsed / 1000.0:F2}s";
-                    _screenService?.ShowFFFWinner(winner.DisplayName);
-                    GameConsole.Log($"[FFF] Displayed winner celebration: {winner.DisplayName} - {timeText}");
+                    if (winnerIndex >= 0)
+                    {
+                        _screenService?.HighlightFFFContestant(winnerIndex, isWinner: true);
+                        GameConsole.Log($"[FFF] Highlighted winner at index {winnerIndex}");
+                        
+                        // Wait 3 seconds
+                        await Task.Delay(3000);
+                        
+                        // Show full winner screen with name
+                        _screenService?.ShowFFFWinner(winner.DisplayName);
+                        GameConsole.Log($"[FFF] Displayed winner celebration: {winner.DisplayName} - {winner.TimeElapsed / 1000.0:F2}s");
+                    }
+                    else
+                    {
+                        // Fallback: couldn't find in list, show directly
+                        GameConsole.Warn($"[FFF] Could not find winner in displayed list, showing directly");
+                        _screenService?.ShowFFFWinner(winner.DisplayName);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                GameConsole.Error($"[FFF] Error displaying winner on TV: {ex.Message}");
-            }
-        });
+                catch (Exception ex)
+                {
+                    GameConsole.Error($"[FFF] Error displaying winner on TV: {ex.Message}");
+                }
+            });
+        }
         
         // Update UI immediately
         _currentState = FFFFlowState.WinnerAnnounced;
