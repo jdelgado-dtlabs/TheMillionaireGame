@@ -34,8 +34,8 @@
 - ✅ DSPTestDialog for testing (395 lines)
 - ✅ Comprehensive testing (5-sound sequence verified)
 
-### Phase 3: Advanced DSP Effects - ⏳ PENDING
-**Status**: Not started  
+### Phase 3: Advanced DSP Effects - ⏳ FUTURE ENHANCEMENT
+**Status**: Not started (DEFERRED)
 **Estimated Time**: 14-19 hours
 
 **Planned Features:**
@@ -44,14 +44,22 @@
 - Limiter (peak limiting)
 - Reverb (optional enhancement)
 
-### Phase 4: UI Implementation - ⏳ PENDING
-**Status**: Not started  
+**NOTE:** Phase 1-2 are complete. Phase 3 deferred until after UI implementation.
+
+### Phase 4: UI Implementation - 🎯 NEXT PRIORITY
+**Status**: Ready to implement  
 **Estimated Time**: 6-8 hours
 
-**Planned Features:**
-- Settings UI in OptionsDialog
-- Real-time queue monitoring
-- Test/preview controls
+**Scope**: Create UI components in OptionsDialog for configuring audio settings.
+
+**Required Features:**
+- Silence Detection settings tab (ThresholdDb, SilenceDurationMs, InitialDelayMs)
+- Crossfade settings tab (DurationMs, Enabled checkbox)
+- Audio Processing tab (Master/Effects/Music Gain, Limiter settings)
+- Real-time queue monitoring panel (optional)
+- Test/preview controls for settings validation
+
+**See:** UI_SETTINGS_IMPLEMENTATION_PLAN.md for detailed planning (to be created)
 
 ---
 
