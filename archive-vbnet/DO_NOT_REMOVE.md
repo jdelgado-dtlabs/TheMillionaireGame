@@ -7,7 +7,6 @@ This archive contains the original VB.NET implementation of The Millionaire Game
 - **Het DJG Toernooi** - Original VB.NET game application
 - **FFF_Guest** - VB.NET guest/audience client
 - **MillionaireGameQEditor** - Original C# question editor
-- **FFF_BACKUP_* folders** - Backup copies from migration period
 - **README-ORIGINAL.md** - Original project README
 
 ### Purpose
