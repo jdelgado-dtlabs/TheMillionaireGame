@@ -47,6 +47,7 @@ public partial class FFFControlPanel : UserControl
     private FFFFlowState _currentState = FFFFlowState.NotStarted;
     private int _revealCorrectClickCount = 0;
     private SoundService? _soundService;
+    private ScreenUpdateService? _screenService;
     
     public FFFControlPanel()
     {
@@ -521,6 +522,15 @@ public partial class FFFControlPanel : UserControl
     }
     
     /// <summary>
+    /// Set screen update service for TV display
+    /// </summary>
+    public void SetScreenService(ScreenUpdateService screenService)
+    {
+        _screenService = screenService;
+        GameConsole.Log("[FFFControlPanel] Screen service set");
+    }
+    
+    /// <summary>
     /// Update button states based on current game flow state
     /// </summary>
     public void UpdateUIState()
@@ -773,8 +783,23 @@ public partial class FFFControlPanel : UserControl
         
         GameConsole.Log("[FFF] Step 2: Show Question started");
         
-        // TODO [PRE-1.0]: Display question on TV screen (FFF Online animations)
-        // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
+        // Display question on TV screen using regular game Q/A straps
+        // Convert FFFQuestion to Question for display
+        var displayQuestion = new MillionaireGame.Core.Models.Question
+        {
+            QuestionText = _currentQuestion.QuestionText,
+            AnswerA = _currentQuestion.AnswerA,
+            AnswerB = _currentQuestion.AnswerB,
+            AnswerC = _currentQuestion.AnswerC,
+            AnswerD = _currentQuestion.AnswerD,
+            CorrectAnswer = "A" // Not used for FFF display
+        };
+        _screenService?.UpdateQuestion(displayQuestion);
+        _screenService?.ShowAnswer("A");
+        _screenService?.ShowAnswer("B");
+        _screenService?.ShowAnswer("C");
+        _screenService?.ShowAnswer("D");
+        GameConsole.Log("[FFF] Question and answers displayed on TV");
         
         // Change state immediately - enables next button
         _currentState = FFFFlowState.QuestionShown;
@@ -943,13 +968,32 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Warn("[FFF] Sound service not available");
             return;
         }
-        // TODO [PRE-1.0]: Highlight correct answer on TV screen (FFF Online animations)
-        // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
-        // TODO Phase 4: Highlight correct answer position on TV
+        
+        // On first click, clear all answers from TV to prepare for reveal
+        if (_revealCorrectClickCount == 1)
+        {
+            _screenService?.RemoveAnswer("A");
+            _screenService?.RemoveAnswer("B");
+            _screenService?.RemoveAnswer("C");
+            _screenService?.RemoveAnswer("D");
+            GameConsole.Log("[FFF] Cleared answers from TV");
+        }
         
         // Play appropriate sound for this reveal (1-4) over background music
         // Note: FFFReadCorrectOrder continues playing in background during all reveals
         var clickCount = _revealCorrectClickCount; // Capture for async use
+        
+        // Get correct order and reveal the answer at this position
+        if (_currentQuestion != null && !string.IsNullOrEmpty(_currentQuestion.CorrectOrder))
+        {
+            var correctOrder = _currentQuestion.CorrectOrder.Split(',').Select(s => s.Trim()).ToArray();
+            if (clickCount <= correctOrder.Length)
+            {
+                var answerLetter = correctOrder[clickCount - 1];
+                _screenService?.ShowAnswer(answerLetter);
+                GameConsole.Log($"[FFF] Revealed answer {clickCount}: {answerLetter}");
+            }
+        }
         
         switch (clickCount)
         {
@@ -1077,10 +1121,24 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Log("[FFF] Playing FFFWhoWasCorrect (over background)...");
             _soundService.QueueSound(SoundEffect.FFFWhoWasCorrect, AudioPriority.Normal);
         }
-        // TODO [PRE-1.0]: Display winners list on TV screen (FFF Online animations)
-        // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
-        // TODO Phase 4: Display list of winners on TV
-        // Clear TV screen and show names of participants who answered correctly
+        
+        // Display top 8 correct winners on TV (alphabetically sorted)
+        var correctWinners = _rankings.Where(r => r.IsCorrect)
+                                      .OrderBy(r => r.DisplayName)
+                                      .Take(8)
+                                      .Select(r => r.DisplayName)
+                                      .ToList();
+        
+        if (correctWinners.Count > 0)
+        {
+            _screenService?.ShowQuestion(false); // Hide question/answers
+            _screenService?.ShowAllFFFContestants(correctWinners);
+            GameConsole.Log($"[FFF] Displaying {correctWinners.Count} correct winners on TV");
+        }
+        else
+        {
+            GameConsole.Warn("[FFF] No correct winners to display");
+        }
         
         _currentState = FFFFlowState.WinnersShown;
         UpdateUIState();
@@ -1160,10 +1218,38 @@ public partial class FFFControlPanel : UserControl
         }
         
         lblWinner.ForeColor = Color.Gold;
-        // TODO [PRE-1.0]: Display winner celebration on TV screen (FFF Online animations)
-        // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
         
-        // TODO Phase 4: Display winner celebration on TV
+        // Highlight the winner on TV for 3 seconds, then show full winner celebration
+        Task.Run(async () =>
+        {
+            try
+            {
+                // Find winner's index in the displayed list
+                var correctWinners = _rankings.Where(r => r.IsCorrect)
+                                              .OrderBy(r => r.DisplayName)
+                                              .Take(8)
+                                              .ToList();
+                var winnerIndex = correctWinners.FindIndex(r => r.DisplayName == winner.DisplayName);
+                
+                if (winnerIndex >= 0)
+                {
+                    _screenService?.HighlightFFFContestant(winnerIndex, isWinner: true);
+                    GameConsole.Log($"[FFF] Highlighted winner at index {winnerIndex}");
+                    
+                    // Wait 3 seconds
+                    await Task.Delay(3000);
+                    
+                    // Show full winner screen with name and time
+                    var timeText = $"{winner.TimeElapsed / 1000.0:F2}s";
+                    _screenService?.ShowFFFWinner(winner.DisplayName);
+                    GameConsole.Log($"[FFF] Displayed winner celebration: {winner.DisplayName} - {timeText}");
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[FFF] Error displaying winner on TV: {ex.Message}");
+            }
+        });
         
         // Update UI immediately
         _currentState = FFFFlowState.WinnerAnnounced;
