@@ -475,10 +475,6 @@ public partial class FFFControlPanel : UserControl
             
         if (result == DialogResult.Yes)
         {
-            // TODO [POST-1.0]: Hot Seat integration - Winner proceeds automatically to hot seat
-            // Status: Deferred - User confirmed "not needed" for v1.0
-            // Priority: MEDIUM (Post-1.0)
-            // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
             MessageBox.Show($"{winner.DisplayName} selected as winner!",
                 "Winner Selected", MessageBoxButtons.OK, MessageBoxIcon.None);
             
@@ -947,7 +943,7 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Warn("[FFF] Sound service not available");
             return;
         }
-        [PRE-1.0]: Highlight correct answer on TV screen (FFF Online animations)
+        // TODO [PRE-1.0]: Highlight correct answer on TV screen (FFF Online animations)
         // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
         // TODO Phase 4: Highlight correct answer position on TV
         
@@ -1080,7 +1076,8 @@ public partial class FFFControlPanel : UserControl
         {
             GameConsole.Log("[FFF] Playing FFFWhoWasCorrect (over background)...");
             _soundService.QueueSound(SoundEffect.FFFWhoWasCorrect, AudioPriority.Normal);
-        }[PRE-1.0]: Display winners list on TV screen (FFF Online animations)
+        }
+        // TODO [PRE-1.0]: Display winners list on TV screen (FFF Online animations)
         // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
         // TODO Phase 4: Display list of winners on TV
         // Clear TV screen and show names of participants who answered correctly
@@ -1116,7 +1113,7 @@ public partial class FFFControlPanel : UserControl
             lblWinner.Text = "Winner: ❌ No Winners";
             lblWinner.ForeColor = Color.Red;
             GameConsole.Log("[FFF] Displaying 'No Winners' message");
-             [PRE-1.0]: Show "No Winners" on TV screen (FFF Online animations)
+            // TODO [PRE-1.0]: Show "No Winners" on TV screen (FFF Online animations)
             // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
             // TODO: Show empty strap on TV screen with "No Winners" text (Phase 4 - Screen Animations)
             
@@ -1162,7 +1159,8 @@ public partial class FFFControlPanel : UserControl
             GameConsole.Log($"[FFF] Winner: {winner.DisplayName} ({winner.TimeElapsed / 1000.0:F2}s) - fastest of {correctAnswers.Count} correct answers");
         }
         
-        lblWinne[PRE-1.0]: Display winner celebration on TV screen (FFF Online animations)
+        lblWinner.ForeColor = Color.Gold;
+        // TODO [PRE-1.0]: Display winner celebration on TV screen (FFF Online animations)
         // Part of Task #1 in PRE_1.0_FINAL_CHECKLIST.md
         
         // TODO Phase 4: Display winner celebration on TV

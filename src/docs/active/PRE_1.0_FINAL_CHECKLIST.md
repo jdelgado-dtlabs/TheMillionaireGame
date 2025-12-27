@@ -199,11 +199,6 @@ These items are explicitly NOT required for v1.0 release:
 - **Post-1.0 Priority**: None (eliminated)
 - **Reference**: ControlPanelForm.cs lines 307, 682
 
-### Hot Seat Integration
-- Winner proceeds from FFF to hot seat automatically
-- **Reason**: User confirmed "not needed" for v1.0
-- **Post-1.0 Priority**: Medium
-
 ### Multi-Session Support
 - Replace hardcoded "LIVE" session ID
 - **Reason**: User confirmed "not needed" for v1.0

@@ -1,4 +1,6 @@
 using MillionaireGame.Core.Helpers;
+using MillionaireGame.Core.Database;
+using System.Text;
 
 namespace MillionaireGame.QuestionEditor.Forms;
 
@@ -40,22 +42,62 @@ public partial class ExportQuestionsForm : Form
             return;
         }
 
+        btnExport.Enabled = false;
+        btnCancel.Enabled = false;
+        Cursor = Cursors.WaitCursor;
+
         try
         {
-            // TODO [PRE-1.0]: Implement CSV export logic
-            // Status: Not started, estimated 2-3 hours
-            // Priority: LOW-MEDIUM (Task #4 in PRE_1.0_FINAL_CHECKLIST.md)
-            // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for requirements
-            MessageBox.Show("Export functionality will be implemented soon.", "Info",
+            var repository = new QuestionRepository(_connectionString);
+            var questions = await repository.GetAllQuestionsAsync();
+
+            if (questions.Count == 0)
+            {
+                MessageBox.Show("No questions found in the database.", "Export Warning",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Build CSV content
+            var csv = new StringBuilder();
+            csv.AppendLine("Question,AnswerA,AnswerB,AnswerC,AnswerD,CorrectAnswer,Level,Explanation,ATA_A,ATA_B,ATA_C,ATA_D");
+
+            foreach (var q in questions)
+            {
+                csv.AppendLine(
+                    $"\"{EscapeCsv(q.QuestionText)}\"," +
+                    $"\"{EscapeCsv(q.AnswerA)}\"," +
+                    $"\"{EscapeCsv(q.AnswerB)}\"," +
+                    $"\"{EscapeCsv(q.AnswerC)}\"," +
+                    $"\"{EscapeCsv(q.AnswerD)}\"," +
+                    $"{q.CorrectAnswer}," +
+                    $"{q.Level}," +
+                    $"\"{EscapeCsv(q.Explanation)}\"," +
+                    $"{q.ATAPercentageA?.ToString() ?? ""}," +
+                    $"{q.ATAPercentageB?.ToString() ?? ""}," +
+                    $"{q.ATAPercentageC?.ToString() ?? ""}," +
+                    $"{q.ATAPercentageD?.ToString() ?? ""}");
+            }
+
+            // Write to file
+            await File.WriteAllTextAsync(txtFilePath.Text, csv.ToString());
+
+            MessageBox.Show($"Successfully exported {questions.Count} questions to CSV.", "Export Complete",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             
-            // DialogResult = DialogResult.OK;
-            // Close();
+            DialogResult = DialogResult.OK;
+            Close();
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Error exporting questions: {ex.Message}", "Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnExport.Enabled = true;
+            btnCancel.Enabled = true;
+            Cursor = Cursors.Default;
         }
     }
 
@@ -63,5 +105,11 @@ public partial class ExportQuestionsForm : Form
     {
         DialogResult = DialogResult.Cancel;
         Close();
+    }
+
+    private string EscapeCsv(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        return text.Replace("\"", "\"\"");
     }
 }

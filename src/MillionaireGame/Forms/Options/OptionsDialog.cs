@@ -1386,20 +1386,19 @@ public partial class OptionsDialog : Form
             
             if (soundPackManager != null)
             {
-                // TODO [PRE-1.0]: Implement RemoveSoundPack in SoundPackManager
-                // Status: Not started, estimated 1 hour
-                // Priority: LOW (Task #5 in PRE_1.0_FINAL_CHECKLIST.md)
-                // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for requirements
-                MessageBox.Show("Pack removal will be implemented in a future update.", 
-                    "Not Yet Implemented", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                
-                // When implemented:
-                // bool success = soundPackManager.RemoveSoundPack(selectedPack);
-                // if (success)
-                // {
-                //     LoadAvailableSoundPacks();
-                //     cmbSoundPack.SelectedItem = "Default";
-                // }
+                bool success = soundPackManager.RemoveSoundPack(selectedPack);
+                if (success)
+                {
+                    LoadAvailableSoundPacks();
+                    cmbSoundPack.SelectedItem = "Default";
+                    MessageBox.Show($"Sound pack '{selectedPack}' has been removed successfully.", 
+                        "Removal Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"Failed to remove sound pack '{selectedPack}'.", 
+                        "Removal Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
     }
