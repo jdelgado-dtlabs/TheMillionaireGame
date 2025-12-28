@@ -108,8 +108,28 @@ public partial class FFFWindow : Form
         {
             e.Cancel = true;
             
+            // Broadcast ResetToLobby to web clients before hiding
+            if (_isWebServerRunning)
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await fffControlPanel.BroadcastResetToLobbyAsync();
+                        GameConsole.Log("[FFFWindow] Broadcast ResetToLobby to web clients");
+                    }
+                    catch (Exception ex)
+                    {
+                        GameConsole.Error($"[FFFWindow] Error broadcasting ResetToLobby: {ex.Message}");
+                    }
+                });
+            }
+            
             // Clear TV screen when closing
             ClearTVScreen();
+            
+            // Clear the control's screen state (question/answers/winner)
+            fffControlPanel?.ClearScreenForMainGame();
             
             Hide();
         }

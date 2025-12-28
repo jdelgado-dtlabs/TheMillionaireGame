@@ -327,6 +327,16 @@ public class FFFHub : Hub
             CorrectSubmissions = results.CorrectSubmissions
         };
     }
+    
+    /// <summary>
+    /// Broadcast a phase message to all participants in a session (called by control panel)
+    /// </summary>
+    public async Task BroadcastPhaseMessage(string sessionId, string messageType, object data)
+    {
+        _logger.LogInformation("Broadcasting phase message {MessageType} to session {SessionId}", messageType, sessionId);
+        
+        await Clients.Group(sessionId).SendAsync(messageType, data);
+    }
 
     public override async Task OnConnectedAsync()
     {

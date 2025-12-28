@@ -113,6 +113,28 @@ public class FFFClientService : IAsyncDisposable
     }
     
     /// <summary>
+    /// Broadcast a phase message to all participants in the session
+    /// </summary>
+    public async Task BroadcastPhaseMessageAsync(string messageType, object data)
+    {
+        if (_connection == null || !_isConnected)
+        {
+            GameConsole.Warn($"[FFFClient] Cannot broadcast {messageType} - not connected");
+            return;
+        }
+        
+        try
+        {
+            GameConsole.Info($"[FFFClient] Broadcasting {messageType} to session {_sessionId}");
+            await _connection.InvokeAsync("BroadcastPhaseMessage", _sessionId, messageType, data);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[FFFClient] Error broadcasting {messageType}: {ex.Message}");
+        }
+    }
+    
+    /// <summary>
     /// Get current active participants
     /// </summary>
     public async Task<List<ParticipantInfo>> GetActiveParticipantsAsync()

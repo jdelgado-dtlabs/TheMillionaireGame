@@ -25,6 +25,13 @@ public class Question
     public int? ATAPercentageC { get; set; }
     public int? ATAPercentageD { get; set; }
 
+    // Custom answer labels (for FFF reveal - shows correct order labels)
+    // If null, defaults to "A", "B", "C", "D"
+    public string? AnswerALabel { get; set; }
+    public string? AnswerBLabel { get; set; }
+    public string? AnswerCLabel { get; set; }
+    public string? AnswerDLabel { get; set; }
+
     // Compatibility properties for numbered answer format (Answer1-4)
     // TODO: Migrate database to use Answer1-4 column names to support random answer ordering
     // This will prevent players from memorizing answer positions

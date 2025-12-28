@@ -136,10 +136,11 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         }
 
         // Always draw answer backgrounds, showing visible answers
-        DrawAnswerBox(g, "A", _currentQuestion.AnswerA, _answerABounds, true, _visibleAnswers.Contains("A"));
-        DrawAnswerBox(g, "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
-        DrawAnswerBox(g, "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
-        DrawAnswerBox(g, "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
+        // Use custom labels if provided (for FFF reveal), otherwise default to A, B, C, D
+        DrawAnswerBox(g, _currentQuestion.AnswerALabel ?? "A", _currentQuestion.AnswerA, _answerABounds, true, _visibleAnswers.Contains("A"));
+        DrawAnswerBox(g, _currentQuestion.AnswerBLabel ?? "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
+        DrawAnswerBox(g, _currentQuestion.AnswerCLabel ?? "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
+        DrawAnswerBox(g, _currentQuestion.AnswerDLabel ?? "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
 
         // Draw ATA results if active
         if (_showATA)
@@ -833,8 +834,8 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     }
     
     public void ShowFFFContestant(int index, string name) { }
-    public void ShowAllFFFContestants(List<string> names) { }
+    public void ShowAllFFFContestants(List<string> names, List<double>? times = null) { }
     public void HighlightFFFContestant(int index, bool isWinner = false) { }
-    public void ShowFFFWinner(string name) { }
+    public void ShowFFFWinner(string name, double? time = null) { }
     public void ClearFFFDisplay() { }
 }
