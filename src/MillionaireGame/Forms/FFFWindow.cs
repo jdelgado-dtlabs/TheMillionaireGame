@@ -59,6 +59,13 @@ public partial class FFFWindow : Form
                     GameConsole.Log("[FFFWindow] Sound service set for control panel");
                 }
                 
+                // Set screen update service for TV display
+                if (_screenService != null)
+                {
+                    fffControlPanel.SetScreenService(_screenService);
+                    GameConsole.Log("[FFFWindow] Screen service set for control panel");
+                }
+                
                 // Initialize button states
                 fffControlPanel.UpdateUIState();
                 GameConsole.Log("[FFFWindow] Button states initialized");
@@ -101,8 +108,28 @@ public partial class FFFWindow : Form
         {
             e.Cancel = true;
             
+            // Broadcast ResetToLobby to web clients before hiding
+            if (_isWebServerRunning)
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await fffControlPanel.BroadcastResetToLobbyAsync();
+                        GameConsole.Log("[FFFWindow] Broadcast ResetToLobby to web clients");
+                    }
+                    catch (Exception ex)
+                    {
+                        GameConsole.Error($"[FFFWindow] Error broadcasting ResetToLobby: {ex.Message}");
+                    }
+                });
+            }
+            
             // Clear TV screen when closing
             ClearTVScreen();
+            
+            // Clear the control's screen state (question/answers/winner)
+            fffControlPanel?.ClearScreenForMainGame();
             
             Hide();
         }

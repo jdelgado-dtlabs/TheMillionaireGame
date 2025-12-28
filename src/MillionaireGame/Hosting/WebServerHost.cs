@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -148,20 +149,66 @@ public class WebServerHost : IDisposable
     {
         if (_host == null)
         {
+            WebServiceConsole.Debug("WebServerHost.StopAsync: Host is already null, nothing to stop.");
             return;
         }
 
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        WebServiceConsole.Info("=== WebServer Shutdown Started ===");
+
         try
         {
+            // Step 1: Notify all SignalR clients to disconnect gracefully
+            WebServiceConsole.Info("Step 1: Notifying SignalR clients to disconnect...");
+            try
+            {
+                var hubContext = _host.Services.GetService(typeof(IHubContext<FFFHub>)) as IHubContext<FFFHub>;
+                var ataHubContext = _host.Services.GetService(typeof(IHubContext<ATAHub>)) as IHubContext<ATAHub>;
+
+                if (hubContext != null)
+                {
+                    await hubContext.Clients.All.SendAsync("ServerShuttingDown");
+                    WebServiceConsole.Debug("  - Sent shutdown notification to FFF hub clients");
+                }
+
+                if (ataHubContext != null)
+                {
+                    await ataHubContext.Clients.All.SendAsync("ServerShuttingDown");
+                    WebServiceConsole.Debug("  - Sent shutdown notification to ATA hub clients");
+                }
+
+                // Give clients a moment to disconnect gracefully
+                await Task.Delay(500);
+                WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+            }
+            catch (Exception ex)
+            {
+                WebServiceConsole.Warn($"  Failed to notify clients: {ex.Message}");
+            }
+
+            // Step 2: Stop the ASP.NET Core host
+            stopwatch.Restart();
+            WebServiceConsole.Info("Step 2: Stopping ASP.NET Core host...");
             await _host.StopAsync(TimeSpan.FromSeconds(5));
+            WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+
+            // Step 3: Dispose resources
+            stopwatch.Restart();
+            WebServiceConsole.Info("Step 3: Disposing host resources...");
             _host.Dispose();
             _host = null;
             _baseUrl = null;
+            WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+
+            stopwatch.Stop();
+            WebServiceConsole.Info($"=== WebServer Shutdown Complete (Total: {stopwatch.ElapsedMilliseconds}ms) ===");
 
             ServerStopped?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
+            stopwatch.Stop();
+            WebServiceConsole.Error($"=== WebServer Shutdown Failed after {stopwatch.ElapsedMilliseconds}ms: {ex.Message} ===");
             ServerError?.Invoke(this, ex);
             throw;
         }

@@ -42,9 +42,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     // FFF display
     private bool _showFFF = false;
     private List<string> _fffContestants = new();
+    private List<double> _fffTimes = new();
     private int _fffHighlightedIndex = -1;
     private bool _fffShowWinner = false;
     private string? _fffWinnerName = null;
+    private double? _fffWinnerTime = null;
     
     // Lifeline icon display
     private bool _showLifelineIcons = false;
@@ -147,10 +149,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         }
 
         // Always draw answer backgrounds, but only show text for visible answers
-        DrawAnswerBox(g, "A", _currentQuestion.AnswerA, _answerABounds, true, _visibleAnswers.Contains("A"));
-        DrawAnswerBox(g, "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
-        DrawAnswerBox(g, "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
-        DrawAnswerBox(g, "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
+        // Use custom labels if provided (for FFF reveal), otherwise default to A, B, C, D
+        DrawAnswerBox(g, _currentQuestion.AnswerALabel ?? "A", _currentQuestion.AnswerA, _answerABounds, true, _visibleAnswers.Contains("A"));
+        DrawAnswerBox(g, _currentQuestion.AnswerBLabel ?? "B", _currentQuestion.AnswerB, _answerBBounds, false, _visibleAnswers.Contains("B"));
+        DrawAnswerBox(g, _currentQuestion.AnswerCLabel ?? "C", _currentQuestion.AnswerC, _answerCBounds, true, _visibleAnswers.Contains("C"));
+        DrawAnswerBox(g, _currentQuestion.AnswerDLabel ?? "D", _currentQuestion.AnswerD, _answerDBounds, false, _visibleAnswers.Contains("D"));
 
         // Draw ATA results if visible
         if (_showATA)
@@ -542,19 +545,8 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     
     private void DrawFFFDisplay(System.Drawing.Graphics g)
     {
-        // Draw FFF background image
-        var backgroundImage = FFFGraphics.GetBackground();
-        if (backgroundImage != null)
-        {
-            // Draw full-screen background
-            var bgBounds = ScaleRect(0, 0, 1920, 1080);
-            g.DrawImage(backgroundImage, bgBounds);
-        }
-        else
-        {
-            // Fallback to solid color if image not found
-            g.Clear(Color.FromArgb(0, 0, 51)); // Dark blue background
-        }
+        // No background for FFF display - alpha keyed/transparent
+        // Background will be added as a game-wide option later
         
         // Show winner with large text
         if (_fffShowWinner && !string.IsNullOrEmpty(_fffWinnerName))
@@ -574,6 +566,17 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             var titleBounds = new RectangleF(200, 280, 1520, 100);
             DrawScaledText(g, "WINNER!", titleFont, titleBrush,
                 titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, format);
+            
+            // Draw time below winner name if available
+            if (_fffWinnerTime.HasValue)
+            {
+                using var timeFont = new Font("Arial", 60, FontStyle.Bold);
+                using var timeBrush = new SolidBrush(Color.White);
+                var timeBounds = new RectangleF(200, 700, 1520, 100);
+                var timeText = $"{_fffWinnerTime.Value:F2}s";
+                DrawScaledText(g, timeText, timeFont, timeBrush,
+                    timeBounds.X, timeBounds.Y, timeBounds.Width, timeBounds.Height, format);
+            }
             return;
         }
         
@@ -634,7 +637,16 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 
                 // Name text bounds (left offset matching VB.NET layout)
                 DrawScaledText(g, name, font, brush,
-                    designBounds.X + 570, designBounds.Y, designBounds.Width - 600, designBounds.Height, format);
+                    designBounds.X + 570, designBounds.Y, designBounds.Width - 1200, designBounds.Height, format);
+                
+                // Draw time (right side of strap) if available
+                if (_fffTimes.Count > i && _fffTimes[i] > 0)
+                {
+                    using var timeFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
+                    var timeText = $"{_fffTimes[i]:F2}s";
+                    DrawScaledText(g, timeText, font, brush,
+                        designBounds.X + 1200, designBounds.Y, designBounds.Width - 1300, designBounds.Height, timeFormat);
+                }
                 
                 currentY += spacing; // Move to next strap position
             }
@@ -1096,16 +1108,17 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         Invalidate();
     }
     
-    public void ShowAllFFFContestants(List<string> names)
+    public void ShowAllFFFContestants(List<string> names, List<double>? times = null)
     {
         if (InvokeRequired)
         {
-            BeginInvoke(new Action(() => ShowAllFFFContestants(names)));
+            BeginInvoke(new Action(() => ShowAllFFFContestants(names, times)));
             return;
         }
         
         _showFFF = true;
         _fffContestants = new List<string>(names);
+        _fffTimes = times != null ? new List<double>(times) : new List<double>();
         _fffHighlightedIndex = -1;
         _fffShowWinner = false;
         Invalidate();
@@ -1124,16 +1137,18 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         Invalidate();
     }
     
-    public void ShowFFFWinner(string name)
+    public void ShowFFFWinner(string name, double? time = null)
     {
         if (InvokeRequired)
         {
-            BeginInvoke(new Action(() => ShowFFFWinner(name)));
+            BeginInvoke(new Action(() => ShowFFFWinner(name, time)));
             return;
         }
         
+        _showFFF = true;
         _fffShowWinner = true;
         _fffWinnerName = name;
+        _fffWinnerTime = time;
         Invalidate();
     }
     
@@ -1147,9 +1162,11 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         
         _showFFF = false;
         _fffContestants.Clear();
+        _fffTimes.Clear();
         _fffHighlightedIndex = -1;
         _fffShowWinner = false;
         _fffWinnerName = null;
+        _fffWinnerTime = null;
         Invalidate();
     }
     

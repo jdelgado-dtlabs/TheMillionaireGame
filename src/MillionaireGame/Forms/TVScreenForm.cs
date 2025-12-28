@@ -315,7 +315,7 @@ public partial class TVScreenForm : Form, IGameScreen
         // This form is being phased out in favor of TVScreenFormScalable
     }
     
-    public void ShowAllFFFContestants(List<string> names)
+    public void ShowAllFFFContestants(List<string> names, List<double>? times = null)
     {
         // FFF display not implemented for the old TVScreenForm
         // This form is being phased out in favor of TVScreenFormScalable
@@ -327,7 +327,7 @@ public partial class TVScreenForm : Form, IGameScreen
         // This form is being phased out in favor of TVScreenFormScalable
     }
     
-    public void ShowFFFWinner(string name)
+    public void ShowFFFWinner(string name, double? time = null)
     {
         // FFF display not implemented for the old TVScreenForm
         // This form is being phased out in favor of TVScreenFormScalable

@@ -624,9 +624,11 @@ public partial class ControlPanelForm : Form
     /// </summary>
     public void UpdateScreenMenuItemStates()
     {
-        hostScreenMenuItem.Enabled = _appSettings.Settings.FullScreenHostScreenEnable;
-        guestScreenMenuItem.Enabled = _appSettings.Settings.FullScreenGuestScreenEnable;
-        tvScreenMenuItem.Enabled = _appSettings.Settings.FullScreenTVScreenEnable;
+        // Menu items are always enabled so screens can be opened in windowed mode during development/debug
+        // The FullScreen settings only control whether screens open in fullscreen mode
+        hostScreenMenuItem.Enabled = true;
+        guestScreenMenuItem.Enabled = true;
+        tvScreenMenuItem.Enabled = true;
     }
     
     #region Full Screen Management
@@ -3745,23 +3747,24 @@ public partial class ControlPanelForm : Form
                 
             case LifelineMode.Standby:
                 // Orange - standby mode (not clickable until all answers revealed)
-                // Only apply to visible buttons (used buttons are left alone)
-                if (btnLifeline1.Visible)
+                // Only apply to visible buttons that haven't been used yet
+                // Grey/disabled buttons (used lifelines) are left alone
+                if (btnLifeline1.Visible && btnLifeline1.BackColor != Color.Gray)
                 {
                     btnLifeline1.BackColor = Color.Orange;
                     btnLifeline1.Enabled = false;
                 }
-                if (btnLifeline2.Visible)
+                if (btnLifeline2.Visible && btnLifeline2.BackColor != Color.Gray)
                 {
                     btnLifeline2.BackColor = Color.Orange;
                     btnLifeline2.Enabled = false;
                 }
-                if (btnLifeline3.Visible)
+                if (btnLifeline3.Visible && btnLifeline3.BackColor != Color.Gray)
                 {
                     btnLifeline3.BackColor = Color.Orange;
                     btnLifeline3.Enabled = false;
                 }
-                if (btnLifeline4.Visible)
+                if (btnLifeline4.Visible && btnLifeline4.BackColor != Color.Gray)
                 {
                     btnLifeline4.BackColor = Color.Orange;
                     btnLifeline4.Enabled = false;

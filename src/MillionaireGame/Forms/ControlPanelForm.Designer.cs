@@ -15,44 +15,14 @@ namespace MillionaireGame.Forms
                 // Stop and dispose web server
                 if (_webServerHost != null)
                 {
-                    Form? shutdownDialog = null;
                     try
                     {
-                        // Show shutdown status dialog
-                        shutdownDialog = new Form
-                        {
-                            Text = "Closing Application",
-                            FormBorderStyle = FormBorderStyle.FixedDialog,
-                            StartPosition = FormStartPosition.CenterScreen,
-                            Size = new Size(300, 100),
-                            MaximizeBox = false,
-                            MinimizeBox = false,
-                            ControlBox = true,
-                            ShowInTaskbar = false,
-                            TopMost = true
-                        };
-                        var label = new Label
-                        {
-                            Text = "Shutting down WebService...",
-                            AutoSize = false,
-                            TextAlign = ContentAlignment.MiddleCenter,
-                            Dock = DockStyle.Fill
-                        };
-                        shutdownDialog.Controls.Add(label);
-                        shutdownDialog.Show();
-                        Application.DoEvents();
-                        
                         _webServerHost.StopAsync().Wait(TimeSpan.FromSeconds(5));
                         _webServerHost.Dispose();
                     }
                     catch
                     {
                         // Ignore errors during shutdown
-                    }
-                    finally
-                    {
-                        shutdownDialog?.Close();
-                        shutdownDialog?.Dispose();
                     }
                 }
 

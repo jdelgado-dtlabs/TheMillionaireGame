@@ -347,11 +347,11 @@ public class ScreenUpdateService
     /// <summary>
     /// Show all FFF contestants with straps on TV screen
     /// </summary>
-    public void ShowAllFFFContestants(List<string> names)
+    public void ShowAllFFFContestants(List<string> names, List<double>? times = null)
     {
         foreach (var screen in _registeredScreens)
         {
-            screen.ShowAllFFFContestants(names);
+            screen.ShowAllFFFContestants(names, times);
         }
     }
     
@@ -369,11 +369,11 @@ public class ScreenUpdateService
     /// <summary>
     /// Show the FFF winner
     /// </summary>
-    public void ShowFFFWinner(string name)
+    public void ShowFFFWinner(string name, double? time = null)
     {
         foreach (var screen in _registeredScreens)
         {
-            screen.ShowFFFWinner(name);
+            screen.ShowFFFWinner(name, time);
         }
     }
     
@@ -419,9 +419,9 @@ public interface IGameScreen
     
     // FFF display methods
     void ShowFFFContestant(int index, string name);
-    void ShowAllFFFContestants(List<string> names);
+    void ShowAllFFFContestants(List<string> names, List<double>? times = null);
     void HighlightFFFContestant(int index, bool isWinner = false);
-    void ShowFFFWinner(string name);
+    void ShowFFFWinner(string name, double? time = null);
     void ClearFFFDisplay();
 }
 
