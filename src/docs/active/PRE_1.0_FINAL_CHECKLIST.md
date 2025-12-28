@@ -7,46 +7,10 @@
 
 ## 🎯 Critical Path (Must Complete for v1.0)
 
-### 1. FFF Online as "Game Within a Game" Feature  **COMPLETE**
-**Status**:  COMPLETE (December 27, 2025)  
-**Total Time**: ~8 hours  
-**Priority**: MEDIUM-HIGH
-
-**Completed**:
-- [x] FFF Online platform fully built with WAPS integration
-- [x] Control panel integration complete
-- [x] Separation between FFF Offline (local) and FFF Online (web)
-- [x] FFFControlPanel wired into main Control Panel
-- [x] End-to-end flow tested: Participants join  Question starts  Answers submitted  Winner calculated
-- [x] WAPS infrastructure complete and operational
-- [x] TV screen animations for FFF Online implemented
-- [x] Web client state integration complete with all phases
-- [x] Show Winners screen with participant times display
-- [x] Winner confirmation screen with time display
-- [x] Graceful webserver shutdown with client notification
-- [x] Automatic cache clearing on server shutdown
-- [x] Detailed logging for webserver lifecycle
-- [x] Lifeline state preservation through Lights Down
-- [x] Screen menu availability during debug mode
-- [x] All FFF SignalR messages implemented (QuestionStarted, TimerExpired, RevealingWinner, WinnerConfirmed, NoWinner, ResetToLobby, ServerShuttingDown)
-
-**Acceptance Criteria**:  ALL MET
-- TV screen displays animated FFF Online sequences with participant times
-- Web participants see current FFF phase on their devices
-- State changes are communicated clearly to all participants
-- Smooth transitions between FFF phases
-- Proper cleanup on server shutdown
-
-**Blockers**: None
-
----
-
-### 2. Real ATA Voting Integration 🔴
+### 1. Real ATA Voting Integration 🔴
 **Status**: Not Started  
 **Estimated Time**: 2-3 hours  
 **Priority**: HIGH
-
----
 
 **Requirements**:
 - [ ] Replace placeholder results in LifelineManager.cs line 491
@@ -67,7 +31,7 @@
 
 ---
 
-### 3. WAPS Lobby and State Change Updates 🔴
+### 2. WAPS Lobby and State Change Updates 🔴
 **Status**: Not Started  
 **Estimated Time**: 4-5 hours  
 **Priority**: HIGH
@@ -123,7 +87,7 @@
 
 ## 🔧 Important Improvements (Should Complete)
 
-### 4. FFF Online Graphics Enhancement 🟢
+### 3. FFF Online Graphics Enhancement 🟢
 **Status**: Partially Complete (Offline graphics done)  
 **Estimated Time**: 3-4 hours  
 **Priority**: MEDIUM
@@ -141,11 +105,81 @@
 - Winner is visually highlighted
 - Consistent look with FFF Offline mode
 
-**Blockers**: Depends on FFF Online integration (Task #1)
+**Blockers**: None (FFF Online complete)
+
+---
+
+## 🔍 Testing & Quality Assurance
+
+### 4. End-to-End Testing
+**Estimated Time**: 4 hours
+
+**Test Scenarios**:
+- [ ] Complete game from question 1 to win (£1,000,000)
+- [ ] Complete game with walk away
+- [ ] Complete game with wrong answer
+- [ ] All lifelines (50:50, PAF, ATA) with real voting
+- [ ] FFF Offline with 2-8 players
+- [ ] FFF Online with web participants
+- [ ] Risk Mode gameplay
+- [ ] Free Safety Net Mode
+- [ ] Monitor selection and full-screen
+- [ ] Sound playback for all cues
+- [ ] Settings persistence and loading
+- [ ] Web client state transitions (all lobby states)
+
+**Performance Tests**:
+- [ ] 50+ concurrent web participants
+- [ ] Answer submission load testing
+- [ ] Vote aggregation accuracy with high concurrency
+- [ ] Memory leaks during extended gameplay
+- [ ] State synchronization with rapid state changes
+
+**Compatibility Tests**:
+- [ ] Windows 10 x64
+- [ ] Windows 11 x64
+- [ ] SQL Server Express 2019+
+- [ ] SQLite database operations
+- [ ] Multiple browsers (Chrome, Edge, Firefox, Safari)
+- [ ] Mobile devices (iOS, Android)
 
 ---
 
 ## 📦 Completed Tasks (Archived)
+
+### ✅ FFF Online as "Game Within a Game" Feature
+**Status**: ✅ COMPLETE (December 27, 2025)  
+**Total Time**: ~8 hours  
+**Priority**: MEDIUM-HIGH
+
+**Completed**:
+- [x] FFF Online platform fully built with WAPS integration
+- [x] Control panel integration complete
+- [x] Separation between FFF Offline (local) and FFF Online (web)
+- [x] FFFControlPanel wired into main Control Panel
+- [x] End-to-end flow tested: Participants join → Question starts → Answers submitted → Winner calculated
+- [x] WAPS infrastructure complete and operational
+- [x] TV screen animations for FFF Online implemented
+- [x] Web client state integration complete with all phases
+- [x] Show Winners screen with participant times display
+- [x] Winner confirmation screen with time display
+- [x] Graceful webserver shutdown with client notification
+- [x] Automatic cache clearing on server shutdown
+- [x] Detailed logging for webserver lifecycle
+- [x] Lifeline state preservation through Lights Down
+- [x] Screen menu availability during debug mode
+- [x] All FFF SignalR messages implemented (QuestionStarted, TimerExpired, RevealingWinner, WinnerConfirmed, NoWinner, ResetToLobby, ServerShuttingDown)
+
+**Acceptance Criteria**: ✅ ALL MET
+- TV screen displays animated FFF Online sequences with participant times
+- Web participants see current FFF phase on their devices
+- State changes are communicated clearly to all participants
+- Smooth transitions between FFF phases
+- Proper cleanup on server shutdown
+
+**Blockers**: None
+
+---
 
 ### ✅ Question Editor CSV Features
 **Status**: COMPLETE  
@@ -180,72 +214,6 @@
 - [x] Protection for Default pack (cannot be removed)
 
 **Result**: Users can remove installed sound packs with proper confirmation and automatic fallback to Default.
-
----
-
-## 🔍 Testing & Quality Assurance
-
-### 5. End-to-End Testing
-**Estimated Time**: 4 hours
-
-**Test Scenarios**:
-- [ ] Complete game from question 1 to win (£1,000,000)
-- [ ] Complete game with walk away
-- [ ] Complete game with wrong answer
-- [ ] All lifelines (50:50, PAF, ATA) with real voting
-- [ ] FFF Offline with 2-8 players
-- [ ] FFF Online with web participants
-- [ ] Risk Mode gameplay
-- [ ] Free Safety Net Mode
-- [ ] Monitor selection and full-screen
-- [ ] Sound playback for all cues
-- [ ] Settings persistence and loading
-
-**Performance Tests**:
-- [ ] 50+ concurrent web participants
-- [ ] Answer submission load testing
-- [ ] Vote aggregation accuracy with high concurrency
-- [ ] Memory leaks during extended gameplay
-
-**Compatibility Tests**:
-- [ ] Windows 10 x64
-- [ ] Windows 11 x64
-- [ ] SQL Server Express 2019+
-- [ ] SQLite database operations
-
----
-
-### 7. End-to-End Testing
-**Estimated Time**: 4 hours
-
-**Test Scenarios**:
-- [ ] Complete game from question 1 to win (£1,000,000)
-- [ ] Complete game with walk away
-- [ ] Complete game with wrong answer
-- [ ] All lifelines (50:50, PAF, ATA) with real voting
-- [ ] FFF Offline with 2-8 players
-- [ ] FFF Online with web participants
-- [ ] Risk Mode gameplay
-- [ ] Free Safety Net Mode
-- [ ] Monitor selection and full-screen
-- [ ] Sound playback for all cues
-- [ ] Settings persistence and loading
-- [ ] Web client state transitions (all lobby states)
-
-**Performance Tests**:
-- [ ] 50+ concurrent web participants
-- [ ] Answer submission load testing
-- [ ] Vote aggregation accuracy with high concurrency
-- [ ] Memory leaks during extended gameplay
-- [ ] State synchronization with rapid state changes
-
-**Compatibility Tests**:
-- [ ] Windows 10 x64
-- [ ] Windows 11 x64
-- [ ] SQL Server Express 2019+
-- [ ] SQLite database operations
-- [ ] Multiple browsers (Chrome, Edge, Firefox, Safari)
-- [ ] Mobile devices (iOS, Android)
 
 ---
 
