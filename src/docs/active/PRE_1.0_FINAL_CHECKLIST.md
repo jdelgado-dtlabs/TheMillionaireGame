@@ -85,33 +85,9 @@
 
 ---
 
-## 🔧 Important Improvements (Should Complete)
+## � Testing & Quality Assurance
 
-### 3. FFF Online Graphics Enhancement 🟢
-**Status**: Partially Complete (Offline graphics done)  
-**Estimated Time**: 3-4 hours  
-**Priority**: MEDIUM
-
-**Requirements**:
-- [ ] Wire up FFFGraphics.cs for FFF Online mode
-- [ ] Implement TV screen rendering for FFF Online questions
-- [ ] Show contestant straps during question
-- [ ] Animate selection/highlighting when winner determined
-- [ ] Match visual style between offline and online modes
-- [ ] Test with 2-8 participants
-
-**Acceptance Criteria**:
-- FFF Online displays contestants with graphic straps (not colored rectangles)
-- Winner is visually highlighted
-- Consistent look with FFF Offline mode
-
-**Blockers**: None (FFF Online complete)
-
----
-
-## 🔍 Testing & Quality Assurance
-
-### 4. End-to-End Testing
+### 3. End-to-End Testing
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
@@ -217,13 +193,13 @@
 
 ---
 
-### 6. Bug Fixes
+### 4. Bug Fixes
 **Estimated Time**: 4 hours  
 **Reserved for issues found during testing**
 
 ---
 
-### 7. Documentation Updates
+### 5. Documentation Updates
 **Estimated Time**: 2 hours
 
 **Documents to Update**:
