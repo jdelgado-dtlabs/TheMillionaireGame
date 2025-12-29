@@ -2,7 +2,7 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Database;
 
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 /// <summary>
 /// Form for importing questions from CSV files
@@ -23,10 +23,27 @@ public partial class ImportQuestionsForm : Form
         using var openFileDialog = new OpenFileDialog
         {
             Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-            Title = "Select CSV File to Import"
+            Title = "Select CSV File to Import",
+            RestoreDirectory = true
         };
 
-        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        // Run on separate thread to avoid modal deadlock that can freeze the UI
+        DialogResult result = DialogResult.Cancel;
+        var thread = new System.Threading.Thread(() =>
+        {
+            result = openFileDialog.ShowDialog();
+        });
+        thread.SetApartmentState(System.Threading.ApartmentState.STA);
+        thread.Start();
+        
+        // Keep UI responsive while waiting
+        while (thread.IsAlive)
+        {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(10);
+        }
+
+        if (result == DialogResult.OK)
         {
             txtFilePath.Text = openFileDialog.FileName;
         }

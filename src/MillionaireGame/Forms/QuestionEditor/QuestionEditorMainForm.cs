@@ -5,7 +5,7 @@ using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Helpers;
 
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 /// <summary>
 /// Main form for the Question Editor application

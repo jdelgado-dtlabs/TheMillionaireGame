@@ -1,6 +1,6 @@
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
-partial class ImportQuestionsForm
+partial class ExportQuestionsForm
 {
     private System.ComponentModel.IContainer components = null;
 
@@ -20,7 +20,7 @@ partial class ImportQuestionsForm
         this.lblFilePath = new Label();
         this.txtFilePath = new TextBox();
         this.btnBrowse = new Button();
-        this.btnImport = new Button();
+        this.btnExport = new Button();
         this.btnCancel = new Button();
         this.SuspendLayout();
         
@@ -28,9 +28,9 @@ partial class ImportQuestionsForm
         this.lblFilePath.AutoSize = true;
         this.lblFilePath.Location = new Point(20, 20);
         this.lblFilePath.Name = "lblFilePath";
-        this.lblFilePath.Size = new Size(113, 20);
+        this.lblFilePath.Size = new Size(150, 20);
         this.lblFilePath.TabIndex = 0;
-        this.lblFilePath.Text = "CSV File Path:";
+        this.lblFilePath.Text = "Export File Path:";
         
         // txtFilePath
         this.txtFilePath.Location = new Point(20, 45);
@@ -48,14 +48,14 @@ partial class ImportQuestionsForm
         this.btnBrowse.UseVisualStyleBackColor = true;
         this.btnBrowse.Click += new EventHandler(this.btnBrowse_Click);
         
-        // btnImport
-        this.btnImport.Location = new Point(380, 100);
-        this.btnImport.Name = "btnImport";
-        this.btnImport.Size = new Size(100, 35);
-        this.btnImport.TabIndex = 3;
-        this.btnImport.Text = "Import";
-        this.btnImport.UseVisualStyleBackColor = true;
-        this.btnImport.Click += new EventHandler(this.btnImport_Click);
+        // btnExport
+        this.btnExport.Location = new Point(380, 100);
+        this.btnExport.Name = "btnExport";
+        this.btnExport.Size = new Size(100, 35);
+        this.btnExport.TabIndex = 3;
+        this.btnExport.Text = "Export";
+        this.btnExport.UseVisualStyleBackColor = true;
+        this.btnExport.Click += new EventHandler(this.btnExport_Click);
         
         // btnCancel
         this.btnCancel.Location = new Point(490, 100);
@@ -66,21 +66,21 @@ partial class ImportQuestionsForm
         this.btnCancel.UseVisualStyleBackColor = true;
         this.btnCancel.Click += new EventHandler(this.btnCancel_Click);
         
-        // ImportQuestionsForm
+        // ExportQuestionsForm
         this.AutoScaleDimensions = new SizeF(8F, 20F);
         this.AutoScaleMode = AutoScaleMode.Font;
         this.ClientSize = new Size(600, 155);
         this.Controls.Add(this.btnCancel);
-        this.Controls.Add(this.btnImport);
+        this.Controls.Add(this.btnExport);
         this.Controls.Add(this.btnBrowse);
         this.Controls.Add(this.txtFilePath);
         this.Controls.Add(this.lblFilePath);
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.MaximizeBox = false;
         this.MinimizeBox = false;
-        this.Name = "ImportQuestionsForm";
+        this.Name = "ExportQuestionsForm";
         this.StartPosition = FormStartPosition.CenterParent;
-        this.Text = "Import Questions from CSV";
+        this.Text = "Export Questions to CSV";
         this.ResumeLayout(false);
         this.PerformLayout();
     }
@@ -90,6 +90,6 @@ partial class ImportQuestionsForm
     private Label lblFilePath;
     private TextBox txtFilePath;
     private Button btnBrowse;
-    private Button btnImport;
+    private Button btnExport;
     private Button btnCancel;
 }

@@ -2,7 +2,7 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Core.Database;
 using System.Text;
 
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 /// <summary>
 /// Form for exporting questions to CSV files
@@ -24,10 +24,27 @@ public partial class ExportQuestionsForm : Form
         {
             Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
             Title = "Save Questions as CSV",
-            DefaultExt = "csv"
+            DefaultExt = "csv",
+            RestoreDirectory = true
         };
 
-        if (saveFileDialog.ShowDialog() == DialogResult.OK)
+        // Run on separate thread to avoid modal deadlock that can freeze the UI
+        DialogResult result = DialogResult.Cancel;
+        var thread = new System.Threading.Thread(() =>
+        {
+            result = saveFileDialog.ShowDialog();
+        });
+        thread.SetApartmentState(System.Threading.ApartmentState.STA);
+        thread.Start();
+        
+        // Keep UI responsive while waiting
+        while (thread.IsAlive)
+        {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(10);
+        }
+
+        if (result == DialogResult.OK)
         {
             txtFilePath.Text = saveFileDialog.FileName;
         }

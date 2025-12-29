@@ -2,7 +2,7 @@ using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Helpers;
 
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 /// <summary>
 /// Form for editing existing FFF questions

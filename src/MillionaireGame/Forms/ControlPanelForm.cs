@@ -3907,7 +3907,7 @@ public partial class ControlPanelForm : Form
 
     private void QuestionsEditorToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        var editorForm = new QuestionEditor.Forms.QuestionEditorMainForm();
+        var editorForm = new Forms.QuestionEditor.QuestionEditorMainForm();
         editorForm.Show();
     }
 

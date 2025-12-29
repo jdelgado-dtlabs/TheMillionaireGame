@@ -1,4 +1,4 @@
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 partial class QuestionEditorMainForm
 {

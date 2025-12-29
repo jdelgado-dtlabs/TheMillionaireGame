@@ -48,8 +48,8 @@ New-Item -ItemType Directory -Path "src/MillionaireGame/Forms/QuestionEditor" -F
 ### Step 2: Move Form Files
 **Time**: 15 minutes
 
-- [ ] Move all 6 forms (.cs and .Designer.cs files) from `MillionaireGame.QuestionEditor/Forms/` to `MillionaireGame/Forms/QuestionEditor/`
-- [ ] Move `Program.cs` if needed (likely can be deleted since editor is launched from Control Panel)
+- [x] Move all 6 forms (.cs and .Designer.cs files) from `MillionaireGame.QuestionEditor/Forms/` to `MillionaireGame/Forms/QuestionEditor/`
+- [x] Move `Program.cs` if needed (likely can be deleted since editor is launched from Control Panel)
 
 **Files to Move**:
 ```
@@ -73,9 +73,9 @@ Get-ChildItem "$source/*.cs" | Move-Item -Destination $dest
 ### Step 3: Update Namespaces
 **Time**: 20 minutes
 
-- [ ] Update namespace in all moved files from `QuestionEditor.Forms` to `MillionaireGame.Forms.QuestionEditor`
-- [ ] Update using statements in moved files
-- [ ] Fix any Core references (should work since MillionaireGame already references Core)
+- [x] Update namespace in all moved files from `QuestionEditor.Forms` to `MillionaireGame.Forms.QuestionEditor`
+- [x] Update using statements in moved files
+- [x] Fix any Core references (should work since MillionaireGame already references Core)
 
 **Search and Replace**:
 ```
@@ -91,10 +91,10 @@ NEW: using MillionaireGame.Forms.QuestionEditor;
 ### Step 4: Update Control Panel Integration
 **Time**: 10 minutes
 
-- [ ] Update ControlPanelForm.cs line 3910
-- [ ] Change `new QuestionEditor.Forms.QuestionEditorMainForm()` to `new Forms.QuestionEditor.QuestionEditorMainForm()`
-- [ ] Update using statements in ControlPanelForm.cs
-- [ ] Remove any project references to QuestionEditor
+- [x] Update ControlPanelForm.cs line 3910
+- [x] Change `new QuestionEditor.Forms.QuestionEditorMainForm()` to `new Forms.QuestionEditor.QuestionEditorMainForm()`
+- [x] Update using statements in ControlPanelForm.cs
+- [x] Remove any project references to QuestionEditor
 
 **File**: `src/MillionaireGame/Forms/ControlPanelForm.cs`
 
@@ -112,10 +112,10 @@ var editorForm = new Forms.QuestionEditor.QuestionEditorMainForm();
 ### Step 5: Update Project Files
 **Time**: 15 minutes
 
-- [ ] Add moved forms to `MillionaireGame.csproj` (if not auto-included)
-- [ ] Remove `MillionaireGame.QuestionEditor` project from solution
-- [ ] Delete `MillionaireGame.QuestionEditor` folder
-- [ ] Remove project reference from any projects that reference it
+- [x] Add moved forms to `MillionaireGame.csproj` (if not auto-included)
+- [x] Remove `MillionaireGame.QuestionEditor` project from solution
+- [x] Delete `MillionaireGame.QuestionEditor` folder
+- [x] Remove project reference from any projects that reference it
 
 **Solution File Changes**:
 - Remove project entry for `MillionaireGame.QuestionEditor` from `TheMillionaireGame.sln`
@@ -127,28 +127,29 @@ var editorForm = new Forms.QuestionEditor.QuestionEditorMainForm();
 **Time**: 30 minutes
 
 **Build Tests**:
-- [ ] `dotnet build TheMillionaireGame.sln` - Verify no errors
-- [ ] Check that only 3 projects build: Core, MillionaireGame, Web
-- [ ] Verify output only contains MillionaireGame.exe (no separate editor executable)
+- [x] `dotnet build TheMillionaireGame.sln` - Verify no errors
+- [x] Check that only 3 projects build: Core, MillionaireGame, Web
+- [x] Verify output only contains MillionaireGame.exe (no separate editor executable)
 
 **Functional Tests**:
-- [ ] Launch MillionaireGame
-- [ ] Open Question Editor from Control Panel menu
-- [ ] Verify main editor window opens
-- [ ] Test Add Question functionality
-- [ ] Test Edit Question functionality
-- [ ] Test Delete Question functionality
-- [ ] Test CSV Import (valid and invalid files)
-- [ ] Test CSV Export with various question sets
-- [ ] Test FFF Question editing
-- [ ] Verify all database operations work correctly
-- [ ] Check for any namespace-related errors
+- [x] Launch MillionaireGame
+- [x] Open Question Editor from Control Panel menu
+- [x] Verify main editor window opens
+- [x] Test Add Question functionality
+- [x] Test Edit Question functionality
+- [x] Test Delete Question functionality
+- [x] Test CSV Import (valid and invalid files)
+- [x] Test CSV Export with various question sets
+- [x] Test FFF Question editing
+- [x] Verify all database operations work correctly
+- [x] Check for any namespace-related errors
+- [x] **BONUS**: Fixed file browser freeze bug in Import/Export forms
 
 **Edge Cases**:
-- [ ] Empty database
-- [ ] Large question sets (100+ questions)
-- [ ] Special characters in questions/answers
-- [ ] CSV with malformed data
+- [x] Empty database
+- [x] Large question sets (100+ questions)
+- [x] Special characters in questions/answers
+- [x] CSV with malformed data
 
 ---
 

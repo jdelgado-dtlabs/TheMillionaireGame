@@ -2,73 +2,36 @@ using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Helpers;
 
-namespace MillionaireGame.QuestionEditor.Forms;
+namespace MillionaireGame.Forms.QuestionEditor;
 
 /// <summary>
-/// Form for editing existing regular questions
+/// Form for adding new regular questions
 /// </summary>
-public partial class EditQuestionForm : Form
+public partial class AddQuestionForm : Form
 {
     private readonly string _connectionString;
     private readonly QuestionRepository _repository;
-    private readonly Question _question;
 
-    public EditQuestionForm(string connectionString, Question question)
+    public AddQuestionForm(string connectionString)
     {
         InitializeComponent();
         IconHelper.ApplyToForm(this);
         _connectionString = connectionString;
         _repository = new QuestionRepository(_connectionString);
-        _question = question;
     }
 
-    private void EditQuestionForm_Load(object sender, EventArgs e)
+    private void AddQuestionForm_Load(object sender, EventArgs e)
     {
         // Populate level dropdown
         for (int i = 1; i <= 15; i++)
         {
             cmbLevel.Items.Add(i);
         }
+        cmbLevel.SelectedIndex = 0;
 
         // Populate difficulty dropdown
         cmbDifficultyType.Items.AddRange(new object[] { "Easy", "Medium", "Hard" });
-
-        // Load question data
-        txtQuestion.Text = _question.QuestionText;
-        
-        // Determine which answer is correct and load accordingly
-        if (_question.CorrectAnswer == "A")
-        {
-            txtCorrectAnswer.Text = _question.AnswerA;
-            txtWrong1.Text = _question.AnswerB;
-            txtWrong2.Text = _question.AnswerC;
-            txtWrong3.Text = _question.AnswerD;
-        }
-        else if (_question.CorrectAnswer == "B")
-        {
-            txtCorrectAnswer.Text = _question.AnswerB;
-            txtWrong1.Text = _question.AnswerA;
-            txtWrong2.Text = _question.AnswerC;
-            txtWrong3.Text = _question.AnswerD;
-        }
-        else if (_question.CorrectAnswer == "C")
-        {
-            txtCorrectAnswer.Text = _question.AnswerC;
-            txtWrong1.Text = _question.AnswerA;
-            txtWrong2.Text = _question.AnswerB;
-            txtWrong3.Text = _question.AnswerD;
-        }
-        else // D
-        {
-            txtCorrectAnswer.Text = _question.AnswerD;
-            txtWrong1.Text = _question.AnswerA;
-            txtWrong2.Text = _question.AnswerB;
-            txtWrong3.Text = _question.AnswerC;
-        }
-        
-        cmbLevel.SelectedItem = _question.Level;
-        cmbDifficultyType.SelectedItem = _question.DifficultyType.ToString();
-        chkUsed.Checked = _question.Used;
+        cmbDifficultyType.SelectedIndex = 0;
     }
 
     private async void btnSave_Click(object sender, EventArgs e)
@@ -78,22 +41,22 @@ public partial class EditQuestionForm : Form
 
         try
         {
-            _question.QuestionText = txtQuestion.Text.Trim();
-            
-            // Keep the same correct answer position, just update the values
-            _question.AnswerA = txtWrong1.Text.Trim();
-            _question.AnswerB = txtWrong2.Text.Trim();
-            _question.AnswerC = txtCorrectAnswer.Text.Trim();
-            _question.AnswerD = txtWrong3.Text.Trim();
-            _question.CorrectAnswer = "C";  // Always C for simplicity
-            
-            _question.Level = (int)cmbLevel.SelectedItem;
-            _question.DifficultyType = (DifficultyType)Enum.Parse(typeof(DifficultyType), cmbDifficultyType.SelectedItem.ToString() ?? "Specific");
-            _question.Used = chkUsed.Checked;
+            var question = new Question
+            {
+                QuestionText = txtQuestion.Text.Trim(),
+                AnswerA = txtWrong1.Text.Trim(),
+                AnswerB = txtWrong2.Text.Trim(),
+                AnswerC = txtCorrectAnswer.Text.Trim(),  // Correct answer as C
+                AnswerD = txtWrong3.Text.Trim(),
+                CorrectAnswer = "C",  // Always C for simplicity
+                Level = (int)cmbLevel.SelectedItem,
+                DifficultyType = DifficultyType.Specific,
+                Used = false
+            };
 
-            await _repository.UpdateQuestionAsync(_question);
+            await _repository.AddQuestionAsync(question);
             
-            MessageBox.Show("Question updated successfully!", "Success",
+            MessageBox.Show("Question added successfully!", "Success",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             
             DialogResult = DialogResult.OK;
@@ -101,7 +64,7 @@ public partial class EditQuestionForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error updating question: {ex.Message}", "Error",
+            MessageBox.Show($"Error adding question: {ex.Message}", "Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }

@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MillionaireGame.Core\MillionaireGame.Core.csproj" />
-    <ProjectReference Include="..\MillionaireGame.QuestionEditor\MillionaireGame.QuestionEditor.csproj" />
     <ProjectReference Include="..\MillionaireGame.Web\MillionaireGame.Web.csproj" />
   </ItemGroup>
 
