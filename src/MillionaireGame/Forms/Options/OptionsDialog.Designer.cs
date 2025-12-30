@@ -82,19 +82,15 @@ namespace MillionaireGame.Forms.Options
             numSafetyNet1 = new NumericUpDown();
             lblSafetyNet2 = new Label();
             lblSafetyNet1 = new Label();
-            grpLifeline4 = new GroupBox();
             cmbLifeline4Availability = new ComboBox();
             cmbLifeline4Type = new ComboBox();
             lblLifeline4 = new Label();
-            grpLifeline3 = new GroupBox();
             cmbLifeline3Availability = new ComboBox();
             cmbLifeline3Type = new ComboBox();
             lblLifeline3 = new Label();
-            grpLifeline2 = new GroupBox();
             cmbLifeline2Availability = new ComboBox();
             cmbLifeline2Type = new ComboBox();
             lblLifeline2 = new Label();
-            grpLifeline1 = new GroupBox();
             cmbLifeline1Availability = new ComboBox();
             cmbLifeline1Type = new ComboBox();
             lblLifeline1 = new Label();
@@ -130,7 +126,6 @@ namespace MillionaireGame.Forms.Options
             lblMusicGain = new Label();
             lblMusicGainValue = new Label();
             chkEnableLimiter = new CheckBox();
-            grpSoundPack = new GroupBox();
             dgvSoundPackInfo = new DataGridView();
             txtSearchSounds = new TextBox();
             lblSearchSounds = new Label();
@@ -156,14 +151,9 @@ namespace MillionaireGame.Forms.Options
             tabBroadcast.SuspendLayout();
             grpBroadcast.SuspendLayout();
             tabLifelines.SuspendLayout();
-            grpLifeline4.SuspendLayout();
-            grpLifeline3.SuspendLayout();
-            grpLifeline2.SuspendLayout();
-            grpLifeline1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
             tabAudio.SuspendLayout();
-            grpSoundPack.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvSoundPackInfo).BeginInit();
             grpSilenceDetection.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trackBarSilenceThreshold).BeginInit();
@@ -192,7 +182,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
             tabControl.SelectedIndex = 0;
-            tabControl.Size = new Size(660, 487);
+            tabControl.Size = new Size(660, 466);
             tabControl.TabIndex = 0;
             // 
             // tabGeneral
@@ -203,7 +193,7 @@ namespace MillionaireGame.Forms.Options
             tabGeneral.Location = new Point(4, 24);
             tabGeneral.Name = "tabGeneral";
             tabGeneral.Padding = new Padding(3);
-            tabGeneral.Size = new Size(652, 459);
+            tabGeneral.Size = new Size(652, 438);
             tabGeneral.TabIndex = 0;
             tabGeneral.Text = "Screens";
             tabGeneral.UseVisualStyleBackColor = true;
@@ -215,7 +205,7 @@ namespace MillionaireGame.Forms.Options
             grpPreviews.Controls.Add(chkEnablePreviewAutomatically);
             grpPreviews.Location = new Point(16, 16);
             grpPreviews.Name = "grpPreviews";
-            grpPreviews.Size = new Size(570, 90);
+            grpPreviews.Size = new Size(620, 90);
             grpPreviews.TabIndex = 0;
             grpPreviews.TabStop = false;
             grpPreviews.Text = "Previews";
@@ -286,7 +276,7 @@ namespace MillionaireGame.Forms.Options
             grpMultipleMonitorControl.Controls.Add(chkFullScreenHostScreen);
             grpMultipleMonitorControl.Location = new Point(16, 112);
             grpMultipleMonitorControl.Name = "grpMultipleMonitorControl";
-            grpMultipleMonitorControl.Size = new Size(570, 250);
+            grpMultipleMonitorControl.Size = new Size(620, 220);
             grpMultipleMonitorControl.TabIndex = 1;
             grpMultipleMonitorControl.TabStop = false;
             grpMultipleMonitorControl.Text = "Multiple Monitor Control";
@@ -386,9 +376,9 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpConsole
             // 
-            grpConsole.Controls.Add(chkShowConsole);            grpConsole.Controls.Add(chkShowWebServiceConsole);            grpConsole.Location = new Point(16, 370);
+            grpConsole.Controls.Add(chkShowConsole);            grpConsole.Controls.Add(chkShowWebServiceConsole);            grpConsole.Location = new Point(16, 340);
             grpConsole.Name = "grpConsole";
-            grpConsole.Size = new Size(570, 60);
+            grpConsole.Size = new Size(620, 90);
             grpConsole.TabIndex = 2;
             grpConsole.TabStop = false;
             grpConsole.Text = "Console";
@@ -419,7 +409,7 @@ namespace MillionaireGame.Forms.Options
             tabBroadcast.Location = new Point(4, 24);
             tabBroadcast.Name = "tabBroadcast";
             tabBroadcast.Padding = new Padding(3);
-            tabBroadcast.Size = new Size(652, 459);
+            tabBroadcast.Size = new Size(652, 438);
             tabBroadcast.TabIndex = 1;
             tabBroadcast.Text = "Broadcast";
             tabBroadcast.UseVisualStyleBackColor = true;
@@ -435,205 +425,165 @@ namespace MillionaireGame.Forms.Options
             // 
             // tabLifelines
             // 
-            tabLifelines.Controls.Add(grpLifeline4);
-            tabLifelines.Controls.Add(grpLifeline3);
-            tabLifelines.Controls.Add(grpLifeline2);
-            tabLifelines.Controls.Add(grpLifeline1);
+            tabLifelines.Controls.Add(cmbLifeline4Availability);
+            tabLifelines.Controls.Add(cmbLifeline4Type);
+            tabLifelines.Controls.Add(lblLifeline4);
+            tabLifelines.Controls.Add(cmbLifeline3Availability);
+            tabLifelines.Controls.Add(cmbLifeline3Type);
+            tabLifelines.Controls.Add(lblLifeline3);
+            tabLifelines.Controls.Add(cmbLifeline2Availability);
+            tabLifelines.Controls.Add(cmbLifeline2Type);
+            tabLifelines.Controls.Add(lblLifeline2);
+            tabLifelines.Controls.Add(cmbLifeline1Availability);
+            tabLifelines.Controls.Add(cmbLifeline1Type);
+            tabLifelines.Controls.Add(lblLifeline1);
             tabLifelines.Controls.Add(numTotalLifelines);
             tabLifelines.Controls.Add(lblTotalLifelines);
             tabLifelines.Location = new Point(4, 24);
             tabLifelines.Name = "tabLifelines";
             tabLifelines.Padding = new Padding(3);
-            tabLifelines.Size = new Size(652, 459);
+            tabLifelines.Size = new Size(652, 518);
             tabLifelines.TabIndex = 1;
             tabLifelines.Text = "Lifelines";
             tabLifelines.UseVisualStyleBackColor = true;
             // 
-            // tabMoneyTree
+            // lblLifeline1
             // 
-            tabMoneyTree.Location = new Point(4, 24);
-            tabMoneyTree.Name = "tabMoneyTree";
-            tabMoneyTree.Padding = new Padding(3);
-            tabMoneyTree.Size = new Size(652, 459);
-            tabMoneyTree.TabIndex = 3;
-            tabMoneyTree.Text = "Money Tree";
-            tabMoneyTree.UseVisualStyleBackColor = true;
-            // 
-            // grpLifeline4
-            // 
-            grpLifeline4.Controls.Add(cmbLifeline4Availability);
-            grpLifeline4.Controls.Add(cmbLifeline4Type);
-            grpLifeline4.Controls.Add(lblLifeline4);
-            grpLifeline4.Location = new Point(336, 236);
-            grpLifeline4.Name = "grpLifeline4";
-            grpLifeline4.Size = new Size(300, 200);
-            grpLifeline4.TabIndex = 5;
-            grpLifeline4.TabStop = false;
-            grpLifeline4.Text = "Lifeline 4";
-            // 
-            // cmbLifeline4Availability
-            // 
-            cmbLifeline4Availability.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline4Availability.FormattingEnabled = true;
-            cmbLifeline4Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
-            cmbLifeline4Availability.Location = new Point(20, 65);
-            cmbLifeline4Availability.Name = "cmbLifeline4Availability";
-            cmbLifeline4Availability.Size = new Size(260, 23);
-            cmbLifeline4Availability.TabIndex = 2;
-            cmbLifeline4Availability.SelectedIndex = 0;
-            cmbLifeline4Availability.SelectedIndexChanged += Control_Changed;
-            // 
-            // cmbLifeline4Type
-            // 
-            cmbLifeline4Type.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline4Type.FormattingEnabled = true;
-            cmbLifeline4Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
-            cmbLifeline4Type.Location = new Point(80, 25);
-            cmbLifeline4Type.Name = "cmbLifeline4Type";
-            cmbLifeline4Type.Size = new Size(200, 23);
-            cmbLifeline4Type.TabIndex = 1;
-            cmbLifeline4Type.SelectedIndexChanged += Control_Changed;
-            // 
-            // lblLifeline4
-            // 
-            lblLifeline4.AutoSize = true;
-            lblLifeline4.Location = new Point(20, 28);
-            lblLifeline4.Name = "lblLifeline4";
-            lblLifeline4.Size = new Size(34, 15);
-            lblLifeline4.TabIndex = 0;
-            lblLifeline4.Text = "Type:";
-            // 
-            // grpLifeline3
-            // 
-            grpLifeline3.Controls.Add(cmbLifeline3Availability);
-            grpLifeline3.Controls.Add(cmbLifeline3Type);
-            grpLifeline3.Controls.Add(lblLifeline3);
-            grpLifeline3.Location = new Point(16, 236);
-            grpLifeline3.Name = "grpLifeline3";
-            grpLifeline3.Size = new Size(300, 200);
-            grpLifeline3.TabIndex = 4;
-            grpLifeline3.TabStop = false;
-            grpLifeline3.Text = "Lifeline 3";
-            // 
-            // cmbLifeline3Availability
-            // 
-            cmbLifeline3Availability.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline3Availability.FormattingEnabled = true;
-            cmbLifeline3Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
-            cmbLifeline3Availability.Location = new Point(20, 65);
-            cmbLifeline3Availability.Name = "cmbLifeline3Availability";
-            cmbLifeline3Availability.Size = new Size(260, 23);
-            cmbLifeline3Availability.TabIndex = 2;
-            cmbLifeline3Availability.SelectedIndex = 0;
-            cmbLifeline3Availability.SelectedIndexChanged += Control_Changed;
-            // 
-            // cmbLifeline3Type
-            // 
-            cmbLifeline3Type.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline3Type.FormattingEnabled = true;
-            cmbLifeline3Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
-            cmbLifeline3Type.Location = new Point(80, 25);
-            cmbLifeline3Type.Name = "cmbLifeline3Type";
-            cmbLifeline3Type.Size = new Size(200, 23);
-            cmbLifeline3Type.TabIndex = 1;
-            cmbLifeline3Type.SelectedIndexChanged += Control_Changed;
-            // 
-            // lblLifeline3
-            // 
-            lblLifeline3.AutoSize = true;
-            lblLifeline3.Location = new Point(20, 28);
-            lblLifeline3.Name = "lblLifeline3";
-            lblLifeline3.Size = new Size(34, 15);
-            lblLifeline3.TabIndex = 0;
-            lblLifeline3.Text = "Type:";
-            // 
-            // grpLifeline2
-            // 
-            grpLifeline2.Controls.Add(cmbLifeline2Availability);
-            grpLifeline2.Controls.Add(cmbLifeline2Type);
-            grpLifeline2.Controls.Add(lblLifeline2);
-            grpLifeline2.Location = new Point(336, 56);
-            grpLifeline2.Name = "grpLifeline2";
-            grpLifeline2.Size = new Size(300, 160);
-            grpLifeline2.TabIndex = 3;
-            grpLifeline2.TabStop = false;
-            grpLifeline2.Text = "Lifeline 2";
-            // 
-            // cmbLifeline2Availability
-            // 
-            cmbLifeline2Availability.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline2Availability.FormattingEnabled = true;
-            cmbLifeline2Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
-            cmbLifeline2Availability.Location = new Point(20, 55);
-            cmbLifeline2Availability.Name = "cmbLifeline2Availability";
-            cmbLifeline2Availability.Size = new Size(260, 23);
-            cmbLifeline2Availability.TabIndex = 2;
-            cmbLifeline2Availability.SelectedIndex = 0;
-            cmbLifeline2Availability.SelectedIndexChanged += Control_Changed;
-            // 
-            // cmbLifeline2Type
-            // 
-            cmbLifeline2Type.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline2Type.FormattingEnabled = true;
-            cmbLifeline2Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
-            cmbLifeline2Type.Location = new Point(80, 25);
-            cmbLifeline2Type.Name = "cmbLifeline2Type";
-            cmbLifeline2Type.Size = new Size(200, 23);
-            cmbLifeline2Type.TabIndex = 1;
-            cmbLifeline2Type.SelectedIndexChanged += Control_Changed;
-            // 
-            // lblLifeline2
-            // 
-            lblLifeline2.AutoSize = true;
-            lblLifeline2.Location = new Point(20, 28);
-            lblLifeline2.Name = "lblLifeline2";
-            lblLifeline2.Size = new Size(34, 15);
-            lblLifeline2.TabIndex = 0;
-            lblLifeline2.Text = "Type:";
-            // 
-            // grpLifeline1
-            // 
-            grpLifeline1.Controls.Add(cmbLifeline1Availability);
-            grpLifeline1.Controls.Add(cmbLifeline1Type);
-            grpLifeline1.Controls.Add(lblLifeline1);
-            grpLifeline1.Location = new Point(16, 56);
-            grpLifeline1.Name = "grpLifeline1";
-            grpLifeline1.Size = new Size(300, 160);
-            grpLifeline1.TabIndex = 2;
-            grpLifeline1.TabStop = false;
-            grpLifeline1.Text = "Lifeline 1";
-            // 
-            // cmbLifeline1Availability
-            // 
-            cmbLifeline1Availability.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbLifeline1Availability.FormattingEnabled = true;
-            cmbLifeline1Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
-            cmbLifeline1Availability.Location = new Point(20, 55);
-            cmbLifeline1Availability.Name = "cmbLifeline1Availability";
-            cmbLifeline1Availability.Size = new Size(260, 23);
-            cmbLifeline1Availability.TabIndex = 2;
-            cmbLifeline1Availability.SelectedIndex = 0;
-            cmbLifeline1Availability.SelectedIndexChanged += Control_Changed;
+            lblLifeline1.AutoSize = true;
+            lblLifeline1.Location = new Point(16, 66);
+            lblLifeline1.Name = "lblLifeline1";
+            lblLifeline1.Size = new Size(68, 15);
+            lblLifeline1.TabIndex = 2;
+            lblLifeline1.Text = "Lifeline 1:";
             // 
             // cmbLifeline1Type
             // 
             cmbLifeline1Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLifeline1Type.FormattingEnabled = true;
             cmbLifeline1Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
-            cmbLifeline1Type.Location = new Point(80, 25);
+            cmbLifeline1Type.Location = new Point(100, 63);
             cmbLifeline1Type.Name = "cmbLifeline1Type";
-            cmbLifeline1Type.Size = new Size(200, 23);
-            cmbLifeline1Type.TabIndex = 1;
+            cmbLifeline1Type.Size = new Size(250, 23);
+            cmbLifeline1Type.TabIndex = 3;
             cmbLifeline1Type.SelectedIndexChanged += Control_Changed;
             // 
-            // lblLifeline1
+            // cmbLifeline1Availability
             // 
-            lblLifeline1.AutoSize = true;
-            lblLifeline1.Location = new Point(20, 28);
-            lblLifeline1.Name = "lblLifeline1";
-            lblLifeline1.Size = new Size(34, 15);
-            lblLifeline1.TabIndex = 0;
-            lblLifeline1.Text = "Type:";
+            cmbLifeline1Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline1Availability.FormattingEnabled = true;
+            cmbLifeline1Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline1Availability.Location = new Point(360, 63);
+            cmbLifeline1Availability.Name = "cmbLifeline1Availability";
+            cmbLifeline1Availability.Size = new Size(250, 23);
+            cmbLifeline1Availability.TabIndex = 4;
+            cmbLifeline1Availability.SelectedIndex = 0;
+            cmbLifeline1Availability.SelectedIndexChanged += Control_Changed;
+            // 
+            // lblLifeline2
+            // 
+            lblLifeline2.AutoSize = true;
+            lblLifeline2.Location = new Point(16, 101);
+            lblLifeline2.Name = "lblLifeline2";
+            lblLifeline2.Size = new Size(68, 15);
+            lblLifeline2.TabIndex = 5;
+            lblLifeline2.Text = "Lifeline 2:";
+            // 
+            // cmbLifeline2Type
+            // 
+            cmbLifeline2Type.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline2Type.FormattingEnabled = true;
+            cmbLifeline2Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
+            cmbLifeline2Type.Location = new Point(100, 98);
+            cmbLifeline2Type.Name = "cmbLifeline2Type";
+            cmbLifeline2Type.Size = new Size(250, 23);
+            cmbLifeline2Type.TabIndex = 6;
+            cmbLifeline2Type.SelectedIndexChanged += Control_Changed;
+            // 
+            // cmbLifeline2Availability
+            // 
+            cmbLifeline2Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline2Availability.FormattingEnabled = true;
+            cmbLifeline2Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline2Availability.Location = new Point(360, 98);
+            cmbLifeline2Availability.Name = "cmbLifeline2Availability";
+            cmbLifeline2Availability.Size = new Size(250, 23);
+            cmbLifeline2Availability.TabIndex = 7;
+            cmbLifeline2Availability.SelectedIndex = 0;
+            cmbLifeline2Availability.SelectedIndexChanged += Control_Changed;
+            // 
+            // lblLifeline3
+            // 
+            lblLifeline3.AutoSize = true;
+            lblLifeline3.Location = new Point(16, 136);
+            lblLifeline3.Name = "lblLifeline3";
+            lblLifeline3.Size = new Size(68, 15);
+            lblLifeline3.TabIndex = 8;
+            lblLifeline3.Text = "Lifeline 3:";
+            // 
+            // cmbLifeline3Type
+            // 
+            cmbLifeline3Type.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline3Type.FormattingEnabled = true;
+            cmbLifeline3Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
+            cmbLifeline3Type.Location = new Point(100, 133);
+            cmbLifeline3Type.Name = "cmbLifeline3Type";
+            cmbLifeline3Type.Size = new Size(250, 23);
+            cmbLifeline3Type.TabIndex = 9;
+            cmbLifeline3Type.SelectedIndexChanged += Control_Changed;
+            // 
+            // cmbLifeline3Availability
+            // 
+            cmbLifeline3Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline3Availability.FormattingEnabled = true;
+            cmbLifeline3Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline3Availability.Location = new Point(360, 133);
+            cmbLifeline3Availability.Name = "cmbLifeline3Availability";
+            cmbLifeline3Availability.Size = new Size(250, 23);
+            cmbLifeline3Availability.TabIndex = 10;
+            cmbLifeline3Availability.SelectedIndex = 0;
+            cmbLifeline3Availability.SelectedIndexChanged += Control_Changed;
+            // 
+            // lblLifeline4
+            // 
+            lblLifeline4.AutoSize = true;
+            lblLifeline4.Location = new Point(16, 171);
+            lblLifeline4.Name = "lblLifeline4";
+            lblLifeline4.Size = new Size(68, 15);
+            lblLifeline4.TabIndex = 11;
+            lblLifeline4.Text = "Lifeline 4:";
+            // 
+            // cmbLifeline4Type
+            // 
+            cmbLifeline4Type.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline4Type.FormattingEnabled = true;
+            cmbLifeline4Type.Items.AddRange(new object[] { "50:50", "Phone a Friend", "Ask the Audience", "Switch the Question", "Ask the Host", "Double Dip" });
+            cmbLifeline4Type.Location = new Point(100, 168);
+            cmbLifeline4Type.Name = "cmbLifeline4Type";
+            cmbLifeline4Type.Size = new Size(250, 23);
+            cmbLifeline4Type.TabIndex = 12;
+            cmbLifeline4Type.SelectedIndexChanged += Control_Changed;
+            // 
+            // cmbLifeline4Availability
+            // 
+            cmbLifeline4Availability.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLifeline4Availability.FormattingEnabled = true;
+            cmbLifeline4Availability.Items.AddRange(new object[] { "Always Available", "After Question 5", "After Question 10", "In Risk Mode Only" });
+            cmbLifeline4Availability.Location = new Point(360, 168);
+            cmbLifeline4Availability.Name = "cmbLifeline4Availability";
+            cmbLifeline4Availability.Size = new Size(250, 23);
+            cmbLifeline4Availability.TabIndex = 13;
+            cmbLifeline4Availability.SelectedIndex = 0;
+            cmbLifeline4Availability.SelectedIndexChanged += Control_Changed;
+            // 
+            // tabMoneyTree
+            // 
+            tabMoneyTree.Location = new Point(4, 24);
+            tabMoneyTree.Name = "tabMoneyTree";
+            tabMoneyTree.Padding = new Padding(3);
+            tabMoneyTree.Size = new Size(652, 438);
+            tabMoneyTree.TabIndex = 3;
+            tabMoneyTree.Text = "Money Tree";
+            tabMoneyTree.UseVisualStyleBackColor = true;
             // 
             // numTotalLifelines
             // 
@@ -675,37 +625,27 @@ namespace MillionaireGame.Forms.Options
             tabControlSounds.Location = new Point(3, 3);
             tabControlSounds.Name = "tabControlSounds";
             tabControlSounds.SelectedIndex = 0;
-            tabControlSounds.Size = new Size(646, 453);
+            tabControlSounds.Size = new Size(646, 432);
             tabControlSounds.TabIndex = 0;
             // 
             // tabSoundpack
             // 
-            tabSoundpack.Controls.Add(grpSoundPack);
+            tabSoundpack.Controls.Add(btnPlaySelected);
+            tabSoundpack.Controls.Add(lblSearchSounds);
+            tabSoundpack.Controls.Add(txtSearchSounds);
+            tabSoundpack.Controls.Add(dgvSoundPackInfo);
+            tabSoundpack.Controls.Add(btnExportExample);
+            tabSoundpack.Controls.Add(btnRemovePack);
+            tabSoundpack.Controls.Add(btnImportPack);
+            tabSoundpack.Controls.Add(cmbSoundPack);
+            tabSoundpack.Controls.Add(lblSoundPack);
             tabSoundpack.Location = new Point(4, 24);
             tabSoundpack.Name = "tabSoundpack";
             tabSoundpack.Padding = new Padding(3);
-            tabSoundpack.Size = new Size(638, 425);
+            tabSoundpack.Size = new Size(638, 404);
             tabSoundpack.TabIndex = 0;
             tabSoundpack.Text = "Soundpack";
             tabSoundpack.UseVisualStyleBackColor = true;
-            // 
-            // grpSoundPack
-            // 
-            grpSoundPack.Controls.Add(btnPlaySelected);
-            grpSoundPack.Controls.Add(lblSearchSounds);
-            grpSoundPack.Controls.Add(txtSearchSounds);
-            grpSoundPack.Controls.Add(dgvSoundPackInfo);
-            grpSoundPack.Controls.Add(btnExportExample);
-            grpSoundPack.Controls.Add(btnRemovePack);
-            grpSoundPack.Controls.Add(btnImportPack);
-            grpSoundPack.Controls.Add(cmbSoundPack);
-            grpSoundPack.Controls.Add(lblSoundPack);
-            grpSoundPack.Location = new Point(16, 16);
-            grpSoundPack.Name = "grpSoundPack";
-            grpSoundPack.Size = new Size(620, 420);
-            grpSoundPack.TabIndex = 0;
-            grpSoundPack.TabStop = false;
-            grpSoundPack.Text = "Sound Pack";
             // 
             // tabAudio
             // 
@@ -716,7 +656,7 @@ namespace MillionaireGame.Forms.Options
             tabAudio.Location = new Point(4, 24);
             tabAudio.Name = "tabAudio";
             tabAudio.Padding = new Padding(3);
-            tabAudio.Size = new Size(638, 425);
+            tabAudio.Size = new Size(638, 404);
             tabAudio.TabIndex = 1;
             tabAudio.Text = "Audio Settings";
             tabAudio.UseVisualStyleBackColor = true;
@@ -1015,7 +955,7 @@ namespace MillionaireGame.Forms.Options
             tabMixer.Location = new Point(4, 24);
             tabMixer.Name = "tabMixer";
             tabMixer.Padding = new Padding(3);
-            tabMixer.Size = new Size(638, 425);
+            tabMixer.Size = new Size(638, 404);
             tabMixer.TabIndex = 1;
             tabMixer.Text = "Mixer";
             tabMixer.UseVisualStyleBackColor = true;
@@ -1071,7 +1011,7 @@ namespace MillionaireGame.Forms.Options
             // lblSoundPack
             // 
             lblSoundPack.AutoSize = true;
-            lblSoundPack.Location = new Point(16, 28);
+            lblSoundPack.Location = new Point(16, 16);
             lblSoundPack.Name = "lblSoundPack";
             lblSoundPack.Size = new Size(70, 15);
             lblSoundPack.TabIndex = 0;
@@ -1081,7 +1021,7 @@ namespace MillionaireGame.Forms.Options
             // 
             cmbSoundPack.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbSoundPack.FormattingEnabled = true;
-            cmbSoundPack.Location = new Point(90, 25);
+            cmbSoundPack.Location = new Point(90, 13);
             cmbSoundPack.Name = "cmbSoundPack";
             cmbSoundPack.Size = new Size(200, 23);
             cmbSoundPack.TabIndex = 1;
@@ -1089,7 +1029,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // btnImportPack
             // 
-            btnImportPack.Location = new Point(300, 24);
+            btnImportPack.Location = new Point(300, 12);
             btnImportPack.Name = "btnImportPack";
             btnImportPack.Size = new Size(90, 25);
             btnImportPack.TabIndex = 2;
@@ -1099,7 +1039,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // btnRemovePack
             // 
-            btnRemovePack.Location = new Point(400, 24);
+            btnRemovePack.Location = new Point(400, 12);
             btnRemovePack.Name = "btnRemovePack";
             btnRemovePack.Size = new Size(90, 25);
             btnRemovePack.TabIndex = 3;
@@ -1109,7 +1049,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // btnExportExample
             // 
-            btnExportExample.Location = new Point(500, 24);
+            btnExportExample.Location = new Point(500, 12);
             btnExportExample.Name = "btnExportExample";
             btnExportExample.Size = new Size(110, 25);
             btnExportExample.TabIndex = 4;
@@ -1120,7 +1060,7 @@ namespace MillionaireGame.Forms.Options
             // lblSearchSounds
             // 
             lblSearchSounds.AutoSize = true;
-            lblSearchSounds.Location = new Point(16, 63);
+            lblSearchSounds.Location = new Point(16, 51);
             lblSearchSounds.Name = "lblSearchSounds";
             lblSearchSounds.Size = new Size(45, 15);
             lblSearchSounds.TabIndex = 5;
@@ -1128,7 +1068,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // txtSearchSounds
             // 
-            txtSearchSounds.Location = new Point(70, 60);
+            txtSearchSounds.Location = new Point(70, 48);
             txtSearchSounds.Name = "txtSearchSounds";
             txtSearchSounds.PlaceholderText = "Filter by key or filename...";
             txtSearchSounds.Size = new Size(400, 23);
@@ -1137,9 +1077,9 @@ namespace MillionaireGame.Forms.Options
             // 
             // btnPlaySelected
             // 
-            btnPlaySelected.Location = new Point(480, 59);
+            btnPlaySelected.Location = new Point(500, 47);
             btnPlaySelected.Name = "btnPlaySelected";
-            btnPlaySelected.Size = new Size(124, 25);
+            btnPlaySelected.Size = new Size(110, 25);
             btnPlaySelected.TabIndex = 7;
             btnPlaySelected.Text = "▶ Play Selected";
             btnPlaySelected.UseVisualStyleBackColor = true;
@@ -1153,7 +1093,7 @@ namespace MillionaireGame.Forms.Options
             dgvSoundPackInfo.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvSoundPackInfo.BackgroundColor = System.Drawing.SystemColors.Window;
             dgvSoundPackInfo.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvSoundPackInfo.Location = new Point(16, 95);
+            dgvSoundPackInfo.Location = new Point(16, 83);
             dgvSoundPackInfo.MultiSelect = false;
             dgvSoundPackInfo.Name = "dgvSoundPackInfo";
             dgvSoundPackInfo.ReadOnly = true;
@@ -1170,7 +1110,7 @@ namespace MillionaireGame.Forms.Options
             tabAudience.Location = new Point(4, 24);
             tabAudience.Name = "tabAudience";
             tabAudience.Padding = new Padding(3);
-            tabAudience.Size = new Size(652, 459);
+            tabAudience.Size = new Size(652, 438);
             tabAudience.TabIndex = 5;
             tabAudience.Text = "Audience";
             tabAudience.UseVisualStyleBackColor = true;
@@ -1189,7 +1129,7 @@ namespace MillionaireGame.Forms.Options
             grpAudienceServer.Controls.Add(lblServerStatus);
             grpAudienceServer.Location = new Point(16, 16);
             grpAudienceServer.Name = "grpAudienceServer";
-            grpAudienceServer.Size = new Size(620, 260);
+            grpAudienceServer.Size = new Size(615, 220);
             grpAudienceServer.TabIndex = 0;
             grpAudienceServer.TabStop = false;
             grpAudienceServer.Text = "Web Server Configuration";
@@ -1294,7 +1234,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // lblAudienceInfo
             // 
-            lblAudienceInfo.Location = new Point(16, 290);
+            lblAudienceInfo.Location = new Point(16, 250);
             lblAudienceInfo.Name = "lblAudienceInfo";
             lblAudienceInfo.Size = new Size(620, 150);
             lblAudienceInfo.TabIndex = 1;
@@ -1308,7 +1248,7 @@ namespace MillionaireGame.Forms.Options
             // // btnOK
             // 
             btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnOK.Location = new Point(416, 515);
+            btnOK.Location = new Point(416, 490);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(80, 30);
             btnOK.TabIndex = 1;
@@ -1319,7 +1259,7 @@ namespace MillionaireGame.Forms.Options
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.Location = new Point(502, 515);
+            btnCancel.Location = new Point(502, 490);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(80, 30);
             btnCancel.TabIndex = 2;
@@ -1333,7 +1273,7 @@ namespace MillionaireGame.Forms.Options
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(684, 561);
+            ClientSize = new Size(684, 540);
             Controls.Add(btnCancel);
             Controls.Add(btnOK);
             Controls.Add(tabControl);
@@ -1357,14 +1297,6 @@ namespace MillionaireGame.Forms.Options
             grpBroadcast.PerformLayout();
             tabLifelines.ResumeLayout(false);
             tabLifelines.PerformLayout();
-            grpLifeline4.ResumeLayout(false);
-            grpLifeline4.PerformLayout();
-            grpLifeline3.ResumeLayout(false);
-            grpLifeline3.PerformLayout();
-            grpLifeline2.ResumeLayout(false);
-            grpLifeline2.PerformLayout();
-            grpLifeline1.ResumeLayout(false);
-            grpLifeline1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).EndInit();
             tabSounds.ResumeLayout(false);
             tabControlSounds.ResumeLayout(false);
@@ -1388,7 +1320,6 @@ namespace MillionaireGame.Forms.Options
             tabMixer.PerformLayout();
             grpAudioDevice.ResumeLayout(false);
             grpAudioDevice.PerformLayout();
-            grpSoundPack.ResumeLayout(false);
             tabAudience.ResumeLayout(false);
             grpAudienceServer.ResumeLayout(false);
             grpAudienceServer.PerformLayout();
@@ -1452,23 +1383,18 @@ namespace MillionaireGame.Forms.Options
         private ComboBox cmbMonitorTV;
         private Button btnIdentifyMonitors;
         private NumericUpDown numTotalLifelines;
-        private GroupBox grpLifeline1;
         private Label lblLifeline1;
         private ComboBox cmbLifeline1Type;
         private ComboBox cmbLifeline1Availability;
-        private GroupBox grpLifeline2;
         private ComboBox cmbLifeline2Type;
         private Label lblLifeline2;
         private ComboBox cmbLifeline2Availability;
-        private GroupBox grpLifeline3;
         private ComboBox cmbLifeline3Type;
         private Label lblLifeline3;
         private ComboBox cmbLifeline3Availability;
-        private GroupBox grpLifeline4;
         private ComboBox cmbLifeline4Type;
         private Label lblLifeline4;
         private ComboBox cmbLifeline4Availability;
-        private GroupBox grpSoundPack;
         private Label lblSoundPack;
         private ComboBox cmbSoundPack;
         private Button btnImportPack;

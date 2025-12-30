@@ -227,10 +227,25 @@ public partial class OptionsDialog : Form
     {
         int total = (int)numTotalLifelines.Value;
         
-        grpLifeline1.Enabled = total >= 1;
-        grpLifeline2.Enabled = total >= 2;
-        grpLifeline3.Enabled = total >= 3;
-        grpLifeline4.Enabled = total >= 4;
+        // Enable/disable lifeline 1 controls
+        lblLifeline1.Enabled = total >= 1;
+        cmbLifeline1Type.Enabled = total >= 1;
+        cmbLifeline1Availability.Enabled = total >= 1;
+        
+        // Enable/disable lifeline 2 controls
+        lblLifeline2.Enabled = total >= 2;
+        cmbLifeline2Type.Enabled = total >= 2;
+        cmbLifeline2Availability.Enabled = total >= 2;
+        
+        // Enable/disable lifeline 3 controls
+        lblLifeline3.Enabled = total >= 3;
+        cmbLifeline3Type.Enabled = total >= 3;
+        cmbLifeline3Availability.Enabled = total >= 3;
+        
+        // Enable/disable lifeline 4 controls
+        lblLifeline4.Enabled = total >= 4;
+        cmbLifeline4Type.Enabled = total >= 4;
+        cmbLifeline4Availability.Enabled = total >= 4;
     }
 
     private void SetLifelineAvailability(ComboBox cmbAvailability, int availability)
@@ -505,10 +520,26 @@ public partial class OptionsDialog : Form
     private void UpdateLifelineGroupBoxStates()
     {
         int totalLifelines = (int)numTotalLifelines.Value;
-        grpLifeline1.Enabled = totalLifelines >= 1;
-        grpLifeline2.Enabled = totalLifelines >= 2;
-        grpLifeline3.Enabled = totalLifelines >= 3;
-        grpLifeline4.Enabled = totalLifelines >= 4;
+        
+        // Enable/disable lifeline 1 controls
+        lblLifeline1.Enabled = totalLifelines >= 1;
+        cmbLifeline1Type.Enabled = totalLifelines >= 1;
+        cmbLifeline1Availability.Enabled = totalLifelines >= 1;
+        
+        // Enable/disable lifeline 2 controls
+        lblLifeline2.Enabled = totalLifelines >= 2;
+        cmbLifeline2Type.Enabled = totalLifelines >= 2;
+        cmbLifeline2Availability.Enabled = totalLifelines >= 2;
+        
+        // Enable/disable lifeline 3 controls
+        lblLifeline3.Enabled = totalLifelines >= 3;
+        cmbLifeline3Type.Enabled = totalLifelines >= 3;
+        cmbLifeline3Availability.Enabled = totalLifelines >= 3;
+        
+        // Enable/disable lifeline 4 controls
+        lblLifeline4.Enabled = totalLifelines >= 4;
+        cmbLifeline4Type.Enabled = totalLifelines >= 4;
+        cmbLifeline4Availability.Enabled = totalLifelines >= 4;
     }
 
     // Event handler for total lifelines value changed
@@ -570,6 +601,7 @@ public partial class OptionsDialog : Form
         var localIPs = NetworkHelper.GetLocalIPAddresses();
         foreach (var ip in localIPs)
         {
+            // IP is now in format "192.168.1.10/24"
             cmbServerIP.Items.Add($"{ip} - Local Network");
         }
         
@@ -595,15 +627,13 @@ public partial class OptionsDialog : Form
     private void UpdateAudienceControlStates()
     {
         bool isServerRunning = GetWebServerHost()?.IsRunning ?? false;
-        bool autoStartEnabled = chkAutoStart.Checked;
         
-        // IP and Port controls: Disabled if auto-start is on OR server is running
-        cmbServerIP.Enabled = !autoStartEnabled && !isServerRunning;
-        txtServerPort.Enabled = !autoStartEnabled && !isServerRunning;
-        btnCheckPort.Enabled = !autoStartEnabled && !isServerRunning;
+        // IP and Port controls: Only disabled when server is running
+        cmbServerIP.Enabled = !isServerRunning;
+        txtServerPort.Enabled = !isServerRunning;
+        btnCheckPort.Enabled = !isServerRunning;
         
-        // Auto-start checkbox: Disabled if server is running
-        chkAutoStart.Enabled = !isServerRunning;
+        // Auto-start checkbox: Always enabled (removed server running constraint)
         
         // Server control buttons
         btnStartServer.Enabled = !isServerRunning;
@@ -687,7 +717,10 @@ public partial class OptionsDialog : Form
         // Get IP address
         var selectedItem = cmbServerIP.SelectedItem?.ToString() ?? "";
         var parts = selectedItem.Split(new[] { " - " }, StringSplitOptions.None);
-        var ipAddress = parts[0].Trim();
+        var ipPart = parts[0].Trim();
+        
+        // Extract just the IP address (remove /prefix if present)
+        var ipAddress = ipPart.Split('/')[0];
         
         // Get web server host from control panel
         var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
@@ -1489,30 +1522,41 @@ public partial class OptionsDialog : Form
 
     private void InitializeMoneyTreeTab()
     {
-        // Create main groups
-        var grpPrizes = new GroupBox
-        {
-            Text = "Prize Values",
-            Location = new Point(16, 16),
-            Size = new Size(320, 420)
-        };
-        
+        // Create currency groups
         var grpCurrency1 = new GroupBox
         {
             Text = "Currency 1",
             Location = new Point(356, 16),
-            Size = new Size(200, 180)
+            Size = new Size(280, 200)
         };
         
         var grpCurrency2 = new GroupBox
         {
             Text = "Currency 2",
-            Location = new Point(356, 216),
-            Size = new Size(200, 200)
+            Location = new Point(356, 226),
+            Size = new Size(280, 200)
+        };
+        
+        // Add header row labels directly to tab (not in group)
+        var lblPrizeHeader = new Label
+        {
+            Text = "Prize",
+            Location = new Point(66, 20),
+            Size = new Size(120, 15),
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold)
+        };
+        
+        var lblCurrencyHeader = new Label
+        {
+            Text = "Currency",
+            Location = new Point(265, 20), // Centered over currency column
+            Size = new Size(60, 15),
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleCenter
         };
         
         // Initialize 15 prize value inputs (DESCENDING - Q15 to Q1)
-        int yPos = 25;
+        int yPos = 45; // Starting Y position directly on tab
         for (int i = 15; i >= 1; i--)
         {
             var lblQuestion = new Label
@@ -1546,7 +1590,7 @@ public partial class OptionsDialog : Form
                     Tag = i
                 };
                 chkSafetyNet.CheckedChanged += Control_Changed;
-                grpPrizes.Controls.Add(chkSafetyNet);
+                tabMoneyTree.Controls.Add(chkSafetyNet);
             }
             
             // Currency selector for each question
@@ -1562,9 +1606,9 @@ public partial class OptionsDialog : Form
             cmbCurrency.SelectedIndex = 0;
             cmbCurrency.SelectedIndexChanged += Control_Changed;
             
-            grpPrizes.Controls.Add(lblQuestion);
-            grpPrizes.Controls.Add(numValue);
-            grpPrizes.Controls.Add(cmbCurrency);
+            tabMoneyTree.Controls.Add(lblQuestion);
+            tabMoneyTree.Controls.Add(numValue);
+            tabMoneyTree.Controls.Add(cmbCurrency);
             yPos += 26;
         }
         
@@ -1724,8 +1768,8 @@ public partial class OptionsDialog : Form
         
         grpCurrency2.Controls.AddRange(new Control[] { chkEnableCurrency2, radDollar2, radEuro2, radPound2, radYen2, radOther2, txtCustomCurrency2, chkSuffix2 });
         
-        // Add all groups to tab
-        tabMoneyTree.Controls.AddRange(new Control[] { grpPrizes, grpCurrency1, grpCurrency2 });
+        // Add header labels and currency groups to tab (note: prize controls already added individually in loop above)
+        tabMoneyTree.Controls.AddRange(new Control[] { lblPrizeHeader, lblCurrencyHeader, grpCurrency1, grpCurrency2 });
     }
     
     private void EnableCurrency2_CheckedChanged(object? sender, EventArgs e)

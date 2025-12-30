@@ -62,12 +62,24 @@ public class WebServerHost : IDisposable
 
         try
         {
-            _baseUrl = $"http://{ipAddress}:{port}";
+            // Determine display URL - use public IP for 0.0.0.0
+            string displayIP = ipAddress;
+            if (ipAddress == "0.0.0.0")
+            {
+                // Try to get public IP for display purposes
+                var publicIP = await NetworkHelper.GetPublicIPAddressAsync();
+                displayIP = publicIP ?? "0.0.0.0";
+            }
+            
+            // Bind URL uses the actual IP address
+            var bindUrl = $"http://{ipAddress}:{port}";
+            // Display URL shows the public IP if available
+            _baseUrl = $"http://{displayIP}:{port}";
 
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls(_baseUrl);
+                    webBuilder.UseUrls(bindUrl);
                     // Set the content root and web root to the application's base directory
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     webBuilder.UseContentRoot(baseDir);

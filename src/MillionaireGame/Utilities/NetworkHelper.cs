@@ -10,9 +10,9 @@ namespace MillionaireGame.Utilities;
 public static class NetworkHelper
 {
     /// <summary>
-    /// Gets a list of local IP addresses with their subnet masks
+    /// Gets a list of local IP addresses with their subnet masks in CIDR notation
     /// </summary>
-    /// <returns>List of IP addresses in "IP/Mask" format</returns>
+    /// <returns>List of IP addresses in "IP/prefix" format</returns>
     public static List<string> GetLocalIPAddresses()
     {
         var addresses = new List<string>();
@@ -37,7 +37,8 @@ public static class NetworkHelper
                     {
                         var ip = unicastAddress.Address.ToString();
                         var mask = unicastAddress.IPv4Mask.ToString();
-                        addresses.Add($"{ip} ({mask})");
+                        var cidr = GetCIDRFromMask(mask);
+                        addresses.Add($"{ip}/{cidr}");
                     }
                 }
             }
@@ -172,6 +173,25 @@ public static class NetworkHelper
         catch
         {
             return 24; // Default to /24 if parsing fails
+        }
+    }
+
+    /// <summary>
+    /// Gets the public IP address by querying an external service
+    /// </summary>
+    /// <returns>Public IP address string, or null if unable to determine</returns>
+    public static async Task<string?> GetPublicIPAddressAsync()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            var response = await client.GetStringAsync("https://ipinfo.io/ip");
+            return response?.Trim();
+        }
+        catch
+        {
+            return null;
         }
     }
 

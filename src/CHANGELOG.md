@@ -2,7 +2,20 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
-## [v0.8.0-2512] - 2025-12-27
+## [v0.8.0-2512] - 2025-12-29
+
+### Fixed
+- **Settings Dialog UI Refinement** ✅ COMPLETE
+  * Standardized window dimensions to 684x540px for consistent layout across all tabs
+  * Standardized all main tabs (Screens, Broadcast, Lifelines, Money Tree, Sounds, Audience) to 652x438px
+  * Standardized nested Sound tabs (Soundpack, Audio Settings, Mixer) to 638x404px
+  * **Lifelines Tab**: Complete redesign - removed 4 GroupBox containers, implemented flat 3-column grid layout for cleaner appearance
+  * **Money Tree Tab**: Removed Prizes GroupBox, positioned controls directly on tab, expanded currency groups from 210px to 280px width, centered currency header, renamed first group to "Currency 1"
+  * **Audience Tab**: Fixed IP/port enable/disable logic, reduced Server group height from 240px to 220px to eliminate scrollbars
+  * **Screens Tab**: Expanded all groups (Previews, Multiple Monitor Control, Console) to 620px width for full-width consistency
+  * Repositioned OK/Cancel buttons to Y=490 for proper window fit
+  * Eliminated all horizontal and vertical scrollbars across all tabs
+  * Location: OptionsDialog.Designer.cs, OptionsDialog.cs
 
 ### Changed
 - **Workspace Reorganization**:
