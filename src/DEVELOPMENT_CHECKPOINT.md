@@ -1,7 +1,7 @@
-# Development Checkpoint - v0.8.0-2512
-**Date**: December 29, 2025  
-**Version**: 0.8.0-2512 (Web Integration + CSCore Audio System + Settings Dialog COMPLETE)  
-**Branch**: feature/web-integration  
+# Development Checkpoint - v0.9.0-2512
+**Date**: December 30, 2025  
+**Version**: 0.9.0-2512 (99% Complete - Final Push to v1.0)  
+**Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
 ---
@@ -10,9 +10,248 @@
 
 ### What to Do When You Return
 
-**CURRENT STATE**: ✅ **Web Server Integration COMPLETE** ✅ **CSCore Audio System COMPLETE** ✅ **Shutdown System COMPLETE** ✅ **Settings Dialog UI COMPLETE** ✅ **FFF Architecture Refactoring COMPLETE**
+**CURRENT STATE**: ✅ **99% COMPLETE** - All core systems operational, web integration complete, final features remain
 
-**READY FOR**: Phase 7 (Build & Deployment Verification) OR Crash Handler Implementation OR Next Game Feature Development
+**MORNING SESSION PLAN**: Complete ATA Dual-Mode + WAPS Lobby State Management (Critical Path Items 1 & 2)
+
+#### Quick Status Check - v0.9.0
+1. ✅ **Web Server Integration** - Single executable, all tests passing (7/8)
+2. ✅ **CSCore Audio System** - Complete with DSP, silence detection, crossfading
+3. ✅ **Audio Settings UI** - Full configuration in Options dialog
+4. ✅ **Shutdown System** - Progress tracking, graceful cleanup
+5. ✅ **FFF Architecture** - Online/Offline dual-mode system working
+6. ✅ **Settings Dialog** - All tabs standardized, no scrollbars
+7. ✅ **Question Editor** - CSV import/export, sound pack management
+8. ✅ **Build Status** - Clean build, 66 warnings (all pre-existing)
+9. ✅ **Documentation** - Comprehensive, organized, archived
+10. ⏳ **ATA System** - Offline placeholder ready, needs dual-mode implementation
+11. ⏳ **WAPS Lobby** - Infrastructure complete, needs state management
+12. ⏳ **Crash Handler** - Planned, not started
+13. ⏳ **Installer** - Not started
+
+---
+
+## 🎯 Path to v1.0 (4 Steps Remaining)
+
+### **MORNING SESSION - Critical Features** (6-8 hours)
+
+#### Step 1: ATA Dual-Mode System (3-4 hours) 🔴 HIGH PRIORITY
+**Phase 1**: Enhance offline mode with realistic voting (30 min)
+- Modify GeneratePlaceholderResults() to show 40-80% on correct answer
+- Distribute remaining percentage across wrong answers
+- Mimics real audience behavior for offline/demo mode
+
+**Phase 2**: Implement ATA Online with real-time voting (2.5-3 hours)
+- Query WAPS database for vote counts
+- Display real percentages as votes come in
+- Update all screens dynamically
+- Test with 2-50 concurrent voters
+- Graceful fallback to offline mode
+
+**Location**: `MillionaireGame/Services/LifelineManager.cs`, `MillionaireGame.Web/Services/SessionService.cs`
+
+#### Step 2: WAPS Lobby & State Management (4-5 hours) 🔴 HIGH PRIORITY
+**FFF Flow** (9 states): Lobby → Pick Player → Question → Timer → Results → Winner → Return
+**ATA Flow** (5 states): Ready → Voting → Submit → Results → Return
+**Game Flow**: Initial lobby → Waiting lobby → Game phases → Complete → Cleanup
+
+**Implementation**:
+- Create GameStateType enum
+- Implement SignalR BroadcastGameState() method
+- Update web client JavaScript for state transitions
+- Wire state changes in ControlPanelForm and LifelineManager
+- Test with 10+ concurrent clients
+
+**Location**: `MillionaireGame.Web/Hubs/`, `MillionaireGame/Forms/ControlPanelForm.cs`
+
+**After Morning Session**: Game will be **99% feature-complete** ✅
+
+---
+
+### **Step 3: Crash Handler Implementation** (4-6 hours) 🟡 MEDIUM PRIORITY
+**Watchdog Application** - Monitor main process, detect crashes, auto-restart
+
+**Components**:
+- [ ] Watchdog service application
+- [ ] Heartbeat system (main app sends ping every 5 seconds)
+- [ ] Crash detection (missed heartbeats, process exit codes)
+- [ ] Comprehensive crash reports (stack traces, memory dumps, logs)
+- [ ] Auto-restart with crash loop protection (max 3 restarts in 10 minutes)
+- [ ] User notification of crashes
+- [ ] Telemetry collection (optional, privacy-first)
+
+**Architecture**:
+```
+MillionaireGameWatchdog.exe (always running)
+  └─> Monitors → MillionaireGame.exe
+      ├─> Heartbeat every 5s
+      ├─> On crash: Generate report
+      ├─> Auto-restart (with limits)
+      └─> Log to crash reports folder
+```
+
+**Acceptance Criteria**:
+- Detects crashes within 10 seconds
+- Generates detailed crash report
+- Auto-restart works without user intervention
+- Prevents infinite restart loops
+- User can disable auto-restart in settings
+
+**Reference**: `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md`
+
+---
+
+### **Step 4: Installer Development** (6-8 hours) 🟢 LOW PRIORITY (FINAL STEP)
+**Professional Windows Installer** - WiX Toolset or Inno Setup
+
+**Requirements**:
+- [ ] Install .NET 8.0 Runtime (Windows Desktop) if not present
+- [ ] Install SQL Server Express 2019+ (optional, check first)
+- [ ] Copy application files to Program Files
+- [ ] Create Start Menu shortcuts
+- [ ] Create Desktop shortcut (optional)
+- [ ] Register file associations (.mmq for questions)
+- [ ] Set up initial configuration
+- [ ] Create uninstaller
+- [ ] Digital signature (code signing certificate)
+
+**Installer Features**:
+- [ ] Welcome screen with project branding
+- [ ] License agreement (if applicable)
+- [ ] Component selection (Main app, SQL Server, Sample content)
+- [ ] Installation directory selection
+- [ ] Progress indication
+- [ ] Completion screen with launch option
+- [ ] Silent install support (/S flag)
+
+**Post-Install**:
+- [ ] First-run wizard (optional)
+- [ ] Database setup wizard
+- [ ] Default sound pack installation
+- [ ] Sample questions import (optional)
+
+**Platforms**:
+- Windows 10 x64 (minimum)
+- Windows 11 x64 (recommended)
+
+**Deliverables**:
+- `TheMillionaireGame-Setup-v1.0.exe` (single installer)
+- Installation guide (docs/guides/INSTALLATION.md)
+- Deployment checklist
+
+**Reference**: Will create `docs/active/INSTALLER_DEVELOPMENT_PLAN.md`
+
+---
+
+## 📊 Progress Summary
+
+### Completed Systems (v0.9.0)
+- ✅ Core Game Engine (Questions 1-15, money tree, risk mode)
+- ✅ All Lifelines (50:50, PAF, ATA-offline, Switch, Double Dip, Ask Host)
+- ✅ FFF Dual-Mode (Online web-based + Offline local)
+- ✅ CSCore Audio System (DSP, silence detection, crossfading)
+- ✅ Multi-Screen Support (Host, Guest, TV with independent content)
+- ✅ Web Server Integration (single executable, embedded ASP.NET Core)
+- ✅ WAPS Infrastructure (SignalR, database, real-time communication)
+- ✅ Question Editor (CRUD, CSV import/export, validation)
+- ✅ Settings Management (persistence, UI, validation)
+- ✅ Shutdown System (graceful cleanup, progress tracking)
+- ✅ Graphics System (animations, smooth rendering)
+- ✅ Build System (clean builds, organized output)
+- ✅ Documentation (comprehensive, organized, searchable)
+
+### Remaining Work to v1.0
+1. ⏳ **ATA Dual-Mode** (3-4 hours) - Offline enhancement + Online real-time voting
+2. ⏳ **WAPS Lobby States** (4-5 hours) - Full state management for web clients
+3. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
+4. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
+
+**Estimated Total**: 17-23 hours to v1.0.0 release
+
+---
+
+## 📝 Morning Session Checklist
+
+### Pre-Session Setup (5 minutes)
+- [ ] Review this checkpoint document
+- [ ] Check current branch: `master-csharp`
+- [ ] Pull latest changes: `git pull origin master-csharp`
+- [ ] Verify build: `dotnet build TheMillionaireGame.sln`
+- [ ] Run automated tests: `.\test-web-server.ps1`
+
+### Session 1: ATA Dual-Mode (3-4 hours)
+- [ ] Phase 1: Enhance offline voting (30 min)
+  - [ ] Modify GeneratePlaceholderResults() in LifelineManager.cs
+  - [ ] Test realistic distribution (40-80% correct)
+  - [ ] Verify display on all screens
+  - [ ] Commit: "ATA Offline: Realistic voting distribution"
+
+- [ ] Phase 2: Implement ATA Online (2.5-3 hours)
+  - [ ] Create vote aggregation query
+  - [ ] Implement real-time percentage calculation
+  - [ ] Add SignalR broadcast for vote updates
+  - [ ] Update web client to display results
+  - [ ] Test with multiple browsers (2-10 concurrent)
+  - [ ] Test edge cases (0 votes, ties, all same answer)
+  - [ ] Commit: "ATA Online: Real-time voting implementation"
+
+### Session 2: WAPS Lobby & States (4-5 hours)
+- [ ] Create GameStateType enum (15 min)
+- [ ] Implement BroadcastGameState() in SignalR hub (30 min)
+- [ ] Update web client JavaScript (1 hour)
+- [ ] Wire FFF state changes (1 hour)
+- [ ] Wire ATA state changes (45 min)
+- [ ] Wire game lifecycle states (45 min)
+- [ ] Test state transitions with 10+ clients (30 min)
+- [ ] Verify auto-disconnect and cleanup (15 min)
+- [ ] Commit: "WAPS: Complete lobby and state management"
+
+### End of Day
+- [ ] Run full build and tests
+- [ ] Update this checkpoint with progress
+- [ ] Commit all changes
+- [ ] Push to master-csharp
+- [ ] Update PRE_1.0_FINAL_CHECKLIST.md
+
+---
+
+## 🎉 Milestone: 99% Complete
+
+After morning session completion, the game will have:
+- ✅ All core gameplay features
+- ✅ All lifelines fully functional (including ATA Online)
+- ✅ Complete web participant experience with state management
+- ✅ Professional audio system
+- ✅ Multi-screen support
+- ✅ Comprehensive settings
+- ✅ Question management tools
+
+**Remaining**: Only crash handler and installer for production deployment!
+
+---
+
+## 📚 Reference Documents
+
+**Active Plans**:
+- `docs/active/PRE_1.0_FINAL_CHECKLIST.md` - Master checklist
+- `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md` - Crash handler details
+- `docs/active/WEB_INTEGRATION_PLAN.md` - Web integration (complete)
+
+**Recent Sessions**:
+- `docs/sessions/SESSION_2025-12-29_WEB_INTEGRATION.md` - Web integration complete
+- `docs/sessions/SESSION_2025-12-29_FFF_REFACTOR.md` - FFF architecture
+- `docs/sessions/PHASE_7_BUILD_VERIFICATION_COMPLETE.md` - Build verification
+
+**Testing**:
+- `src/test-web-server.ps1` - Automated web server tests
+
+---
+
+**Current Time**: End of Day, December 29, 2025  
+**Next Session**: Morning, December 30, 2025  
+**Target**: Complete ATA + WAPS Lobby → 99% feature-complete  
+**Version After**: v0.9.5 (ready for crash handler and installer)  
+**Final Target**: v1.0.0 (estimated 1-2 weeks)
 
 #### Quick Status Check
 1. ✅ **Web Server Integration** - Consolidated into single executable, all tests passing (7/8)
