@@ -44,13 +44,16 @@ public class PreviewScreenForm : Form
     
     public PreviewOrientation Orientation => _orientation;
 
-    public PreviewScreenForm(GameService gameService, ScreenUpdateService screenService, PreviewOrientation orientation = PreviewOrientation.Vertical)
+    public PreviewScreenForm(GameService gameService, ScreenUpdateService screenService, ControlPanelForm controlPanel, PreviewOrientation orientation = PreviewOrientation.Vertical)
     {
         // Create dedicated screen instances for preview and register with ScreenService
         _hostScreen = new HostScreenForm();
         _hostScreen.Initialize(gameService.MoneyTree);
         _hostScreen.CreateControl(); // Force control creation without showing
         screenService.RegisterScreen(_hostScreen); // Register to receive display updates
+        
+        // Subscribe to host messaging events from control panel
+        controlPanel.MessageSent += _hostScreen.OnMessageReceived;
         
         _guestScreen = new GuestScreenForm();
         _guestScreen.Initialize(gameService.MoneyTree);

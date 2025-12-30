@@ -99,6 +99,12 @@ namespace MillionaireGame.Forms
             btnActivateRiskMode = new Button();
             btnShowMoneyTree = new Button();
             
+            // Host messaging controls
+            lblHostMessage = new Label();
+            txtHostMessage = new TextBox();
+            btnSendHostMessage = new Button();
+            btnClearHostMessage = new Button();
+            
             // Menu
             menuStrip = new MenuStrip();
             gameToolStripMenuItem = new ToolStripMenuItem();
@@ -766,7 +772,7 @@ namespace MillionaireGame.Forms
             chkShowQuestion.AutoSize = true;
             chkShowQuestion.Checked = false;
             chkShowQuestion.CheckState = CheckState.Unchecked;
-            chkShowQuestion.Location = new Point(12, 555);
+            chkShowQuestion.Location = new Point(12, 618);
             chkShowQuestion.Name = "chkShowQuestion";
             chkShowQuestion.Size = new Size(190, 24);
             chkShowQuestion.TabIndex = 40;
@@ -780,7 +786,7 @@ namespace MillionaireGame.Forms
             chkShowWinnings.AutoSize = true;
             chkShowWinnings.Checked = false;
             chkShowWinnings.CheckState = CheckState.Unchecked;
-            chkShowWinnings.Location = new Point(12, 585);
+            chkShowWinnings.Location = new Point(220, 618);
             chkShowWinnings.Name = "chkShowWinnings";
             chkShowWinnings.Size = new Size(200, 24);
             chkShowWinnings.TabIndex = 43;
@@ -792,7 +798,7 @@ namespace MillionaireGame.Forms
             // chkCorrectAnswer
             // 
             chkCorrectAnswer.AutoSize = true;
-            chkCorrectAnswer.Location = new Point(220, 555);
+            chkCorrectAnswer.Location = new Point(440, 618);
             chkCorrectAnswer.Name = "chkCorrectAnswer";
             chkCorrectAnswer.Size = new Size(235, 24);
             chkCorrectAnswer.TabIndex = 41;
@@ -832,16 +838,65 @@ namespace MillionaireGame.Forms
             btnActivateRiskMode.Size = new Size(120, 85);
             btnActivateRiskMode.TabIndex = 43;
             btnActivateRiskMode.Text = "Activate Risk Mode";
-            btnShowMoneyTree.UseVisualStyleBackColor = false;
+            btnActivateRiskMode.UseVisualStyleBackColor = false;
             btnActivateRiskMode.Click += btnActivateRiskMode_Click;
 
+            // 
+            // lblHostMessage
+            // 
+            lblHostMessage.AutoSize = true;
+            lblHostMessage.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblHostMessage.Location = new Point(12, 510);
+            lblHostMessage.Name = "lblHostMessage";
+            lblHostMessage.Size = new Size(71, 15);
+            lblHostMessage.TabIndex = 44;
+            lblHostMessage.Text = "Host Note:";
+            
+            // 
+            // txtHostMessage
+            // 
+            txtHostMessage.Location = new Point(12, 535);
+            txtHostMessage.Multiline = true;
+            txtHostMessage.Name = "txtHostMessage";
+            txtHostMessage.Size = new Size(470, 64);
+            txtHostMessage.TabIndex = 45;
+            txtHostMessage.AcceptsReturn = false;
+            txtHostMessage.KeyDown += txtHostMessage_KeyDown;
+            
+            // 
+            // btnSendHostMessage
+            // 
+            btnSendHostMessage.BackColor = Color.FromArgb(70, 130, 180);
+            btnSendHostMessage.FlatStyle = FlatStyle.Flat;
+            btnSendHostMessage.ForeColor = Color.White;
+            btnSendHostMessage.Location = new Point(487, 535);
+            btnSendHostMessage.Name = "btnSendHostMessage";
+            btnSendHostMessage.Size = new Size(75, 32);
+            btnSendHostMessage.TabIndex = 46;
+            btnSendHostMessage.Text = "Send";
+            btnSendHostMessage.UseVisualStyleBackColor = false;
+            btnSendHostMessage.Click += btnSendHostMessage_Click;
+            
+            // 
+            // btnClearHostMessage
+            // 
+            btnClearHostMessage.BackColor = Color.FromArgb(180, 70, 70);
+            btnClearHostMessage.FlatStyle = FlatStyle.Flat;
+            btnClearHostMessage.ForeColor = Color.White;
+            btnClearHostMessage.Location = new Point(487, 567);
+            btnClearHostMessage.Name = "btnClearHostMessage";
+            btnClearHostMessage.Size = new Size(75, 32);
+            btnClearHostMessage.TabIndex = 47;
+            btnClearHostMessage.Text = "Clear";
+            btnClearHostMessage.UseVisualStyleBackColor = false;
+            btnClearHostMessage.Click += btnClearHostMessage_Click;
             
             // 
             // ControlPanelForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(880, 620);
+            ClientSize = new Size(880, 660);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Controls.Add(btnShowMoneyTree);
@@ -849,6 +904,10 @@ namespace MillionaireGame.Forms
             Controls.Add(chkCorrectAnswer);
             Controls.Add(chkShowWinnings);
             Controls.Add(chkShowQuestion);
+            Controls.Add(lblHostMessage);
+            Controls.Add(txtHostMessage);
+            Controls.Add(btnSendHostMessage);
+            Controls.Add(btnClearHostMessage);
             Controls.Add(btnLifeline4);
             Controls.Add(btnLifeline3);
             Controls.Add(btnLifeline2);
@@ -960,6 +1019,12 @@ namespace MillionaireGame.Forms
         private CheckBox chkShowQuestion;
         private CheckBox chkShowWinnings;
         private CheckBox chkCorrectAnswer;
+        
+        // Host messaging controls
+        private Label lblHostMessage;
+        private TextBox txtHostMessage;
+        private Button btnSendHostMessage;
+        private Button btnClearHostMessage;
         
         private static Image? _stopImageNormal;
         private static Image? _stopImageWhite;

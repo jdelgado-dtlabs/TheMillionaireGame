@@ -44,6 +44,14 @@ public enum GameOutcome
 }
 
 /// <summary>
+/// Event arguments for host messages
+/// </summary>
+public class HostMessageEventArgs : EventArgs
+{
+    public string Message { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Main control panel for managing the game
 /// </summary>
 public partial class ControlPanelForm : Form
@@ -103,6 +111,9 @@ public partial class ControlPanelForm : Form
     
     // Track if bed music should be restarted after lifeline use (for Q1-5)
     private bool _shouldRestartBedMusic = false;
+
+    // Host messaging event
+    public event EventHandler<HostMessageEventArgs>? MessageSent;
 
     // Screen forms
     private HostScreenForm? _hostScreen;
@@ -3974,6 +3985,9 @@ public partial class ControlPanelForm : Form
             _screenService.RegisterScreen(_hostScreen);
             _hostScreen.FormClosed += (s, args) => _screenService.UnregisterScreen(_hostScreen);
             
+            // Subscribe to host messaging events
+            MessageSent += _hostScreen.OnMessageReceived;
+            
             // Sync current game state to the newly opened screen
             SyncScreenState(_hostScreen);
             
@@ -3994,6 +4008,12 @@ public partial class ControlPanelForm : Form
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
+        // Don't intercept keys when host message textbox has focus
+        if (ActiveControl == txtHostMessage)
+        {
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+        
         if (_hotkeyHandler.ProcessKeyPress(keyData))
         {
             return true;
@@ -4188,7 +4208,7 @@ public partial class ControlPanelForm : Form
         // Preview screen creates its own dedicated instances
         
         // Create preview screen with dedicated instances
-        _previewScreen = new PreviewScreenForm(_gameService, _screenService, currentOrientation);
+        _previewScreen = new PreviewScreenForm(_gameService, _screenService, this, currentOrientation);
         _lastPreviewOrientation = currentOrientation;
         _previewScreen.Show();
     }
@@ -4222,5 +4242,68 @@ public partial class ControlPanelForm : Form
     {
         _gameService.ChangeLevel((int)nmrLevel.Value);
     }
+
+    #region Host Messaging
+
+    /// <summary>
+    /// Sends a message to the host screen
+    /// </summary>
+    private void SendHostMessage()
+    {
+        if (string.IsNullOrWhiteSpace(txtHostMessage.Text))
+            return;
+
+        // Send message to host screen if it exists (including preview window)
+        MessageSent?.Invoke(this, new HostMessageEventArgs
+        {
+            Message = txtHostMessage.Text.Trim()
+        });
+
+        GameConsole.Debug("[Host Message] Message sent to host screen: " + txtHostMessage.Text.Trim());
+    }
+    
+    /// <summary>
+    /// Clears the host message from the host screen
+    /// </summary>
+    private void ClearHostMessage()
+    {
+        txtHostMessage.Clear();
+        MessageSent?.Invoke(this, new HostMessageEventArgs { Message = string.Empty });
+        GameConsole.Debug("[Host Message] Message cleared from host screen");
+    }
+    
+    /// <summary>
+    /// Button click handler for clearing host messages
+    /// </summary>
+    private void btnClearHostMessage_Click(object? sender, EventArgs e)
+    {
+        ClearHostMessage();
+    }
+
+    /// <summary>
+    /// Button click handler for sending host messages
+    /// </summary>
+    private void btnSendHostMessage_Click(object? sender, EventArgs e)
+    {
+        SendHostMessage();
+    }
+
+    /// <summary>
+    /// KeyDown handler for host message textbox (Enter to send, Alt+Enter for newline)
+    /// </summary>
+    private void txtHostMessage_KeyDown(object? sender, KeyEventArgs e)
+    {
+        // Enter (without modifiers) to send message
+        if (e.KeyCode == Keys.Enter && !e.Alt && !e.Control && !e.Shift)
+        {
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            SendHostMessage();
+            return;
+        }
+        // Alt+Enter to insert newline - allow default behavior
+    }
+
+    #endregion
 }
 

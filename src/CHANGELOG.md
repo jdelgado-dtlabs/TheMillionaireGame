@@ -2,6 +2,58 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.8.1-2512] - 2025-12-30
+
+### Added
+- **Host Notes/Messaging System** ✅ COMPLETE
+  * Implemented real-time messaging from Control Panel to Host Screen
+  * Event-based architecture: MessageSent event broadcasts to all HostScreenForm instances
+  * Control Panel UI: Multi-line textbox (470×64px), Send button (blue), Clear button (red)
+  * Host Screen Display:
+    - Explanation box: 1100×70px at position (180, 490) - displays contextual clues about answers
+    - Host message box: 1100×dynamic height at (180, 570) - displays operator messages
+    - Semi-transparent black background (70% opacity) with steel blue border (3px)
+    - Arial 16pt Bold white text with word wrapping
+  * Keyboard handling: Enter key sends message, ProcessCmdKey skips hotkeys when textbox focused
+  * Preview window integration: Subscribes to MessageSent event in constructor
+  * Thread-safe updates using BeginInvoke() for cross-thread communication
+  * Location: ControlPanelForm.cs, HostScreenForm.cs, PreviewScreenForm.cs
+
+- **Question Explanation System** ✅ COMPLETE
+  * Updated all 80 questions in database with contextual clues about correct answers
+  * Explanations provide hints/clues for hosts to use during contestant conversation
+  * Example: "Who painted the Mona Lisa?" → "This Renaissance artist was also an inventor who designed flying machines"
+  * Renders above host message box when question has explanation text
+  * SQL Script: 01_reset_questions_table.sql updated and executed against database
+  * Location: src/docs/database/01_reset_questions_table.sql
+
+### Fixed
+- **Host Screen Instance Conflicts**
+  * Removed auto-open Host Screen feature from SendHostMessage() to prevent multiple instance conflicts
+  * Preview window's HostScreenForm instance no longer conflicts with manually opened Host Screen
+  * Messages now broadcast via event to all subscribers instead of auto-creating new windows
+  * Location: ControlPanelForm.cs
+
+- **Host Screen Rendering Order**
+  * Moved DrawHostMessage() and DrawExplanation() calls before early return in RenderScreen()
+  * Messages and explanations now display even when no question is loaded
+  * Ensures host notes are always visible regardless of game state
+  * Location: HostScreenForm.cs
+
+### Changed
+- **Control Panel Layout Refinement**
+  * Repositioned checkboxes to Y=618 (vertically centered in available space)
+  * Final spacing: 24px gap between textbox bottom (Y=599) and checkboxes (Y=618)
+  * Improved visual balance in bottom section of control panel
+  * Location: ControlPanelForm.Designer.cs
+
+- **Host Screen Message Positioning**
+  * Message box width reduced from 1560px to 1100px to avoid overlapping money tree
+  * Message box ends at X=1280, 70px clearance before money tree (starts at X≈1351)
+  * Positioned above question strap at Y=570 (strap at Y=650)
+  * Left-aligned at X=180 for consistency with question display
+  * Location: HostScreenForm.cs
+
 ## [v0.8.0-2512] - 2025-12-29
 
 ### Changed
