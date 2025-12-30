@@ -244,10 +244,11 @@ MillionaireGameWatchdog.exe (always running)
 ### Remaining Work to v1.0
 1. ⏳ **ATA Dual-Mode** (3-4 hours) - Offline enhancement + Online real-time voting
 2. ⏳ **WAPS Lobby States** (4-5 hours) - Full state management for web clients
-3. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
-4. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
+3. ⏳ **Database Consolidation** (3-4 hours) - Unify settings + WAPS into SQL Server
+4. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
+5. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
 
-**Estimated Total**: 17-23 hours to v1.0.0 release
+**Estimated Total**: 20-27 hours to v1.0.0 release
 
 ---
 
@@ -286,7 +287,31 @@ MillionaireGameWatchdog.exe (always running)
 - [ ] Test state transitions with 10+ clients (30 min)
 - [ ] Verify auto-disconnect and cleanup (15 min)
 - [ ] Commit: "WAPS: Complete lobby and state management"
+Session 3: Database Consolidation (Optional but Recommended) (3-4 hours)
+- [ ] Phase 1: Settings Migration (1.5 hours)
+  - [ ] Make SQL Server mandatory for settings
+  - [ ] Remove XML fallback mode
+  - [ ] Test settings load/save
+  - [ ] Commit: "Settings: Migrate to SQL Server only"
 
+- [ ] Phase 2: WAPS Migration (1.5 hours)
+  - [ ] Change WAPSDbContext to SQL Server
+  - [ ] Add WAPS tables to main database
+  - [ ] Update all WAPS services
+  - [ ATA + WAPS Lobby completion, the game will have:
+- ✅ All core gameplay features
+- ✅ All lifelines fully functional (including ATA Online)
+- ✅ Complete web participant experience with state management
+- ✅ Professional audio system
+- ✅ Multi-screen support
+- ✅ Comprehensive settings
+- ✅ Question management tools
+
+After Database Consolidation (optional):
+- ✅ Professional single-database architecture
+- ✅ Simplified deployment (SQL Server only)
+- ✅ Easier backup and management
+### 
 ### End of Day
 - [ ] Run full build and tests
 - [ ] Update this checkpoint with progress
