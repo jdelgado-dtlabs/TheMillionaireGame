@@ -83,6 +83,16 @@ public class WebServerHost : IDisposable
 
         try
         {
+            // Strip CIDR notation if present (e.g., "192.168.1.5/24" -> "192.168.1.5")
+            var slashIndex = ipAddress.IndexOf('/');
+            if (slashIndex >= 0)
+            {
+                ipAddress = ipAddress.Substring(0, slashIndex);
+            }
+            
+            // Log input parameters for debugging
+            WebServerConsole.Debug($"[WebServer] StartAsync called with IP: '{ipAddress}', Port: {port}");
+            
             // Determine display URL - use public IP for 0.0.0.0
             string displayIP = ipAddress;
             if (ipAddress == "0.0.0.0")
@@ -94,28 +104,34 @@ public class WebServerHost : IDisposable
             
             // Build list of URLs to bind to
             // Always include localhost unless the selected IP already is localhost
-            List<string> bindUrls = new List<string>();
+            string bindUrl;
             
             if (ipAddress == "127.0.0.1" || ipAddress == "localhost")
             {
                 // Localhost only
-                bindUrls.Add($"http://127.0.0.1:{port}");
+                bindUrl = $"http://127.0.0.1:{port}";
+            }
+            else if (ipAddress == "0.0.0.0")
+            {
+                // Bind to all interfaces
+                bindUrl = $"http://0.0.0.0:{port}";
             }
             else
             {
-                // Add localhost first
-                bindUrls.Add($"http://127.0.0.1:{port}");
-                // Then add the selected IP
-                bindUrls.Add($"http://{ipAddress}:{port}");
+                // For specific local IP, bind to both localhost and that IP
+                bindUrl = $"http://127.0.0.1:{port};http://{ipAddress}:{port}";
             }
             
             // Display URL shows the public IP if available
             _baseUrl = $"http://{displayIP}:{port}";
+            
+            WebServerConsole.Debug($"[WebServer] Bind URL: '{bindUrl}'");
+            WebServerConsole.Debug($"[WebServer] Display URL: '{_baseUrl}'");
 
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls(bindUrls.ToArray());
+                    webBuilder.UseUrls(bindUrl);
                     // Set the content root and web root to the application's base directory
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     webBuilder.UseContentRoot(baseDir);
@@ -135,8 +151,8 @@ public class WebServerHost : IDisposable
                     // Clear default providers
                     logging.ClearProviders();
                     
-                    // Add custom WebServiceConsole logger
-                    logging.AddProvider(new WebServiceConsoleLoggerProvider());
+                    // Add custom WebServerConsole logger
+                    logging.AddProvider(new WebServerConsoleLoggerProvider());
                     
                     // Set minimum level to Information to see participant joins
                     logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
@@ -374,11 +390,11 @@ public class WebServerHost : IDisposable
 /// <summary>
 /// Custom logger provider that writes to WebServiceConsole
 /// </summary>
-internal class WebServiceConsoleLoggerProvider : ILoggerProvider
+internal class WebServerConsoleLoggerProvider : ILoggerProvider
 {
     public ILogger CreateLogger(string categoryName)
     {
-        return new WebServiceConsoleLogger(categoryName);
+        return new WebServerConsoleLogger(categoryName);
     }
 
     public void Dispose() { }
@@ -387,11 +403,11 @@ internal class WebServiceConsoleLoggerProvider : ILoggerProvider
 /// <summary>
 /// Custom logger that writes to WebServiceConsole
 /// </summary>
-internal class WebServiceConsoleLogger : ILogger
+internal class WebServerConsoleLogger : ILogger
 {
     private readonly string _categoryName;
 
-    public WebServiceConsoleLogger(string categoryName)
+    public WebServerConsoleLogger(string categoryName)
     {
         _categoryName = categoryName;
     }

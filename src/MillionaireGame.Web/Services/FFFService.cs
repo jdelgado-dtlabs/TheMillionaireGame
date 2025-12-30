@@ -105,7 +105,7 @@ public class FFFService
             var winner = correctSubmissions.FirstOrDefault();
             if (winner != null)
             {
-                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
                 if (consoleType != null)
                 {
                     var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });

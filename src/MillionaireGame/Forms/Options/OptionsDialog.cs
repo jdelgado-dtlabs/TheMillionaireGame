@@ -577,7 +577,16 @@ public partial class OptionsDialog : Form
             var selectedItem = cmbServerIP.SelectedItem.ToString() ?? "127.0.0.1";
             // Extract just the IP address (before the dash separator if present)
             var parts = selectedItem.Split(new[] { " - " }, StringSplitOptions.None);
-            _settings.AudienceServerIP = parts[0].Trim();
+            var ipAddress = parts[0].Trim();
+            
+            // Strip CIDR notation if present (e.g., "192.168.1.5/24" -> "192.168.1.5")
+            var slashIndex = ipAddress.IndexOf('/');
+            if (slashIndex >= 0)
+            {
+                ipAddress = ipAddress.Substring(0, slashIndex);
+            }
+            
+            _settings.AudienceServerIP = ipAddress;
         }
         
         // Save port (with validation)

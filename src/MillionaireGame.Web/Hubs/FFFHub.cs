@@ -72,7 +72,7 @@ public class FFFHub : Hub
         // WebService console logging
         try 
         {
-            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
             if (consoleType != null)
             {
                 var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });

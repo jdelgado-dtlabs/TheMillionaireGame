@@ -66,7 +66,7 @@ public class ApplicationSettings
 
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;
-    public bool ShowWebServiceConsole { get; set; } = false;
+    public bool ShowWebServerConsole { get; set; } = false;
 
     // Web Server / Audience Participation Settings
     public string AudienceServerIP { get; set; } = "127.0.0.1";
@@ -229,7 +229,7 @@ public class ApplicationSettingsManager
         destination.SelectedSoundPack = source.SelectedSoundPack;
         destination.AudioOutputDevice = source.AudioOutputDevice;
         destination.ShowConsole = source.ShowConsole;
-        destination.ShowWebServiceConsole = source.ShowWebServiceConsole;
+        destination.ShowWebServerConsole = source.ShowWebServerConsole;
         destination.AudienceServerIP = source.AudienceServerIP;
         destination.AudienceServerPort = source.AudienceServerPort;
         destination.AudienceServerAutoStart = source.AudienceServerAutoStart;
