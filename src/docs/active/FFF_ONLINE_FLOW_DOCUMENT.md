@@ -1,10 +1,45 @@
 # FFF Online Flow Document
 
-**Status:** ✅ COMPLETE - Implementation Finished December 27, 2025
-**Date:** December 2025
+**Status:** ✅ COMPLETE - Implementation Finished December 27, 2025  
+**Architecture Refactored:** December 29, 2025  
+**Date:** December 2025  
 **Purpose:** Design specification for FFF (Fastest Finger First) feature
 
 ---
+
+## Architecture Overview
+
+The FFF system consists of three main components:
+
+1. **FFFWindow** (Container/Mode Switcher)
+   - Main form that hosts FFF functionality
+   - Dynamically switches between Online and Offline modes via `UpdateModeAsync()`
+   - Checks web server state before showing and reconfigures UI accordingly
+   - Location: `src/MillionaireGame/Forms/FFFWindow.cs`
+
+2. **FFFOnlinePanel** (Web-Based Mode)
+   - UserControl for web-based FFF with SignalR client
+   - Handles remote contestants via web interface
+   - Full control panel with participant list, rankings, and winner selection
+   - Location: `src/MillionaireGame/Forms/FFFOnlinePanel.cs`
+
+3. **FFFOfflinePanel** (Local Player Selection Mode)
+   - UserControl for local player selection without web server
+   - Supports 2-8 local players with manual entry
+   - Animated random selection with sound cues
+   - TV screen integration for displaying players and winner
+   - Location: `src/MillionaireGame/Forms/FFFOfflinePanel.cs`
+
+### Mode Switching
+- FFFWindow checks `_isWebServerRunning` state
+- If web server is running → shows FFFOnlinePanel
+- If web server is stopped → shows FFFOfflinePanel
+- Dynamic switching: UpdateModeAsync() called when window shown on existing instance
+- Services (SoundService, ScreenUpdateService) injected into active panel
+
+---
+
+## Game Flow
 
 FFF or Fastest Finger First is a game within a game feature that is used to determine which participant gets to be able to play the main game. It is part of the overall flow of the game show format, often seen in quiz shows like "Who Wants to Be a Millionaire?".
 

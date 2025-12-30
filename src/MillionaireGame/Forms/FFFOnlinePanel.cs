@@ -9,7 +9,7 @@ using System.Timers;
 namespace MillionaireGame.Forms;
 
 /// <summary>
-/// Game flow states for FFF round
+/// Game flow states for FFF Online round
 /// </summary>
 public enum FFFFlowState
 {
@@ -27,9 +27,9 @@ public enum FFFFlowState
 }
 
 /// <summary>
-/// User control for managing Fastest Finger First (FFF) rounds
+/// User control for managing Fastest Finger First (FFF) rounds - ONLINE MODE (Web-based)
 /// </summary>
-public partial class FFFControlPanel : UserControl
+public partial class FFFOnlinePanel : UserControl
 {
     private readonly System.Timers.Timer _fffTimer;
     private DateTime _fffStartTime;
@@ -49,7 +49,7 @@ public partial class FFFControlPanel : UserControl
     private SoundService? _soundService;
     private ScreenUpdateService? _screenService;
     
-    public FFFControlPanel()
+    public FFFOnlinePanel()
     {
         InitializeComponent();
         
@@ -69,7 +69,7 @@ public partial class FFFControlPanel : UserControl
         }
         
         // Stop audio on control disposal
-        this.Disposed += FFFControlPanel_Disposed;
+        this.Disposed += FFFOnlinePanel_Disposed;
         
         // Auto-refresh participants when control becomes visible
         this.VisibleChanged += async (s, e) =>
@@ -87,13 +87,13 @@ public partial class FFFControlPanel : UserControl
         UpdateUIState();
     }
     
-    private void FFFControlPanel_Disposed(object? sender, EventArgs e)
+    private void FFFOnlinePanel_Disposed(object? sender, EventArgs e)
     {
         // Stop all audio to prevent it from continuing after disposal
         if (_soundService != null)
         {
             _ = _soundService.StopAllSoundsAsync();
-            GameConsole.Log("[FFFControlPanel] Control disposed - stopping all audio");
+            GameConsole.Log("[FFFOnlinePanel] Control disposed - stopping all audio");
         }
         _fffTimer?.Stop();
         _fffTimer?.Dispose();

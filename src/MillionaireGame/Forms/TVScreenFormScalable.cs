@@ -28,6 +28,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
+    private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
     // PAF timer display
     private bool _showPAFTimer = false;
@@ -194,7 +195,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             _questionStrapBounds.Height - 30);
             
         DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
-            "Arial", 32, FontStyle.Bold, Color.White, textBounds, 2);
+            "Copperplate Gothic Bold", 32, FontStyle.Bold, Color.White, textBounds, 2);
     }
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeft, bool showText)
@@ -255,7 +256,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 bounds.Height - 30);
                 
             DrawScaledTextWithWrap(g, text, 
-                "Arial", 24, FontStyle.Regular, Color.White, textBounds, 2, 
+                "Copperplate Gothic Bold", 24, FontStyle.Regular, Color.White, textBounds, 2, 
                 StringAlignment.Near);
         }
     }
@@ -401,13 +402,27 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 // Current level - use white text if showing alternate lock-in graphic, black otherwise
                 textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
             }
-            else if (level == 5 || level == 10 || level == 15)
+            else if (level == 15)
             {
-                textColor = Color.White; // Milestone levels
+                textColor = Color.White; // Q15 is always white (million dollar question)
+            }
+            else if (level == 5 || level == 10)
+            {
+                // Q5 and Q10 are white only if they're enabled as safety nets
+                bool isQ5Enabled = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
+                bool isQ10Enabled = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
+                bool isRiskMode = _currentGameMode == GameMode.Risk;
+                
+                // White only if safety net is enabled AND not in Risk Mode
+                if (level == 5)
+                    textColor = (isQ5Enabled && !isRiskMode) ? Color.White : Color.Gold;
+                else // level == 10
+                    textColor = (isQ10Enabled && !isRiskMode) ? Color.White : Color.Gold;
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
-                textColor = Color.White; // Custom safety nets
+                // Custom safety nets (not Q5/Q10) - white only if not in Risk Mode
+                textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
             }
             else
             {
@@ -553,7 +568,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         {
             // Draw winner text centered on screen
             var designBounds = new RectangleF(200, 400, 1520, 280);
-            using var font = new Font("Arial", 120, FontStyle.Bold);
+            using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
             using var brush = new SolidBrush(Color.Gold);
             using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
             
@@ -561,7 +576,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
             
             // Draw "WINNER!" above
-            using var titleFont = new Font("Arial", 80, FontStyle.Bold);
+            using var titleFont = new Font("Copperplate Gothic Bold", 80, FontStyle.Bold);
             using var titleBrush = new SolidBrush(Color.White);
             var titleBounds = new RectangleF(200, 280, 1520, 100);
             DrawScaledText(g, "WINNER!", titleFont, titleBrush,
@@ -630,7 +645,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 
                 // Draw contestant name (left side of strap)
                 // VB.NET position: X=379 (scaled to 570px for 1920 width)
-                using var font = new Font("Calibri", 30, FontStyle.Bold); // Scaled from 20.25pt
+                using var font = new Font("Copperplate Gothic Bold", 30, FontStyle.Bold); // Scaled from 20.25pt
                 Color textColor = isHighlighted ? Color.Black : Color.White;
                 using var brush = new SolidBrush(textColor);
                 using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
@@ -841,6 +856,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // TV Screen: Clear all graphics and show money tree with animation
         // Use GetDisplayLevel to show level 15 when game is won
         _currentMoneyTreeLevel = _moneyTreeService.GetDisplayLevel(state.CurrentLevel, state.GameWin);
+        _currentGameMode = state.Mode; // Store game mode for rendering
         _showWinnings = false;
         _showQuestionAndAnswers = false;
         _showMoneyTree = true;

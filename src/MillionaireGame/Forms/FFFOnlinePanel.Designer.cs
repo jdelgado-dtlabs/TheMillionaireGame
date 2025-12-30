@@ -1,6 +1,6 @@
 namespace MillionaireGame.Forms
 {
-    partial class FFFControlPanel
+    partial class FFFOnlinePanel
     {
         private System.ComponentModel.IContainer components = null;
 

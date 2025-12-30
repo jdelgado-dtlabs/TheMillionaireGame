@@ -1,11 +1,21 @@
 # FFF Online Web Client Flow Improvements
 
-**Status:** ✅ COMPLETE
-**Priority:** HIGH
-**Date:** December 2025
+**Status:** ✅ COMPLETE  
+**Architecture Refactored:** December 29, 2025  
+**Priority:** HIGH  
+**Date:** December 2025  
 **Completed:** December 27, 2025
 
 ---
+
+## Architecture Notes
+
+As of December 29, 2025, the FFF system has been refactored with clear separation:
+- **FFFOnlinePanel** (formerly FFFControlPanel) - Handles web-based FFF with SignalR
+- **FFFOfflinePanel** - New UserControl for local player selection mode
+- **FFFWindow** - Container that dynamically switches between Online/Offline modes
+
+This document focuses on the **FFFOnlinePanel** web client messaging implementation.
 
 ## Implementation Summary
 
@@ -53,7 +63,7 @@ All FFF web client phase messaging has been successfully implemented and tested.
 **Files Modified:**
 1. `FFFClientService.cs` - Added BroadcastPhaseMessageAsync method
 2. `FFFHub.cs` - Added BroadcastPhaseMessage hub method
-3. `FFFControlPanel.cs` - Added 5 broadcast calls at key phases
+3. `FFFOnlinePanel.cs` (formerly FFFControlPanel.cs) - Added 5 broadcast calls at key phases
 4. `FFFWindow.cs` - Added ResetToLobby broadcast on close
 
 ### Frontend (HTML/JavaScript)

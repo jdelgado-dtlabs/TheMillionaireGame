@@ -3,9 +3,6 @@
   <PackName>Default</PackName>
   <Sounds>
     <!-- General/Broadcast Sounds -->
-    <Sound Key="OpeningTheme" File="opening_theme.mp3" />
-    <Sound Key="CommercialIn" File="commercial_in.mp3" />
-    <Sound Key="CommercialOut" File="commercial_out.mp3" />
     <Sound Key="ClosingTheme" File="close_theme.mp3" />
     <Sound Key="HostEntrance" File="host_entrance.mp3" />
     <Sound Key="CloseUnderscore" File="close_underscore.mp3" />
@@ -16,7 +13,6 @@
     <Sound Key="WalkAwayLarge" File="walk_away_large.mp3" />
     <Sound Key="GameOver" File="game_over.mp3" />
     <Sound Key="RiskModeActive" File="risk_mode.mp3" />
-    <Sound Key="RandomContestantPicking" File="pick_random_contestant.mp3" />
     <Sound Key="SetSafetyNet" File="set_safety_net.mp3" />
     
     <!-- Fastest Finger First Sounds -->

@@ -17,6 +17,12 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Eliminated all horizontal and vertical scrollbars across all tabs
   * Location: OptionsDialog.Designer.cs, OptionsDialog.cs
 
+- **FFF Mode Persistence Bug** ✅ COMPLETE
+  * Fixed issue where FFF window retained "Online" mode after web server stopped and window was reset
+  * Implemented dynamic mode switching via UpdateModeAsync() method
+  * Window now checks web server state before showing and reconfigures UI accordingly
+  * Location: FFFWindow.cs, ControlPanelForm.cs
+
 ### Changed
 - **Workspace Reorganization**:
   * All VB.NET projects moved to `archive-vbnet/` folder (scheduled for removal at v1.0)
@@ -24,6 +30,15 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * New root README.md with GitHub Wiki reference for comprehensive documentation
   * Removed obsolete FFF_BACKUP folders (OneDrive merge recovery backups no longer needed)
   * Clean workspace structure: archive-vbnet/, src/, and configuration files only at root
+
+- **FFF Architecture Refactoring** ✅ COMPLETE
+  * Renamed FFFControlPanel → FFFOnlinePanel for clarity (Online = web-based mode)
+  * Renamed localPlayerPanel → fffOfflinePanel for clarity (Offline = local player selection mode)
+  * Extracted FFFOfflinePanel into separate UserControl (FFFOfflinePanel.cs + Designer.cs)
+  * Reduced FFFWindow.cs from 597 to 236 lines (60% reduction) by extracting offline logic
+  * Clear separation of concerns: FFFWindow (mode switcher), FFFOnlinePanel (web mode), FFFOfflinePanel (local mode)
+  * Event-driven architecture with PlayerSelected event for offline mode completion
+  * Location: FFFWindow.cs, FFFOnlinePanel.cs, FFFOfflinePanel.cs
 
 ### Added
 - **Question Editor Enhancements** ✅ FEATURE COMPLETE

@@ -10,7 +10,7 @@
 
 ### What to Do When You Return
 
-**CURRENT STATE**: ✅ **CSCore Audio System COMPLETE** ✅ **Shutdown System with Progress Dialog COMPLETE** ✅ **Settings Dialog UI COMPLETE**
+**CURRENT STATE**: ✅ **CSCore Audio System COMPLETE** ✅ **Shutdown System with Progress Dialog COMPLETE** ✅ **Settings Dialog UI COMPLETE** ✅ **FFF Architecture Refactoring COMPLETE**
 
 **READY FOR**: Crash Handler Implementation OR Next Game Feature Development
 
@@ -21,9 +21,22 @@
 4. ✅ **Audio Disposal** - No orphaned processes, proper cleanup on shutdown
 5. ✅ **FFF System** - Winner detection, ranking, audio control all working correctly
 6. ✅ **Settings Dialog** - All UI bugs fixed, standardized layouts, no scrollbars
-7. ✅ **Build Status** - All green, 49 warnings (expected nullable reference types)
+7. ✅ **FFF Architecture** - Clear separation of Online/Offline modes, extracted UserControl, dynamic mode switching
+8. ✅ **Build Status** - All green, 49 warnings (expected nullable reference types)
 
 #### What Was Completed This Phase
+
+**FFF Architecture Refactoring (December 29, 2025):**
+- **Problem**: FFF mode persistence bug - window retained "Online" state after web server stopped; unclear naming between Online/Offline modes; monolithic 597-line FFFWindow mixing container logic with offline implementation
+- **Dynamic Mode Switching**: Created UpdateModeAsync() method that checks web server state and reconfigures UI before showing window; removed `readonly` from _isWebServerRunning field
+- **Clear Naming**: Renamed FFFControlPanel → FFFOnlinePanel (web-based mode), localPlayerPanel → fffOfflinePanel (local player selection mode)
+- **Code Extraction**: Created FFFOfflinePanel as independent UserControl (FFFOfflinePanel.cs 453 lines, FFFOfflinePanel.Designer.cs 178 lines)
+- **Architecture**: Three-component system - FFFWindow (mode switcher, 236 lines), FFFOnlinePanel (web mode, 1607 lines), FFFOfflinePanel (local mode, 453 lines)
+- **Service Injection**: SoundService and ScreenUpdateService passed to panels via SetSoundService() and SetScreenService() methods
+- **Event-Driven**: FFFOfflinePanel.PlayerSelected event notifies parent window of completion
+- **File Reduction**: FFFWindow.cs reduced 60% (597→236 lines), FFFWindow.Designer.cs reduced 67% (204→68 lines)
+- **Result**: Clean separation of concerns, reusable components, improved maintainability, all functionality preserved
+- **Location**: FFFWindow.cs, FFFOnlinePanel.cs, FFFOfflinePanel.cs, ControlPanelForm.cs
 
 **Settings Dialog UI Refinement (December 29, 2025):**
 - **Problem**: Inconsistent tab dimensions, cut-off content, unnecessary scrollbars, cluttered layouts

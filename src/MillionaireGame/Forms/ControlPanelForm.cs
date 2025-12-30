@@ -875,6 +875,15 @@ public partial class ControlPanelForm : Form
         bool isNet5Active = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
         bool isNet10Active = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
         
+        // If already in Risk Mode, keep button disabled and red
+        if (_gameService.State.Mode == Core.Models.GameMode.Risk)
+        {
+            btnActivateRiskMode.BackColor = Color.Red;
+            btnActivateRiskMode.Text = "RISK MODE: ON";
+            btnActivateRiskMode.Enabled = false; // Stay disabled once activated
+            return;
+        }
+        
         // Determine button state based on safety net configuration
         if (!isNet5Active && !isNet10Active)
         {
@@ -886,48 +895,51 @@ public partial class ControlPanelForm : Form
         else if (!isNet5Active)
         {
             // Q5 safety net disabled
-            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
-            {
-                btnActivateRiskMode.BackColor = Color.Red;
-                btnActivateRiskMode.Text = "RISK MODE: ON";
-            }
-            else
-            {
-                btnActivateRiskMode.BackColor = Color.Blue;
-                btnActivateRiskMode.Text = "RISK MODE: 5";
-            }
+            btnActivateRiskMode.BackColor = Color.Blue;
+            btnActivateRiskMode.Text = "RISK MODE: 5";
             btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
         }
         else if (!isNet10Active)
         {
             // Q10 safety net disabled
-            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
-            {
-                btnActivateRiskMode.BackColor = Color.Red;
-                btnActivateRiskMode.Text = "RISK MODE: ON";
-            }
-            else
-            {
-                btnActivateRiskMode.BackColor = Color.Blue;
-                btnActivateRiskMode.Text = "RISK MODE: 10";
-            }
+            btnActivateRiskMode.BackColor = Color.Blue;
+            btnActivateRiskMode.Text = "RISK MODE: 10";
             btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
         }
         else
         {
-            // Both safety nets active = normal risk mode toggle
-            if (_gameService.State.Mode == Core.Models.GameMode.Risk)
-            {
-                btnActivateRiskMode.BackColor = Color.Red;
-                btnActivateRiskMode.Text = "RISK MODE: ON";
-            }
-            else
-            {
-                btnActivateRiskMode.BackColor = Color.Yellow;
-                btnActivateRiskMode.Text = "Activate Risk Mode";
-            }
+            // Both safety nets active = normal risk mode toggle available at start
+            btnActivateRiskMode.BackColor = Color.Yellow;
+            btnActivateRiskMode.Text = "Activate Risk Mode";
             btnActivateRiskMode.Enabled = (_gameService.State.CurrentLevel == 0);
         }
+    }
+    
+    /// <summary>
+    /// Determines if safety net lock-in is available (not disabled by Risk Mode or unchecked in settings)
+    /// </summary>
+    private bool CanLockInSafetyNet()
+    {
+        var settings = _gameService.MoneyTree.Settings;
+        var currentMode = _gameService.State.Mode;
+        
+        // Check if the pending safety net level is actually enabled in settings
+        bool isNet5Enabled = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
+        bool isNet10Enabled = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
+        
+        // If Q5 is pending but disabled in settings, cannot lock in
+        if (_pendingSafetyNetLevel == 5 && !isNet5Enabled)
+            return false;
+            
+        // If Q10 is pending but disabled in settings, cannot lock in
+        if (_pendingSafetyNetLevel == 10 && !isNet10Enabled)
+            return false;
+        
+        // Check if safety net is disabled due to Risk Mode
+        if (_gameService.MoneyTree.IsSafetyNetDisabledInRiskMode(_pendingSafetyNetLevel, currentMode))
+            return false;
+        
+        return true;
     }
     
     /// <summary>
@@ -935,8 +947,9 @@ public partial class ControlPanelForm : Form
     /// </summary>
     private void UpdateMoneyTreeOnScreens(int level)
     {
-        _hostScreen?.UpdateMoneyTreeLevel(level);
-        _guestScreen?.UpdateMoneyTreeLevel(level);
+        var currentMode = _gameService.State.Mode;
+        _hostScreen?.UpdateMoneyTreeLevel(level, currentMode);
+        _guestScreen?.UpdateMoneyTreeLevel(level, currentMode);
         
         if (_tvScreen is TVScreenForm tvForm)
         {
@@ -1726,32 +1739,27 @@ public partial class ControlPanelForm : Form
             return;
         }
         
-        var newMode = _gameService.State.Mode == Core.Models.GameMode.Normal
-            ? Core.Models.GameMode.Risk
-            : Core.Models.GameMode.Normal;
-
-        _gameService.ChangeMode(newMode);
-        
-        // Update button appearance based on mode
-        if (newMode == Core.Models.GameMode.Risk)
+        // If already in Risk Mode, do nothing (button should be disabled but check anyway)
+        if (_gameService.State.Mode == Core.Models.GameMode.Risk)
         {
-            btnActivateRiskMode.BackColor = Color.Red;
-            btnActivateRiskMode.Text = "RISK MODE: ON";
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug("[Risk Mode] Activated - No safety net at Q5/Q10, uses alternate sounds");
-            }
+            GameConsole.Warn("[RiskMode] Risk Mode is already active.");
+            return;
         }
-        else
+        
+        // Activate Risk Mode
+        _gameService.ChangeMode(Core.Models.GameMode.Risk);
+        
+        // Play Risk Mode activation sound
+        _soundService.PlaySound(SoundEffect.RiskModeActive, "risk_mode_active", loop: false);
+        
+        // Update button appearance - set to active state and disable
+        btnActivateRiskMode.BackColor = Color.Red;
+        btnActivateRiskMode.Text = "RISK MODE: ON";
+        btnActivateRiskMode.Enabled = false; // Disable button once activated
+        
+        if (Program.DebugMode)
         {
-            btnActivateRiskMode.BackColor = Color.Yellow;
-            btnActivateRiskMode.Text = "Activate Risk Mode";
-            
-            if (Program.DebugMode)
-            {
-                GameConsole.Debug("[Risk Mode] Deactivated - Normal mode restored");
-            }
+            GameConsole.Debug("[Risk Mode] Activated - No safety net at Q5/Q10, uses alternate sounds. Button disabled until reset.");
         }
     }
     
@@ -1782,7 +1790,7 @@ public partial class ControlPanelForm : Form
                 btnShowMoneyTree.ForeColor = Color.Black;
                 btnShowMoneyTree.Text = "Demo Money Tree";
             }
-            else if (_pendingSafetyNetLevel > 0)
+            else if (_pendingSafetyNetLevel > 0 && CanLockInSafetyNet())
             {
                 // Safety net lock-in is available - show "Lock In Safety" button
                 btnShowMoneyTree.BackColor = Color.LightBlue;
@@ -2314,25 +2322,31 @@ public partial class ControlPanelForm : Form
         });
     }
 
-    private void btnPickPlayer_Click(object? sender, EventArgs e)
+    private async void btnPickPlayer_Click(object? sender, EventArgs e)
     {
         // Open FFF Window to manage Fastest Finger First
+        
+        // Always use localhost for internal connections, regardless of what IP the web server listens on
+        // The web server may listen on 0.0.0.0, 192.168.x.x, etc., but we always connect via localhost
+        var serverPort = _appSettings.Settings.AudienceServerPort;
+        var serverUrl = $"http://127.0.0.1:{serverPort}";
+        
+        // Check if web server is actually running
+        bool isWebServerRunning = _webServerHost != null && _webServerHost.IsRunning;
+        
         if (_fffWindow == null || _fffWindow.IsDisposed)
         {
-            // Always use localhost for internal connections, regardless of what IP the web server listens on
-            // The web server may listen on 0.0.0.0, 192.168.x.x, etc., but we always connect via localhost
-            var serverPort = _appSettings.Settings.AudienceServerPort;
-            var serverUrl = $"http://127.0.0.1:{serverPort}";
-            
-            // Check if web server is actually running
-            bool isWebServerRunning = _webServerHost != null && _webServerHost.IsRunning;
-            
+            // Create new window with current server state
             _fffWindow = new FFFWindow(serverUrl, isWebServerRunning, _screenService as ScreenUpdateService, _soundService);
+        }
+        else
+        {
+            // Update existing window's mode based on current server state
+            await _fffWindow.UpdateModeAsync(isWebServerRunning);
         }
         
         // Check if no more players available (offline mode only)
-        bool webServerRunning = _webServerHost != null && _webServerHost.IsRunning;
-        if (!webServerRunning && _fffWindow.NoMorePlayers)
+        if (!isWebServerRunning && _fffWindow.NoMorePlayers)
         {
             GameConsole.Warn("[FFF] No more players available! Please reset the game to start a new session.");
             return;
@@ -2371,7 +2385,7 @@ public partial class ControlPanelForm : Form
         
         // Enable Reset Round button (grey with red border/symbol and black text)
         // UNLESS no more players are available in offline mode
-        if (!webServerRunning && _fffWindow.NoMorePlayers)
+        if (!isWebServerRunning && _fffWindow.NoMorePlayers)
         {
             btnResetRound.Enabled = false;
             btnResetRound.BackColor = Color.DarkGray;
@@ -2759,7 +2773,7 @@ public partial class ControlPanelForm : Form
         ResetAllControls();
 
         // Reset FFF Online control panel state
-        _fffWindow?.ControlPanel.ResetFFFRound();
+        _fffWindow?.OnlinePanel.ResetFFFRound();
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -2828,7 +2842,7 @@ public partial class ControlPanelForm : Form
         ResetAllControls(resetFFFWindow: false);
 
         // Reset FFF Online control panel state
-        _fffWindow?.ControlPanel.ResetFFFRound();
+        _fffWindow?.OnlinePanel.ResetFFFRound();
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -3116,10 +3130,15 @@ public partial class ControlPanelForm : Form
         // Use passed questionNumber or fall back to nmrLevel (now 1-indexed)
         var currentQuestion = questionNumber ?? ((int)nmrLevel.Value);
         var isRiskMode = _gameService.State.Mode == GameMode.Risk;
+        var settings = _gameService.MoneyTree.Settings;
+        
+        // Check if specific safety nets are disabled (either by Risk Mode or unchecked in settings)
+        bool isQ5SafetyNetDisabled = isRiskMode || (settings.SafetyNet1 != 5 && settings.SafetyNet2 != 5);
+        bool isQ10SafetyNetDisabled = isRiskMode || (settings.SafetyNet1 != 10 && settings.SafetyNet2 != 10);
         
         if (Program.DebugMode)
         {
-            GameConsole.Log($"[Sound] Looking for correct sound for question #{currentQuestion}, Risk Mode: {isRiskMode}");
+            GameConsole.Log($"[Sound] Looking for correct sound for question #{currentQuestion}, Risk Mode: {isRiskMode}, Q5 disabled: {isQ5SafetyNetDisabled}, Q10 disabled: {isQ10SafetyNetDisabled}");
         }
         
         var soundKey = currentQuestion switch
@@ -3128,12 +3147,12 @@ public partial class ControlPanelForm : Form
             2 => "Q01to04Correct",
             3 => "Q01to04Correct",
             4 => "Q01to04Correct",
-            5 => isRiskMode ? "Q05Correct2" : "Q05Correct",
+            5 => isQ5SafetyNetDisabled ? "Q05Correct2" : "Q05Correct",
             6 => "Q06Correct",
             7 => "Q07Correct",
             8 => "Q08Correct",
             9 => "Q09Correct",
-            10 => isRiskMode ? "Q10Correct2" : "Q10Correct",
+            10 => isQ10SafetyNetDisabled ? "Q10Correct2" : "Q10Correct",
             11 => "Q11Correct",
             12 => "Q12Correct",
             13 => "Q13Correct",
@@ -3618,7 +3637,7 @@ public partial class ControlPanelForm : Form
         // Reset FFF Window state (offline mode only) - only if requested
         if (resetFFFWindow && _fffWindow != null && !_fffWindow.IsDisposed)
         {
-            _fffWindow.ResetLocalPlayerState();
+            _fffWindow.OfflinePanel.ResetState();
         }
         
         // Disable answer buttons until a question is loaded and set to grey

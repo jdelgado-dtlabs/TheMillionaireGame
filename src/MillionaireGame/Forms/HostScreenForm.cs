@@ -23,6 +23,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
+    private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
     // PAF timer display
     private bool _showPAFTimer = false;
@@ -91,15 +92,16 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         _moneyTreeService = moneyTreeService;
     }
 
-    public void UpdateMoneyTreeLevel(int level)
+    public void UpdateMoneyTreeLevel(int level, GameMode mode = GameMode.Normal)
     {
         if (InvokeRequired)
         {
-            BeginInvoke(new Action(() => UpdateMoneyTreeLevel(level)));
+            BeginInvoke(new Action(() => UpdateMoneyTreeLevel(level, mode)));
             return;
         }
         
         _currentMoneyTreeLevel = level;
+        _currentGameMode = mode; // Store game mode for rendering
         _useSafetyNetAltGraphic = false; // Reset to normal graphic
         Refresh(); // Force immediate redraw to update money tree
     }
@@ -190,7 +192,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             _questionStrapBounds.Height - 30);
             
         DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
-            "Arial", 32, FontStyle.Bold, Color.White, textBounds, 2);
+            "Copperplate Gothic Bold", 32, FontStyle.Bold, Color.White, textBounds, 2);
     }
 
 
@@ -236,7 +238,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             float textRightPadding = 80;
             
             // Draw answer letter
-            using var letterFont = new Font("Arial", 28, FontStyle.Bold);
+            using var letterFont = new Font("Copperplate Gothic Bold", 28, FontStyle.Bold);
             using var letterBrush = new SolidBrush(Color.White);
             using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
             
@@ -253,7 +255,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 bounds.Height - 30);
                 
             DrawScaledTextWithWrap(g, text, 
-                "Arial", 24, FontStyle.Regular, Color.White, textBounds, 2, 
+                "Copperplate Gothic Bold", 24, FontStyle.Regular, Color.White, textBounds, 2, 
                 StringAlignment.Near);
         }
     }
@@ -389,13 +391,27 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 // Current level - use white text if showing alternate lock-in graphic, black otherwise
                 textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
             }
-            else if (level == 5 || level == 10 || level == 15)
+            else if (level == 15)
             {
-                textColor = Color.White; // Milestone levels
+                textColor = Color.White; // Q15 is always white (million dollar question)
+            }
+            else if (level == 5 || level == 10)
+            {
+                // Q5 and Q10 are white only if they're enabled as safety nets
+                bool isQ5Enabled = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
+                bool isQ10Enabled = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
+                bool isRiskMode = _currentGameMode == GameMode.Risk;
+                
+                // White only if safety net is enabled AND not in Risk Mode
+                if (level == 5)
+                    textColor = (isQ5Enabled && !isRiskMode) ? Color.White : Color.Gold;
+                else // level == 10
+                    textColor = (isQ10Enabled && !isRiskMode) ? Color.White : Color.Gold;
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
-                textColor = Color.White; // Custom safety nets
+                // Custom safety nets (not Q5/Q10) - white only if not in Risk Mode
+                textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
             }
             else
             {
