@@ -7,27 +7,67 @@
 
 ## 🎯 Critical Path (Must Complete for v1.0)
 
-### 1. Real ATA Voting Integration 🔴
+### 1. ATA Dual-Mode System (Online/Offline) 🔴
 **Status**: Not Started  
-**Estimated Time**: 2-3 hours  
+**Estimated Time**: 3-4 hours  
 **Priority**: HIGH
 
+**Architecture**: Two-mode system similar to FFF (Online/Offline)
+
+#### **Phase 1: ATA Offline Enhancement** (30 minutes)
+**Improve placeholder results to simulate realistic audience voting**
+
 **Requirements**:
-- [ ] Replace placeholder results in LifelineManager.cs line 491
-- [ ] Query WAPS database for real voting results
-- [ ] Display actual vote percentages on all screens (Host, Guest, TV)
-- [ ] Test with multiple concurrent voters (2-50 participants)
-- [ ] Validate vote aggregation accuracy
-- [ ] Ensure percentages add up to 100%
-- [ ] Handle edge cases (0 votes, tied percentages)
+- [ ] Modify GeneratePlaceholderResults() in LifelineManager.cs line 491
+- [ ] Correct answer gets 40-80% of votes (random within range)
+- [ ] Remaining 20-60% spread across incorrect answers
+- [ ] Percentages always sum to 100%
+- [ ] Maintain smooth display animations
+- [ ] Keep existing offline functionality intact
+
+**Implementation**:
+```csharp
+// Example logic:
+int correctPercent = random.Next(40, 81); // 40-80%
+int remaining = 100 - correctPercent;
+// Distribute remaining across 3 wrong answers
+```
 
 **Acceptance Criteria**:
-- ATA lifeline shows real participant votes
-- Percentages reflect actual voting distribution
-- Results update in real-time as votes come in
-- No placeholder "100% correct answer" results
+- Realistic voting distribution (correct answer favored but not 100%)
+- Mimics real audience behavior
+- Works offline without web server
+- Smooth visual display on all screens
 
-**Blockers**: None (ATA voting system complete)
+#### **Phase 2: ATA Online Implementation** (2.5-3 hours)
+**Real-time voting with WAPS database integration**
+
+**Requirements**:
+- [ ] Create ATAOnline mode detection (check web server running)
+- [ ] Query WAPS database for real-time vote counts
+- [ ] Implement vote aggregation service in SessionService.cs
+- [ ] Display actual percentages as votes come in
+- [ ] Update results in real-time on all screens (Host, Guest, TV)
+- [ ] Test with multiple concurrent voters (2-50 participants)
+- [ ] Handle edge cases (0 votes, ties, all vote same answer)
+- [ ] Graceful fallback to offline mode if web server unavailable
+
+**Database Query**:
+```sql
+SELECT Answer, COUNT(*) as VoteCount 
+FROM ATAVotes 
+WHERE SessionId = @sessionId AND QuestionId = @questionId
+GROUP BY Answer
+```
+
+**Acceptance Criteria**:
+- ATA Online shows real participant votes from database
+- Percentages update dynamically as votes submitted
+- Real-time display on all screens
+- Smooth transition between offline/online modes
+- Clear indication of which mode is active
+
+**Blockers**: None (ATA voting infrastructure complete, SignalR operational)
 
 ---
 
