@@ -3,7 +3,6 @@ using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
 using MillionaireGame.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using System.Drawing;
 
 namespace MillionaireGame.Services;
@@ -499,14 +498,14 @@ public class LifelineManager
         
         try
         {
-            var sessionService = await GetServiceFromWebServerAsync<MillionaireGame.Web.Services.SessionService>(webServerHost);
+            var sessionService = webServerHost.GetService<MillionaireGame.Web.Services.SessionService>();
             
             if (sessionService == null)
             {
                 return;
             }
             
-            var dbContext = await GetServiceFromWebServerAsync<MillionaireGame.Web.Data.WAPSDbContext>(webServerHost);
+            var dbContext = webServerHost.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
             
             if (dbContext == null)
             {
@@ -628,7 +627,7 @@ public class LifelineManager
         try
         {
             // Get SessionService from web server host
-            var sessionService = await GetServiceFromWebServerAsync<MillionaireGame.Web.Services.SessionService>(webServerHost);
+            var sessionService = webServerHost.GetService<MillionaireGame.Web.Services.SessionService>();
             
             if (sessionService == null)
             {
@@ -637,7 +636,7 @@ public class LifelineManager
             }
             
             // Get WAPSDbContext to query for active session
-            var dbContext = await GetServiceFromWebServerAsync<MillionaireGame.Web.Data.WAPSDbContext>(webServerHost);
+            var dbContext = webServerHost.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
             
             if (dbContext == null)
             {
@@ -684,43 +683,7 @@ public class LifelineManager
         }
     }
     
-    /// <summary>
-    /// Get a service from the web server host
-    /// </summary>
-    private async Task<T?> GetServiceFromWebServerAsync<T>(WebServerHost webServerHost) where T : class
-    {
-        try
-        {
-            // Access internal Services property via reflection
-            var hostProperty = webServerHost.GetType().GetProperty("Host", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            if (hostProperty == null)
-            {
-                LogMessage?.Invoke($"[ATA] Unable to access Host property on WebServerHost");
-                return null;
-            }
-            
-            var host = hostProperty.GetValue(webServerHost) as Microsoft.Extensions.Hosting.IHost;
-            
-            if (host == null)
-            {
-                LogMessage?.Invoke($"[ATA] Host is null on WebServerHost");
-                return null;
-            }
-            
-            // Create a scope to get scoped services
-            using var scope = host.Services.CreateScope();
-            var service = scope.ServiceProvider.GetService(typeof(T)) as T;
-            
-            return service;
-        }
-        catch (Exception ex)
-        {
-            LogMessage?.Invoke($"[ATA] Error getting service from web server: {ex.Message}");
-            return null;
-        }
-    }
+
     
     #endregion
     

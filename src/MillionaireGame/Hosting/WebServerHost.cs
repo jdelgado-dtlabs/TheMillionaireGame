@@ -49,6 +49,27 @@ public class WebServerHost : IDisposable
     }
 
     /// <summary>
+    /// Gets a service from the web server's dependency injection container
+    /// </summary>
+    /// <typeparam name="T">The service type to resolve</typeparam>
+    /// <returns>The service instance, or null if not found or server not running</returns>
+    public T? GetService<T>() where T : class
+    {
+        if (_host == null)
+            return null;
+
+        try
+        {
+            using var scope = _host.Services.CreateScope();
+            return scope.ServiceProvider.GetService<T>();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Starts the web server on the specified IP address and port
     /// </summary>
     /// <param name="ipAddress">IP address to bind to (e.g., "0.0.0.0", "127.0.0.1", or local IP)</param>
@@ -71,15 +92,30 @@ public class WebServerHost : IDisposable
                 displayIP = publicIP ?? "0.0.0.0";
             }
             
-            // Bind URL uses the actual IP address
-            var bindUrl = $"http://{ipAddress}:{port}";
+            // Build list of URLs to bind to
+            // Always include localhost unless the selected IP already is localhost
+            List<string> bindUrls = new List<string>();
+            
+            if (ipAddress == "127.0.0.1" || ipAddress == "localhost")
+            {
+                // Localhost only
+                bindUrls.Add($"http://127.0.0.1:{port}");
+            }
+            else
+            {
+                // Add localhost first
+                bindUrls.Add($"http://127.0.0.1:{port}");
+                // Then add the selected IP
+                bindUrls.Add($"http://{ipAddress}:{port}");
+            }
+            
             // Display URL shows the public IP if available
             _baseUrl = $"http://{displayIP}:{port}";
 
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseUrls(bindUrl);
+                    webBuilder.UseUrls(bindUrls.ToArray());
                     // Set the content root and web root to the application's base directory
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     webBuilder.UseContentRoot(baseDir);
