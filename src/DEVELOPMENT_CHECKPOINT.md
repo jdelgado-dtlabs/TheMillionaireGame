@@ -1,7 +1,7 @@
 # Development Checkpoint - v0.8.0-2512
 **Date**: December 29, 2025  
-**Version**: 0.8.0-2512 (CSCore Audio System & Settings Dialog COMPLETE)  
-**Branch**: feature/QEditor_Integration  
+**Version**: 0.8.0-2512 (Web Integration + CSCore Audio System + Settings Dialog COMPLETE)  
+**Branch**: feature/web-integration  
 **Author**: jdelgado-dtlabs
 
 ---
@@ -10,21 +10,38 @@
 
 ### What to Do When You Return
 
-**CURRENT STATE**: ✅ **CSCore Audio System COMPLETE** ✅ **Shutdown System with Progress Dialog COMPLETE** ✅ **Settings Dialog UI COMPLETE** ✅ **FFF Architecture Refactoring COMPLETE**
+**CURRENT STATE**: ✅ **Web Server Integration COMPLETE** ✅ **CSCore Audio System COMPLETE** ✅ **Shutdown System COMPLETE** ✅ **Settings Dialog UI COMPLETE** ✅ **FFF Architecture Refactoring COMPLETE**
 
-**READY FOR**: Crash Handler Implementation OR Next Game Feature Development
+**READY FOR**: Phase 7 (Build & Deployment Verification) OR Crash Handler Implementation OR Next Game Feature Development
 
 #### Quick Status Check
-1. ✅ **CSCore Audio System** - Complete with DSP, silence detection, audio queue, crossfading
-2. ✅ **Audio Settings UI** - Full configuration UI in Options dialog (Phase 4 complete)
-3. ✅ **Shutdown System** - Progress dialog with component-level visibility and GameConsole logging
-4. ✅ **Audio Disposal** - No orphaned processes, proper cleanup on shutdown
-5. ✅ **FFF System** - Winner detection, ranking, audio control all working correctly
-6. ✅ **Settings Dialog** - All UI bugs fixed, standardized layouts, no scrollbars
-7. ✅ **FFF Architecture** - Clear separation of Online/Offline modes, extracted UserControl, dynamic mode switching
-8. ✅ **Build Status** - All green, 49 warnings (expected nullable reference types)
+1. ✅ **Web Server Integration** - Consolidated into single executable, all tests passing (7/8)
+2. ✅ **CSCore Audio System** - Complete with DSP, silence detection, audio queue, crossfading
+3. ✅ **Audio Settings UI** - Full configuration UI in Options dialog (Phase 4 complete)
+4. ✅ **Shutdown System** - Progress dialog with component-level visibility and GameConsole logging
+5. ✅ **Audio Disposal** - No orphaned processes, proper cleanup on shutdown
+6. ✅ **FFF System** - Winner detection, ranking, audio control all working correctly
+7. ✅ **Settings Dialog** - All UI bugs fixed, standardized layouts, no scrollbars
+8. ✅ **FFF Architecture** - Clear separation of Online/Offline modes, extracted UserControl, dynamic mode switching
+9. ✅ **Build Status** - All green, 66 warnings (49 pre-existing + 17 Web project warnings)
+10. ✅ **Automated Tests** - Web server endpoints verified, SignalR hubs operational, static files serving
 
 #### What Was Completed This Phase
+
+**Web Server Integration (December 29, 2025 - Phases 1-6):**
+- **Problem**: Two executables (MillionaireGame.exe + MillionaireGame.Web.exe), standalone web server, code duplication, configuration split across projects
+- **Discovery**: WebServerHost.cs already implemented complete embedded hosting (Phase 1 analysis saved 2+ hours)
+- **Phase 1**: Comprehensive analysis comparing WebServerHost vs Program.cs - WebServerHost more complete
+- **Phase 2**: SKIPPED - Configuration already integrated in WebServerHost
+- **Phase 3**: Added Microsoft.EntityFrameworkCore.Sqlite (8.0.*) and QRCoder (1.7.0) to main project
+- **Phase 4**: Converted MillionaireGame.Web from executable to library (OutputType=Library, kept Sdk.Web for implicit usings)
+- **Phase 5**: Automated testing confirmed 7/8 tests passing (landing page, health endpoint, both SignalR hubs, session API, database)
+- **Phase 6**: Documentation updates (CHANGELOG, DEVELOPMENT_CHECKPOINT)
+- **Result**: Single MillionaireGame.exe with embedded ASP.NET Core server on port 5278
+- **Architecture**: Main app (EXE) → WebServerHost.cs → MillionaireGame.Web (DLL) → Controllers/Hubs/Services
+- **Files Removed**: Program.cs (archived), appsettings*.json, launchSettings.json, MillionaireGame.Web.http, Swagger packages
+- **Testing**: Landing page loads (8906 bytes), SignalR hubs negotiate successfully, health endpoint returns JSON, database accessible (68 KB)
+- **Location**: MillionaireGame.Web.csproj, WebServerHost.cs, MillionaireGame.csproj, src/test-web-server.ps1, docs/sessions/PHASE_5_TESTING_RESULTS.md
 
 **FFF Architecture Refactoring (December 29, 2025):**
 - **Problem**: FFF mode persistence bug - window retained "Online" state after web server stopped; unclear naming between Online/Offline modes; monolithic 597-line FFFWindow mixing container logic with offline implementation
@@ -74,26 +91,33 @@
 
 #### Next Session Options
 
-**Option A: Implement Crash Handler** ⭐ PLANNED
-- Watchdog application monitors main process
-- Heartbeat system detects crashes and freezes
-- Comprehensive crash reports with diagnostics
-- Auto-restart capability with crash loop protection
+**Option A: Complete Phase 7 - Build & Deployment Verification** ⭐ RECOMMENDED
+- Clean build from scratch (delete bin/obj folders)
+- Verify output directory structure (single EXE + dependencies)
+- Test deployment to clean machine/VM (copy deployment folder, run from fresh location)
+- Measure performance metrics (startup time, memory usage, web server response time)
+- Document deployment requirements (runtime dependencies, prerequisites)
+- Create deployment package structure recommendation
+- See: `docs/active/WEB_INTEGRATION_PLAN.md` (Phase 7 section)
+
+**Option B: Merge to master-csharp and Continue Development**
+- Merge feature/web-integration branch to master-csharp
+- Proceed with Crash Handler implementation
 - See: `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md`
 
-**Option B: Continue Game Feature Development**
+**Option C: Continue Game Feature Development**
 - Test remaining lifelines (Switch Question, Double Dip, Ask the Host)
 - Implement hotkey mapping (F8-F11 for lifelines)
 - Add more game modes or features
 - Graphics implementation for FFF
 
-**Option C: FFF Online Testing & Enhancement**
+**Option D: FFF Online Testing & Enhancement**
 - Test web client interface with multiple browsers
 - Test FFF flow end-to-end with web participants
 - Add FFF statistics tracking (fastest time, accuracy rate)
 - Consider answer reveal animations
 
-**None at this time** - All reported FFF issues have been resolved!
+**None at this time** - All reported FFF issues and web integration tasks have been resolved!
 
 ---
 

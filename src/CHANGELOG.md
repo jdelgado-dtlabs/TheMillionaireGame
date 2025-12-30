@@ -4,6 +4,17 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [v0.8.0-2512] - 2025-12-29
 
+### Changed
+- **Web Server Integration** ✅ COMPLETE
+  * Consolidated standalone web server into main application for single-executable architecture
+  * Converted MillionaireGame.Web from standalone app to class library
+  * Web functionality now embedded via WebServerHost.cs in main application
+  * Removed: Standalone Program.cs, appsettings.json, launchSettings.json, Swagger packages
+  * Added: Microsoft.EntityFrameworkCore.Sqlite and QRCoder packages to main project
+  * Result: Single MillionaireGame.exe with embedded ASP.NET Core server
+  * Testing: 7/8 automated tests passing, all critical infrastructure operational
+  * Location: MillionaireGame.Web.csproj, WebServerHost.cs, MillionaireGame.csproj
+
 ### Fixed
 - **Settings Dialog UI Refinement** ✅ COMPLETE
   * Standardized window dimensions to 684x540px for consistent layout across all tabs
