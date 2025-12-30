@@ -147,10 +147,10 @@ public partial class OptionsDialog : Form
     
     private void UpdateDropdownEnabledStates()
     {
-        // Disable dropdown when full-screen is enabled, enable when disabled
-        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
-        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
-        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+        // Enable dropdown when checkbox is checked (opposite of before)
+        cmbMonitorHost.Enabled = chkFullScreenHostScreen.Checked;
+        cmbMonitorGuest.Enabled = chkFullScreenGuestScreen.Checked;
+        cmbMonitorTV.Enabled = chkFullScreenTVScreen.Checked;
     }
     
     #region Full Screen Checkbox Event Handlers
@@ -161,7 +161,13 @@ public partial class OptionsDialog : Form
         MarkChanged();
         
         // Update dropdown enabled state
-        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+        cmbMonitorHost.Enabled = chkFullScreenHostScreen.Checked;
+        
+        // Update checkbox enabled states
+        UpdateCheckboxEnabledStates();
+        
+        // Refresh monitor dropdowns to exclude selected monitors
+        RefreshMonitorDropdowns();
         
         // Apply full-screen immediately if checked and host screen is open
         ApplyFullScreenToOpenScreen("Host");
@@ -173,7 +179,13 @@ public partial class OptionsDialog : Form
         MarkChanged();
         
         // Update dropdown enabled state
-        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+        cmbMonitorGuest.Enabled = chkFullScreenGuestScreen.Checked;
+        
+        // Update checkbox enabled states
+        UpdateCheckboxEnabledStates();
+        
+        // Refresh monitor dropdowns to exclude selected monitors
+        RefreshMonitorDropdowns();
         
         // Apply full-screen immediately if checked and guest screen is open
         ApplyFullScreenToOpenScreen("Guest");
@@ -185,7 +197,13 @@ public partial class OptionsDialog : Form
         MarkChanged();
         
         // Update dropdown enabled state
-        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+        cmbMonitorTV.Enabled = chkFullScreenTVScreen.Checked;
+        
+        // Update checkbox enabled states
+        UpdateCheckboxEnabledStates();
+        
+        // Refresh monitor dropdowns to exclude selected monitors
+        RefreshMonitorDropdowns();
         
         // Apply full-screen immediately if checked and TV screen is open
         ApplyFullScreenToOpenScreen("TV");
@@ -621,7 +639,7 @@ public partial class OptionsDialog : Form
         var currentIP = _settings.AudienceServerIP;
         for (int i = 0; i < cmbServerIP.Items.Count; i++)
         {
-            var item = cmbServerIP.Items[i].ToString() ?? "";
+            var item = cmbServerIP.Items[i].ToString()!;
             if (item.StartsWith(currentIP))
             {
                 cmbServerIP.SelectedIndex = i;
@@ -1221,18 +1239,18 @@ public partial class OptionsDialog : Form
                 var status = e.Value.ToString();
                 if (status?.StartsWith("✅") == true)
                 {
-                    e.CellStyle.ForeColor = Color.Green;
-                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                    e.CellStyle!.ForeColor = Color.Green;
+                    e.CellStyle!.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
                 }
                 else if (status?.StartsWith("⚠️") == true)
                 {
-                    e.CellStyle.ForeColor = Color.Orange;
-                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                    e.CellStyle!.ForeColor = Color.Orange;
+                    e.CellStyle!.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
                 }
                 else if (status?.StartsWith("❌") == true)
                 {
-                    e.CellStyle.ForeColor = Color.Red;
-                    e.CellStyle.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
+                    e.CellStyle!.ForeColor = Color.Red;
+                    e.CellStyle!.Font = new Font(dgvSoundPackInfo.Font, FontStyle.Bold);
                 }
             }
         };
@@ -2065,26 +2083,102 @@ public partial class OptionsDialog : Form
             cmbMonitorTV.SelectedIndex = 0;
         }
     }
+    
+    private void RefreshMonitorDropdowns()
+    {
+        var screens = Screen.AllScreens;
+        
+        // Get currently selected monitor indices before refresh
+        int hostSelectedIndex = GetSelectedMonitorIndex(cmbMonitorHost);
+        int guestSelectedIndex = GetSelectedMonitorIndex(cmbMonitorGuest);
+        int tvSelectedIndex = GetSelectedMonitorIndex(cmbMonitorTV);
+        
+        // Clear and repopulate each dropdown
+        RefreshSingleDropdown(cmbMonitorHost, screens, guestSelectedIndex, tvSelectedIndex, chkFullScreenHostScreen.Checked);
+        RefreshSingleDropdown(cmbMonitorGuest, screens, hostSelectedIndex, tvSelectedIndex, chkFullScreenGuestScreen.Checked);
+        RefreshSingleDropdown(cmbMonitorTV, screens, hostSelectedIndex, guestSelectedIndex, chkFullScreenTVScreen.Checked);
+        
+        // Restore selections
+        SelectMonitorIndex(cmbMonitorHost, hostSelectedIndex);
+        SelectMonitorIndex(cmbMonitorGuest, guestSelectedIndex);
+        SelectMonitorIndex(cmbMonitorTV, tvSelectedIndex);
+    }
+    
+    private void RefreshSingleDropdown(ComboBox dropdown, Screen[] screens, int excludeIndex1, int excludeIndex2, bool isEnabled)
+    {
+        if (!isEnabled)
+        {
+            // If checkbox is not checked, don't populate dropdown
+            dropdown.Items.Clear();
+            return;
+        }
+        
+        dropdown.Items.Clear();
+        
+        for (int i = 0; i < screens.Length; i++)
+        {
+            // Skip Display 1 unless in DEBUG mode
+#if DEBUG
+            bool includeThisDisplay = true;
+#else
+            bool includeThisDisplay = i > 0; // Skip index 0 (Display 1) in release mode
+#endif
+            
+            // Also skip monitors that are already selected by other screens
+            if (includeThisDisplay && i != excludeIndex1 && i != excludeIndex2)
+            {
+                var screen = screens[i];
+                var (manufacturer, modelName) = GetMonitorModelName(screen);
+                string displayText = $"{i + 1}:{manufacturer}:{modelName} ({screen.Bounds.Width}x{screen.Bounds.Height})";
+                
+                dropdown.Items.Add(displayText);
+            }
+        }
+        
+        // Select first item if available and nothing is currently selected
+        if (dropdown.Items.Count > 0 && dropdown.SelectedIndex == -1)
+        {
+            dropdown.SelectedIndex = 0;
+        }
+    }
 
     private void UpdateMonitorStatus()
     {
         var monitorCount = Screen.AllScreens.Length;
-        lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (4 Monitors are required for this feature)";
+        
+        // Update label based on monitor count
+        if (monitorCount >= 4)
+        {
+            lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (All screens can be enabled)";
+        }
+        else if (monitorCount == 3)
+        {
+            lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (Up to 2 screens can be enabled)";
+        }
+        else if (monitorCount == 2)
+        {
+            lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (Only 1 screen can be enabled)";
+        }
+        else
+        {
+            lblMonitorCount.Text = $"Number of Monitors: {monitorCount} (At least 2 monitors are required for this feature)";
+        }
         
         // In DEBUG mode, always enable controls regardless of monitor count
-        // In RELEASE mode, require 4+ monitors
+        // In RELEASE mode, require 2+ monitors
 #if DEBUG
         bool hasEnoughMonitors = true;
 #else
-        bool hasEnoughMonitors = monitorCount >= 4;
+        bool hasEnoughMonitors = monitorCount >= 2;
 #endif
         
+        // Enable/disable controls based on monitor count
         chkFullScreenHostScreen.Enabled = hasEnoughMonitors;
         chkFullScreenGuestScreen.Enabled = hasEnoughMonitors;
         chkFullScreenTVScreen.Enabled = hasEnoughMonitors;
-        cmbMonitorHost.Enabled = hasEnoughMonitors;
-        cmbMonitorGuest.Enabled = hasEnoughMonitors;
-        cmbMonitorTV.Enabled = hasEnoughMonitors;
+        cmbMonitorHost.Enabled = hasEnoughMonitors && chkFullScreenHostScreen.Checked;
+        cmbMonitorGuest.Enabled = hasEnoughMonitors && chkFullScreenGuestScreen.Checked;
+        cmbMonitorTV.Enabled = hasEnoughMonitors && chkFullScreenTVScreen.Checked;
         btnIdentifyMonitors.Enabled = hasEnoughMonitors;
         
         if (!hasEnoughMonitors)
@@ -2093,6 +2187,33 @@ public partial class OptionsDialog : Form
             chkFullScreenGuestScreen.Checked = false;
             chkFullScreenTVScreen.Checked = false;
         }
+        
+        // Update checkbox enabled states based on how many are already checked
+        UpdateCheckboxEnabledStates();
+    }
+    
+    private void UpdateCheckboxEnabledStates()
+    {
+        var monitorCount = Screen.AllScreens.Length;
+        
+        // Count how many checkboxes are currently checked
+        int checkedCount = 0;
+        if (chkFullScreenHostScreen.Checked) checkedCount++;
+        if (chkFullScreenGuestScreen.Checked) checkedCount++;
+        if (chkFullScreenTVScreen.Checked) checkedCount++;
+        
+        // Determine how many screens can be enabled based on monitor count
+        int maxScreens = monitorCount >= 4 ? 3 : monitorCount - 1;
+        
+        // If we've reached the maximum, disable unchecked checkboxes
+        bool canCheckMore = checkedCount < maxScreens;
+        
+        if (!chkFullScreenHostScreen.Checked)
+            chkFullScreenHostScreen.Enabled = canCheckMore;
+        if (!chkFullScreenGuestScreen.Checked)
+            chkFullScreenGuestScreen.Enabled = canCheckMore;
+        if (!chkFullScreenTVScreen.Checked)
+            chkFullScreenTVScreen.Enabled = canCheckMore;
     }
 
     private (string manufacturer, string modelName) GetMonitorModelName(Screen screen)

@@ -461,7 +461,7 @@ namespace MillionaireGame.Services
             else
             {
                 // Normal playback from current cue
-                int read = _currentCue.Source.Read(buffer, offset, count);
+                int read = _currentCue.Source!.Read(buffer, offset, count);
 
                 // Handle manual fadeout (only if not crossfading)
                 if (_fadingOut && read > 0 && _fadeoutDurationSamples > 0)
@@ -643,7 +643,7 @@ namespace MillionaireGame.Services
                 else if (_nextCue != null && !_crossfading)
                 {
                     // Check if we're within crossfade distance of the end
-                    long remainingSamples = _currentCue.Source.Length - _currentCue.Source.Position;
+                    long remainingSamples = _currentCue.Source!.Length - _currentCue.Source!.Position;
                     if (remainingSamples <= _crossfadeDurationSamples)
                     {
                         _crossfading = true;

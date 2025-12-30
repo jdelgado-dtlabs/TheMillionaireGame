@@ -639,7 +639,11 @@ public partial class ControlPanelForm : Form
     /// </summary>
     public void UpdateScreenMenuItemStates()
     {
-        // Menu items are always enabled so screens can be opened in windowed mode during development/debug
+        // Menu items are always enabled regardless of monitor count
+        // This allows screens to be opened in windowed mode for:
+        // - Development/debug purposes
+        // - Screen capture/streaming applications
+        // - Window sharing for broadcast
         // The FullScreen settings only control whether screens open in fullscreen mode
         hostScreenMenuItem.Enabled = true;
         guestScreenMenuItem.Enabled = true;
@@ -1512,8 +1516,7 @@ public partial class ControlPanelForm : Form
         bool isCorrect = _currentAnswer == lblAnswer.Text;
         GameConsole.Debug($"[Reveal] Answer: {_currentAnswer}, Correct: {lblAnswer.Text}, IsCorrect: {isCorrect}");
         
-        // Check if Double Dip is active first (synchronously)
-        DoubleDipRevealResult ddResult = DoubleDipRevealResult.NotActive;
+        // Check if Double Dip is active (synchronously)
         if (_lifelineManager != null)
         {
             GameConsole.Debug("[Reveal] Lifeline manager exists, checking DD in background");
@@ -3326,7 +3329,7 @@ public partial class ControlPanelForm : Form
 
             // Broadcast correct answer to all screens in background to prevent blocking
             GameConsole.Debug("[ProcessNormalReveal] Broadcasting to screens");
-            Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true));
+            _ = Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, true));
 
             // Handle sounds based on question level
             // Q1-4: Bed music keeps playing, simple correct sound over bed
@@ -3425,7 +3428,7 @@ public partial class ControlPanelForm : Form
             }
 
             // Broadcast wrong answer to all screens in background to prevent blocking
-            Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false));
+            _ = Task.Run(() => _screenService.RevealAnswer(_currentAnswer, lblAnswer.Text, false));
 
             // Stop all sounds and play lose sound with await
             await _soundService.StopAllSoundsAsync();
@@ -3967,13 +3970,6 @@ public partial class ControlPanelForm : Form
         };
         
         optionsDialog.ShowDialog(this);
-    }
-
-    private void DSPTestToolStripMenuItem_Click(object? sender, EventArgs e)
-    {
-        GameConsole.Info("[ControlPanel] Opening DSP Test Dialog...");
-        using var dspTestDialog = new DSPTestDialog(_soundService);
-        dspTestDialog.ShowDialog(this);
     }
 
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)

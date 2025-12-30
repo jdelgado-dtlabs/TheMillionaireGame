@@ -2,6 +2,36 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.8.2-2512] - 2025-12-30
+
+### Fixed
+- **Code Quality Improvements** ✅ COMPLETE
+  * Reduced compiler warnings from 66 to 17 (74% reduction)
+  * Removed unused fields: `_currentAmount` (GuestScreenForm, HostScreenForm), `_currentIntroIndex` (FFFOfflinePanel)
+  * Removed unused variables: `widthScale`, `heightScale` (TVScreenFormScalable), `ddResult` (ControlPanelForm)
+  * Removed unused event: `RankingsUpdated` (FFFClientService)
+  * Fixed unawaited async calls with discard operator (`_`)
+  * Added null-forgiving operators (!) to verified non-null references
+  * Added null-coalescing operators to unboxing operations
+  * Suppressed obsolete API warning for SqlConnection with pragma directive
+
+- **Monitor Settings Flexibility** ✅ COMPLETE
+  * Changed monitor requirement from 4 to 2 monitors minimum in Settings dialog
+  * Implemented dynamic checkbox logic: 2 monitors→1 screen max, 3→2 max, 4+→3 max
+  * Added real-time dropdown filtering to exclude already-selected monitors
+  * Screen menu items remain unrestricted for windowed mode and streaming use cases
+
+### Removed
+- **Test/Debug Code Cleanup** ✅ COMPLETE
+  * Removed DSPTestDialog.cs (394 lines of test code)
+  * Removed DSP Test menu item from Game menu
+  * Removed associated event handler
+
+### Changed
+- **Documentation Updates**
+  * Updated comment in UpdateScreenMenuItemStates() to clarify streaming/broadcast support
+  * Emphasized that screen menu items have no monitor restrictions for screen capture compatibility
+
 ## [v0.8.1-2512] - 2025-12-30
 
 ### Added

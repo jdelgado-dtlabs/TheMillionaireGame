@@ -18,7 +18,6 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     private bool _isRevealing;
     private bool _showATA;
     private Dictionary<string, int> _ataVotes = new();
-    private string? _currentAmount;
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
@@ -729,7 +728,6 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         _isRevealing = false;
         _showATA = false;
         _ataVotes.Clear();
-        _currentAmount = null;
         _visibleAnswers.Clear();
         _showPAFTimer = false; // Hide PAF timer on reset
         _showATATimer = false; // Hide ATA timer on reset        _showLifelineIcons = false; // Hide lifeline icons on reset        // Straps remain always visible

@@ -21,7 +21,6 @@ public class FFFClientService : IAsyncDisposable
     public event EventHandler<ParticipantInfo>? ParticipantJoined;
     public event EventHandler<string>? ParticipantLeft;
     public event EventHandler<AnswerSubmission>? AnswerSubmitted;
-    public event EventHandler<List<RankingResult>>? RankingsUpdated;
     public event EventHandler<string>? ConnectionStatusChanged;
     
     public bool IsConnected => _isConnected;
@@ -152,7 +151,7 @@ public class FFFClientService : IAsyncDisposable
             GameConsole.Log($"[FFFClient] Received result: {result?.GetType().Name ?? "null"}");
             
             // Convert dynamic result to typed list
-            var participants = ParseParticipants(result);
+            var participants = ParseParticipants(result!);
             GameConsole.Log($"[FFFClient] Parsed {participants.Count} participants");
             
             // Cache participants for lookup when parsing answers
@@ -219,7 +218,7 @@ public class FFFClientService : IAsyncDisposable
             }
             
             // Fallback to parsing entire result
-            var allRankings = ParseRankings(result);
+            var allRankings = ParseRankings(result!);
             GameConsole.Debug($"[FFFClient] Parsed {allRankings.Count} rankings (fallback)");
             return allRankings;
         }
@@ -258,7 +257,7 @@ public class FFFClientService : IAsyncDisposable
         try
         {
             GameConsole.Debug($"[FFFClient] OnAnswerSubmitted called with data type: {data?.GetType().Name}");
-            var answer = ParseAnswer(data);
+            var answer = ParseAnswer(data!);
             GameConsole.Debug($"[FFFClient] Parsed answer: ParticipantId={answer.ParticipantId}, DisplayName={answer.DisplayName}, Sequence={answer.AnswerSequence}");
             AnswerSubmitted?.Invoke(this, answer);
             GameConsole.Debug($"[FFFClient] AnswerSubmitted event raised");
@@ -354,7 +353,7 @@ public class FFFClientService : IAsyncDisposable
                 try
                 {
                     GameConsole.Log($"[FFFClient] Parsing item {index}: {item?.GetType().Name ?? "null"}");
-                    var participant = ParseParticipant(item);
+                    var participant = ParseParticipant(item!);
                     GameConsole.Log($"[FFFClient] Parsed: Id={participant.Id}, Name={participant.DisplayName}");
                     result.Add(participant);
                     index++;

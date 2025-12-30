@@ -49,7 +49,7 @@ public partial class AddQuestionForm : Form
                 AnswerC = txtCorrectAnswer.Text.Trim(),  // Correct answer as C
                 AnswerD = txtWrong3.Text.Trim(),
                 CorrectAnswer = "C",  // Always C for simplicity
-                Level = (int)cmbLevel.SelectedItem,
+                Level = (int)(cmbLevel.SelectedItem ?? 1),
                 DifficultyType = DifficultyType.Specific,
                 Used = false
             };

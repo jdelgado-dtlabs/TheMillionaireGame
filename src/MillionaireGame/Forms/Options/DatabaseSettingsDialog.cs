@@ -97,7 +97,9 @@ public partial class DatabaseSettingsDialog : Form
             // Try to open connection
             await Task.Run(() =>
             {
+#pragma warning disable CS0618 // Type or member is obsolete
                 using var connection = new System.Data.SqlClient.SqlConnection(connectionString);
+#pragma warning restore CS0618
                 connection.Open();
             });
             

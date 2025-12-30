@@ -14,7 +14,6 @@ public partial class FFFOfflinePanel : UserControl
     private int _currentHighlightedIndex = 0;
     private readonly Random _random = new Random();
     private bool _playersIntroduced = false;
-    private int _currentIntroIndex = 0;
     
     private SoundService? _soundService;
     private ScreenUpdateService? _screenService;
@@ -97,7 +96,6 @@ public partial class FFFOfflinePanel : UserControl
         
         // Reset flow when player count changes
         _playersIntroduced = false;
-        _currentIntroIndex = 0;
         btnFFFIntro.Enabled = true;
         btnPlayerIntro.Enabled = false;
         btnRandomSelect.Enabled = false;

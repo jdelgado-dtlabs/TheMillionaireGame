@@ -274,7 +274,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         }
 
         // Draw winnings amount in center
-        using var font = new Font("Arial", 48, FontStyle.Bold);
+        using var font = new Font("Copperplate Gothic Bold", 48, FontStyle.Bold);
         using var brush = new SolidBrush(Color.Gold);
         using var format = CreateCenteredFormat();
         
@@ -303,10 +303,6 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         
         float screenHeight = 1080f;
         float padding = screenHeight * 0.005f; // 0.5% padding = ~5px (reduced from 1%)
-        
-        // Calculate scale factors from original 720p canvas to new 1080p
-        float widthScale = 745f / 630f;  // 1.182
-        float heightScale = 1080f / 720f; // 1.5
         
         // New overlay dimensions (from assets)
         float overlayWidth = 571f;
@@ -855,7 +851,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
         // TV Screen: Clear all graphics and show money tree with animation
         // Use GetDisplayLevel to show level 15 when game is won
-        _currentMoneyTreeLevel = _moneyTreeService.GetDisplayLevel(state.CurrentLevel, state.GameWin);
+        _currentMoneyTreeLevel = _moneyTreeService!.GetDisplayLevel(state.CurrentLevel, state.GameWin);
         _currentGameMode = state.Mode; // Store game mode for rendering
         _showWinnings = false;
         _showQuestionAndAnswers = false;

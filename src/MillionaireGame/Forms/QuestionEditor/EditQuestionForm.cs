@@ -87,8 +87,8 @@ public partial class EditQuestionForm : Form
             _question.AnswerD = txtWrong3.Text.Trim();
             _question.CorrectAnswer = "C";  // Always C for simplicity
             
-            _question.Level = (int)cmbLevel.SelectedItem;
-            _question.DifficultyType = (DifficultyType)Enum.Parse(typeof(DifficultyType), cmbDifficultyType.SelectedItem.ToString() ?? "Specific");
+            _question.Level = (int)(cmbLevel.SelectedItem ?? 1);
+            _question.DifficultyType = (DifficultyType)Enum.Parse(typeof(DifficultyType), cmbDifficultyType.SelectedItem!.ToString() ?? "Specific");
             _question.Used = chkUsed.Checked;
 
             await _repository.UpdateQuestionAsync(_question);
