@@ -242,7 +242,7 @@ public class WebServerHost : IDisposable
         // Add services
         services.AddControllers();
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        // Note: Swagger removed - not needed in embedded hosting (dev tool only)
 
         // Add SignalR
         services.AddSignalR();
