@@ -148,8 +148,12 @@ public partial class ControlPanelForm : Form
         _screenService = screenService;
         _soundService = soundService;
         
-        // Initialize lifeline manager
-        _lifelineManager = new LifelineManager(gameService, soundService, screenService);
+        // Initialize lifeline manager with WebServerHost accessor
+        _lifelineManager = new LifelineManager(
+            gameService, 
+            soundService, 
+            screenService, 
+            () => _webServerHost);
         _lifelineManager.ButtonStateChanged += OnLifelineButtonStateChanged;
         _lifelineManager.SetOtherButtonsToStandby += OnSetOtherButtonsToStandby;
         _lifelineManager.RequestAsyncOperation += OnLifelineRequestAsyncOperation;

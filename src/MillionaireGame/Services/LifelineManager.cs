@@ -2,6 +2,8 @@ using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
+using MillionaireGame.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System.Drawing;
 
 namespace MillionaireGame.Services;
@@ -14,6 +16,7 @@ public class LifelineManager
     private readonly GameService _gameService;
     private readonly SoundService _soundService;
     private readonly ScreenUpdateService _screenService;
+    private readonly Func<WebServerHost?> _getWebServerHost;
     
     // PAF state tracking
     private PAFStage _pafStage = PAFStage.NotStarted;
@@ -56,11 +59,16 @@ public class LifelineManager
     public event Action<string>? LogMessage; // For debug logging
     public event Action? RequestBedMusicRestart; // For Q1-5 bed music restart after lifeline
     
-    public LifelineManager(GameService gameService, SoundService soundService, ScreenUpdateService screenService)
+    public LifelineManager(
+        GameService gameService, 
+        SoundService soundService, 
+        ScreenUpdateService screenService,
+        Func<WebServerHost?> getWebServerHost)
     {
         _gameService = gameService;
         _soundService = soundService;
         _screenService = screenService;
+        _getWebServerHost = getWebServerHost;
     }
     
     /// <summary>
@@ -397,6 +405,9 @@ public class LifelineManager
         {
             var randomVotes = GenerateRandomATAPercentages();
             _screenService.ShowATAResults(randomVotes);
+            
+            // Check if all participants have voted (online mode only)
+            CheckForVoteCompletion();
         }
         
         if (_ataSecondsRemaining <= 0)
@@ -454,8 +465,8 @@ public class LifelineManager
         // Wait for sound to complete (ATAEnd is ~3 seconds)
         await Task.Delay(3500);
         
-        // Generate placeholder results: 100% on correct answer
-        var finalResults = GeneratePlaceholderResults();
+        // Try to get real voting results from WAPS database, fallback to offline mode
+        var finalResults = await GetATAResultsAsync();
         _screenService.ShowATAResults(finalResults);
         
         _gameService.UseLifeline(LifelineType.AskTheAudience);
@@ -471,6 +482,65 @@ public class LifelineManager
         SetOtherButtonsToStandby?.Invoke(_ataLifelineButtonNumber, false);
         
         LogMessage?.Invoke("[ATA] Completed and marked as used");
+    }
+    
+    /// <summary>
+    /// Check if all online participants have voted and auto-complete if so
+    /// </summary>
+    private async void CheckForVoteCompletion()
+    {
+        var webServerHost = _getWebServerHost();
+        
+        // Only check if web server is running (online mode)
+        if (webServerHost == null || !webServerHost.IsRunning)
+        {
+            return;
+        }
+        
+        try
+        {
+            var sessionService = await GetServiceFromWebServerAsync<MillionaireGame.Web.Services.SessionService>(webServerHost);
+            
+            if (sessionService == null)
+            {
+                return;
+            }
+            
+            var dbContext = await GetServiceFromWebServerAsync<MillionaireGame.Web.Data.WAPSDbContext>(webServerHost);
+            
+            if (dbContext == null)
+            {
+                return;
+            }
+            
+            // Get active session
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+            
+            if (activeSession == null)
+            {
+                return;
+            }
+            
+            // Get active participant count
+            var activeParticipants = await sessionService.GetActiveParticipantsAsync(activeSession.Id);
+            var participantCount = activeParticipants.Count();
+            
+            // Get vote count
+            var voteCount = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            
+            // If all participants have voted, complete ATA early
+            if (participantCount > 0 && voteCount >= participantCount)
+            {
+                LogMessage?.Invoke($"[ATA] All participants voted ({voteCount}/{participantCount}) - auto-completing");
+                CompleteATA();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Silent failure - this is just an optimization, timer will complete normally
+            LogMessage?.Invoke($"[ATA] Vote completion check failed: {ex.Message}");
+        }
     }
     
     private Dictionary<string, int> GenerateRandomATAPercentages()
@@ -506,12 +576,9 @@ public class LifelineManager
     
     private Dictionary<string, int> GeneratePlaceholderResults()
     {
-        // Placeholder: 100% on correct answer
-        // TODO [PRE-1.0 - CRITICAL]: Replace with real voting results from WAPS database
-        // Status: Not started, estimated 2-3 hours
-        // Priority: HIGH (Task #2 in PRE_1.0_FINAL_CHECKLIST.md)
-        // Implementation: Query WAPS database for actual participant votes
-        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md for detailed requirements
+        // Offline Mode: Generate realistic-looking voting distribution
+        // Correct answer gets 40-80%, wrong answers split the remainder
+        // This mimics real audience behavior for demo/offline mode
         var votes = new Dictionary<string, int>
         {
             { "A", 0 },
@@ -520,10 +587,139 @@ public class LifelineManager
             { "D", 0 }
         };
         
-        votes[_ataCorrectAnswer] = 100;
+        // Generate realistic percentage for correct answer (40-80%)
+        int correctPercentage = _random.Next(40, 81);
+        votes[_ataCorrectAnswer] = correctPercentage;
         
-        LogMessage?.Invoke($"[ATA] Placeholder results: 100% on answer {_ataCorrectAnswer}");
+        // Distribute remaining percentage across wrong answers
+        int remainingPercentage = 100 - correctPercentage;
+        var wrongAnswers = new[] { "A", "B", "C", "D" }.Where(a => a != _ataCorrectAnswer).ToArray();
+        
+        // Split remaining percentage across 3 wrong answers
+        for (int i = 0; i < wrongAnswers.Length - 1; i++)
+        {
+            // Each wrong answer gets 0 to remaining percentage
+            int wrongPercentage = _random.Next(0, remainingPercentage + 1);
+            votes[wrongAnswers[i]] = wrongPercentage;
+            remainingPercentage -= wrongPercentage;
+        }
+        
+        // Last wrong answer gets whatever's left
+        votes[wrongAnswers[^1]] = remainingPercentage;
+        
+        LogMessage?.Invoke($"[ATA] Offline results: {votes["A"]}% A, {votes["B"]}% B, {votes["C"]}% C, {votes["D"]}% D (Correct: {_ataCorrectAnswer})");
         return votes;
+    }
+    
+    /// <summary>
+    /// Get ATA results - online from WAPS database if available, otherwise offline mode
+    /// </summary>
+    private async Task<Dictionary<string, int>> GetATAResultsAsync()
+    {
+        var webServerHost = _getWebServerHost();
+        
+        // Check if web server is running
+        if (webServerHost == null || !webServerHost.IsRunning)
+        {
+            LogMessage?.Invoke("[ATA] Web server not running - using offline mode");
+            return GeneratePlaceholderResults();
+        }
+        
+        try
+        {
+            // Get SessionService from web server host
+            var sessionService = await GetServiceFromWebServerAsync<MillionaireGame.Web.Services.SessionService>(webServerHost);
+            
+            if (sessionService == null)
+            {
+                LogMessage?.Invoke("[ATA] SessionService not available - falling back to offline mode");
+                return GeneratePlaceholderResults();
+            }
+            
+            // Get WAPSDbContext to query for active session
+            var dbContext = await GetServiceFromWebServerAsync<MillionaireGame.Web.Data.WAPSDbContext>(webServerHost);
+            
+            if (dbContext == null)
+            {
+                LogMessage?.Invoke("[ATA] WAPSDbContext not available - falling back to offline mode");
+                return GeneratePlaceholderResults();
+            }
+            
+            // Query for active session
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+            
+            if (activeSession == null)
+            {
+                LogMessage?.Invoke("[ATA] No active session found - falling back to offline mode");
+                return GeneratePlaceholderResults();
+            }
+            
+            // Get real voting percentages from database
+            var percentages = await sessionService.CalculateATAPercentagesAsync(activeSession.Id);
+            var totalVotes = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            
+            if (totalVotes == 0)
+            {
+                LogMessage?.Invoke("[ATA] No votes received - falling back to offline mode");
+                return GeneratePlaceholderResults();
+            }
+            
+            // Convert double percentages to int
+            var results = new Dictionary<string, int>
+            {
+                { "A", (int)Math.Round(percentages.GetValueOrDefault("A", 0)) },
+                { "B", (int)Math.Round(percentages.GetValueOrDefault("B", 0)) },
+                { "C", (int)Math.Round(percentages.GetValueOrDefault("C", 0)) },
+                { "D", (int)Math.Round(percentages.GetValueOrDefault("D", 0)) }
+            };
+            
+            LogMessage?.Invoke($"[ATA] Online results: {results["A"]}% A, {results["B"]}% B, {results["C"]}% C, {results["D"]}% D (Total votes: {totalVotes})");
+            return results;
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ATA] Error querying online votes: {ex.Message} - falling back to offline mode");
+            return GeneratePlaceholderResults();
+        }
+    }
+    
+    /// <summary>
+    /// Get a service from the web server host
+    /// </summary>
+    private async Task<T?> GetServiceFromWebServerAsync<T>(WebServerHost webServerHost) where T : class
+    {
+        try
+        {
+            // Access internal Services property via reflection
+            var hostProperty = webServerHost.GetType().GetProperty("Host", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (hostProperty == null)
+            {
+                LogMessage?.Invoke($"[ATA] Unable to access Host property on WebServerHost");
+                return null;
+            }
+            
+            var host = hostProperty.GetValue(webServerHost) as Microsoft.Extensions.Hosting.IHost;
+            
+            if (host == null)
+            {
+                LogMessage?.Invoke($"[ATA] Host is null on WebServerHost");
+                return null;
+            }
+            
+            // Create a scope to get scoped services
+            using var scope = host.Services.CreateScope();
+            var service = scope.ServiceProvider.GetService(typeof(T)) as T;
+            
+            return service;
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ATA] Error getting service from web server: {ex.Message}");
+            return null;
+        }
     }
     
     #endregion
