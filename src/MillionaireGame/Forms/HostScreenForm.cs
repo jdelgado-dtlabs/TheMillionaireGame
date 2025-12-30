@@ -4,6 +4,7 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -39,6 +40,10 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private bool _showLifelineIcons = false;
     private Dictionary<int, LifelineIconState> _lifelineStates = new();
     private Dictionary<int, LifelineType> _lifelineTypes = new();
+    
+    // Host message display
+    private string? _hostMessage = null;
+    private bool _showHostMessage = false;
 
     // Design-time coordinates (based on 1920x1080, matching TV screen layout)
     // Question in upper part of lower third
@@ -128,6 +133,18 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         if (_showLifelineIcons)
         {
             DrawLifelineIcons(g);
+        }
+        
+        // Draw explanation if question has one
+        if (_currentQuestion != null && !string.IsNullOrEmpty(_currentQuestion.Explanation))
+        {
+            DrawExplanation(g);
+        }
+        
+        // Draw host message if visible (always draw, regardless of question state)
+        if (_showHostMessage && !string.IsNullOrEmpty(_hostMessage))
+        {
+            DrawHostMessage(g);
         }
 
         // If no question loaded yet, still draw empty answer backgrounds
@@ -591,6 +608,119 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
     }
     
+    private void DrawExplanation(System.Drawing.Graphics g)
+    {
+        if (_currentQuestion == null || string.IsNullOrEmpty(_currentQuestion.Explanation))
+            return;
+            
+        // Design coordinates - above host message box
+        // Position above host message (Y=570), with enough space for 2 lines
+        const float designX = 180; // Match question text left padding
+        const float designY = 490; // Above host message box (570 - 80 for space)
+        const float designMaxWidth = 1100; // Same width as host message box
+        const float designPadding = 20;
+        const float designHeight = 70; // Enough for 2 lines of text
+        
+        // Scale to actual screen coordinates
+        var actualBounds = new RectangleF(
+            designX * ScaleX,
+            designY * ScaleY,
+            designMaxWidth * ScaleX,
+            designHeight * ScaleY
+        );
+        
+        // Semi-transparent background (70% opacity black)
+        using var bgBrush = new SolidBrush(Color.FromArgb(178, 0, 0, 0));
+        g.FillRectangle(bgBrush, actualBounds);
+        
+        // Border with accent color
+        using var borderPen = new Pen(Color.FromArgb(255, 70, 130, 180), 3); // Steel blue
+        g.DrawRectangle(borderPen, actualBounds.X, actualBounds.Y, actualBounds.Width, actualBounds.Height);
+        
+        // Draw explanation text with wrapping
+        var textBounds = new RectangleF(
+            actualBounds.X + (designPadding * ScaleX),
+            actualBounds.Y + (designPadding * ScaleY),
+            actualBounds.Width - (designPadding * 2 * ScaleX),
+            actualBounds.Height - (designPadding * 2 * ScaleY)
+        );
+        
+        using var textBrush = new SolidBrush(Color.White);
+        using var textFont = new Font("Arial", 16, FontStyle.Bold);
+        var scaledFont = new Font(textFont.FontFamily, textFont.Size * Math.Min(ScaleX, ScaleY), textFont.Style, textFont.Unit);
+        using var format = new StringFormat
+        {
+            Alignment = StringAlignment.Near,
+            LineAlignment = StringAlignment.Near,
+            Trimming = StringTrimming.Word
+        };
+        
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+        g.DrawString(_currentQuestion.Explanation, scaledFont, textBrush, textBounds, format);
+        
+        scaledFont.Dispose();
+    }
+    
+    private void DrawHostMessage(System.Drawing.Graphics g)
+    {
+        if (string.IsNullOrEmpty(_hostMessage))
+            return;
+            
+        // Design coordinates - just above question strap (Y=650), aligned left
+        // Position above question strap with some margin, ending before money tree
+        const float designX = 180; // Match question text left padding
+        const float designY = 570; // Just above question strap (650 - 80)
+        const float designMaxWidth = 1100; // End before money tree at ~X=1351 (1280 max - 180 start)
+        const float designPadding = 20;
+        const float designMinHeight = 60;
+        
+        // Calculate actual text size to determine box height
+        using var measureFont = new Font("Arial", 16, FontStyle.Bold);
+        var scaledMeasureFont = new Font(measureFont.FontFamily, measureFont.Size * Math.Min(ScaleX, ScaleY), measureFont.Style, measureFont.Unit);
+        var maxWidth = designMaxWidth * ScaleX - (designPadding * 2 * ScaleX);
+        var textSize = g.MeasureString(_hostMessage, scaledMeasureFont, (int)maxWidth);
+        
+        // Calculate box height with padding
+        float designHeight = Math.Max(designMinHeight, (textSize.Height / ScaleY) + (designPadding * 2));
+        
+        // Scale to actual screen coordinates
+        var actualBounds = new RectangleF(
+            designX * ScaleX,
+            designY * ScaleY,
+            designMaxWidth * ScaleX,
+            designHeight * ScaleY
+        );
+        
+        // Semi-transparent background (70% opacity black)
+        using var bgBrush = new SolidBrush(Color.FromArgb(178, 0, 0, 0));
+        g.FillRectangle(bgBrush, actualBounds);
+        
+        // Border with accent color
+        using var borderPen = new Pen(Color.FromArgb(255, 70, 130, 180), 3); // Steel blue
+        g.DrawRectangle(borderPen, actualBounds.X, actualBounds.Y, actualBounds.Width, actualBounds.Height);
+        
+        // Draw message text with wrapping
+        var textBounds = new RectangleF(
+            actualBounds.X + (designPadding * ScaleX),
+            actualBounds.Y + (designPadding * ScaleY),
+            actualBounds.Width - (designPadding * 2 * ScaleX),
+            actualBounds.Height - (designPadding * 2 * ScaleY)
+        );
+        
+        using var textBrush = new SolidBrush(Color.White);
+        using var format = new StringFormat
+        {
+            Alignment = StringAlignment.Near,
+            LineAlignment = StringAlignment.Near,
+            Trimming = StringTrimming.Word
+        };
+        
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+        g.DrawString(_hostMessage, scaledMeasureFont, textBrush, textBounds, format);
+        
+        scaledMeasureFont.Dispose();
+    }
+    
     private void DrawLifelineIcons(System.Drawing.Graphics g)
     {
         // Design-time coordinates (1920x1080)
@@ -904,6 +1034,60 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     public void ShowAllFFFContestants(List<string> names, List<double>? times = null) { }
     public void HighlightFFFContestant(int index, bool isWinner = false) { }
     public void ShowFFFWinner(string name, double? time = null) { }
+    
+    #region Host Messaging
+    
+    /// <summary>
+    /// Receives and displays a message from the control panel
+    /// </summary>
+    public void OnMessageReceived(object? sender, HostMessageEventArgs e)
+    {
+        var instanceId = this.GetHashCode();
+        var stackTrace = new System.Diagnostics.StackTrace(1, true);
+        GameConsole.Debug($"[HostScreen:{instanceId}] OnMessageReceived called with message: '{e.Message}' (empty={string.IsNullOrWhiteSpace(e.Message)})");
+        GameConsole.Debug($"[HostScreen:{instanceId}] Call stack: {stackTrace.GetFrame(0)?.GetMethod()?.Name}");
+        
+        if (InvokeRequired)
+        {
+            BeginInvoke(() => OnMessageReceived(sender, e));
+            return;
+        }
+        
+        // Empty message means clear, otherwise show the message
+        if (string.IsNullOrWhiteSpace(e.Message))
+        {
+            _hostMessage = null;
+            _showHostMessage = false;
+            GameConsole.Debug($"[HostScreen:{instanceId}] Message cleared");
+        }
+        else
+        {
+            _hostMessage = e.Message;
+            _showHostMessage = true;
+            GameConsole.Debug($"[HostScreen:{instanceId}] Message received: {e.Message}, Show: {_showHostMessage}");
+        }
+        
+        GameConsole.Debug($"[HostScreen:{instanceId}] OnMessageReceived complete - about to Invalidate. Current state: Show={_showHostMessage}, Message='{_hostMessage}'");
+        Invalidate();
+        GameConsole.Debug($"[HostScreen:{instanceId}] Invalidate() completed. Final state: Show={_showHostMessage}, Message='{_hostMessage}'");
+    }
+    
+    /// <summary>
+    /// Hides the host message
+    /// </summary>
+    public void HideHostMessage()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(HideHostMessage));
+            return;
+        }
+        
+        _showHostMessage = false;
+        Invalidate();
+    }
+    
+    #endregion
     public void ClearFFFDisplay() { }
 }
 
