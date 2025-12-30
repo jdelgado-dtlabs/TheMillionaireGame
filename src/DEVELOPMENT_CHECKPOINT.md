@@ -68,7 +68,88 @@
 
 ---
 
-### **Step 3: Crash Handler Implementation** (4-6 hours) 🟡 MEDIUM PRIORITY
+### **Step 3: Database Consolidation** (3-4 hours) 🟢 HIGH VALUE
+**Unify Settings + WAPS into Single SQL Server Database**
+
+#### Feasibility Assessment ✅
+**HIGHLY FEASIBLE** - Straightforward migration with significant benefits:
+
+**Current State:**
+- Settings: XML file (config.xml) + optional SQL Server (ApplicationSettings table already exists!)
+- WAPS: SQLite (waps.db) with 4 tables (Sessions, Participants, FFFAnswers, ATAVotes)
+- Both use Entity Framework Core
+
+**Benefits:**
+- ✅ Single database = easier backups, management, deployment
+- ✅ Centralized configuration and game data
+- ✅ Better transaction support across features
+- ✅ Professional production architecture
+- ✅ Installer only needs SQL Server (eliminate SQLite dependency)
+- ✅ Consistent data access patterns
+
+#### Implementation Plan
+
+**Phase 1: Settings Migration (1.5 hours)**
+- [ ] Make SQL Server mode mandatory (remove XML fallback)
+- [ ] Update ApplicationSettingsManager to require connection string
+- [ ] Migrate existing XML settings on first run (SettingsMigrationService already exists!)
+- [ ] Update OptionsDialog to save directly to SQL Server
+- [ ] Remove XML serialization code
+- [ ] Test settings persistence and retrieval
+
+**Phase 2: WAPS Migration (1.5 hours)**
+- [ ] Modify WAPSDbContext to use SQL Server instead of SQLite
+- [ ] Update WebServerHost.cs connection string configuration
+- [ ] Add WAPS tables to main database schema:
+  - Sessions
+  - Participants
+  - FFFAnswers
+  - ATAVotes
+- [ ] Update all WAPS services to use SQL Server context
+- [ ] Test web server initialization and database creation
+
+**Phase 3: Integration & Testing (1 hour)**
+- [ ] Update Program.cs initialization (single connection string)
+- [ ] Verify ApplicationSettings + WAPS coexist in same database
+- [ ] Test full game flow (settings → game → FFF → ATA)
+- [ ] Test web participant experience
+- [ ] Verify database cleanup on shutdown
+- [ ] Update documentation
+
+#### Database Schema (Unified)
+```
+TheMillionaireGameDB (SQL Server)
+├── Questions (existing)
+├── FFFQuestions (existing)
+├── ApplicationSettings (existing - will become primary)
+├── Sessions (from WAPS)
+├── Participants (from WAPS)
+├── FFFAnswers (from WAPS)
+└── ATAVotes (from WAPS)
+```
+
+#### Migration Strategy
+1. **Graceful Upgrade**: Detect waps.db on startup, import sessions into SQL Server
+2. **Backward Compatibility**: Keep SQLite support for one version (v1.0 only)
+3. **Clean Install**: New installations use SQL Server only
+
+**Acceptance Criteria**:
+- All settings load/save to SQL Server ApplicationSettings table
+- WAPS web features work with SQL Server backend
+- Single database backup captures everything
+- Installer only needs SQL Server (no SQLite)
+- Performance equal or better than dual-database approach
+
+**Files to Modify**:
+- `MillionaireGame.Core/Settings/ApplicationSettings.cs` - Remove XML mode
+- `MillionaireGame.Core/Database/ApplicationSettingsRepository.cs` - Enhance
+- `MillionaireGame.Web/Data/WAPSDbContext.cs` - Change to SQL Server
+- `MillionaireGame/Hosting/WebServerHost.cs` - Update connection config
+- `MillionaireGame/Program.cs` - Unified initialization
+
+---
+
+### **Step 4: Crash Handler Implementation** (4-6 hours) 🟡 MEDIUM PRIORITY
 **Watchdog Application** - Monitor main process, detect crashes, auto-restart
 
 **Components**:
@@ -101,12 +182,12 @@ MillionaireGameWatchdog.exe (always running)
 
 ---
 
-### **Step 4: Installer Development** (6-8 hours) 🟢 LOW PRIORITY (FINAL STEP)
+### **Step 5: Installer Development** (6-8 hours) 🟢 LOW PRIORITY (FINAL STEP)
 **Professional Windows Installer** - WiX Toolset or Inno Setup
 
 **Requirements**:
 - [ ] Install .NET 8.0 Runtime (Windows Desktop) if not present
-- [ ] Install SQL Server Express 2019+ (optional, check first)
+- [ ] Install SQL Server Express 2019+ (only database needed after Step 3!)
 - [ ] Copy application files to Program Files
 - [ ] Create Start Menu shortcuts
 - [ ] Create Desktop shortcut (optional)
