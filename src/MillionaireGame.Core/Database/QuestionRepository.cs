@@ -25,6 +25,8 @@ public class QuestionRepository
         await connection.OpenAsync();
 
         string query;
+        SqlCommand command;
+        
         if (difficultyType == DifficultyType.Specific)
         {
             query = @"
@@ -33,37 +35,55 @@ public class QuestionRepository
                 AND Difficulty_Type = 'Specific' 
                 AND Used = 0 
                 ORDER BY NEWID()";
+            
+            command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Level", level);
         }
         else
         {
-            var levelRange = GetLevelRangeForLevel(level);
-            // Convert LevelRange enum to database format (Lvl1, Lvl2, etc.)
-            var levelRangeStr = levelRange switch
+            // Determine level range based on level number
+            // Level 1-5: Easy, 6-10: Medium, 11-14: Hard, 15: Million
+            int minLevel, maxLevel;
+            if (level >= 1 && level <= 5)
             {
-                LevelRange.Level1 => "Lvl1",
-                LevelRange.Level2 => "Lvl2",
-                LevelRange.Level3 => "Lvl3",
-                LevelRange.Level4 => "Lvl4",
-                _ => "Lvl1"
-            };
+                minLevel = 1;
+                maxLevel = 5;
+            }
+            else if (level >= 6 && level <= 10)
+            {
+                minLevel = 6;
+                maxLevel = 10;
+            }
+            else if (level >= 11 && level <= 14)
+            {
+                minLevel = 11;
+                maxLevel = 14;
+            }
+            else // level == 15
+            {
+                minLevel = 15;
+                maxLevel = 15;
+            }
             
             query = @"
                 SELECT TOP 1 * FROM questions 
-                WHERE LevelRange = @LevelRange 
+                WHERE Level BETWEEN @MinLevel AND @MaxLevel
                 AND Difficulty_Type = 'Range' 
                 AND Used = 0 
                 ORDER BY NEWID()";
+            
+            command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@MinLevel", minLevel);
+            command.Parameters.AddWithValue("@MaxLevel", maxLevel);
         }
 
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@Level", level);
-        command.Parameters.AddWithValue("@LevelRange", difficultyType == DifficultyType.Range ? 
-            GetLevelRangeString(level) : (object)DBNull.Value);
-
-        using var reader = await command.ExecuteReaderAsync();
-        if (await reader.ReadAsync())
+        using (command)
         {
-            return MapQuestion(reader);
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return MapQuestion(reader);
+            }
         }
 
         return null;
@@ -116,9 +136,9 @@ public class QuestionRepository
 
         var query = @"
             INSERT INTO questions 
-            (Question, A, B, C, D, CorrectAnswer, Difficulty_Type, Level, LevelRange, Note, ATA_A, ATA_B, ATA_C, ATA_D)
+            (Question, A, B, C, D, CorrectAnswer, Difficulty_Type, Level, Note)
             VALUES 
-            (@Question, @A, @B, @C, @D, @CorrectAnswer, @DifficultyType, @Level, @LevelRange, @Note, @ATA_A, @ATA_B, @ATA_C, @ATA_D);
+            (@Question, @A, @B, @C, @D, @CorrectAnswer, @DifficultyType, @Level, @Note);
             SELECT CAST(SCOPE_IDENTITY() as int)";
 
         using var command = new SqlCommand(query, connection);
@@ -130,12 +150,7 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@CorrectAnswer", question.CorrectAnswer);
         command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
-        command.Parameters.AddWithValue("@LevelRange", question.LevelRange?.ToString() ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_A", question.ATAPercentageA ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_B", question.ATAPercentageB ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_C", question.ATAPercentageC ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_D", question.ATAPercentageD ?? (object)DBNull.Value);
 
         var result = await command.ExecuteScalarAsync();
         return Convert.ToInt32(result);
@@ -159,12 +174,7 @@ public class QuestionRepository
                 CorrectAnswer = @CorrectAnswer,
                 Difficulty_Type = @DifficultyType,
                 Level = @Level,
-                LevelRange = @LevelRange,
-                Note = @Note,
-                ATA_A = @ATA_A,
-                ATA_B = @ATA_B,
-                ATA_C = @ATA_C,
-                ATA_D = @ATA_D
+                Note = @Note
             WHERE Id = @Id";
 
         using var command = new SqlCommand(query, connection);
@@ -177,12 +187,7 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@CorrectAnswer", question.CorrectAnswer);
         command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
-        command.Parameters.AddWithValue("@LevelRange", question.LevelRange?.ToString() ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_A", question.ATAPercentageA ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_B", question.ATAPercentageB ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_C", question.ATAPercentageC ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@ATA_D", question.ATAPercentageD ?? (object)DBNull.Value);
 
         await command.ExecuteNonQueryAsync();
     }
@@ -253,21 +258,6 @@ public class QuestionRepository
             ? DifficultyType.Specific 
             : DifficultyType.Range;
 
-        // Parse level range safely (handle both "Lvl1" and "Level1" formats)
-        LevelRange? levelRange = null;
-        if (!reader.IsDBNull(reader.GetOrdinal("LevelRange")))
-        {
-            var levelRangeStr = reader.GetString(reader.GetOrdinal("LevelRange"));
-            levelRange = levelRangeStr.ToLower() switch
-            {
-                "lvl1" or "level1" => LevelRange.Level1,
-                "lvl2" or "level2" => LevelRange.Level2,
-                "lvl3" or "level3" => LevelRange.Level3,
-                "lvl4" or "level4" => LevelRange.Level4,
-                _ => null
-            };
-        }
-
         return new Question
         {
             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -279,48 +269,11 @@ public class QuestionRepository
             CorrectAnswer = reader.GetString(reader.GetOrdinal("CorrectAnswer")),
             DifficultyType = difficultyType,
             Level = reader.GetInt32(reader.GetOrdinal("Level")),
-            LevelRange = levelRange,
             Note = string.Empty,
             Used = reader.GetBoolean(reader.GetOrdinal("Used")),
             Explanation = reader.IsDBNull(reader.GetOrdinal("Note")) 
                 ? string.Empty 
-                : reader.GetString(reader.GetOrdinal("Note")),
-            ATAPercentageA = reader.IsDBNull(reader.GetOrdinal("ATA_A")) 
-                ? null 
-                : reader.GetInt32(reader.GetOrdinal("ATA_A")),
-            ATAPercentageB = reader.IsDBNull(reader.GetOrdinal("ATA_B")) 
-                ? null 
-                : reader.GetInt32(reader.GetOrdinal("ATA_B")),
-            ATAPercentageC = reader.IsDBNull(reader.GetOrdinal("ATA_C")) 
-                ? null 
-                : reader.GetInt32(reader.GetOrdinal("ATA_C")),
-            ATAPercentageD = reader.IsDBNull(reader.GetOrdinal("ATA_D")) 
-                ? null 
-                : reader.GetInt32(reader.GetOrdinal("ATA_D"))
-        };
-    }
-
-    private LevelRange GetLevelRangeForLevel(int level)
-    {
-        return level switch
-        {
-            >= 1 and <= 5 => LevelRange.Level1,
-            >= 6 and <= 10 => LevelRange.Level2,
-            >= 11 and <= 14 => LevelRange.Level3,
-            15 => LevelRange.Level4,
-            _ => LevelRange.Level1
-        };
-    }
-
-    private string GetLevelRangeString(int level)
-    {
-        return level switch
-        {
-            >= 1 and <= 5 => "Lvl1",
-            >= 6 and <= 10 => "Lvl2",
-            >= 11 and <= 14 => "Lvl3",
-            15 => "Lvl4",
-            _ => "Lvl1"
+                : reader.GetString(reader.GetOrdinal("Note"))
         };
     }
 }

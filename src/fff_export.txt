@@ -1,0 +1,28 @@
+Id Question A B C D CorrectAnswer Level Used Note
+-- -------- - - - - ------------- ----- ---- ----
+35 Put these planets in order from closest to farthest from the Sun Mars Venus Earth Mercury DBCA 0 1 NULL
+36 Put these US Presidents in chronological order Lincoln Washington Roosevelt Kennedy BACD 0 0 NULL
+37 Put these numbers in ascending order 50 10 25 100 BCAD 0 0 NULL
+38 Put these seasons in order starting with Spring Winter Fall Spring Summer CDBA 0 0 NULL
+39 Put these letters in alphabetical order Z M A Q CBDA 0 0 NULL
+40 Put these planets in order from closest to farthest from the Sun Mars Venus Earth Mercury DBCA 0 0 NULL
+41 Put these US Presidents in chronological order Lincoln Washington Roosevelt Kennedy BACD 0 0 NULL
+42 Put these numbers in ascending order 50 10 25 100 BCAD 0 0 NULL
+43 Put these seasons in order starting with Spring Winter Fall Spring Summer CDBA 0 0 NULL
+44 Put these events in chronological order Moon Landing WWI Fall of Berlin Wall American Revolution DBAC 0 0 NULL
+45 Put these cities by population (largest to smallest) Paris Tokyo London New York BDCA 0 0 NULL
+46 Put these movies in order of release date (oldest first) The Matrix Star Wars Avatar Titanic BDAC 0 0 NULL
+47 Put these months in calendar order October January July April BDCA 0 0 NULL
+48 Put these animals by size (smallest to largest) Horse Mouse Elephant Dog BDAC 0 0 NULL
+49 Put these US states by year of admission (oldest first) Texas Delaware California Alaska BACD 0 0 NULL
+50 Put these elements by atomic number (lowest to highest) Iron Hydrogen Carbon Oxygen BCDA 0 0 NULL
+51 Put these Olympiads in chronological order Beijing 2008 Athens 2004 London 2012 Rio 2016 BACD 0 0 NULL
+52 Put these inventions by year (oldest first) Telephone Light Bulb Automobile Airplane CBAD 0 0 NULL
+53 Put these oceans by area (largest to smallest) Indian Pacific Atlantic Arctic BCAD 0 0 NULL
+54 Put these books by publication date (oldest first) 1984 Moby Dick Harry Potter The Great Gatsby BDAC 0 0 NULL
+55 Put these continents by population (most to least) Africa Asia Europe North America BCAD 0 0 NULL
+56 Put these tech companies by founding year (oldest first) Google Microsoft Apple Facebook BCAD 0 0 NULL
+57 Put these mountains by height (shortest to tallest) K2 Mount Everest Kilimanjaro Denali CDAB 0 0 NULL
+58 Put these colors in rainbow order (ROYGBIV) Blue Red Yellow Green BCDA 0 0 NULL
+
+(24 rows affected)

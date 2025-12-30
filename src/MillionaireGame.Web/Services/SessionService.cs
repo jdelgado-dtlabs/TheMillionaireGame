@@ -161,7 +161,7 @@ public class SessionService
         try 
         {
             var activeCount = await _context.Participants.CountAsync(p => p.SessionId == sessionId && p.IsActive);
-            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+            var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
             if (consoleType != null)
             {
                 var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });
@@ -326,7 +326,7 @@ public class SessionService
             try 
             {
                 var activeCount = await _context.Participants.CountAsync(p => p.SessionId == participant.SessionId && p.IsActive);
-                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
                 if (consoleType != null)
                 {
                     var logMethod = consoleType.GetMethod("Log", new[] { typeof(string) });

@@ -140,11 +140,6 @@ public partial class QuestionEditorMainForm : Form
             if (dgvQuestions.Columns["Answer4"] != null) dgvQuestions.Columns["Answer4"].Visible = false;
             if (dgvQuestions.Columns["Note"] != null) dgvQuestions.Columns["Note"].Visible = false;
             if (dgvQuestions.Columns["Explanation"] != null) dgvQuestions.Columns["Explanation"].Visible = false;
-            if (dgvQuestions.Columns["LevelRange"] != null) dgvQuestions.Columns["LevelRange"].Visible = false;
-            if (dgvQuestions.Columns["ATAPercentageA"] != null) dgvQuestions.Columns["ATAPercentageA"].Visible = false;
-            if (dgvQuestions.Columns["ATAPercentageB"] != null) dgvQuestions.Columns["ATAPercentageB"].Visible = false;
-            if (dgvQuestions.Columns["ATAPercentageC"] != null) dgvQuestions.Columns["ATAPercentageC"].Visible = false;
-            if (dgvQuestions.Columns["ATAPercentageD"] != null) dgvQuestions.Columns["ATAPercentageD"].Visible = false;
 
             lblTotalQuestions.Text = $"Total Questions: {questions.Count}";
 

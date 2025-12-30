@@ -699,16 +699,10 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         if (lifeline.Type == LifelineType.AskTheAudience)
         {
             _showATA = true;
-            // Generate ATA results based on question percentages
+            // Generate random ATA results favoring the correct answer
             if (_currentQuestion != null)
             {
-                _ataVotes = new Dictionary<string, int>
-                {
-                    ["A"] = _currentQuestion.ATAPercentageA ?? 0,
-                    ["B"] = _currentQuestion.ATAPercentageB ?? 0,
-                    ["C"] = _currentQuestion.ATAPercentageC ?? 0,
-                    ["D"] = _currentQuestion.ATAPercentageD ?? 0
-                };
+                _ataVotes = _currentQuestion.GenerateATAPercentages();
                 Invalidate();
             }
         }

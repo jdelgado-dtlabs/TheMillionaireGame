@@ -7,7 +7,43 @@
 
 ## 🎯 Critical Path (Must Complete for v1.0)
 
-### 1. ATA Dual-Mode System (Online/Offline) 🔴
+### 1. Host Notes/Messaging System 🔴
+**Status**: Not Started  
+**Estimated Time**: 2-3 hours  
+**Priority**: HIGH
+
+**Description**: Real-time messaging system from Control Panel to Host Screen
+
+**Requirements**:
+- [ ] Event-based messaging infrastructure (HostMessageEventArgs)
+- [ ] Control Panel UI: Multi-line TextBox + Send button
+- [ ] Keyboard shortcuts: Enter to send, Alt+Enter for newline
+- [ ] Host Screen display: Semi-transparent message box (300-400px)
+- [ ] Message validation (no empty messages)
+- [ ] Thread-safe UI updates with Invoke()
+- [ ] Non-blocking message delivery
+- [ ] Message persistence during question changes
+
+**Implementation Details**:
+- Add MessageSent event to ControlPanelForm
+- Subscribe HostScreenForm to message events
+- Position message box in top-right corner of Host Screen
+- Multi-line textbox on Control Panel (~60-80px height)
+- Standard chat interface behavior (Enter/Alt+Enter)
+
+**Acceptance Criteria**:
+- Messages appear instantly on Host Screen
+- Enter key sends message, Alt+Enter adds newline
+- Empty messages are blocked
+- No UI freezing or performance impact
+- Messages remain visible during gameplay
+- Clean, professional appearance
+
+**Reference**: HOST_NOTES_SYSTEM_PLAN.md
+
+---
+
+### 2. ATA Dual-Mode System (Online/Offline) 🔴
 **Status**: Not Started  
 **Estimated Time**: 3-4 hours  
 **Priority**: HIGH
@@ -71,7 +107,7 @@ GROUP BY Answer
 
 ---
 
-### 2. WAPS Lobby and State Change Updates 🔴
+### 3. WAPS Lobby and State Change Updates 🔴
 **Status**: Not Started  
 **Estimated Time**: 4-5 hours  
 **Priority**: HIGH
@@ -233,13 +269,13 @@ GROUP BY Answer
 
 ---
 
-### 4. Bug Fixes
+### 3. Bug Fixes
 **Estimated Time**: 4 hours  
 **Reserved for issues found during testing**
 
 ---
 
-### 5. Documentation Updates
+### 4. Documentation Updates
 **Estimated Time**: 2 hours
 
 **Documents to Update**:
@@ -308,13 +344,13 @@ These items are explicitly NOT required for v1.0 release:
 
 | Category | Tasks | Complete | Remaining | % Done |
 |----------|-------|----------|-----------|--------|
-| Critical Path | 3 | 0 | 3 | 0% |
+| Critical Path | 4 | 0 | 4 | 0% |
 | Important | 1 | 0 | 1 | 0% |
 | Testing & QA | 3 | 0 | 3 | 0% |
 | Completed (Archived) | 2 | 2 | 0 | 100% |
-| **Total** | **9** | **2** | **7** | **22%** |
+| **Total** | **10** | **2** | **8** | **20%** |
 
-**Estimated Total Hours**: 19-27 hours  
+**Estimated Total Hours**: 21-30 hours  
 **Target Completion**: January 15, 2026 (assuming 10-15 hours/week)
 
 **Note**: FFF Online mostly complete (~80%), only TV animations and web client state integration remaining.
@@ -324,16 +360,16 @@ These items are explicitly NOT required for v1.0 release:
 ## 📋 Weekly Milestones
 
 ### Week 1 (Dec 29 - Jan 4)
+- [ ] Host Notes/Messaging System (2-3 hours): Event infrastructure, UI components, keyboard handling
 - [ ] WAPS Lobby and State Updates - Phase 1 (3 hours): Enum, SignalR methods, basic states
 - [ ] FFF Online TV Screen Animations (2 hours)
-- [ ] Real ATA Voting Integration (3 hours)
 
-**Target**: 8 hours, 40% complete
+**Target**: 7-8 hours, 35% complete
 
 ### Week 2 (Jan 5 - Jan 11)
+- [ ] Real ATA Voting Integration (3 hours)
 - [ ] WAPS Lobby and State Updates - Phase 2 (2 hours): FFF state flow, ATA flow
 - [ ] FFF Online Web Client State Integration (1 hour)
-- [ ] FFF Online Graphics Enhancement (3 hours)
 - [ ] End-to-End Testing - Phase 1 (2 hours)
 
 **Target**: 8 hours, 70% complete
@@ -353,6 +389,7 @@ These items are explicitly NOT required for v1.0 release:
 Version 1.0 is ready for release when:
 
 ### Functionality
+- [ ] Host notes/messaging system functional
 - [ ] WAPS lobby and state management complete (all 13+ states)
 - [ ] FFF Online TV animations complete
 - [ ] FFF Online web client state integration complete
@@ -435,6 +472,17 @@ Version 1.0 is ready for release when:
 ---
 
 ## 📝 Changelog
+
+**December 30, 2025**:
+- Added Task #1: Host Notes/Messaging System (2-3 hours, HIGH priority)
+  * Real-time messaging from Control Panel to Host Screen
+  * Event-based architecture with keyboard shortcuts
+  * Non-blocking message delivery
+- Renumbered all subsequent tasks (ATA is now #2, WAPS is now #3, etc.)
+- Updated progress tracking: 10 total tasks, 2 complete (20% done), 21-30 hours remaining
+- Adjusted Week 1 milestone to prioritize Host Notes system
+- Updated Definition of Done to include messaging system
+- Reference: HOST_NOTES_SYSTEM_PLAN.md
 
 **December 27, 2025**:
 - Added Task #6: WAPS Lobby and State Change Updates (4-5 hours, HIGH priority)

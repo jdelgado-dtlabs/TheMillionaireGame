@@ -102,7 +102,6 @@ public class GameDatabaseContext : IDisposable
                     CorrectAnswer NVARCHAR(1) NOT NULL,
                     Difficulty_Type NVARCHAR(50) NOT NULL,
                     Level INT NOT NULL,
-                    LevelRange NVARCHAR(50),
                     Note NVARCHAR(MAX),
                     Used BIT DEFAULT 0,
                     Explanation NVARCHAR(MAX),

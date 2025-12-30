@@ -363,7 +363,7 @@ public partial class ControlPanelForm : Form
             {
                 progressDialog.UpdateStatus("Shutting down console windows...");
                 GameConsole.Shutdown();
-                WebServiceConsole.Shutdown();
+                WebServerConsole.Shutdown();
                 stepStopwatch.Stop();
                 progressDialog.AddStep("Shutdown Consoles", true, stepStopwatch.ElapsedMilliseconds);
             }
@@ -576,12 +576,12 @@ public partial class ControlPanelForm : Form
         // Always show in debug mode
         if (_appSettings.Settings.AudienceServerAutoStart)
         {
-            WebServiceConsole.Show();
+            WebServerConsole.Show();
         }
 #else
-        if (_appSettings.Settings.ShowWebServiceConsole && _appSettings.Settings.AudienceServerAutoStart)
+        if (_appSettings.Settings.ShowWebServerConsole && _appSettings.Settings.AudienceServerAutoStart)
         {
-            WebServiceConsole.Show();
+            WebServerConsole.Show();
         }
 #endif
         
@@ -792,19 +792,19 @@ public partial class ControlPanelForm : Form
         
         // Show WebService console when server starts
 #if DEBUG
-        WebServiceConsole.Show();
+        WebServerConsole.Show();
 #else
-        if (_appSettings.Settings.ShowWebServiceConsole)
+        if (_appSettings.Settings.ShowWebServerConsole)
         {
-            WebServiceConsole.Show();
+            WebServerConsole.Show();
         }
 #endif
         
         // Log to WebService console
-        WebServiceConsole.LogSeparator();
-        WebServiceConsole.Info("✓ Server started successfully");
-        WebServiceConsole.Info($"URL: {baseUrl}");
-        WebServiceConsole.LogSeparator();
+        WebServerConsole.LogSeparator();
+        WebServerConsole.Info("✓ Server started successfully");
+        WebServerConsole.Info($"URL: {baseUrl}");
+        WebServerConsole.LogSeparator();
         
         // Log to console or status bar if available
         Text = $"The Millionaire Game - Control Panel [Web Server: {baseUrl}]";
@@ -819,12 +819,12 @@ public partial class ControlPanelForm : Form
         }
         
         // Log to WebService console
-        WebServiceConsole.LogSeparator();
-        WebServiceConsole.Info("Server stopped");
-        WebServiceConsole.LogSeparator();
+        WebServerConsole.LogSeparator();
+        WebServerConsole.Info("Server stopped");
+        WebServerConsole.LogSeparator();
         
         // Hide WebService console when server stops
-        WebServiceConsole.Hide();
+        WebServerConsole.Hide();
         
         // Reset title
         Text = "The Millionaire Game - Control Panel";
@@ -832,9 +832,9 @@ public partial class ControlPanelForm : Form
 
     private void OnWebServerError(object? sender, Exception ex)
     {
-        // Both WebServiceConsole and GameConsole are thread-safe with internal queuing
+        // Both WebServerConsole and GameConsole are thread-safe with internal queuing
         // No UI thread marshalling needed
-        WebServiceConsole.Error($"❌ Error: {ex.Message}");
+        WebServerConsole.Error($"❌ Error: {ex.Message}");
         GameConsole.Error($"[Web Server] {ex.Message}");
     }
 
@@ -1198,7 +1198,7 @@ public partial class ControlPanelForm : Form
             }
             
             // Try Range type first (most common), fall back to Specific if needed
-            // Pass currentQuestion (not difficultyLevel) because GetLevelRangeString expects question numbers 1-15
+            // Pass currentQuestion to determine which level range (1-5, 6-10, 11-14, or 15) to query
             var question = await _questionRepository.GetRandomQuestionAsync(currentQuestion, Core.Models.DifficultyType.Range);
             if (question == null)
             {
@@ -4223,3 +4223,4 @@ public partial class ControlPanelForm : Form
         _gameService.ChangeLevel((int)nmrLevel.Value);
     }
 }
+

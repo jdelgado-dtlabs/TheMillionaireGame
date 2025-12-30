@@ -165,27 +165,29 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
-            // Delete old database to ensure clean state on startup
-            var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "waps.db");
-            if (File.Exists(dbPath))
-            {
-                try
-                {
-                    File.Delete(dbPath);
-                    WebServiceConsole.Info($"[WebServer] Deleted existing database: {dbPath}");
-                }
-                catch (Exception ex)
-                {
-                    WebServiceConsole.Warn($"[WebServer] Could not delete database: {ex.Message}");
-                }
-            }
-
-            // Ensure database is created
+            // Ensure database exists and clear all tables for clean state
             using (var scope = _host.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
+                
+                // Ensure database is created
                 context.Database.EnsureCreated();
-                WebServiceConsole.Info("[WebServer] Database created with clean state");
+                
+                // Clear all tables to ensure clean state on startup
+                try
+                {
+                    // Delete in correct order to respect foreign key constraints
+                    var deletedVotes = context.ATAVotes.ExecuteDelete();
+                    var deletedAnswers = context.FFFAnswers.ExecuteDelete();
+                    var deletedParticipants = context.Participants.ExecuteDelete();
+                    var deletedSessions = context.Sessions.ExecuteDelete();
+                    
+                    WebServerConsole.Info($"[WebServer] Database cleared: {deletedSessions} sessions, {deletedParticipants} participants, {deletedAnswers} FFF answers, {deletedVotes} ATA votes");
+                }
+                catch (Exception ex)
+                {
+                    WebServerConsole.Warn($"[WebServer] Could not clear database tables: {ex.Message}");
+                }
             }
 
             await _host.StartAsync();
@@ -193,7 +195,7 @@ public class WebServerHost : IDisposable
             // Wait a moment for the server to fully initialize and start accepting requests
             // This prevents "message channel closed" errors when browsers connect too early
             await Task.Delay(500);
-            WebServiceConsole.Info("[WebServer] Server ready to accept connections");
+            WebServerConsole.Info("[WebServer] Server ready to accept connections");
 
             ServerStarted?.Invoke(this, _baseUrl);
         }
@@ -213,17 +215,17 @@ public class WebServerHost : IDisposable
     {
         if (_host == null)
         {
-            WebServiceConsole.Debug("WebServerHost.StopAsync: Host is already null, nothing to stop.");
+            WebServerConsole.Debug("WebServerHost.StopAsync: Host is already null, nothing to stop.");
             return;
         }
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        WebServiceConsole.Info("=== WebServer Shutdown Started ===");
+        WebServerConsole.Info("=== WebServer Shutdown Started ===");
 
         try
         {
             // Step 1: Notify all SignalR clients to disconnect gracefully
-            WebServiceConsole.Info("Step 1: Notifying SignalR clients to disconnect...");
+            WebServerConsole.Info("Step 1: Notifying SignalR clients to disconnect...");
             try
             {
                 var hubContext = _host.Services.GetService(typeof(IHubContext<FFFHub>)) as IHubContext<FFFHub>;
@@ -232,47 +234,47 @@ public class WebServerHost : IDisposable
                 if (hubContext != null)
                 {
                     await hubContext.Clients.All.SendAsync("ServerShuttingDown");
-                    WebServiceConsole.Debug("  - Sent shutdown notification to FFF hub clients");
+                    WebServerConsole.Debug("  - Sent shutdown notification to FFF hub clients");
                 }
 
                 if (ataHubContext != null)
                 {
                     await ataHubContext.Clients.All.SendAsync("ServerShuttingDown");
-                    WebServiceConsole.Debug("  - Sent shutdown notification to ATA hub clients");
+                    WebServerConsole.Debug("  - Sent shutdown notification to ATA hub clients");
                 }
 
                 // Give clients a moment to disconnect gracefully
                 await Task.Delay(500);
-                WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+                WebServerConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
             }
             catch (Exception ex)
             {
-                WebServiceConsole.Warn($"  Failed to notify clients: {ex.Message}");
+                WebServerConsole.Warn($"  Failed to notify clients: {ex.Message}");
             }
 
             // Step 2: Stop the ASP.NET Core host
             stopwatch.Restart();
-            WebServiceConsole.Info("Step 2: Stopping ASP.NET Core host...");
+            WebServerConsole.Info("Step 2: Stopping ASP.NET Core host...");
             await _host.StopAsync(TimeSpan.FromSeconds(5));
-            WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+            WebServerConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
 
             // Step 3: Dispose resources
             stopwatch.Restart();
-            WebServiceConsole.Info("Step 3: Disposing host resources...");
+            WebServerConsole.Info("Step 3: Disposing host resources...");
             _host.Dispose();
             _host = null;
             _baseUrl = null;
-            WebServiceConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+            WebServerConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
 
             stopwatch.Stop();
-            WebServiceConsole.Info($"=== WebServer Shutdown Complete (Total: {stopwatch.ElapsedMilliseconds}ms) ===");
+            WebServerConsole.Info($"=== WebServer Shutdown Complete (Total: {stopwatch.ElapsedMilliseconds}ms) ===");
 
             ServerStopped?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            WebServiceConsole.Error($"=== WebServer Shutdown Failed after {stopwatch.ElapsedMilliseconds}ms: {ex.Message} ===");
+            WebServerConsole.Error($"=== WebServer Shutdown Failed after {stopwatch.ElapsedMilliseconds}ms: {ex.Message} ===");
             ServerError?.Invoke(this, ex);
             throw;
         }
@@ -388,7 +390,7 @@ public class WebServerHost : IDisposable
     }
 }
 /// <summary>
-/// Custom logger provider that writes to WebServiceConsole
+/// Custom logger provider that writes to WebServerConsole
 /// </summary>
 internal class WebServerConsoleLoggerProvider : ILoggerProvider
 {
@@ -401,7 +403,7 @@ internal class WebServerConsoleLoggerProvider : ILoggerProvider
 }
 
 /// <summary>
-/// Custom logger that writes to WebServiceConsole
+/// Custom logger that writes to WebServerConsole
 /// </summary>
 internal class WebServerConsoleLogger : ILogger
 {
@@ -443,11 +445,12 @@ internal class WebServerConsoleLogger : ILogger
             _ => Utilities.LogLevel.INFO
         };
         
-        WebServiceConsole.Log($"{logPrefix} [{shortCategory}] {message}", ourLevel);
+        WebServerConsole.Log($"{logPrefix} [{shortCategory}] {message}", ourLevel);
 
         if (exception != null)
         {
-            WebServiceConsole.Error($"  Exception: {exception.Message}");
+            WebServerConsole.Error($"  Exception: {exception.Message}");
         }
     }
 }
+

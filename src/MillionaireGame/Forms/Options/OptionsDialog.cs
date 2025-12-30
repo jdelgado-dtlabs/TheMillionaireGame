@@ -119,7 +119,7 @@ public partial class OptionsDialog : Form
         
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
-        chkShowWebServiceConsole.Checked = _settings.ShowWebServiceConsole;
+        chkShowWebServiceConsole.Checked = _settings.ShowWebServerConsole;
 #if DEBUG
         // In debug mode, always show console and disable checkbox
         chkShowConsole.Checked = true;
@@ -361,7 +361,7 @@ public partial class OptionsDialog : Form
         // Console settings (only save in release mode, debug is always true)
 #if !DEBUG
         _settings.ShowConsole = chkShowConsole.Checked;
-        _settings.ShowWebServiceConsole = chkShowWebServiceConsole.Checked;
+        _settings.ShowWebServerConsole = chkShowWebServiceConsole.Checked;
 #endif
 
         // Save money tree settings
@@ -786,11 +786,11 @@ public partial class OptionsDialog : Form
         {
             if (chkShowWebServiceConsole.Checked)
             {
-                WebServiceConsole.Show();
+                WebServerConsole.Show();
             }
             else
             {
-                WebServiceConsole.Hide();
+                WebServerConsole.Hide();
             }
         }
         MarkChanged();

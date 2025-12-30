@@ -266,7 +266,7 @@ public class ATAHub : Hub
             {
                 var activeParticipants = await _sessionService.GetActiveParticipantsAsync(sessionId);
                 var activeCount = activeParticipants.Count();
-                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServiceConsole, MillionaireGame");
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
                 if (consoleType != null)
                 {
                     var logSeparatorMethod = consoleType.GetMethod("LogSeparator");

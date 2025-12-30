@@ -1,13 +1,12 @@
 using MillionaireGame.Core.Database;
 using System.Reflection;
-using System.Xml.Serialization;
 
 namespace MillionaireGame.Core.Settings;
 
 /// <summary>
 /// Main application settings and profile configuration
+/// Stored in the database ApplicationSettings table
 /// </summary>
-[XmlRoot("AppSettings")]
 public class ApplicationSettings
 {
     // Lifeline Configuration
@@ -76,60 +75,57 @@ public class ApplicationSettings
 
 /// <summary>
 /// Manager for application settings persistence
+/// All settings are stored in and loaded from the database
 /// </summary>
 public class ApplicationSettingsManager
 {
-    private const string FileName = "config.xml";
-    private readonly string _filePath;
-    private readonly ApplicationSettingsRepository? _repository;
-    private readonly bool _useDatabaseMode;
+    private readonly ApplicationSettingsRepository _repository;
 
     public ApplicationSettings Settings { get; private set; }
 
-    public ApplicationSettingsManager(string? basePath = null, string? connectionString = null)
+    public ApplicationSettingsManager(string connectionString)
     {
-        _filePath = Path.Combine(basePath ?? AppDomain.CurrentDomain.BaseDirectory, FileName);
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new ArgumentException("Connection string cannot be null or empty", nameof(connectionString));
+            
+        _repository = new ApplicationSettingsRepository(connectionString);
         Settings = new ApplicationSettings();
-        
-        if (!string.IsNullOrWhiteSpace(connectionString))
-        {
-            _repository = new ApplicationSettingsRepository(connectionString);
-            _useDatabaseMode = true;
-        }
     }
 
     /// <summary>
-    /// Load settings from database or XML file
+    /// Load settings from database
     /// </summary>
     public async Task LoadSettingsAsync()
     {
-        if (_useDatabaseMode && _repository != null)
-        {
-            await LoadFromDatabaseAsync();
-        }
-        else
-        {
-            LoadFromXml();
-        }
+        await LoadFromDatabaseAsync();
     }
 
     /// <summary>
-    /// Synchronous load for backward compatibility (uses XML only)
+    /// Synchronous load wrapper - runs on background thread to avoid UI deadlocks
     /// </summary>
     public void LoadSettings()
     {
-        LoadFromXml();
+        Task.Run(async () => await LoadSettingsAsync()).GetAwaiter().GetResult();
     }
 
     private async Task LoadFromDatabaseAsync()
     {
-        if (_repository == null)
-            return;
-
         try
         {
+            // Ensure table exists
+            if (!await _repository.SettingsTableExistsAsync())
+            {
+                await _repository.CreateSettingsTableAsync();
+            }
+
             var dbSettings = await _repository.GetAllSettingsAsync();
-            Settings = new ApplicationSettings();
+            
+            // If no settings exist, save defaults
+            if (dbSettings.Count == 0)
+            {
+                await SaveToDatabaseAsync();
+                return;
+            }
             
             var properties = typeof(ApplicationSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -152,137 +148,28 @@ public class ApplicationSettingsManager
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading settings from database: {ex.Message}");
-            // Fall back to defaults
-            Settings = new ApplicationSettings();
-        }
-    }
-
-    private void LoadFromXml()
-    {
-        if (!File.Exists(_filePath))
-        {
-            // Settings already initialized with defaults in constructor
-            return;
-        }
-
-        try
-        {
-            var serializer = new XmlSerializer(typeof(ApplicationSettings));
-            using var reader = new StreamReader(_filePath);
-            var loadedSettings = (ApplicationSettings?)serializer.Deserialize(reader);
-            if (loadedSettings != null)
-            {
-                // CRITICAL: Update properties instead of replacing Settings object
-                // This maintains references held by SoundService -> EffectsChannel -> AudioCueQueue
-                CopySettingsProperties(loadedSettings, Settings);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading application settings from XML: {ex.Message}");
-            // Keep defaults that were initialized in constructor
+            throw;
         }
     }
 
     /// <summary>
-    /// Copy all properties from source to destination settings object.
-    /// Maintains object references for audio settings.
-    /// </summary>
-    private void CopySettingsProperties(ApplicationSettings source, ApplicationSettings destination)
-    {
-        // Copy simple properties
-        destination.TotalLifelines = source.TotalLifelines;
-        destination.Lifeline1 = source.Lifeline1;
-        destination.Lifeline2 = source.Lifeline2;
-        destination.Lifeline3 = source.Lifeline3;
-        destination.Lifeline4 = source.Lifeline4;
-        destination.Lifeline1Available = source.Lifeline1Available;
-        destination.Lifeline2Available = source.Lifeline2Available;
-        destination.Lifeline3Available = source.Lifeline3Available;
-        destination.Lifeline4Available = source.Lifeline4Available;
-        destination.WinningStrapTexture = source.WinningStrapTexture;
-        destination.QuestionsTexture = source.QuestionsTexture;
-        destination.EnablePreviewAutomatically = source.EnablePreviewAutomatically;
-        destination.PreviewOrientation = source.PreviewOrientation;
-        destination.FullScreenHostScreenEnable = source.FullScreenHostScreenEnable;
-        destination.FullScreenHostScreenMonitor = source.FullScreenHostScreenMonitor;
-        destination.FullScreenGuestScreenEnable = source.FullScreenGuestScreenEnable;
-        destination.FullScreenGuestScreenMonitor = source.FullScreenGuestScreenMonitor;
-        destination.FullScreenTVScreenEnable = source.FullScreenTVScreenEnable;
-        destination.FullScreenTVScreenMonitor = source.FullScreenTVScreenMonitor;
-        destination.ClearHostMessagesAtNewQuestion = source.ClearHostMessagesAtNewQuestion;
-        destination.ShowAnswerOnlyOnHostScreenAtFinal = source.ShowAnswerOnlyOnHostScreenAtFinal;
-        destination.AutoHideQuestionAtPlusOne = source.AutoHideQuestionAtPlusOne;
-        destination.AutoShowTotalWinnings = source.AutoShowTotalWinnings;
-        destination.AutoHideQuestionAtWalkAway = source.AutoHideQuestionAtWalkAway;
-        destination.HideAnswerInControlPanelAtNewQ = source.HideAnswerInControlPanelAtNewQ;
-        destination.ATAIsAlwaysCorrect = source.ATAIsAlwaysCorrect;
-        destination.FFFPort = source.FFFPort;
-        destination.FFFPlayer1Name = source.FFFPlayer1Name;
-        destination.FFFPlayer2Name = source.FFFPlayer2Name;
-        destination.FFFPlayer3Name = source.FFFPlayer3Name;
-        destination.FFFPlayer4Name = source.FFFPlayer4Name;
-        destination.FFFPlayer5Name = source.FFFPlayer5Name;
-        destination.FFFPlayer6Name = source.FFFPlayer6Name;
-        destination.FFFPlayer7Name = source.FFFPlayer7Name;
-        destination.FFFPlayer8Name = source.FFFPlayer8Name;
-        destination.SelectedSoundPack = source.SelectedSoundPack;
-        destination.AudioOutputDevice = source.AudioOutputDevice;
-        destination.ShowConsole = source.ShowConsole;
-        destination.ShowWebServerConsole = source.ShowWebServerConsole;
-        destination.AudienceServerIP = source.AudienceServerIP;
-        destination.AudienceServerPort = source.AudienceServerPort;
-        destination.AudienceServerAutoStart = source.AudienceServerAutoStart;
-
-        // Copy audio settings properties (maintain object references)
-        destination.SilenceDetection.Enabled = source.SilenceDetection.Enabled;
-        destination.SilenceDetection.ThresholdDb = source.SilenceDetection.ThresholdDb;
-        destination.SilenceDetection.SilenceDurationMs = source.SilenceDetection.SilenceDurationMs;
-        destination.SilenceDetection.FadeoutDurationMs = source.SilenceDetection.FadeoutDurationMs;
-        destination.SilenceDetection.InitialDelayMs = source.SilenceDetection.InitialDelayMs;
-        destination.SilenceDetection.ApplyToMusic = source.SilenceDetection.ApplyToMusic;
-        destination.SilenceDetection.ApplyToEffects = source.SilenceDetection.ApplyToEffects;
-
-        destination.Crossfade.Enabled = source.Crossfade.Enabled;
-        destination.Crossfade.CrossfadeDurationMs = source.Crossfade.CrossfadeDurationMs;
-        destination.Crossfade.QueueLimit = source.Crossfade.QueueLimit;
-        destination.Crossfade.AutoCrossfade = source.Crossfade.AutoCrossfade;
-
-        destination.AudioProcessing.MasterGainDb = source.AudioProcessing.MasterGainDb;
-        destination.AudioProcessing.EffectsGainDb = source.AudioProcessing.EffectsGainDb;
-        destination.AudioProcessing.MusicGainDb = source.AudioProcessing.MusicGainDb;
-        destination.AudioProcessing.EnableLimiter = source.AudioProcessing.EnableLimiter;
-        destination.AudioProcessing.LimiterCeilingDb = source.AudioProcessing.LimiterCeilingDb;
-    }
-
-    /// <summary>
-    /// Save settings to database or XML file
+    /// Save settings to database
     /// </summary>
     public async Task SaveSettingsAsync()
     {
-        if (_useDatabaseMode && _repository != null)
-        {
-            await SaveToDatabaseAsync();
-        }
-        else
-        {
-            SaveToXml();
-        }
+        await SaveToDatabaseAsync();
     }
 
     /// <summary>
-    /// Synchronous save for backward compatibility (uses XML only)
+    /// Synchronous save wrapper - runs on background thread to avoid UI deadlocks
     /// </summary>
     public void SaveSettings()
     {
-        SaveToXml();
+        Task.Run(async () => await SaveSettingsAsync()).GetAwaiter().GetResult();
     }
 
     private async Task SaveToDatabaseAsync()
     {
-        if (_repository == null)
-            return;
-
         try
         {
             var properties = typeof(ApplicationSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -301,21 +188,6 @@ public class ApplicationSettingsManager
         catch (Exception ex)
         {
             Console.WriteLine($"Error saving settings to database: {ex.Message}");
-            throw;
-        }
-    }
-
-    private void SaveToXml()
-    {
-        try
-        {
-            var serializer = new XmlSerializer(typeof(ApplicationSettings));
-            using var writer = new StreamWriter(_filePath);
-            serializer.Serialize(writer, Settings);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving application settings to XML: {ex.Message}");
             throw;
         }
     }

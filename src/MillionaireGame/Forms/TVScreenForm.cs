@@ -218,10 +218,11 @@ public partial class TVScreenForm : Form, IGameScreen
         if (lifeline.Type == LifelineType.AskTheAudience && _currentQuestion != null)
         {
             pnlATA.Visible = true;
-            lblATA_A.Text = $"A: {_currentQuestion.ATAPercentageA ?? 0}%";
-            lblATA_B.Text = $"B: {_currentQuestion.ATAPercentageB ?? 0}%";
-            lblATA_C.Text = $"C: {_currentQuestion.ATAPercentageC ?? 0}%";
-            lblATA_D.Text = $"D: {_currentQuestion.ATAPercentageD ?? 0}%";
+            var ataResults = _currentQuestion.GenerateATAPercentages();
+            lblATA_A.Text = $"A: {ataResults["A"]}%";
+            lblATA_B.Text = $"B: {ataResults["B"]}%";
+            lblATA_C.Text = $"C: {ataResults["C"]}%";
+            lblATA_D.Text = $"D: {ataResults["D"]}%";
         }
     }
     

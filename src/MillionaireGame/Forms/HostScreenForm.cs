@@ -453,13 +453,16 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         float yOffset = 60;
         var lineHeight = 30f;
         
-        DrawATALine(g, "A", _currentQuestion.ATAPercentageA ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        // Generate preview percentages
+        var previewPercentages = _currentQuestion.GenerateATAPercentages();
+        
+        DrawATALine(g, "A", previewPercentages["A"], new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
         yOffset += lineHeight;
-        DrawATALine(g, "B", _currentQuestion.ATAPercentageB ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        DrawATALine(g, "B", previewPercentages["B"], new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
         yOffset += lineHeight;
-        DrawATALine(g, "C", _currentQuestion.ATAPercentageC ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        DrawATALine(g, "C", previewPercentages["C"], new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
         yOffset += lineHeight;
-        DrawATALine(g, "D", _currentQuestion.ATAPercentageD ?? 0, new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
+        DrawATALine(g, "D", previewPercentages["D"], new RectangleF(previewBounds.X + 20, previewBounds.Y + yOffset, previewBounds.Width - 40, lineHeight));
     }
 
     private void DrawATALine(System.Drawing.Graphics g, string answer, int percentage, RectangleF bounds)
@@ -751,16 +754,10 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         if (lifeline.Type == LifelineType.AskTheAudience)
         {
             _showATA = true;
-            // Generate ATA results based on question percentages
+            // Generate random ATA results favoring the correct answer
             if (_currentQuestion != null)
             {
-                _ataVotes = new Dictionary<string, int>
-                {
-                    ["A"] = _currentQuestion.ATAPercentageA ?? 0,
-                    ["B"] = _currentQuestion.ATAPercentageB ?? 0,
-                    ["C"] = _currentQuestion.ATAPercentageC ?? 0,
-                    ["D"] = _currentQuestion.ATAPercentageD ?? 0
-                };
+                _ataVotes = _currentQuestion.GenerateATAPercentages();
                 Invalidate();
             }
         }

@@ -14,16 +14,9 @@ public class Question
     public string CorrectAnswer { get; set; } = string.Empty;
     public DifficultyType DifficultyType { get; set; }
     public int Level { get; set; }
-    public LevelRange? LevelRange { get; set; }
     public string Note { get; set; } = string.Empty;
     public bool Used { get; set; } = false;
     public string Explanation { get; set; } = string.Empty;
-
-    // Ask the Audience percentages (optional, can be customized per question)
-    public int? ATAPercentageA { get; set; }
-    public int? ATAPercentageB { get; set; }
-    public int? ATAPercentageC { get; set; }
-    public int? ATAPercentageD { get; set; }
 
     // Custom answer labels (for FFF reveal - shows correct order labels)
     // If null, defaults to "A", "B", "C", "D"
@@ -58,6 +51,44 @@ public class Question
         get => AnswerD;
         set => AnswerD = value;
     }
+
+    /// <summary>
+    /// Generates random Ask The Audience percentages that favor the correct answer
+    /// </summary>
+    public Dictionary<string, int> GenerateATAPercentages()
+    {
+        var random = new Random();
+        var percentages = new Dictionary<string, int>();
+        
+        // Generate random percentages that add up to 100
+        // Favor the correct answer with 40-70% of votes
+        var correctPercentage = random.Next(40, 71);
+        var remaining = 100 - correctPercentage;
+        
+        // Distribute remaining votes among wrong answers
+        var wrongAnswers = new List<string> { "A", "B", "C", "D" }
+            .Where(x => x != CorrectAnswer)
+            .ToList();
+        
+        var wrongPercentages = new List<int>();
+        for (int i = 0; i < wrongAnswers.Count - 1; i++)
+        {
+            var max = remaining - (wrongAnswers.Count - 1 - i);
+            var value = random.Next(0, Math.Max(1, max));
+            wrongPercentages.Add(value);
+            remaining -= value;
+        }
+        wrongPercentages.Add(remaining); // Last answer gets remainder
+        
+        // Assign percentages
+        percentages[CorrectAnswer] = correctPercentage;
+        for (int i = 0; i < wrongAnswers.Count; i++)
+        {
+            percentages[wrongAnswers[i]] = wrongPercentages[i];
+        }
+        
+        return percentages;
+    }
 }
 
 /// <summary>
@@ -67,15 +98,4 @@ public enum DifficultyType
 {
     Specific = 0,
     Range = 1
-}
-
-/// <summary>
-/// Level range categories for questions
-/// </summary>
-public enum LevelRange
-{
-    Level1 = 0,  // Questions 1-5
-    Level2 = 1,  // Questions 6-10
-    Level3 = 2,  // Questions 11-14
-    Level4 = 3   // Question 15
 }

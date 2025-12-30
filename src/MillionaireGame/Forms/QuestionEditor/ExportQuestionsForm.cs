@@ -89,11 +89,7 @@ public partial class ExportQuestionsForm : Form
                     $"\"{EscapeCsv(q.AnswerD)}\"," +
                     $"{q.CorrectAnswer}," +
                     $"{q.Level}," +
-                    $"\"{EscapeCsv(q.Explanation)}\"," +
-                    $"{q.ATAPercentageA?.ToString() ?? ""}," +
-                    $"{q.ATAPercentageB?.ToString() ?? ""}," +
-                    $"{q.ATAPercentageC?.ToString() ?? ""}," +
-                    $"{q.ATAPercentageD?.ToString() ?? ""}");
+                    $"\"{EscapeCsv(q.Explanation)}\"");
             }
 
             // Write to file

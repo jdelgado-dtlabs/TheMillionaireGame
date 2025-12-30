@@ -32,17 +32,7 @@ internal static class Program
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         
-        // Settings are stored in XML for now (database migration disabled)
-        // Load application settings from XML first to check console setting
-        var appSettings = new ApplicationSettingsManager();
-        appSettings.LoadSettings();
-        
-        // Initialize application first (required before creating any Forms)
-        Application.SetHighDpiMode(HighDpiMode.SystemAware);
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-
-        // Load settings
+        // Load SQL connection settings from sql.xml
         var sqlSettings = new SqlSettingsManager();
         sqlSettings.LoadSettings();
 
@@ -78,12 +68,21 @@ internal static class Program
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Error initializing database: {ex.Message}\n\nPlease check your SQL Server connection settings.",
+                $"Error initializing database: {ex.Message}\\n\\nPlease check your SQL Server connection settings.",
                 "Database Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
             return;
         }
+
+        // Initialize application settings from database
+        var appSettings = new ApplicationSettingsManager(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+        appSettings.LoadSettings();
+
+        // Initialize application first (required before creating any Forms)
+        Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
 
         // Create and show game log window FIRST so we can log service initialization
         if (DebugMode || appSettings.Settings.ShowConsole)

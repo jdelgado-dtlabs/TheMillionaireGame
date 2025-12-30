@@ -187,12 +187,6 @@ public partial class ImportQuestionsForm : Form
             Explanation = fields.Length > 7 ? fields[7].Trim() : string.Empty
         };
 
-        // Parse optional ATA percentages (fields 8-11)
-        if (fields.Length > 8 && int.TryParse(fields[8], out var ataA)) question.ATAPercentageA = ataA;
-        if (fields.Length > 9 && int.TryParse(fields[9], out var ataB)) question.ATAPercentageB = ataB;
-        if (fields.Length > 10 && int.TryParse(fields[10], out var ataC)) question.ATAPercentageC = ataC;
-        if (fields.Length > 11 && int.TryParse(fields[11], out var ataD)) question.ATAPercentageD = ataD;
-
         // Validate
         if (string.IsNullOrWhiteSpace(question.QuestionText) ||
             !new[] { "A", "B", "C", "D" }.Contains(question.CorrectAnswer))
