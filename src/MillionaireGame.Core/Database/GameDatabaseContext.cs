@@ -140,6 +140,79 @@ public class GameDatabaseContext : IDisposable
             await command.ExecuteNonQueryAsync();
         }
 
+        // Create WAPS tables (Web-Based Audience Participation System)
+        var createWAPSTables = @"
+            -- Sessions table
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Sessions')
+            BEGIN
+                CREATE TABLE Sessions (
+                    Id NVARCHAR(450) PRIMARY KEY,
+                    HostName NVARCHAR(100) NOT NULL,
+                    CreatedAt DATETIME2 NOT NULL,
+                    StartedAt DATETIME2 NULL,
+                    EndedAt DATETIME2 NULL,
+                    Status NVARCHAR(50) NOT NULL
+                );
+                CREATE INDEX IX_Sessions_CreatedAt ON Sessions(CreatedAt);
+            END
+
+            -- Participants table
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Participants')
+            BEGIN
+                CREATE TABLE Participants (
+                    Id NVARCHAR(450) PRIMARY KEY,
+                    SessionId NVARCHAR(450) NOT NULL,
+                    DisplayName NVARCHAR(50) NOT NULL,
+                    ConnectionId NVARCHAR(450) NULL,
+                    JoinedAt DATETIME2 NOT NULL,
+                    IsActive BIT NOT NULL DEFAULT 1,
+                    DeviceType NVARCHAR(50) NULL,
+                    Browser NVARCHAR(100) NULL,
+                    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IX_Participants_SessionId ON Participants(SessionId);
+                CREATE INDEX IX_Participants_ConnectionId ON Participants(ConnectionId);
+            END
+
+            -- FFFAnswers table
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FFFAnswers')
+            BEGIN
+                CREATE TABLE FFFAnswers (
+                    Id INT PRIMARY KEY IDENTITY(1,1),
+                    SessionId NVARCHAR(450) NOT NULL,
+                    ParticipantId NVARCHAR(450) NOT NULL,
+                    QuestionId INT NOT NULL,
+                    AnswerSequence NVARCHAR(20) NOT NULL,
+                    SubmittedAt DATETIME2 NOT NULL,
+                    TimeTaken FLOAT NOT NULL,
+                    IsCorrect BIT NOT NULL DEFAULT 0,
+                    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IX_FFFAnswers_SessionId_QuestionId ON FFFAnswers(SessionId, QuestionId);
+                CREATE INDEX IX_FFFAnswers_SubmittedAt ON FFFAnswers(SubmittedAt);
+            END
+
+            -- ATAVotes table
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ATAVotes')
+            BEGIN
+                CREATE TABLE ATAVotes (
+                    Id INT PRIMARY KEY IDENTITY(1,1),
+                    SessionId NVARCHAR(450) NOT NULL,
+                    ParticipantId NVARCHAR(450) NOT NULL,
+                    QuestionText NVARCHAR(500) NOT NULL,
+                    SelectedOption NVARCHAR(1) NOT NULL,
+                    SubmittedAt DATETIME2 NOT NULL,
+                    FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IX_ATAVotes_SessionId ON ATAVotes(SessionId);
+                CREATE INDEX IX_ATAVotes_SubmittedAt ON ATAVotes(SubmittedAt);
+            END";
+
+        using (var command = new SqlCommand(createWAPSTables, useDbConnection))
+        {
+            await command.ExecuteNonQueryAsync();
+        }
+
         useDbConnection.Close();
     }
 

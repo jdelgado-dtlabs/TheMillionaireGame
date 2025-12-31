@@ -166,28 +166,26 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
-            // Ensure database exists and clear all tables for clean state
+            // Clear WAPS tables for clean session state on startup
+            // Tables are created by GameDatabaseContext.CreateDatabaseAsync()
             using (var scope = _host.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
                 
-                // Ensure database is created
-                context.Database.EnsureCreated();
-                
-                // Clear all tables to ensure clean state on startup
                 try
                 {
                     // Delete in correct order to respect foreign key constraints
-                    var deletedVotes = context.ATAVotes.ExecuteDelete();
-                    var deletedAnswers = context.FFFAnswers.ExecuteDelete();
-                    var deletedParticipants = context.Participants.ExecuteDelete();
-                    var deletedSessions = context.Sessions.ExecuteDelete();
+                    var deletedVotes = await context.ATAVotes.ExecuteDeleteAsync();
+                    var deletedAnswers = await context.FFFAnswers.ExecuteDeleteAsync();
+                    var deletedParticipants = await context.Participants.ExecuteDeleteAsync();
+                    var deletedSessions = await context.Sessions.ExecuteDeleteAsync();
                     
-                    WebServerConsole.Info($"[WebServer] Database cleared: {deletedSessions} sessions, {deletedParticipants} participants, {deletedAnswers} FFF answers, {deletedVotes} ATA votes");
+                    WebServerConsole.Info($"[WebServer] WAPS data cleared: {deletedSessions} sessions, {deletedParticipants} participants, {deletedAnswers} FFF answers, {deletedVotes} ATA votes");
                 }
                 catch (Exception ex)
                 {
-                    WebServerConsole.Warn($"[WebServer] Could not clear database tables: {ex.Message}");
+                    WebServerConsole.Error($"[WebServer] Failed to clear WAPS data: {ex.Message}");
+                    throw; // Don't start web server if we can't clear old session data
                 }
             }
 
@@ -332,11 +330,10 @@ public class WebServerHost : IDisposable
         // Add SignalR
         services.AddSignalR();
 
-        // Add database context
+        // Add database context - using SQL Server (same database as main application)
         services.AddDbContext<WAPSDbContext>(options =>
         {
-            var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "waps.db");
-            options.UseSqlite($"Data Source={dbPath}");
+            options.UseSqlServer(_sqlConnectionString);
         });
 
         // Add repositories and services
