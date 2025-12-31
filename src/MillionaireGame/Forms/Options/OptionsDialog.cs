@@ -1010,10 +1010,13 @@ public partial class OptionsDialog : Form
         if (cmbBackground.SelectedItem is BackgroundItem bgItem)
         {
             _settings.Broadcast.SelectedBackgroundPath = bgItem.Path;
+            GameConsole.Debug($"[OptionsDialog] Saved background path: {bgItem.Path}");
         }
 
         // Save chroma key color (convert from Color to hex)
         _settings.Broadcast.ChromaKeyColor = lblChromaColorPreview.BackColor;
+        
+        GameConsole.Debug($"[OptionsDialog] Saved broadcast mode: {_settings.Broadcast.Mode}");
     }
 
     private void UpdateBroadcastControlVisibility()
@@ -1098,10 +1101,10 @@ public partial class OptionsDialog : Form
             IsCustom = false
         });
 
-        // Add embedded backgrounds (01_FFF.png through 04_FFF.png)
-        for (int i = 1; i <= 4; i++)
+        // Add embedded backgrounds (01_bkg.png through 06_bkg.png)
+        for (int i = 1; i <= 6; i++)
         {
-            string resourceName = $"0{i}_FFF.png";
+            string resourceName = $"0{i}_bkg.png";
             cmbBackground.Items.Add(new BackgroundItem
             {
                 DisplayName = $"Background {i}",
@@ -1177,8 +1180,8 @@ public partial class OptionsDialog : Form
 
         if (cmbBackground.Items[e.Index] is BackgroundItem bgItem)
         {
-            // Draw thumbnail (40x40 box on the left)
-            var thumbnailRect = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 2, 36, 36);
+            // Draw thumbnail (71x40 box on the left in 16:9 aspect ratio)
+            var thumbnailRect = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 2, 67, 36);
             
             if (bgItem.IsCustom)
             {
@@ -1251,7 +1254,7 @@ public partial class OptionsDialog : Form
             }
 
             // Draw display name
-            var textRect = new Rectangle(e.Bounds.Left + 42, e.Bounds.Top, e.Bounds.Width - 42, e.Bounds.Height);
+            var textRect = new Rectangle(e.Bounds.Left + 75, e.Bounds.Top, e.Bounds.Width - 75, e.Bounds.Height);
             using var brush = new SolidBrush(e.ForeColor);
             var format = new StringFormat { LineAlignment = StringAlignment.Center };
             e.Graphics.DrawString(bgItem.DisplayName, e.Font!, brush, textRect, format);
@@ -1265,7 +1268,7 @@ public partial class OptionsDialog : Form
         try
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            var resourcePath = $"MillionaireGame.Graphics.{resourceName}";
+            var resourcePath = $"MillionaireGame.lib.textures.{resourceName}";
             
             using var stream = assembly.GetManifestResourceStream(resourcePath);
             if (stream != null)

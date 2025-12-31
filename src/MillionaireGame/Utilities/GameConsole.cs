@@ -50,9 +50,15 @@ public static class GameConsole
                     // Process log message
                     lock (_lock)
                     {
+                        // Always log - window will handle file logging even if hidden
                         if (_logWindow != null && !_logWindow.IsDisposed)
                         {
                             _logWindow.Log(logEntry.message, logEntry.level);
+                        }
+                        else
+                        {
+                            // No window - just write to debug console
+                            System.Diagnostics.Debug.WriteLine($"[{logEntry.level}] {logEntry.message}");
                         }
                     }
                 }
@@ -105,13 +111,16 @@ public static class GameConsole
     }
 
     /// <summary>
-    /// Hides the game log window
+    /// Hides the game log window (file logging continues)
     /// </summary>
     public static void Hide()
     {
         lock (_lock)
         {
-            _logWindow?.Hide();
+            if (_logWindow != null && !_logWindow.IsDisposed)
+            {
+                _logWindow.Hide();
+            }
         }
     }
 

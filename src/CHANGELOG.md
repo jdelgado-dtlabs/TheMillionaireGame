@@ -5,6 +5,14 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [v0.9.8] - 2025-12-31
 
 ### Added
+- **Background Graphics System** ✅ COMPLETE
+  * Added BackgroundRenderer class for theme-based backgrounds on TV Screen
+  * Supports embedded resources (PNG files) and chroma key colors
+  * Background images renamed: 01_bkg.png through 06_bkg.png (16:9 aspect ratio)
+  * Preview window now displays backgrounds correctly
+  * Integrated with OptionsDialog for background selection
+  * Custom-drawn ComboBox with 16:9 thumbnail previews (71x40 pixels)
+  * Location: Graphics/BackgroundRenderer.cs, lib/textures/*.png
 - **MIT License** ✅ COMPLETE
   * Added MIT License with dual copyright (Jean Francois Delgado 2025-2026, Marco Loenen 2017-2024)
   * Updated all documentation with proper attribution
@@ -50,6 +58,35 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Fixed duplicate priorities in START_HERE.md
   * All READMEs updated to reflect v0.9.8 state
   * Location: src/docs/
+
+### Fixed
+- **Icon Display Issues** ✅ COMPLETE
+  * Fixed icon not appearing on GameLogWindow and WebServerLogWindow
+  * Corrected namespace: Using MillionaireGame.Helpers.IconHelper (not Core.Helpers)
+  * Icon application moved to end of constructor after all UI initialization
+  * Improved logging: Now shows form type and title for better debugging
+  * Location: GameLogWindow.cs, WebServerLogWindow.cs, IconHelper.cs
+
+- **Background Image Loading** ✅ COMPLETE
+  * Fixed embedded resource path: Changed from "MillionaireGame.Graphics" to "MillionaireGame.lib.textures"
+  * Background images now load correctly from embedded resources
+  * Added comprehensive debug logging to trace resource loading
+  * Updated background file references from _FFF.png to _bkg.png naming convention
+  * Location: BackgroundRenderer.cs, OptionsDialog.cs
+
+- **UI Layout Issues** ✅ COMPLETE
+  * Fixed dropdown overlap with info label in OptionsDialog
+  * Moved lblBackgroundInfo from Y:110 to Y:140 (30px down)
+  * Dropdown height set to 40px for 16:9 thumbnail display
+  * Background selection now displays 6 options (01-06) instead of selective array
+  * Location: OptionsDialog.Designer.cs, OptionsDialog.cs
+
+- **Logging System Improvements** ✅ COMPLETE
+  * GameConsole now logs even when window is hidden/closed
+  * File logging continues independently of window visibility
+  * ProcessLogQueue always writes to file logger when available
+  * Prevents log loss when console window is minimized
+  * Location: GameConsole.cs
 
 ## [v0.9.5] - 2025-12-30
 

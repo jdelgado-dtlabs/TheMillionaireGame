@@ -542,7 +542,7 @@ namespace MillionaireGame.Forms.Options
             // 
             // lblBackgroundInfo
             // 
-            lblBackgroundInfo.Location = new Point(16, 110);
+            lblBackgroundInfo.Location = new Point(16, 140);
             lblBackgroundInfo.Name = "lblBackgroundInfo";
             lblBackgroundInfo.Size = new Size(560, 170);
             lblBackgroundInfo.TabIndex = 8;

@@ -126,10 +126,12 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // Use broadcast background renderer if available, otherwise fall back to black
         if (_backgroundRenderer != null)
         {
+            GameConsole.Debug($"[TVScreen] Rendering background via BackgroundRenderer");
             _backgroundRenderer.RenderBackground(e.Graphics, ClientSize.Width, ClientSize.Height);
         }
         else
         {
+            GameConsole.Debug($"[TVScreen] BackgroundRenderer is NULL - using black fallback");
             // Fallback: Fill with black background
             e.Graphics.Clear(Color.Black);
         }

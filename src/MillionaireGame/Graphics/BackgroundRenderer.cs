@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Utilities;
 using System.Drawing.Drawing2D;
 
 namespace MillionaireGame.Graphics;
@@ -39,9 +40,12 @@ public class BackgroundRenderer
     {
         var backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
         
+        GameConsole.Debug($"[BackgroundRenderer] Rendering prerendered background. Path: {backgroundPath ?? "(null)"}");
+        
         // If no background selected or empty path, fall back to black
         if (string.IsNullOrWhiteSpace(backgroundPath))
         {
+            GameConsole.Debug("[BackgroundRenderer] No background path - using black");
             g.Clear(Color.Black);
             return;
         }
@@ -94,10 +98,12 @@ public class BackgroundRenderer
             if (backgroundPath.StartsWith("embedded://"))
             {
                 var resourceName = backgroundPath.Substring("embedded://".Length);
+                GameConsole.Debug($"[BackgroundRenderer] Loading embedded resource: {resourceName}");
                 _cachedBackground = LoadEmbeddedResource(resourceName);
                 if (_cachedBackground != null)
                 {
                     _cachedBackgroundPath = backgroundPath;
+                    GameConsole.Debug($"[BackgroundRenderer] Successfully loaded embedded resource: {resourceName}");
                 }
                 return _cachedBackground;
             }
@@ -134,17 +140,33 @@ public class BackgroundRenderer
         try
         {
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            var resourcePath = $"MillionaireGame.Graphics.{resourceName}";
+            var resourcePath = $"MillionaireGame.lib.textures.{resourceName}";
+            
+            GameConsole.Debug($"[BackgroundRenderer] Looking for resource: {resourcePath}");
             
             using var stream = assembly.GetManifestResourceStream(resourcePath);
             if (stream != null)
             {
-                return Image.FromStream(stream);
+                var image = Image.FromStream(stream);
+                GameConsole.Debug($"[BackgroundRenderer] ✓ Successfully loaded embedded resource: {resourceName}");
+                return image;
+            }
+            else
+            {
+                GameConsole.Warn($"[BackgroundRenderer] ✗ Resource stream is NULL for: {resourcePath}");
+                
+                // List all available resources for debugging
+                var allResources = assembly.GetManifestResourceNames();
+                GameConsole.Debug($"[BackgroundRenderer] Available embedded resources ({allResources.Length}):");
+                foreach (var res in allResources.Where(r => r.Contains("bkg") || r.Contains("FFF")))
+                {
+                    GameConsole.Debug($"  - {res}");
+                }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently ignore loading errors
+            GameConsole.Error($"[BackgroundRenderer] Error loading embedded resource '{resourceName}': {ex.Message}");
         }
         return null;
     }

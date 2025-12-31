@@ -43,9 +43,16 @@ public static class IconHelper
     public static void ApplyToForm(Form form)
     {
         var icon = LoadApplicationIcon();
+        var formName = $"{form.GetType().Name} ({form.Text})";
+        
         if (icon != null)
         {
             form.Icon = icon;
+            GameConsole.Debug($"[IconHelper] Applied icon to {formName}");
+        }
+        else
+        {
+            GameConsole.Debug($"[IconHelper] Failed to load icon for {formName}");
         }
     }
 }
