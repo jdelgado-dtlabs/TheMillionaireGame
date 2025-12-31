@@ -91,20 +91,6 @@ internal static class Program
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        // Create and show game log window FIRST so we can log service initialization
-        if (DebugMode || appSettings.Settings.ShowGameConsole)
-        {
-            var gameLogWindow = new GameConsoleWindow();
-            gameLogWindow.Show();
-            GameConsole.SetWindow(gameLogWindow);
-            
-            GameConsole.Info("===== TESTING GAMECONSOLE =====");
-            GameConsole.Info("THE MILLIONAIRE GAME - Debug Console");
-            GameConsole.Info($"Version: Debug Build");
-            GameConsole.Info($"Started: {DateTime.Now}");
-            GameConsole.LogSeparator();
-        }
-
         // Initialize services
         var gameService = new GameService();
         var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
@@ -145,16 +131,23 @@ internal static class Program
         
         ServiceProvider = services.BuildServiceProvider();
 
-        // Log initialization complete
+        // Create and run main control panel (FIRST window to show)
+        var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
+        
+        // Initialize GameConsole AFTER ControlPanel is created but BEFORE showing it
+        // This ensures proper window initialization order
         if (DebugMode || appSettings.Settings.ShowGameConsole)
         {
+            var gameConsoleWindow = new GameConsoleWindow();
+            gameConsoleWindow.Show();
+            GameConsole.SetWindow(gameConsoleWindow);
+            
+            GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
+            GameConsole.Info($"Version: v0.9.8 Debug Build");
+            GameConsole.Info($"Started: {DateTime.Now}");
+            GameConsole.LogSeparator();
             GameConsole.Info("Application initialized successfully.");
-            GameConsole.Info("");
-            GameConsole.Log("If you see this, GameConsole.Log() is working!");
         }
-
-        // Create and run main control panel
-        var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
         
         Application.Run(controlPanel);
     }
