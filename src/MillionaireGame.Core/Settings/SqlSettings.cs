@@ -25,15 +25,15 @@ public class SqlConnectionSettings
     {
         if (UseRemoteServer)
         {
-            return $"Server={RemoteServer},{RemotePort};User Id={RemoteLogin};Password={RemotePassword};";
+            return $"Server={RemoteServer},{RemotePort};User Id={RemoteLogin};Password={RemotePassword};TrustServerCertificate=True;";
         }
         else if (UseLocalDB)
         {
-            return "Server=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;";
+            return "Server=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=True;";
         }
         else
         {
-            return $"Server=localhost\\{LocalInstance};Trusted_Connection=true;";
+            return $"Server=localhost\\{LocalInstance};Trusted_Connection=true;TrustServerCertificate=True;";
         }
     }
 
@@ -45,15 +45,15 @@ public class SqlConnectionSettings
     {
         if (UseRemoteServer)
         {
-            return $"Server={RemoteServer},{RemotePort};Database={databaseName};User Id={RemoteLogin};Password={RemotePassword};";
+            return $"Server={RemoteServer},{RemotePort};Database={databaseName};User Id={RemoteLogin};Password={RemotePassword};TrustServerCertificate=True;";
         }
         else if (UseLocalDB)
         {
-            return $"Server=(LocalDB)\\MSSQLLocalDB;Database={databaseName};Integrated Security=true;";
+            return $"Server=(LocalDB)\\MSSQLLocalDB;Database={databaseName};Integrated Security=true;TrustServerCertificate=True;";
         }
         else
         {
-            return $"Server=localhost\\{LocalInstance};Database={databaseName};Trusted_Connection=true;";
+            return $"Server=localhost\\{LocalInstance};Database={databaseName};Trusted_Connection=true;TrustServerCertificate=True;";
         }
     }
 }

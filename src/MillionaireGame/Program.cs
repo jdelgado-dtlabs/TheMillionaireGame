@@ -42,7 +42,8 @@ internal static class Program
         try
         {
             // Check if database exists, create if not
-            if (!dbContext.DatabaseExistsAsync().Result)
+            bool dbExists = dbContext.DatabaseExistsAsync().Result;
+            if (!dbExists)
             {
                 var result = MessageBox.Show(
                     "Database not found. Would you like to create it?",
@@ -63,6 +64,12 @@ internal static class Program
                 {
                     return;
                 }
+            }
+            else
+            {
+                // Database exists - ensure all tables exist (including WAPS tables)
+                // CreateDatabaseAsync has IF NOT EXISTS checks, so it's safe to run
+                dbContext.CreateDatabaseAsync().Wait();
             }
         }
         catch (Exception ex)

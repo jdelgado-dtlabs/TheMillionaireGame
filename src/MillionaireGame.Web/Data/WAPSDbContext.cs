@@ -28,7 +28,8 @@ public class WAPSDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.HostName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Status).IsRequired();
+            entity.Property(e => e.Status).IsRequired().HasConversion<string>();
+            entity.Property(e => e.CurrentMode).HasConversion<string>();
             entity.HasIndex(e => e.CreatedAt);
         });
 
@@ -38,6 +39,7 @@ public class WAPSDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.SessionId).IsRequired();
             entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.State).IsRequired().HasConversion<string>();
             entity.HasIndex(e => e.SessionId);
             entity.HasIndex(e => e.ConnectionId);
             

@@ -221,27 +221,27 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeftSide, bool isVisible)
     {
-        // Determine if this is a left or right answer
-        bool isLeft = (letter == "A" || letter == "C");
+        // Use isLeftSide parameter for both texture selection AND padding
+        // This keeps everything position-based, not letter-based
         
-        // Determine texture based on state
+        // Determine texture based on state - use isLeftSide (position) not letter
         TextureManager.ElementType elementType;
         
         if (_isRevealing && letter == _correctAnswer)
         {
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
+            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
         }
         else if (_selectedAnswer == letter && !_isRevealing)
         {
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
+            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
         }
         else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
         {
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
+            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
         }
         else
         {
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
+            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
         }
 
         var texture = TextureManager.GetTexture(elementType, CurrentTextureSet);
@@ -254,13 +254,13 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         // Only draw text if answer is visible
         if (isVisible)
         {
-            // Left answers (A, C) have more padding, right answers (B, D) have less
-            float letterLeftPadding = isLeft ? 150 : 40;
-            float textLeftPadding = isLeft ? 240 : 130;
+            // Left positions (A, C) have more padding, right positions (B, D) have less
+            float letterLeftPadding = isLeftSide ? 150 : 40;
+            float textLeftPadding = isLeftSide ? 240 : 130;
             float textRightPadding = 80;
             
             // Draw answer letter
-            using var letterFont = new Font("Copperplate Gothic Bold", 28, FontStyle.Bold);
+            using var letterFont = new Font("Arial", 28, FontStyle.Bold);
             using var letterBrush = new SolidBrush(Color.White);
             using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
             

@@ -178,12 +178,18 @@ public class PreviewScreenForm : Form
         _screenService.LifelineActivated += (s, e) => InvalidateAllCaches();
         _screenService.MoneyUpdated += (s, e) => InvalidateAllCaches();
         _screenService.GameReset += (s, e) => InvalidateAllCaches();
+        _screenService.GeneralUpdate += (s, e) => InvalidateAllCaches();
         
         // Also subscribe to screen invalidation events for immediate updates
         // (e.g., animations, timer ticks)
         _hostScreen.Invalidated += (s, e) => _hostPanel.InvalidateCache();
         _guestScreen.Invalidated += (s, e) => _guestPanel.InvalidateCache();
         _tvScreen.Invalidated += (s, e) => _tvPanel.InvalidateCache();
+        
+        // Also force immediate cache invalidation on Paint to ensure preview updates
+        _hostScreen.Paint += (s, e) => _hostPanel.InvalidateCache();
+        _guestScreen.Paint += (s, e) => _guestPanel.InvalidateCache();
+        _tvScreen.Paint += (s, e) => _tvPanel.InvalidateCache();
     }
 
     /// <summary>
@@ -348,6 +354,9 @@ public class PreviewPanel : Panel
     private Label _label;
     private Bitmap? _cachedScreenBitmap; // Cached screen render at design resolution
     private bool _isCacheDirty = true; // Track if cache needs regeneration
+    private DateTime _lastCacheUpdate = DateTime.MinValue;
+    private const int MinUpdateIntervalMs = 100; // Throttle to max 10 updates per second
+    private System.Windows.Forms.Timer? _throttleTimer;
 
     public PreviewPanel(ScalableScreenBase screen, string labelText)
     {
@@ -370,21 +379,57 @@ public class PreviewPanel : Panel
         };
         Controls.Add(_label);
         _label.BringToFront();
+        
+        // Create throttle timer for delayed updates
+        _throttleTimer = new System.Windows.Forms.Timer();
+        _throttleTimer.Interval = MinUpdateIntervalMs;
+        _throttleTimer.Tick += (s, e) =>
+        {
+            _throttleTimer.Stop();
+            if (_isCacheDirty)
+            {
+                _lastCacheUpdate = DateTime.UtcNow;
+                Invalidate();
+            }
+        };
     }
 
     /// <summary>
     /// Invalidates the cached screen bitmap, forcing a re-render on next paint
+    /// Throttled to prevent excessive updates
     /// </summary>
     public void InvalidateCache()
     {
+        var now = DateTime.UtcNow;
+        var timeSinceLastUpdate = (now - _lastCacheUpdate).TotalMilliseconds;
+        
+        // Always mark cache as dirty
         _isCacheDirty = true;
-        Invalidate();
+        
+        // If enough time has passed, update immediately
+        if (timeSinceLastUpdate >= MinUpdateIntervalMs)
+        {
+            _lastCacheUpdate = now;
+            _throttleTimer?.Stop(); // Cancel any pending timer
+            Invalidate();
+        }
+        else
+        {
+            // Schedule a delayed update if not already scheduled
+            if (!_throttleTimer.Enabled)
+            {
+                _throttleTimer.Start();
+            }
+        }
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            _throttleTimer?.Stop();
+            _throttleTimer?.Dispose();
+            _throttleTimer = null;
             _cachedScreenBitmap?.Dispose();
             _cachedScreenBitmap = null;
         }

@@ -930,6 +930,9 @@ public partial class FFFOnlinePanel : UserControl
                     // Show timer on screen (20 seconds)
                     _screenService?.ShowPAFTimer(20, "FFF");
                     
+                    // Force preview screen update by triggering a general update event
+                    _screenService?.TriggerGeneralUpdate();
+                    
                     GameConsole.Log("[FFF] Answers and timer displayed on TV in original order");
                 });
             }
@@ -942,6 +945,9 @@ public partial class FFFOnlinePanel : UserControl
                 
                 // Show timer on screen (20 seconds)
                 _screenService?.ShowPAFTimer(20, "FFF");
+                
+                // Force preview screen update by triggering a general update event
+                _screenService?.TriggerGeneralUpdate();
                 
                 GameConsole.Log("[FFF] Answers and timer displayed on TV in original order");
             }

@@ -18,9 +18,18 @@ public class ScreenUpdateService
     public event EventHandler<LifelineActivatedEventArgs>? LifelineActivated;
     public event EventHandler<MoneyUpdatedEventArgs>? MoneyUpdated;
     public event EventHandler<EventArgs>? GameReset;
+    public event EventHandler<EventArgs>? GeneralUpdate;
     
     public string GetCorrectAnswer() => _currentQuestion?.CorrectAnswer ?? "A";
     public Question? GetCurrentQuestion() => _currentQuestion;
+
+    /// <summary>
+    /// Triggers a general update event for cases where multiple screen changes happen rapidly
+    /// </summary>
+    public void TriggerGeneralUpdate()
+    {
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>
     /// Register a screen to receive updates
@@ -93,6 +102,7 @@ public class ScreenUpdateService
         {
             screen.ShowAnswer(answer);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -104,6 +114,7 @@ public class ScreenUpdateService
         {
             screen.RemoveAnswer(answer);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -115,6 +126,7 @@ public class ScreenUpdateService
         {
             screen.ShowCorrectAnswerToHost(correctAnswer);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -126,6 +138,7 @@ public class ScreenUpdateService
         {
             screen.ShowPAFTimer(secondsRemaining, stage);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -137,6 +150,7 @@ public class ScreenUpdateService
         {
             screen.ShowATATimer(secondsRemaining, stage);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     /// <summary>
@@ -148,6 +162,7 @@ public class ScreenUpdateService
         {
             screen.ShowATAResults(votes);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -159,6 +174,7 @@ public class ScreenUpdateService
         {
             screen.HideATAResults();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -203,6 +219,7 @@ public class ScreenUpdateService
         
         // Hide lifeline icons when winnings are shown
         HideLifelineIcons();
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -231,6 +248,7 @@ public class ScreenUpdateService
         
         // Icons stay visible on Host/Guest screens during winnings display
         // TV screen handles hiding icons internally when showing winnings
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -242,6 +260,7 @@ public class ScreenUpdateService
         {
             screen.HideWinnings();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -297,6 +316,7 @@ public class ScreenUpdateService
         {
             screen.ClearQuestionAndAnswerText();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     /// <summary>
@@ -308,6 +328,7 @@ public class ScreenUpdateService
         {
             screen.ShowLifelineIcons();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     /// <summary>
@@ -319,6 +340,7 @@ public class ScreenUpdateService
         {
             screen.HideLifelineIcons();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     /// <summary>
@@ -330,6 +352,7 @@ public class ScreenUpdateService
         {
             screen.SetLifelineIcon(lifelineNumber, type, state);
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     /// <summary>
@@ -341,6 +364,7 @@ public class ScreenUpdateService
         {
             screen.ClearLifelineIcons();
         }
+        GeneralUpdate?.Invoke(this, EventArgs.Empty);
     }
     
     #region FFF Display Methods

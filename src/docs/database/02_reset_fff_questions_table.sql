@@ -72,7 +72,7 @@ INSERT INTO fff_questions (Question, A, B, C, D, CorrectAnswer, Used) VALUES
 -- Books & Literature
 ('Put these books by publication date (oldest first)', '1984', 'Moby Dick', 'Harry Potter', 'The Great Gatsby', 'BDAC', 0),
 ('Put these Harry Potter books in order', 'Prisoner of Azkaban', 'Philosopher''s Stone', 'Goblet of Fire', 'Chamber of Secrets', 'BDCA', 0),
-('Put these Shakespeare plays in alphabetical order', 'Othello', 'Hamlet', 'Macbeth', 'Romeo and Juliet', 'BMCA', 0),
+('Put these Shakespeare plays in alphabetical order', 'Othello', 'Hamlet', 'Macbeth', 'Romeo and Juliet', 'BCAD', 0),
 ('Put these classic authors by birth year (oldest first)', 'Charles Dickens', 'William Shakespeare', 'Jane Austen', 'Mark Twain', 'BCAD', 0),
 
 -- Technology & Innovation

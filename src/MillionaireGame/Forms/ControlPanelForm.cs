@@ -1,4 +1,4 @@
-using MillionaireGame.Core.Game;
+﻿using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
@@ -819,7 +819,7 @@ public partial class ControlPanelForm : Form
         
         // Log to WebService console
         WebServerConsole.LogSeparator();
-        WebServerConsole.Info("âœ“ Server started successfully");
+        WebServerConsole.Info("Server started successfully");
         WebServerConsole.Info($"URL: {baseUrl}");
         WebServerConsole.LogSeparator();
         
@@ -851,7 +851,7 @@ public partial class ControlPanelForm : Form
     {
         // Both WebServerConsole and GameConsole are thread-safe with internal queuing
         // No UI thread marshalling needed
-        WebServerConsole.Error($"âŒ Error: {ex.Message}");
+        WebServerConsole.Error($"Ã¢ÂÅ’ Error: {ex.Message}");
         GameConsole.Error($"[Web Server] {ex.Message}");
     }
 
@@ -979,6 +979,9 @@ public partial class ControlPanelForm : Form
         
         // Update preview screen if open
         _previewScreen?.UpdateMoneyTreeLevel(level);
+        
+        // Trigger preview screen cache invalidation
+        _screenService.TriggerGeneralUpdate();
     }
 
     private void OnLifelineUsed(object? sender, LifelineUsedEventArgs e)
@@ -1384,7 +1387,7 @@ public partial class ControlPanelForm : Form
 
     private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
-        // Only increment for first question (0â†’1). After that, ProcessNormalReveal handles increment.
+        // Only increment for first question (0Ã¢â€ â€™1). After that, ProcessNormalReveal handles increment.
         if (nmrLevel.Value == 0)
         {
             nmrLevel.Value++;
@@ -1430,11 +1433,21 @@ public partial class ControlPanelForm : Form
         
         try
         {
-            // For Q6+, stop all sounds before playing lights down
-            // For Q1-5, let existing sounds continue (bed music from previous question)
+            // Stop ExplainRules music if it was playing, or stop all sounds for Q6+
+            // For Q1-5 (without explain game active), let existing sounds continue
             if (questionNumber >= 6)
             {
                 await _soundService.StopAllSoundsAsync();
+            }
+            else
+            {
+                // For Q1-5, only stop music if coming from Explain Game mode
+                // Check if ExplainRules music is currently playing
+                var currentMusic = _soundService.GetCurrentMusicIdentifier();
+                if (currentMusic == "ExplainGame")
+                {
+                    await _soundService.StopAllSoundsAsync();
+                }
             }
             
             // Play lights down sound
@@ -1836,7 +1849,7 @@ public partial class ControlPanelForm : Form
             // Start the animation with sound and revert to current level after
             StartSafetyNetAnimation(levelToLock, playSound: true, targetLevelAfterAnimation: _gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
             
-            // Wait for animation to complete (6 flashes Ã— 300ms = 1800ms + small buffer) - in background
+            // Wait for animation to complete (6 flashes Ãƒâ€” 300ms = 1800ms + small buffer) - in background
             _ = Task.Run(async () =>
             {
                 try
@@ -3639,7 +3652,7 @@ public partial class ControlPanelForm : Form
             // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
             StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
             
-            // Wait for animation to complete using a timer (12 flashes Ã— 400ms = 4800ms + small buffer)
+            // Wait for animation to complete using a timer (12 flashes Ãƒâ€” 400ms = 4800ms + small buffer)
             var completionTimer = new System.Windows.Forms.Timer();
             completionTimer.Interval = 5000;
             completionTimer.Tick += (s, e) =>
@@ -4363,4 +4376,6 @@ public partial class ControlPanelForm : Form
 
     #endregion
 }
+
+
 

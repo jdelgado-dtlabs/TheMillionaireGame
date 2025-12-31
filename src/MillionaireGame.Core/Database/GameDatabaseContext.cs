@@ -151,7 +151,9 @@ public class GameDatabaseContext : IDisposable
                     CreatedAt DATETIME2 NOT NULL,
                     StartedAt DATETIME2 NULL,
                     EndedAt DATETIME2 NULL,
-                    Status NVARCHAR(50) NOT NULL
+                    Status NVARCHAR(50) NOT NULL,
+                    CurrentMode NVARCHAR(50) NULL,
+                    CurrentQuestionId INT NULL
                 );
                 CREATE INDEX IX_Sessions_CreatedAt ON Sessions(CreatedAt);
             END
@@ -163,11 +165,22 @@ public class GameDatabaseContext : IDisposable
                     Id NVARCHAR(450) PRIMARY KEY,
                     SessionId NVARCHAR(450) NOT NULL,
                     DisplayName NVARCHAR(50) NOT NULL,
-                    ConnectionId NVARCHAR(450) NULL,
                     JoinedAt DATETIME2 NOT NULL,
+                    ConnectionId NVARCHAR(450) NULL,
+                    LastSeenAt DATETIME2 NULL,
                     IsActive BIT NOT NULL DEFAULT 1,
+                    State NVARCHAR(50) NOT NULL DEFAULT 'Lobby',
+                    HasPlayedFFF BIT NOT NULL DEFAULT 0,
+                    HasUsedATA BIT NOT NULL DEFAULT 0,
+                    SelectedForFFFAt DATETIME2 NULL,
+                    BecameWinnerAt DATETIME2 NULL,
                     DeviceType NVARCHAR(50) NULL,
-                    Browser NVARCHAR(100) NULL,
+                    OSType NVARCHAR(50) NULL,
+                    OSVersion NVARCHAR(50) NULL,
+                    BrowserType NVARCHAR(100) NULL,
+                    BrowserVersion NVARCHAR(50) NULL,
+                    DisconnectedAt DATETIME2 NULL,
+                    HasAgreedToPrivacy BIT NOT NULL DEFAULT 0,
                     FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
                 );
                 CREATE INDEX IX_Participants_SessionId ON Participants(SessionId);
@@ -184,8 +197,9 @@ public class GameDatabaseContext : IDisposable
                     QuestionId INT NOT NULL,
                     AnswerSequence NVARCHAR(20) NOT NULL,
                     SubmittedAt DATETIME2 NOT NULL,
-                    TimeTaken FLOAT NOT NULL,
+                    TimeElapsed FLOAT NOT NULL,
                     IsCorrect BIT NOT NULL DEFAULT 0,
+                    Rank INT NULL,
                     FOREIGN KEY (SessionId) REFERENCES Sessions(Id) ON DELETE CASCADE
                 );
                 CREATE INDEX IX_FFFAnswers_SessionId_QuestionId ON FFFAnswers(SessionId, QuestionId);
