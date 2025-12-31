@@ -1,5 +1,4 @@
 using MillionaireGame.Forms;
-using System.Collections.Concurrent;
 
 namespace MillionaireGame.Utilities;
 
@@ -15,21 +14,14 @@ public enum LogLevel
 }
 
 /// <summary>
-/// Manages a separate window for game logging with async background processing
+/// Static console for game logging with file-first architecture
+/// Logs are written to disk first, then UI window tails the file
 /// </summary>
 public static class GameConsole
 {
-    private static GameLogWindow? _logWindow;
-    private static readonly object _lock = new object();
-    private static readonly ConcurrentQueue<(string message, LogLevel level)> _logQueue = new();
-    private static readonly CancellationTokenSource _cts = new();
-    private static readonly Task _logTask;
-    
-    static GameConsole()
-    {
-        // Start background thread to process log messages
-        _logTask = Task.Run(ProcessLogQueue, _cts.Token);
-    }
+    private static GameConsoleWindow? _logWindow;
+    private static readonly FileLogger _fileLogger = new("game", 5);
+    private static readonly object _lock = new();
 
     /// <summary>
     /// Gets whether the console window is currently visible
@@ -37,52 +29,14 @@ public static class GameConsole
     public static bool IsVisible => _logWindow != null && _logWindow.Visible;
 
     /// <summary>
-    /// Background task that processes queued log messages
+    /// Gets the current log file path
     /// </summary>
-    private static async Task ProcessLogQueue()
-    {
-        while (!_cts.Token.IsCancellationRequested)
-        {
-            try
-            {
-                if (_logQueue.TryDequeue(out var logEntry))
-                {
-                    // Process log message
-                    lock (_lock)
-                    {
-                        // Always log - window will handle file logging even if hidden
-                        if (_logWindow != null && !_logWindow.IsDisposed)
-                        {
-                            _logWindow.Log(logEntry.message, logEntry.level);
-                        }
-                        else
-                        {
-                            // No window - just write to debug console
-                            System.Diagnostics.Debug.WriteLine($"[{logEntry.level}] {logEntry.message}");
-                        }
-                    }
-                }
-                else
-                {
-                    // No messages - wait a bit before checking again
-                    await Task.Delay(10, _cts.Token);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[GameConsole] Error processing log: {ex.Message}");
-            }
-        }
-    }
+    public static string? CurrentLogFilePath => _fileLogger.CurrentLogFilePath;
 
     /// <summary>
     /// Sets the log window instance (called from Program.cs)
     /// </summary>
-    public static void SetWindow(GameLogWindow window)
+    public static void SetWindow(GameConsoleWindow window)
     {
         lock (_lock)
         {
@@ -100,7 +54,7 @@ public static class GameConsole
         {
             if (_logWindow == null || _logWindow.IsDisposed)
             {
-                _logWindow = new GameLogWindow();
+                _logWindow = new GameConsoleWindow();
             }
 
             if (!_logWindow.Visible)
@@ -125,7 +79,7 @@ public static class GameConsole
     }
 
     /// <summary>
-    /// Logs a message to the game console window with specified log level
+    /// Logs a message to file and notifies the window
     /// Non-blocking - queues message for background processing
     /// </summary>
     public static void Log(string message, LogLevel level = LogLevel.INFO)
@@ -134,8 +88,24 @@ public static class GameConsole
         if (level == LogLevel.DEBUG && !Program.DebugMode)
             return;
 
-        // Queue message for async processing - never blocks
-        _logQueue.Enqueue((message, level));
+        // Write to file first (primary log destination)
+        _fileLogger.Log(message, level);
+
+        // Notify window if it exists (secondary - for UI display)
+        lock (_lock)
+        {
+            if (_logWindow != null && !_logWindow.IsDisposed && _logWindow.Visible)
+            {
+                try
+                {
+                    _logWindow.NotifyLogUpdated();
+                }
+                catch
+                {
+                    // Window might be closing, ignore
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -157,7 +127,22 @@ public static class GameConsole
     /// </summary>
     public static void LogSeparator()
     {
-        _logWindow?.LogSeparator();
+        _fileLogger.LogSeparator();
+        
+        lock (_lock)
+        {
+            if (_logWindow != null && !_logWindow.IsDisposed && _logWindow.Visible)
+            {
+                try
+                {
+                    _logWindow.NotifyLogUpdated();
+                }
+                catch
+                {
+                    // Window might be closing, ignore
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -167,11 +152,8 @@ public static class GameConsole
     {
         try
         {
-            // Signal cancellation
-            _cts.Cancel();
-
-            // Wait for log task to complete (up to 1 second)
-            _logTask.Wait(1000);
+            // Close file logger
+            _fileLogger.Dispose();
 
             // Close window
             lock (_lock)

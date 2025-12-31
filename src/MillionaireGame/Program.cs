@@ -92,9 +92,9 @@ internal static class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         // Create and show game log window FIRST so we can log service initialization
-        if (DebugMode || appSettings.Settings.ShowConsole)
+        if (DebugMode || appSettings.Settings.ShowGameConsole)
         {
-            var gameLogWindow = new GameLogWindow();
+            var gameLogWindow = new GameConsoleWindow();
             gameLogWindow.Show();
             GameConsole.SetWindow(gameLogWindow);
             
@@ -146,7 +146,7 @@ internal static class Program
         ServiceProvider = services.BuildServiceProvider();
 
         // Log initialization complete
-        if (DebugMode || appSettings.Settings.ShowConsole)
+        if (DebugMode || appSettings.Settings.ShowGameConsole)
         {
             GameConsole.Info("Application initialized successfully.");
             GameConsole.Info("");
@@ -162,13 +162,13 @@ internal static class Program
     /// <summary>
     /// Shows or hides the console window based on the current setting
     /// </summary>
-    public static void UpdateConsoleVisibility(bool showConsole)
+    public static void UpdateConsoleVisibility(bool showGameConsole)
     {
         #if DEBUG
         // In debug mode, console is always visible
         return;
         #else
-        if (showConsole)
+        if (showGameConsole)
         {
             GameConsole.Show();
         }

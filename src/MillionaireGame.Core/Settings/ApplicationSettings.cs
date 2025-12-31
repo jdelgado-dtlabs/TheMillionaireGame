@@ -67,7 +67,7 @@ public class ApplicationSettings
     public BroadcastSettings Broadcast { get; set; } = new();
 
     // Debug Console Settings
-    public bool ShowConsole { get; set; } = false;
+    public bool ShowGameConsole { get; set; } = false;
     public bool ShowWebServerConsole { get; set; } = false;
 
     // Web Server / Audience Participation Settings
