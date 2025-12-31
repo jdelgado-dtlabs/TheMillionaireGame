@@ -246,8 +246,70 @@
 
 ---
 
-### 7. Database Consolidation 🔴
+### 7. Database Consolidation ✅
+**Status**: ✅ COMPLETE  
+**Completed**: December 31, 2025  
+**Time Taken**: ~1.5 hours  
+**Priority**: CRITICAL (Required before testing)
+
+**Description**: Migrate WAPS from SQLite to SQL Server, consolidating all data into single database
+
+**Problem Identified**:
+- WAPS used SQLite file database (waps.db)
+- Main game data in SQL Server (dbMillionaire)
+- Split architecture complicates backups
+- SQLite file locking issues possible
+- Two separate databases to manage
+
+**Solution Implemented - SQLite → SQL Server Migration** ✅
+
+**Phase 1: Add WAPS Tables to SQL Server** ✅
+- [x] Added Sessions table (Id, HostName, CreatedAt, StartedAt, EndedAt, Status)
+- [x] Added Participants table (Id, SessionId, DisplayName, ConnectionId, JoinedAt, IsActive, DeviceType, Browser)
+- [x] Added FFFAnswers table (Id, SessionId, ParticipantId, QuestionId, AnswerSequence, SubmittedAt, TimeTaken, IsCorrect)
+- [x] Added ATAVotes table (Id, SessionId, ParticipantId, QuestionText, SelectedOption, SubmittedAt)
+- [x] All tables include proper foreign keys, indexes, and CASCADE delete
+
+**Phase 2: Update WAPSDbContext Configuration** ✅
+- [x] Changed WebServerHost.ConfigureServices() from UseSqlite to UseSqlServer
+- [x] Updated MillionaireGame.Web.csproj to use EntityFrameworkCore.SqlServer
+- [x] Removed SQLite package dependency (Microsoft.EntityFrameworkCore.Sqlite)
+- [x] Using same connection string as main application
+
+**Phase 3: Improve Database Cleanup Logic** ✅
+- [x] Removed EnsureCreated() hack (tables managed by GameDatabaseContext)
+- [x] Made ExecuteDelete calls async (ExecuteDeleteAsync)
+- [x] Added proper error handling with throw on cleanup failure
+- [x] Clear messaging: "WAPS data cleared" instead of "Database cleared"
+- [x] Respects foreign key constraints (delete in correct order)
+
+**Technical Implementation**:
+- GameDatabaseContext.CreateDatabaseAsync(): Added WAPS table creation SQL
+- WebServerHost.StartAsync(): Uses SQL Server for WAPSDbContext
+- Database cleanup on web server startup clears old session data
+- No waps.db file created anymore
+
+**Benefits Achieved**:
+- ✅ Single database for all application data (dbMillionaire)
+- ✅ No SQLite file locking issues
+- ✅ Better concurrent write performance for web participants
+- ✅ Professional unified architecture
+- ✅ Simpler backup/restore (one database)
+- ✅ Transactional consistency across all data
+
+**Files Modified**:
+- GameDatabaseContext.cs: Added WAPS table creation (+73 lines)
+- WebServerHost.cs: UseSqlServer + improved cleanup logic
+- MillionaireGame.Web.csproj: Replaced SQLite with SQL Server package
+
+**Reference**: DATABASE_CONSOLIDATION_PLAN.md (Phases 1-3 complete)
+
+---
+
+### 8. End-to-End Testing ⏳
 **Status**: Not Started  
+**Estimated Time**: 4 hours  
+**Priority**: CRITICAL (Required before release)
 **Estimated Time**: 3-4 hours  
 **Priority**: CRITICAL (Required before testing)
 

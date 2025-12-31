@@ -23,20 +23,20 @@
 - ✅ **WAPS Lobby States** - Full state management (Lobby, Waiting, FFF, ATA, GameComplete)
 - ✅ **Winner Confetti** - Physics-based celebration animation (Q11+)
 - ✅ **Code Cleanup** - TVScreenForm deprecated code removed (566 lines)
-- ✅ **Build Status** - Clean build, 18 warnings (down from 22)
+- ✅ **Preview Screen Performance** - Cached rendering optimization (40-60% CPU reduction)
+- ✅ **Database Consolidation** - WAPS migrated from SQLite to SQL Server
+- ✅ **Build Status** - Clean build, 35 warnings
 - ✅ **Documentation** - Comprehensive, organized, current
 
 **What's Next:**
-3 items remaining for v1.0 release (must complete before testing):
-1. **Preview Screen Performance** (2-3 hours) - REQUIRED optimization
-2. **Database Consolidation** (3-4 hours) - REQUIRED before testing
-3. **End-to-End Testing** (4 hours) - REQUIRED before release
+1 item remaining for v1.0 release:
+1. **End-to-End Testing** (4 hours) - REQUIRED before release
 
 ---
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-### **Priority 1: Preview Screen Performance Optimization** 🔴 CRITICAL (2-3 hours)
+### **Priority 1: End-to-End Testing** ⭐ CRITICAL (4 hours)
 **Goal**: Optimize preview rendering to reduce CPU overhead when displaying 3 screens
 
 **Current Issue:**
@@ -158,9 +158,9 @@
 
 ---
 
-## 🎯 MILESTONE: v1.0 READY FOR FINAL PUSH
+## 🎯 MILESTONE: v1.0 READY FOR TESTING
 
-**Status**: All critical features complete! 3 tasks before testing.
+**Status**: All critical features complete! Ready for final testing phase.
 
 **What's Done**:
 - ✅ All gameplay features implemented
@@ -169,15 +169,15 @@
 - ✅ Professional audio system
 - ✅ Host communication tools
 - ✅ State management system
+- ✅ Preview screen optimized
+- ✅ Database consolidated to SQL Server
 
 **What's Left**:
-- 🔴 Preview screen performance optimization (2-3 hours) - REQUIRED
-- 🔴 Database consolidation (3-4 hours) - REQUIRED before testing
 - 🔴 End-to-end testing (4 hours) - REQUIRED before release
 
-**Total Time to v1.0**: 9-11 hours remaining
+**Total Time to v1.0**: 4 hours remaining
 
-**After Completion**:
+**After Testing**:
 - Optional: Crash handler implementation
 - Optional: Production installer
 - Ready for v1.0 release!
@@ -186,6 +186,7 @@
 
 ## 📊 Version History
 
+- **v0.9.9** (December 31, 2025): Preview optimization and database consolidation complete
 - **v0.9.8** (December 31, 2025): WAPS lobby states, confetti animation, code cleanup complete
 - **v0.9.7** (December 30, 2025): ATA dual-mode and host notes/messaging complete
 - **v0.9.5** (December 27, 2025): FFF online and question editor CSV features complete
@@ -194,7 +195,7 @@
 ---
 
 **Last Updated**: December 31, 2025  
-**Current Branch**: `feature/preview-screen-performance`  
-**Next Milestone**: Preview optimization → Database consolidation → E2E testing → v1.0 release
+**Current Branch**: `master-csharp`  
+**Next Milestone**: E2E testing → v1.0 release
 
 *"Go do that voodoo that you do so well!" - Harvey Korman*
