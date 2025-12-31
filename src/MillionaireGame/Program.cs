@@ -134,21 +134,6 @@ internal static class Program
         // Create and run main control panel (FIRST window to show)
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
         
-        // Initialize GameConsole AFTER ControlPanel is created but BEFORE showing it
-        // This ensures proper window initialization order
-        if (DebugMode || appSettings.Settings.ShowGameConsole)
-        {
-            var gameConsoleWindow = new GameConsoleWindow();
-            gameConsoleWindow.Show();
-            GameConsole.SetWindow(gameConsoleWindow);
-            
-            GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
-            GameConsole.Info($"Version: v0.9.8 Debug Build");
-            GameConsole.Info($"Started: {DateTime.Now}");
-            GameConsole.LogSeparator();
-            GameConsole.Info("Application initialized successfully.");
-        }
-        
         Application.Run(controlPanel);
     }
 

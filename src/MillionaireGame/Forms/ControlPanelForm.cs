@@ -620,6 +620,34 @@ public partial class ControlPanelForm : Form
             PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
         }
         
+        // Initialize GameConsole LAST (after all screens are shown)
+        // This prevents it from stealing focus and ensures proper icon loading
+#if DEBUG
+        // Always show in debug mode
+        var gameConsoleWindow = new GameConsoleWindow();
+        gameConsoleWindow.Show();
+        GameConsole.SetWindow(gameConsoleWindow);
+        
+        GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
+        GameConsole.Info($"Version: v0.9.8 Debug Build");
+        GameConsole.Info($"Started: {DateTime.Now}");
+        GameConsole.LogSeparator();
+        GameConsole.Info("Application initialized successfully.");
+#else
+        if (_appSettings.Settings.ShowGameConsole)
+        {
+            var gameConsoleWindow = new GameConsoleWindow();
+            gameConsoleWindow.Show();
+            GameConsole.SetWindow(gameConsoleWindow);
+            
+            GameConsole.Info("===== THE MILLIONAIRE GAME - Console =====");
+            GameConsole.Info($"Version: v0.9.8");
+            GameConsole.Info($"Started: {DateTime.Now}");
+            GameConsole.LogSeparator();
+            GameConsole.Info("Application initialized successfully.");
+        }
+#endif
+        
         // Bring Control Panel to front after everything else loads
         // Use BeginInvoke to let all other windows finish loading first
         this.BeginInvoke(new Action(() =>
