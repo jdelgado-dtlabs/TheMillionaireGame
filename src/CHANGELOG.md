@@ -114,6 +114,14 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Improved code maintainability with predictable naming patterns
   * Location: GameConsoleWindow.cs, WebServerConsoleWindow.cs, ApplicationSettings.cs, Program.cs
 
+- **Window Initialization Order Fix** ✅ COMPLETE
+  * Fixed icon loading issue by correcting window startup sequence
+  * ControlPanel now initializes first, then Preview/Screens, then GameConsole last
+  * GameConsole moved from Program.cs to ControlPanelForm_Load (end of method)
+  * Prevents focus stealing and ensures proper icon loading on all windows
+  * Startup order: ControlPanel → Preview/Screens → GameConsole → WebServerConsole
+  * Location: Program.cs, ControlPanelForm.cs
+
 ## [v0.9.5] - 2025-12-30
 
 ### Added
