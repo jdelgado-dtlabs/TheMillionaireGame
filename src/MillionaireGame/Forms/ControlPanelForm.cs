@@ -2145,6 +2145,13 @@ public partial class ControlPanelForm : Form
         };
     }
 
+    private bool IsLifelineUsed(int lifelineNumber)
+    {
+        var type = GetLifelineTypeFromSettings(lifelineNumber);
+        var lifeline = _gameService.State.GetLifeline(type);
+        return lifeline != null && lifeline.IsUsed;
+    }
+
     private void UpdateLifelineButtonLabels()
     {
         InitializeLifelineButtons();
@@ -3786,22 +3793,22 @@ public partial class ControlPanelForm : Form
                 // Orange - standby mode (not clickable until all answers revealed)
                 // Only apply to visible buttons that haven't been used yet
                 // Grey/disabled buttons (used lifelines) are left alone
-                if (btnLifeline1.Visible && btnLifeline1.BackColor != Color.Gray)
+                if (btnLifeline1.Visible && !IsLifelineUsed(1))
                 {
                     btnLifeline1.BackColor = Color.Orange;
                     btnLifeline1.Enabled = false;
                 }
-                if (btnLifeline2.Visible && btnLifeline2.BackColor != Color.Gray)
+                if (btnLifeline2.Visible && !IsLifelineUsed(2))
                 {
                     btnLifeline2.BackColor = Color.Orange;
                     btnLifeline2.Enabled = false;
                 }
-                if (btnLifeline3.Visible && btnLifeline3.BackColor != Color.Gray)
+                if (btnLifeline3.Visible && !IsLifelineUsed(3))
                 {
                     btnLifeline3.BackColor = Color.Orange;
                     btnLifeline3.Enabled = false;
                 }
-                if (btnLifeline4.Visible && btnLifeline4.BackColor != Color.Gray)
+                if (btnLifeline4.Visible && !IsLifelineUsed(4))
                 {
                     btnLifeline4.BackColor = Color.Orange;
                     btnLifeline4.Enabled = false;
@@ -3810,13 +3817,12 @@ public partial class ControlPanelForm : Form
                 
             case LifelineMode.Active:
                 // Green - active mode (clickable)
-                // Only apply to visible buttons that are in standby (orange)
-                // Grey/disabled buttons (used lifelines) are left alone
+                // Only apply to visible buttons that haven't been used
                 // Check if Q15 - if so, disable STQ lifeline (now 1-indexed)
                 var currentQuestionNumber = (int)nmrLevel.Value;
                 var isQ15 = (currentQuestionNumber == 15);
                 
-                if (btnLifeline1.Visible && btnLifeline1.BackColor == Color.Orange)
+                if (btnLifeline1.Visible && !IsLifelineUsed(1))
                 {
                     // Check if this is STQ lifeline at Q15
                     if (isQ15 && GetLifelineTypeFromSettings(1) == Core.Models.LifelineType.SwitchQuestion)
@@ -3830,7 +3836,7 @@ public partial class ControlPanelForm : Form
                         btnLifeline1.Enabled = true;
                     }
                 }
-                if (btnLifeline2.Visible && btnLifeline2.BackColor == Color.Orange)
+                if (btnLifeline2.Visible && !IsLifelineUsed(2))
                 {
                     // Check if this is STQ lifeline at Q15
                     if (isQ15 && GetLifelineTypeFromSettings(2) == Core.Models.LifelineType.SwitchQuestion)
@@ -3844,7 +3850,7 @@ public partial class ControlPanelForm : Form
                         btnLifeline2.Enabled = true;
                     }
                 }
-                if (btnLifeline3.Visible && btnLifeline3.BackColor == Color.Orange)
+                if (btnLifeline3.Visible && !IsLifelineUsed(3))
                 {
                     // Check if this is STQ lifeline at Q15
                     if (isQ15 && GetLifelineTypeFromSettings(3) == Core.Models.LifelineType.SwitchQuestion)
@@ -3858,7 +3864,7 @@ public partial class ControlPanelForm : Form
                         btnLifeline3.Enabled = true;
                     }
                 }
-                if (btnLifeline4.Visible && btnLifeline4.BackColor == Color.Orange)
+                if (btnLifeline4.Visible && !IsLifelineUsed(4))
                 {
                     // Check if this is STQ lifeline at Q15
                     if (isQ15 && GetLifelineTypeFromSettings(4) == Core.Models.LifelineType.SwitchQuestion)
