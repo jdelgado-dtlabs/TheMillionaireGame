@@ -479,6 +479,19 @@ public class PreviewPanel : Panel
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
+                // Render background first (for TVScreenFormScalable)
+                if (_screen is TVScreenFormScalable tvScreen)
+                {
+                    var bgRenderer = tvScreen.GetType().GetField("_backgroundRenderer", 
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        ?.GetValue(tvScreen) as BackgroundRenderer;
+                    
+                    if (bgRenderer != null)
+                    {
+                        bgRenderer.RenderBackground(g, designWidth, designHeight);
+                    }
+                }
+
                 // Call the screen's protected RenderScreen method via reflection
                 var renderMethod = _screen.GetType().GetMethod("RenderScreen", 
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

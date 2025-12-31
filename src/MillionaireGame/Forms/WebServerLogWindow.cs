@@ -1,5 +1,6 @@
 using System.Text;
 using MillionaireGame.Utilities;
+using MillionaireGame.Helpers;
 
 namespace MillionaireGame.Forms;
 
@@ -35,6 +36,9 @@ public partial class WebServerLogWindow : Form
 
         // Write header
         LogHeader();
+        
+        // Apply icon after everything is set up
+        IconHelper.ApplyToForm(this);
     }
 
     private void InitializeComponent()
@@ -48,17 +52,6 @@ public partial class WebServerLogWindow : Form
         
         FormBorderStyle = FormBorderStyle.Sizable;
         MinimumSize = new Size(400, 300);
-        
-        // Set icon
-        try
-        {
-            var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "image", "logo.ico");
-            if (File.Exists(iconPath))
-            {
-                Icon = new Icon(iconPath);
-            }
-        }
-        catch { /* Ignore icon load errors */ }
         
         // Don't close, just hide
         FormClosing += (s, e) =>

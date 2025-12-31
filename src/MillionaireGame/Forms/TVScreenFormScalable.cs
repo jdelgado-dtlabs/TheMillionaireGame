@@ -5,6 +5,8 @@ using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
 using MillionaireGame.Utilities;
+using MillionaireGame.Core.Settings;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame.Forms;
 
@@ -28,6 +30,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private float _moneyTreeAnimationProgress = 0f; // 0.0 to 1.0
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    private BackgroundRenderer? _backgroundRenderer; // Broadcast background renderer
     
     /// <summary>
     /// Gets or sets whether this screen is a preview instance.
@@ -83,6 +86,10 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     {
         IconHelper.ApplyToForm(this);
         
+        // Initialize background renderer with settings
+        // Note: Settings should be injected via DI, but for now we'll initialize on first use
+        // _backgroundRenderer will be initialized in Initialize() method with proper settings
+        
         // Start at 50% of screen resolution with borders
         var screen = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
         int width = screen.Width / 2;
@@ -112,6 +119,22 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                 e.Handled = true;
             }
         };
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        // Use broadcast background renderer if available, otherwise fall back to black
+        if (_backgroundRenderer != null)
+        {
+            GameConsole.Debug($"[TVScreen] Rendering background via BackgroundRenderer");
+            _backgroundRenderer.RenderBackground(e.Graphics, ClientSize.Width, ClientSize.Height);
+        }
+        else
+        {
+            GameConsole.Debug($"[TVScreen] BackgroundRenderer is NULL - using black fallback");
+            // Fallback: Fill with black background
+            e.Graphics.Clear(Color.Black);
+        }
     }
 
     protected override void RenderScreen(System.Drawing.Graphics g)
@@ -802,6 +825,21 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
+        
+        // Initialize background renderer with current settings
+        // Try to get settings from Program.ServiceProvider
+        try
+        {
+            var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+            if (settingsManager?.Settings != null)
+            {
+                _backgroundRenderer = new BackgroundRenderer(settingsManager.Settings);
+            }
+        }
+        catch
+        {
+            // If DI not available, background renderer will remain null and fall back to black background
+        }
     }
     
     public void UpdateMoneyTreeLevel(int level)
