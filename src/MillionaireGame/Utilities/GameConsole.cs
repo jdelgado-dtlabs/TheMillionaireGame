@@ -19,7 +19,7 @@ public enum LogLevel
 /// </summary>
 public static class GameConsole
 {
-    private static GameLogWindow? _logWindow;
+    private static GameConsoleWindow? _logWindow;
     private static readonly FileLogger _fileLogger = new("game", 5);
     private static readonly object _lock = new();
 
@@ -36,7 +36,7 @@ public static class GameConsole
     /// <summary>
     /// Sets the log window instance (called from Program.cs)
     /// </summary>
-    public static void SetWindow(GameLogWindow window)
+    public static void SetWindow(GameConsoleWindow window)
     {
         lock (_lock)
         {
@@ -54,7 +54,7 @@ public static class GameConsole
         {
             if (_logWindow == null || _logWindow.IsDisposed)
             {
-                _logWindow = new GameLogWindow();
+                _logWindow = new GameConsoleWindow();
             }
 
             if (!_logWindow.Visible)

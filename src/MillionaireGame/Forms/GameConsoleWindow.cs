@@ -7,14 +7,14 @@ namespace MillionaireGame.Forms;
 /// <summary>
 /// Window that displays game logs by tailing the log file
 /// </summary>
-public partial class GameLogWindow : Form
+public partial class GameConsoleWindow : Form
 {
     private readonly RichTextBox txtLog;
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private long _lastFilePosition;
     private int _lastLineCount;
 
-    public GameLogWindow()
+    public GameConsoleWindow()
     {
         InitializeComponent();
 
@@ -174,7 +174,7 @@ public partial class GameLogWindow : Form
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[GameLogWindow] Error reading log file: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[GameConsoleWindow] Error reading log file: {ex.Message}");
         }
     }
 

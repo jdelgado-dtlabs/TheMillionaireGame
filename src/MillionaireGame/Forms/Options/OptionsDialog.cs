@@ -427,7 +427,7 @@ public partial class OptionsDialog : Form
         SaveSettings();
         
         // Update console visibility based on new setting
-        Program.UpdateConsoleVisibility(_settings.ShowConsole);
+        Program.UpdateConsoleVisibility(_settings.ShowGameConsole);
         
         SettingsApplied?.Invoke(this, EventArgs.Empty);
         DialogResult = DialogResult.OK;
