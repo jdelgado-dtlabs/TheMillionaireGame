@@ -2,6 +2,90 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.9.5] - 2025-12-30
+
+### Added
+- **ATA Online Voting System** ✅ COMPLETE
+  * Full Ask the Audience dual-mode implementation (offline + online)
+  * Real-time voting from web clients with live percentage updates
+  * Multi-phase voting flow:
+    - Intro Phase (120s): Question displayed, voting disabled
+    - Voting Phase (60s): Clients can submit votes, real-time counts
+    - Results Phase: Final percentages displayed, persists until answer selected
+    - Clear Phase: Results cleared when host selects answer
+  * Database integration: ATAVotes table stores all submissions
+  * Auto-completion when all participants have voted
+  * Vote tracking: Participants marked as "used" after voting
+  * Duplicate vote prevention per session
+  * SignalR events: ATAIntroStarted, VotingStarted, VotesUpdated, VotingEnded, ATACleared
+  * Location: LifelineManager.cs, GameHub.cs, SessionService.cs, app.js
+
+- **Hub Architecture Consolidation** ✅ COMPLETE
+  * Merged FFFHub and ATAHub into unified GameHub at `/hubs/game`
+  * Single SignalR endpoint for all game functionality (FFF, ATA, future lifelines)
+  * Reduced complexity and improved maintainability
+  * Updated all clients: FFFClientService, web client (app.js)
+  * Location: GameHub.cs, WebServerHost.cs, FFFClientService.cs, app.js
+
+- **Web Client Session Persistence** ✅ COMPLETE
+  * Auto-reconnection on page refresh using localStorage
+  * Session data preserved across browser refreshes
+  * Participant ID, display name, and session ID cached locally
+  * Seamless rejoin without re-entering credentials
+  * Server-side reconnection detection by display name
+  * Removed aggressive cleanup handlers that cleared data on page transitions
+  * Location: app.js, GameHub.cs, SessionService.cs
+
+### Fixed
+- **Vote Persistence Bug**
+  * Removed `_ataQuestions` dictionary requirement in GameHub.SubmitVote()
+  * Dictionary was never populated since LifelineManager broadcasts events directly
+  * Votes now save correctly without dictionary validation
+  * Location: GameHub.cs (line 318-325)
+
+- **UTF-8 Encoding Issues**
+  * Fixed corrupted checkmark character display ("Γ£ô" → "✓")
+  * Vote confirmation message now displays properly: "✓ Your vote has been recorded!"
+  * Location: app.js (lines 516, 555)
+
+- **DOM Element Null Reference Errors**
+  * Added null checks before accessing sessionCode and displayName input fields
+  * Prevents crash when auto-reconnecting (fields don't exist on lobby screen)
+  * Location: app.js (DOMContentLoaded handler)
+
+- **Service Scope Disposal Errors**
+  * Implemented IServiceScopeFactory pattern in all ATA notification methods
+  * Creates fresh DbContext instances to prevent disposal conflicts
+  * Added `using Microsoft.Extensions.DependencyInjection;`
+  * Location: LifelineManager.cs (NotifyWebClientsATAIntro, NotifyWebClientsATAVoting, NotifyWebClientsATAComplete, CheckVoteCompletion)
+
+### Changed
+- **ATA Results Display Duration**
+  * Results now persist on screen until host selects an answer (previously 5-second auto-hide)
+  * Web clients show "Voting has ended - waiting for answer..." message
+  * Physical screens maintain results display
+  * `ClearATAFromScreens()` method called on answer selection
+  * ATACleared event broadcasts to web clients to return to lobby
+  * Location: LifelineManager.cs (CompleteATA, ClearATAFromScreens), ControlPanelForm.cs (ContinueAnswerSelection), app.js
+
+- **Reconnection User Experience**
+  * Brief flash of login screen on refresh (expected behavior - HTML renders before JS executes)
+  * Auto-reconnect initiates immediately after page load
+  * Global variables initialized from localStorage before connection attempt
+  * Location: app.js (DOMContentLoaded handler)
+
+### Removed
+- **beforeunload Cleanup Handler**
+  * Removed aggressive session data clearing on page unload
+  * Session persistence now takes priority over privacy cleanup
+  * Users must explicitly leave game to clear session
+  * Location: app.js (setupCleanupHandlers)
+
+- **pageshow Reload Handler**
+  * Removed forced reload when page restored from back/forward cache
+  * Prevented alternating reconnection behavior
+  * Location: app.js (setupCleanupHandlers)
+
 ## [v0.8.2-2512] - 2025-12-30
 
 ### Fixed

@@ -3021,6 +3021,12 @@ public partial class ControlPanelForm : Form
 
         // Broadcast answer selection to all screens
         _screenService.SelectAnswer(answer);
+        
+        // Clear ATA results from screens and web clients (if ATA was used)
+        if (_lifelineManager != null)
+        {
+            _ = _lifelineManager.ClearATAFromScreens();
+        }
 
         // Sound behavior changes based on question level:
         // Q1-5: Don't stop sounds, Q6+: Stop sounds

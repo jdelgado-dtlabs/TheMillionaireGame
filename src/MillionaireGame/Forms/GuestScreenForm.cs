@@ -695,15 +695,13 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     public void ActivateLifeline(Lifeline lifeline)
     {
         // Could show visual effects for lifeline activation
+        // For ATA, don't show results yet - wait for ShowATAResults() to be called
         if (lifeline.Type == LifelineType.AskTheAudience)
         {
-            _showATA = true;
-            // Generate random ATA results favoring the correct answer
-            if (_currentQuestion != null)
-            {
-                _ataVotes = _currentQuestion.GenerateATAPercentages();
-                Invalidate();
-            }
+            // Clear any previous ATA data
+            _showATA = false;
+            _ataVotes.Clear();
+            Invalidate();
         }
     }
     
@@ -711,6 +709,13 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         _showATA = true;
         _ataVotes = votes;
+        Invalidate();
+    }
+
+    public void HideATAResults()
+    {
+        _showATA = false;
+        _ataVotes.Clear();
         Invalidate();
     }
 

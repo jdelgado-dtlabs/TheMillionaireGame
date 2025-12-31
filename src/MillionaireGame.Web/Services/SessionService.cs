@@ -80,7 +80,8 @@ public class SessionService
                 Id = sessionId,
                 HostName = "Auto-Created Session",
                 CreatedAt = DateTime.UtcNow,
-                Status = SessionStatus.Waiting
+                StartedAt = DateTime.UtcNow,
+                Status = SessionStatus.Active  // Auto-created sessions are immediately active
             };
             _context.Sessions.Add(session);
             await _context.SaveChangesAsync();
@@ -347,6 +348,17 @@ public class SessionService
             .Where(p => p.SessionId == sessionId && p.IsActive)
             .OrderBy(p => p.JoinedAt)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Find participant by display name (for reconnection detection)
+    /// </summary>
+    public async Task<Participant?> FindParticipantByNameAsync(string sessionId, string displayName)
+    {
+        return await _context.Participants
+            .FirstOrDefaultAsync(p => p.SessionId == sessionId && 
+                                     p.DisplayName == displayName && 
+                                     p.IsActive);
     }
 
     /// <summary>
