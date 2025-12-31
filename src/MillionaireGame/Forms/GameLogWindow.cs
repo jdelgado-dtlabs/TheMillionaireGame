@@ -5,20 +5,18 @@ using MillionaireGame.Helpers;
 namespace MillionaireGame.Forms;
 
 /// <summary>
-/// Separate window for displaying game logs
+/// Window that displays game logs by tailing the log file
 /// </summary>
 public partial class GameLogWindow : Form
 {
     private readonly RichTextBox txtLog;
-    private readonly ConsoleLogger _logger;
+    private readonly System.Windows.Forms.Timer _refreshTimer;
+    private long _lastFilePosition;
+    private int _lastLineCount;
 
     public GameLogWindow()
     {
         InitializeComponent();
-
-        // Initialize logger
-        _logger = new ConsoleLogger("game", 5);
-        _logger.StartLogging();
 
         // Configure log text box
         txtLog = new RichTextBox
@@ -37,9 +35,17 @@ public partial class GameLogWindow : Form
         // Write header
         LogHeader();
         
+        // Setup refresh timer to tail the log file
+        _refreshTimer = new System.Windows.Forms.Timer();
+        _refreshTimer.Interval = 100; // Refresh every 100ms
+        _refreshTimer.Tick += RefreshTimer_Tick;
+        _refreshTimer.Start();
+
         // Apply icon after everything is set up
         IconHelper.ApplyToForm(this);
-        Log($"GameLogWindow constructor completed. Icon applied. Form.Icon is {(Icon != null ? "SET" : "NULL")}", LogLevel.DEBUG);
+        
+        // Load initial log content
+        RefreshLogDisplay();
     }
 
     private void InitializeComponent()
@@ -75,96 +81,139 @@ public partial class GameLogWindow : Form
     }
 
     /// <summary>
-    /// Logs a message to the window and file with log level
+    /// Timer tick event to refresh log display from file
     /// </summary>
-    public void Log(string message, Utilities.LogLevel level = Utilities.LogLevel.INFO)
+    private void RefreshTimer_Tick(object? sender, EventArgs e)
+    {
+        RefreshLogDisplay();
+    }
+
+    /// <summary>
+    /// Notifies the window that the log has been updated (called by GameConsole)
+    /// </summary>
+    public void NotifyLogUpdated()
     {
         if (InvokeRequired)
         {
             try
             {
-                // Use BeginInvoke (async) to prevent blocking the audio thread
-                BeginInvoke(new Action<string, Utilities.LogLevel>(Log), message, level);
+                BeginInvoke(new Action(RefreshLogDisplay));
             }
             catch (ObjectDisposedException)
             {
                 // Window was disposed, ignore
-                return;
             }
             return;
         }
+
+        RefreshLogDisplay();
+    }
+
+    /// <summary>
+    /// Reads new lines from the log file and displays them
+    /// </summary>
+    private void RefreshLogDisplay()
+    {
+        if (IsDisposed || !Visible)
+            return;
+
+        var logFilePath = GameConsole.CurrentLogFilePath;
+        if (string.IsNullOrEmpty(logFilePath) || !File.Exists(logFilePath))
+            return;
 
         try
         {
-            var timestamp = DateTime.Now.ToString("HH:mm:ss");
-            var levelStr = level switch
-            {
-                Utilities.LogLevel.DEBUG => "DEBUG",
-                Utilities.LogLevel.INFO => "INFO",
-                Utilities.LogLevel.WARN => "WARN",
-                Utilities.LogLevel.ERROR => "ERROR",
-                _ => "INFO"
-            };
+            // Read file without locking
+            using var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             
-            var formattedMessage = $"[{timestamp}] [{levelStr}] {message}\n";
-            
-            // Color code by log level
-            var color = level switch
-            {
-                Utilities.LogLevel.DEBUG => Color.Gray,
-                Utilities.LogLevel.INFO => Color.Lime,
-                Utilities.LogLevel.WARN => Color.Yellow,
-                Utilities.LogLevel.ERROR => Color.Red,
-                _ => Color.Lime
-            };
-            
-            txtLog.SelectionStart = txtLog.TextLength;
-            txtLog.SelectionLength = 0;
-            txtLog.SelectionColor = color;
-            txtLog.AppendText(formattedMessage);
-            txtLog.SelectionColor = txtLog.ForeColor;
-            txtLog.ScrollToCaret();
-            
-            _logger.Log($"[{levelStr}] {message}");
+            // Check if file has new content
+            if (fs.Length <= _lastFilePosition)
+                return;
 
-            // Limit text length to prevent memory issues
-            if (txtLog.TextLength > 100000)
+            // Seek to last read position
+            fs.Seek(_lastFilePosition, SeekOrigin.Begin);
+
+            // Read new lines
+            using var reader = new StreamReader(fs, Encoding.UTF8);
+            var newLines = new List<string>();
+            string? line;
+            while ((line = reader.ReadLine()) != null)
             {
-                txtLog.Text = txtLog.Text.Substring(txtLog.TextLength - 50000);
+                newLines.Add(line);
             }
+
+            // Update position
+            _lastFilePosition = fs.Position;
+
+            // Display new lines with color coding
+            if (newLines.Count > 0)
+            {
+                foreach (var logLine in newLines)
+                {
+                    AppendColoredLine(logLine);
+                }
+
+                txtLog.ScrollToCaret();
+
+                // Limit text length to prevent memory issues
+                if (txtLog.Lines.Length > 5000)
+                {
+                    var lines = txtLog.Lines.Skip(txtLog.Lines.Length - 2500).ToArray();
+                    txtLog.Lines = lines;
+                    _lastLineCount = lines.Length;
+                }
+                else
+                {
+                    _lastLineCount = txtLog.Lines.Length;
+                }
+            }
+        }
+        catch (IOException)
+        {
+            // File might be locked, try again next time
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[GameLogWindow] Error logging: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[GameLogWindow] Error reading log file: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Logs a formatted message
+    /// Appends a line with color coding based on log level
     /// </summary>
-    public void Log(string format, Utilities.LogLevel level, params object[] args)
+    private void AppendColoredLine(string line)
     {
-        Log(string.Format(format, args), level);
-    }
+        Color color = Color.Lime; // Default
 
-    /// <summary>
-    /// Logs a separator line
-    /// </summary>
-    public void LogSeparator()
-    {
-        if (InvokeRequired)
-        {
-            Invoke(new Action(LogSeparator));
-            return;
-        }
+        if (line.Contains("[DEBUG]"))
+            color = Color.Gray;
+        else if (line.Contains("[INFO]"))
+            color = Color.Lime;
+        else if (line.Contains("[WARN]"))
+            color = Color.Yellow;
+        else if (line.Contains("[ERROR]"))
+            color = Color.Red;
 
-        txtLog.AppendText("-------------------------------------------\n");
-        _logger.LogSeparator();
+        txtLog.SelectionStart = txtLog.TextLength;
+        txtLog.SelectionLength = 0;
+        txtLog.SelectionColor = color;
+        txtLog.AppendText(line + "\n");
+        txtLog.SelectionColor = txtLog.ForeColor;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        _logger?.Close();
+        _refreshTimer?.Stop();
+        _refreshTimer?.Dispose();
         base.OnFormClosing(e);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _refreshTimer?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }
