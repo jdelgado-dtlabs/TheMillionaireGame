@@ -51,6 +51,15 @@ namespace MillionaireGame.Forms.Options
             chkShowWebServiceConsole = new CheckBox();
             tabBroadcast = new TabPage();
             grpBroadcast = new GroupBox();
+            lblBackgroundMode = new Label();
+            radModePrerendered = new RadioButton();
+            radModeChromaKey = new RadioButton();
+            lblBackground = new Label();
+            cmbBackground = new ComboBox();
+            lblChromaColor = new Label();
+            btnChromaColor = new Button();
+            lblChromaColorPreview = new Label();
+            lblBackgroundInfo = new Label();
             tabLifelines = new TabPage();
             tabMoneyTree = new TabPage();
             grpPrizeValues = new GroupBox();
@@ -416,12 +425,117 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpBroadcast
             // 
+            grpBroadcast.Controls.Add(lblBackgroundMode);
+            grpBroadcast.Controls.Add(radModePrerendered);
+            grpBroadcast.Controls.Add(radModeChromaKey);
+            grpBroadcast.Controls.Add(lblBackground);
+            grpBroadcast.Controls.Add(cmbBackground);
+            grpBroadcast.Controls.Add(lblChromaColor);
+            grpBroadcast.Controls.Add(btnChromaColor);
+            grpBroadcast.Controls.Add(lblChromaColorPreview);
+            grpBroadcast.Controls.Add(lblBackgroundInfo);
             grpBroadcast.Location = new Point(16, 16);
             grpBroadcast.Name = "grpBroadcast";
-            grpBroadcast.Size = new Size(600, 400);
+            grpBroadcast.Size = new Size(600, 300);
             grpBroadcast.TabIndex = 0;
             grpBroadcast.TabStop = false;
-            grpBroadcast.Text = "Broadcast Settings (Future Feature)";
+            grpBroadcast.Text = "TV Screen Background";
+            // 
+            // lblBackgroundMode
+            // 
+            lblBackgroundMode.AutoSize = true;
+            lblBackgroundMode.Location = new Point(16, 30);
+            lblBackgroundMode.Name = "lblBackgroundMode";
+            lblBackgroundMode.Size = new Size(110, 15);
+            lblBackgroundMode.TabIndex = 0;
+            lblBackgroundMode.Text = "Background Mode:";
+            // 
+            // radModePrerendered
+            // 
+            radModePrerendered.AutoSize = true;
+            radModePrerendered.Checked = true;
+            radModePrerendered.Location = new Point(140, 28);
+            radModePrerendered.Name = "radModePrerendered";
+            radModePrerendered.Size = new Size(137, 19);
+            radModePrerendered.TabIndex = 1;
+            radModePrerendered.TabStop = true;
+            radModePrerendered.Text = "Theme Background";
+            radModePrerendered.UseVisualStyleBackColor = true;
+            radModePrerendered.CheckedChanged += radModePrerendered_CheckedChanged;
+            // 
+            // radModeChromaKey
+            // 
+            radModeChromaKey.AutoSize = true;
+            radModeChromaKey.Location = new Point(300, 28);
+            radModeChromaKey.Name = "radModeChromaKey";
+            radModeChromaKey.Size = new Size(138, 19);
+            radModeChromaKey.TabIndex = 2;
+            radModeChromaKey.Text = "Chroma Key (Solid)";
+            radModeChromaKey.UseVisualStyleBackColor = true;
+            radModeChromaKey.CheckedChanged += radModeChromaKey_CheckedChanged;
+            // 
+            // lblBackground
+            // 
+            lblBackground.AutoSize = true;
+            lblBackground.Location = new Point(16, 70);
+            lblBackground.Name = "lblBackground";
+            lblBackground.Size = new Size(117, 15);
+            lblBackground.TabIndex = 3;
+            lblBackground.Text = "Select Background:";
+            // 
+            // cmbBackground
+            // 
+            cmbBackground.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbBackground.FormattingEnabled = true;
+            cmbBackground.Location = new Point(140, 67);
+            cmbBackground.Name = "cmbBackground";
+            cmbBackground.Size = new Size(300, 23);
+            cmbBackground.TabIndex = 4;
+            // 
+            // lblChromaColor
+            // 
+            lblChromaColor.AutoSize = true;
+            lblChromaColor.Location = new Point(16, 70);
+            lblChromaColor.Name = "lblChromaColor";
+            lblChromaColor.Size = new Size(84, 15);
+            lblChromaColor.TabIndex = 5;
+            lblChromaColor.Text = "Chroma Color:";
+            lblChromaColor.Visible = false;
+            // 
+            // btnChromaColor
+            // 
+            btnChromaColor.Location = new Point(140, 66);
+            btnChromaColor.Name = "btnChromaColor";
+            btnChromaColor.Size = new Size(100, 25);
+            btnChromaColor.TabIndex = 6;
+            btnChromaColor.Text = "Select Color...";
+            btnChromaColor.UseVisualStyleBackColor = true;
+            btnChromaColor.Visible = false;
+            btnChromaColor.Click += btnChromaColor_Click;
+            // 
+            // lblChromaColorPreview
+            // 
+            lblChromaColorPreview.BackColor = System.Drawing.Color.Blue;
+            lblChromaColorPreview.BorderStyle = BorderStyle.FixedSingle;
+            lblChromaColorPreview.Location = new Point(250, 66);
+            lblChromaColorPreview.Name = "lblChromaColorPreview";
+            lblChromaColorPreview.Size = new Size(80, 25);
+            lblChromaColorPreview.TabIndex = 7;
+            lblChromaColorPreview.Visible = false;
+            // 
+            // lblBackgroundInfo
+            // 
+            lblBackgroundInfo.Location = new Point(16, 110);
+            lblBackgroundInfo.Name = "lblBackgroundInfo";
+            lblBackgroundInfo.Size = new Size(560, 170);
+            lblBackgroundInfo.TabIndex = 8;
+            lblBackgroundInfo.Text = "Background settings only affect the TV Screen (broadcast/streaming output).\r\n\r\n" +
+                "Theme Background: Use prerendered background images from the selected theme.\r\n\r\n" +
+                "Chroma Key: Use a solid color background for chroma keying in OBS/streaming software.\r\n" +
+                "  • Default: Blue (#0000FF) - safe choice that won't conflict with game UI\r\n" +
+                "  • Avoid: Green, Red, Yellow, Orange, Cyan (used by game UI elements)\r\n" +
+                "  • Recommended: Blue or Magenta for best keying results\r\n\r\n" +
+                "Note: Guest and Host screens always use black backgrounds.";
             // 
             // tabLifelines
             // 
@@ -1369,6 +1483,15 @@ namespace MillionaireGame.Forms.Options
         private GroupBox grpPreviews;
         private GroupBox grpMultipleMonitorControl;
         private GroupBox grpBroadcast;
+        private Label lblBackgroundMode;
+        private RadioButton radModePrerendered;
+        private RadioButton radModeChromaKey;
+        private Label lblBackground;
+        private ComboBox cmbBackground;
+        private Label lblChromaColor;
+        private Button btnChromaColor;
+        private Label lblChromaColorPreview;
+        private Label lblBackgroundInfo;
         private CheckBox chkEnablePreviewAutomatically;
         private Label lblPreviewOrientation;
         private ComboBox cmbPreviewOrientation;

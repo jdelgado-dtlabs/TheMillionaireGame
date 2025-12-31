@@ -117,6 +117,9 @@ public partial class OptionsDialog : Form
         // Load audio settings (silence detection, crossfade, processing)
         LoadAudioSettings();
         
+        // Load broadcast settings (TV screen background)
+        LoadBroadcastSettings();
+        
         // Load console settings
         chkShowConsole.Checked = _settings.ShowConsole;
         chkShowWebServiceConsole.Checked = _settings.ShowWebServerConsole;
@@ -375,6 +378,9 @@ public partial class OptionsDialog : Form
 
         // Save audio settings (silence detection, crossfade, processing)
         SaveAudioSettings();
+
+        // Save broadcast settings (TV screen background)
+        SaveBroadcastSettings();
 
         // Console settings (only save in release mode, debug is always true)
 #if !DEBUG
@@ -965,6 +971,105 @@ public partial class OptionsDialog : Form
     }
 
     #endregion
+
+    // Broadcast Settings methods
+    private void LoadBroadcastSettings()
+    {
+        // Load background mode
+        if (_settings.Broadcast.Mode == Core.Settings.BackgroundMode.Prerendered)
+        {
+            radModePrerendered.Checked = true;
+        }
+        else
+        {
+            radModeChromaKey.Checked = true;
+        }
+
+        // Load selected background (will be populated when theme loads)
+        // For now, just store the path - it will be selected when backgrounds are loaded
+
+        // Load chroma key color
+        var chromaColor = _settings.Broadcast.ChromaKeyColor;
+        lblChromaColorPreview.BackColor = chromaColor;
+
+        // Update control visibility based on mode
+        UpdateBroadcastControlVisibility();
+    }
+
+    private void SaveBroadcastSettings()
+    {
+        // Save background mode
+        _settings.Broadcast.Mode = radModePrerendered.Checked
+            ? Core.Settings.BackgroundMode.Prerendered
+            : Core.Settings.BackgroundMode.ChromaKey;
+
+        // Save selected background
+        if (cmbBackground.SelectedItem != null)
+        {
+            _settings.Broadcast.SelectedBackgroundPath = cmbBackground.SelectedItem.ToString();
+        }
+
+        // Save chroma key color (convert from Color to hex)
+        _settings.Broadcast.ChromaKeyColor = lblChromaColorPreview.BackColor;
+    }
+
+    private void UpdateBroadcastControlVisibility()
+    {
+        bool isPrerendered = radModePrerendered.Checked;
+
+        // Show/hide controls based on mode
+        lblBackground.Visible = isPrerendered;
+        cmbBackground.Visible = isPrerendered;
+
+        lblChromaColor.Visible = !isPrerendered;
+        btnChromaColor.Visible = !isPrerendered;
+        lblChromaColorPreview.Visible = !isPrerendered;
+    }
+
+    private void radModePrerendered_CheckedChanged(object? sender, EventArgs e)
+    {
+        UpdateBroadcastControlVisibility();
+        MarkChanged();
+    }
+
+    private void radModeChromaKey_CheckedChanged(object? sender, EventArgs e)
+    {
+        UpdateBroadcastControlVisibility();
+        MarkChanged();
+    }
+
+    private void btnChromaColor_Click(object? sender, EventArgs e)
+    {
+        using var colorDialog = new ColorDialog();
+        colorDialog.Color = lblChromaColorPreview.BackColor;
+        colorDialog.FullOpen = true;
+
+        if (colorDialog.ShowDialog() == DialogResult.OK)
+        {
+            var selectedColor = colorDialog.Color;
+
+            // Check for color conflicts
+            if (Core.Settings.BroadcastSettings.IsColorConflict(selectedColor, out string conflictingElement))
+            {
+                var result = MessageBox.Show(
+                    $"Warning: The selected color is similar to {conflictingElement} used in the game UI.\n\n" +
+                    $"This may cause parts of the game UI to be removed during chroma keying.\n\n" +
+                    $"Recommended colors: Blue (#0000FF) or Magenta (#FF00FF)\n\n" +
+                    $"Do you want to use this color anyway?",
+                    "Color Conflict Warning",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (result != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            lblChromaColorPreview.BackColor = selectedColor;
+            MarkChanged();
+        }
+    }
 
     // Soundpack management methods
     private void LoadAvailableSoundPacks()
