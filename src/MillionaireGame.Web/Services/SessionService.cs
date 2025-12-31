@@ -14,11 +14,26 @@ public class SessionService
 {
     private readonly WAPSDbContext _context;
     private readonly ILogger<SessionService> _logger;
+    private GameStateType _currentState = GameStateType.InitialLobby;
 
     public SessionService(WAPSDbContext context, ILogger<SessionService> logger)
     {
         _context = context;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Get the current game state
+    /// </summary>
+    public GameStateType GetCurrentState() => _currentState;
+
+    /// <summary>
+    /// Set the current game state
+    /// </summary>
+    public void SetCurrentState(GameStateType state)
+    {
+        _currentState = state;
+        _logger.LogInformation("Game state changed to: {State}", state);
     }
 
     /// <summary>

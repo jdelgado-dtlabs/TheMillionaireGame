@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using MillionaireGame.Web.Data;
 using MillionaireGame.Web.Database;
 using MillionaireGame.Web.Hubs;
+using MillionaireGame.Web.Models;
 using MillionaireGame.Web.Services;
 using MillionaireGame.Utilities;
 
@@ -270,6 +271,43 @@ public class WebServerHost : IDisposable
             WebServerConsole.Error($"=== WebServer Shutdown Failed after {stopwatch.ElapsedMilliseconds}ms: {ex.Message} ===");
             ServerError?.Invoke(this, ex);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Broadcast game state change to all connected web clients
+    /// </summary>
+    public async Task BroadcastGameStateAsync(string sessionId, GameStateType state, string? message = null, object? data = null)
+    {
+        if (_host == null)
+        {
+            WebServerConsole.Warn("[WebServer] Cannot broadcast game state - server not running");
+            return;
+        }
+
+        try
+        {
+            var hubContext = _host.Services.GetService<IHubContext<GameHub>>();
+            if (hubContext == null)
+            {
+                WebServerConsole.Error("[WebServer] Failed to get GameHub context");
+                return;
+            }
+
+            var stateData = new GameStateData
+            {
+                State = state,
+                Message = message,
+                Data = data,
+                Timestamp = DateTime.UtcNow
+            };
+
+            await hubContext.Clients.Group(sessionId).SendAsync("GameStateChanged", stateData);
+            WebServerConsole.Debug($"[WebServer] Broadcasted state {state} to session {sessionId}");
+        }
+        catch (Exception ex)
+        {
+            WebServerConsole.Error($"[WebServer] Error broadcasting game state: {ex.Message}");
         }
     }
 

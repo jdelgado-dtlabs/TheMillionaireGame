@@ -546,6 +546,12 @@ public class LifelineManager
                         
                         if (activeSession != null)
                         {
+                            // Broadcast state change back to Waiting Lobby
+                            await webServerHost.BroadcastGameStateAsync(
+                                activeSession.Id,
+                                Web.Models.GameStateType.WaitingLobby,
+                                "Waiting for next activity...");
+                            
                             await hubContext.Clients.Group(activeSession.Id).SendAsync("ATACleared");
                             LogMessage?.Invoke("[ATA] Cleared from web clients");
                         }
@@ -839,6 +845,12 @@ public class LifelineManager
 
             LogMessage?.Invoke($"[ATA] Broadcasting ATAIntroStarted to session group: {activeSession.Id}");
 
+            // Broadcast game state change to ATAReady
+            await webServerHost.BroadcastGameStateAsync(
+                activeSession.Id,
+                Web.Models.GameStateType.ATAReady,
+                "Get ready to vote!");
+
             // Broadcast intro message to web clients (showing question but voting disabled)
             await hubContext.Clients.Group(activeSession.Id).SendAsync("ATAIntroStarted", new
             {
@@ -902,6 +914,12 @@ public class LifelineManager
             }
 
             LogMessage?.Invoke($"[ATA] Broadcasting VotingStarted to session group: {activeSession.Id}");
+
+            // Broadcast game state change to ATAVoting
+            await webServerHost.BroadcastGameStateAsync(
+                activeSession.Id,
+                Web.Models.GameStateType.ATAVoting,
+                "Vote now!");
 
             // Use the GameHub to broadcast voting started
             var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
@@ -980,6 +998,12 @@ public class LifelineManager
 
             // Mark all voters as having used ATA
             await sessionService.MarkATAUsedForVotersAsync(activeSession.Id);
+
+            // Broadcast game state change to ATAResults
+            await webServerHost.BroadcastGameStateAsync(
+                activeSession.Id,
+                Web.Models.GameStateType.ATAResults,
+                "Here are the results!");
 
             // Broadcast completion to web clients via GameHub
             var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();

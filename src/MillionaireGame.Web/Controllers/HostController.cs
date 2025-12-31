@@ -14,21 +14,18 @@ public class HostController : ControllerBase
 {
     private readonly SessionService _sessionService;
     private readonly StatisticsService _statisticsService;
-    private readonly IHubContext<FFFHub> _fffHubContext;
-    private readonly IHubContext<ATAHub> _ataHubContext;
+    private readonly IHubContext<GameHub> _hubContext;
     private readonly ILogger<HostController> _logger;
 
     public HostController(
         SessionService sessionService,
         StatisticsService statisticsService,
-        IHubContext<FFFHub> fffHubContext,
-        IHubContext<ATAHub> ataHubContext,
+        IHubContext<GameHub> hubContext,
         ILogger<HostController> logger)
     {
         _sessionService = sessionService;
         _statisticsService = statisticsService;
-        _fffHubContext = fffHubContext;
-        _ataHubContext = ataHubContext;
+        _hubContext = hubContext;
         _logger = logger;
     }
 
@@ -47,7 +44,7 @@ public class HostController : ControllerBase
             }
 
             // Notify all participants
-            await _fffHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("GameStarted", new { sessionId, message = "Game is starting! Get ready!" });
 
             _logger.LogInformation("Game started for session {SessionId}", sessionId);
@@ -80,7 +77,7 @@ public class HostController : ControllerBase
             {
                 if (!string.IsNullOrEmpty(participant.ConnectionId))
                 {
-                    await _fffHubContext.Clients.Client(participant.ConnectionId)
+                    await _hubContext.Clients.Client(participant.ConnectionId)
                         .SendAsync("SelectedForFFF", new 
                         { 
                             participantId = participant.Id,
@@ -90,7 +87,7 @@ public class HostController : ControllerBase
             }
 
             // Notify all in session about selection
-            await _fffHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("FFFPlayersSelected", new 
                 { 
                     count = selected.Count,
@@ -131,7 +128,7 @@ public class HostController : ControllerBase
             // Notify the winner
             if (!string.IsNullOrEmpty(selected.ConnectionId))
             {
-                await _fffHubContext.Clients.Client(selected.ConnectionId)
+                await _hubContext.Clients.Client(selected.ConnectionId)
                     .SendAsync("SelectedAsWinner", new 
                     { 
                         participantId = selected.Id,
@@ -140,7 +137,7 @@ public class HostController : ControllerBase
             }
 
             // Notify all in session
-            await _fffHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("PlayerSelected", new 
                 { 
                     participantId = selected.Id,
@@ -175,7 +172,7 @@ public class HostController : ControllerBase
             var count = await _sessionService.ReturnEliminatedToLobbyAsync(sessionId);
 
             // Notify all participants
-            await _fffHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("PlayersReturnedToLobby", new 
                 { 
                     count,
@@ -210,7 +207,7 @@ public class HostController : ControllerBase
             await _sessionService.UpdateSessionModeAsync(sessionId, Models.SessionMode.ATA, request.QuestionId);
 
             // Notify eligible participants
-            await _ataHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("ATAStarted", new 
                 { 
                     questionId = request.QuestionId,
@@ -250,7 +247,7 @@ public class HostController : ControllerBase
             var csvData = await _sessionService.EndGameAsync(sessionId, _statisticsService);
 
             // Notify all participants
-            await _fffHubContext.Clients.Group(sessionId)
+            await _hubContext.Clients.Group(sessionId)
                 .SendAsync("GameEnded", new 
                 { 
                     sessionId,

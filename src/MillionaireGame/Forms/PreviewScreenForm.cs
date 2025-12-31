@@ -48,6 +48,7 @@ public class PreviewScreenForm : Form
     {
         // Create dedicated screen instances for preview and register with ScreenService
         _hostScreen = new HostScreenForm();
+        _hostScreen.IsPreview = true; // Mark as preview to skip intensive animations
         _hostScreen.Initialize(gameService.MoneyTree);
         _hostScreen.CreateControl(); // Force control creation without showing
         screenService.RegisterScreen(_hostScreen); // Register to receive display updates
@@ -56,11 +57,13 @@ public class PreviewScreenForm : Form
         controlPanel.MessageSent += _hostScreen.OnMessageReceived;
         
         _guestScreen = new GuestScreenForm();
+        _guestScreen.IsPreview = true; // Mark as preview to skip intensive animations
         _guestScreen.Initialize(gameService.MoneyTree);
         _guestScreen.CreateControl(); // Force control creation without showing
         screenService.RegisterScreen(_guestScreen); // Register to receive display updates
         
         _tvScreen = new TVScreenFormScalable();
+        _tvScreen.IsPreview = true; // Mark as preview to skip intensive animations
         _tvScreen.Initialize(gameService.MoneyTree);
         _tvScreen.CreateControl(); // Force control creation without showing
         screenService.RegisterScreen(_tvScreen); // Register to receive display updates

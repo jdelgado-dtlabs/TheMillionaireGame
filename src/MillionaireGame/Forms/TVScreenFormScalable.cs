@@ -4,6 +4,7 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -27,6 +28,12 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private float _moneyTreeAnimationProgress = 0f; // 0.0 to 1.0
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    
+    /// <summary>
+    /// Gets or sets whether this screen is a preview instance.
+    /// Preview screens skip intensive animations like confetti.
+    /// </summary>
+    public bool IsPreview { get; set; } = false;
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
@@ -48,6 +55,12 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private bool _fffShowWinner = false;
     private string? _fffWinnerName = null;
     private double? _fffWinnerTime = null;
+    
+    // Game winner display (Thanks for Playing)
+    private bool _showGameWinner = false;
+    private string? _gameWinnerAmount = null;
+    private List<ConfettiParticle> _confettiParticles = new();
+    private System.Threading.Timer? _confettiTimer;
     
     // Lifeline icon display
     private bool _showLifelineIcons = false;
@@ -103,6 +116,13 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
 
     protected override void RenderScreen(System.Drawing.Graphics g)
     {
+        // If game winner is showing, render full-screen winner display (takes over entire screen)
+        if (_showGameWinner)
+        {
+            DrawGameWinnerDisplay(g);
+            return;
+        }
+        
         // If FFF is showing, render FFF display (takes over entire screen)
         if (_showFFF)
         {
@@ -554,6 +574,46 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             designTimerBounds.X, designTimerBounds.Y, designTimerBounds.Width, designTimerBounds.Height);
     }
     
+    private void DrawGameWinnerDisplay(System.Drawing.Graphics g)
+    {
+        // Full-screen winner display (similar to FFF winner display)
+        // No background - alpha keyed/transparent
+        
+        // Draw confetti particles as background
+        foreach (var particle in _confettiParticles)
+        {
+            var state = g.Save();
+            g.TranslateTransform(particle.X, particle.Y);
+            g.RotateTransform(particle.Rotation);
+            
+            using (var confettiBrush = new SolidBrush(particle.Color))
+            {
+                g.FillRectangle(confettiBrush, -particle.Size / 2, -particle.Size / 2, particle.Size, particle.Size * 3);
+            }
+            
+            g.Restore(state);
+        }
+        
+        if (string.IsNullOrEmpty(_gameWinnerAmount))
+            return;
+        
+        // Draw winning amount centered on screen
+        var designBounds = new RectangleF(200, 400, 1520, 280);
+        using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
+        using var brush = new SolidBrush(Color.Gold);
+        using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+        
+        DrawScaledText(g, _gameWinnerAmount, font, brush,
+            designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
+        
+        // Draw "You Won" above
+        using var titleFont = new Font("Copperplate Gothic Bold", 80, FontStyle.Bold);
+        using var titleBrush = new SolidBrush(Color.White);
+        var titleBounds = new RectangleF(200, 280, 1520, 100);
+        DrawScaledText(g, "You Won", titleFont, titleBrush,
+            titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, format);
+    }
+    
     private void DrawFFFDisplay(System.Drawing.Graphics g)
     {
         // No background for FFF display - alpha keyed/transparent
@@ -976,6 +1036,15 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         _showPAFTimer = false; // Hide PAF timer on reset
         _showATATimer = false; // Hide ATA timer on reset
         _showLifelineIcons = false; // Hide lifeline icons on reset
+        
+        // Clear winner display and confetti
+        _showGameWinner = false;
+        _gameWinnerAmount = null;
+        _confettiTimer?.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+        _confettiTimer?.Dispose();
+        _confettiTimer = null;
+        _confettiParticles.Clear();
+        
         Invalidate();
     }
 
@@ -1182,6 +1251,185 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         Invalidate();
     }
     
+    /// <summary>
+    /// Show full-screen game winner display (Thanks for Playing portion)
+    /// </summary>
+    public void ShowGameWinner(string amount, int questionLevel)
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(() => ShowGameWinner(amount, questionLevel)));
+            return;
+        }
+        
+        _showGameWinner = true;
+        _gameWinnerAmount = amount;
+        
+        // Skip confetti for preview screens to avoid performance issues
+        if (IsPreview)
+        {
+            GameConsole.Debug("Skipping confetti for preview screen");
+            Invalidate();
+            return;
+        }
+        
+        // Only show confetti for significant wins (Q11+)
+        // Walking away at Q10 gives Q9 prize, so confetti starts at Q11
+        if (questionLevel >= 11)
+        {
+            GameConsole.Info($"Initializing confetti for Q{questionLevel}");
+            
+            // Stop any existing timer first
+            if (_confettiTimer != null)
+            {
+                GameConsole.Warn("Confetti timer already exists, stopping it");
+                _confettiTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+                _confettiTimer.Dispose();
+                _confettiTimer = null;
+            }
+            
+            // Initialize confetti particles
+            InitializeConfetti();
+            
+            // Ensure form handle is created for timer to work
+            if (!IsHandleCreated)
+            {
+                var _ = Handle; // Force handle creation
+            }
+            
+            // Start confetti animation timer using Threading.Timer (doesn't depend on Windows message pump)
+            _confettiTimer = new System.Threading.Timer(
+                callback: _ => ConfettiTimer_Tick(),
+                state: null,
+                dueTime: 67,
+                period: 67  // 15 FPS for better performance with multiple screens
+            );
+        }
+        
+        Invalidate();
+    }
+    
+    /// <summary>
+    /// Initialize confetti particles for celebration animation
+    /// </summary>
+    private void InitializeConfetti()
+    {
+        _confettiParticles.Clear();
+        var random = new Random();
+        var colors = new[] { Color.Gold, Color.Yellow, Color.Orange, Color.Red, Color.Blue, Color.Green, Color.Purple, Color.Magenta };
+        
+        // Create 100 confetti particles
+        for (int i = 0; i < 100; i++)
+        {
+            _confettiParticles.Add(new ConfettiParticle
+            {
+                X = random.Next(0, 1920),
+                Y = random.Next(-500, 0), // Start above screen
+                VelocityY = random.Next(2, 6),
+                VelocityX = random.Next(-2, 3),
+                Rotation = random.Next(0, 360),
+                RotationSpeed = random.Next(-10, 11),
+                Color = colors[random.Next(colors.Length)],
+                Size = random.Next(8, 20)
+            });
+        }
+    }
+    
+    /// <summary>
+    /// Timer tick handler for confetti animation
+    /// </summary>
+    private void ConfettiTimer_Tick()
+    {
+        // Use Invoke to update UI from background thread
+        if (InvokeRequired)
+        {
+            try
+            {
+                Invoke(new Action(UpdateConfetti));
+            }
+            catch (ObjectDisposedException)
+            {
+                // Form was disposed, stop timer
+                _confettiTimer?.Dispose();
+                _confettiTimer = null;
+            }
+        }
+        else
+        {
+            UpdateConfetti();
+        }
+    }
+    
+    /// <summary>
+    /// Update confetti particle positions for animation
+    /// </summary>
+    private void UpdateConfetti()
+    {
+        // Stop updating if display was cleared
+        if (!_showGameWinner || _confettiTimer == null)
+        {
+            return;
+        }
+        
+        var random = new Random();
+        
+        foreach (var particle in _confettiParticles)
+        {
+            // Update position
+            particle.Y += particle.VelocityY;
+            particle.X += particle.VelocityX;
+            particle.Rotation += particle.RotationSpeed;
+            
+            // Reset particle if it falls off screen
+            if (particle.Y > 1080)
+            {
+                particle.Y = -20;
+                particle.X = random.Next(0, 1920);
+            }
+        }
+        
+        // Always redraw while animation is active
+        Invalidate();
+    }
+    
+    /// <summary>
+    /// Hide full-screen game winner display
+    /// </summary>
+    public void ClearGameWinnerDisplay()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(ClearGameWinnerDisplay));
+            return;
+        }
+        
+        _showGameWinner = false;
+        _gameWinnerAmount = null;
+        
+        // Stop confetti animation (Threading.Timer)
+        _confettiTimer?.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+        _confettiTimer?.Dispose();
+        _confettiTimer = null;
+        _confettiParticles.Clear();
+        
+        Invalidate();
+    }
+    
     #endregion
+}
+
+/// <summary>
+/// Confetti particle for winner celebration animation
+/// </summary>
+internal class ConfettiParticle
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float VelocityY { get; set; }
+    public float VelocityX { get; set; }
+    public float Rotation { get; set; }
+    public float RotationSpeed { get; set; }
+    public Color Color { get; set; }
+    public float Size { get; set; }
 }
 

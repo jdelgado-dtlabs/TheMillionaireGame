@@ -6,6 +6,8 @@ using MillionaireGame.Services;
 using MillionaireGame.Core.Helpers;
 using MillionaireGame.Hosting;
 using MillionaireGame.Utilities;
+using MillionaireGame.Web.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame.Forms;
 
@@ -817,7 +819,7 @@ public partial class ControlPanelForm : Form
         
         // Log to WebService console
         WebServerConsole.LogSeparator();
-        WebServerConsole.Info("✓ Server started successfully");
+        WebServerConsole.Info("âœ“ Server started successfully");
         WebServerConsole.Info($"URL: {baseUrl}");
         WebServerConsole.LogSeparator();
         
@@ -849,7 +851,7 @@ public partial class ControlPanelForm : Form
     {
         // Both WebServerConsole and GameConsole are thread-safe with internal queuing
         // No UI thread marshalling needed
-        WebServerConsole.Error($"❌ Error: {ex.Message}");
+        WebServerConsole.Error($"âŒ Error: {ex.Message}");
         GameConsole.Error($"[Web Server] {ex.Message}");
     }
 
@@ -970,11 +972,7 @@ public partial class ControlPanelForm : Form
         _hostScreen?.UpdateMoneyTreeLevel(level, currentMode);
         _guestScreen?.UpdateMoneyTreeLevel(level, currentMode);
         
-        if (_tvScreen is TVScreenForm tvForm)
-        {
-            tvForm.UpdateMoneyTreeLevel(level);
-        }
-        else if (_tvScreen is TVScreenFormScalable tvScalable)
+        if (_tvScreen is TVScreenFormScalable tvScalable)
         {
             tvScalable.UpdateMoneyTreeLevel(level);
         }
@@ -1386,7 +1384,7 @@ public partial class ControlPanelForm : Form
 
     private async void btnLightsDown_Click(object? sender, EventArgs e)
     {
-        // Only increment for first question (0→1). After that, ProcessNormalReveal handles increment.
+        // Only increment for first question (0â†’1). After that, ProcessNormalReveal handles increment.
         if (nmrLevel.Value == 0)
         {
             nmrLevel.Value++;
@@ -1838,7 +1836,7 @@ public partial class ControlPanelForm : Form
             // Start the animation with sound and revert to current level after
             StartSafetyNetAnimation(levelToLock, playSound: true, targetLevelAfterAnimation: _gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin));
             
-            // Wait for animation to complete (6 flashes × 300ms = 1800ms + small buffer) - in background
+            // Wait for animation to complete (6 flashes Ã— 300ms = 1800ms + small buffer) - in background
             _ = Task.Run(async () =>
             {
                 try
@@ -2333,6 +2331,35 @@ public partial class ControlPanelForm : Form
         // Play host entrance audio once
         _soundService.PlaySound(SoundEffect.HostEntrance, loop: false);
         
+        // Broadcast game state to web clients (transition from InitialLobby to WaitingLobby)
+        _ = Task.Run(async () =>
+        {
+            if (IsWebServerRunning && _webServerHost != null)
+            {
+                try
+                {
+                    var sessionId = await GetActiveSessionIdAsync();
+                    if (!string.IsNullOrEmpty(sessionId))
+                    {
+                        await _webServerHost.BroadcastGameStateAsync(
+                            sessionId, 
+                            Web.Models.GameStateType.WaitingLobby,
+                            "Game has started! Waiting for next activity...");
+                        
+                        GameConsole.Info($"[HostIntro] Broadcasted WaitingLobby state to session {sessionId}");
+                    }
+                    else
+                    {
+                        GameConsole.Warn("[HostIntro] No active session found - skipping state broadcast");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Error($"[HostIntro] Error broadcasting game state: {ex.Message}");
+                }
+            }
+        });
+        
         // Reset all questions to unused for new game - run in background
         _ = Task.Run(async () =>
         {
@@ -2345,6 +2372,37 @@ public partial class ControlPanelForm : Form
                 GameConsole.Error($"[HostIntro] Error resetting questions: {ex.Message}");
             }
         });
+    }
+    
+    /// <summary>
+    /// Get the active session ID from the database
+    /// </summary>
+    private async Task<string?> GetActiveSessionIdAsync()
+    {
+        if (_webServerHost == null || !_webServerHost.IsRunning)
+            return null;
+
+        try
+        {
+            var serviceScopeFactory = _webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+                return null;
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            if (dbContext == null)
+                return null;
+
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+
+            return activeSession?.Id;
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[GetActiveSession] Error: {ex.Message}");
+            return null;
+        }
     }
 
     private async void btnPickPlayer_Click(object? sender, EventArgs e)
@@ -2484,6 +2542,16 @@ public partial class ControlPanelForm : Form
         {
             chkShowWinnings.Checked = true;
         }
+        else
+        {
+            // If already checked, manually update the amount displayed
+            // This ensures the correct winnings value is shown
+            var amountToShow = _finalWinningsAmount ?? _gameService.State.CurrentValue;
+            _screenService.ShowWinningsAmount(amountToShow);
+        }
+        
+        // Show full-screen game winner display (Thanks for Playing portion)
+        _screenService.ShowGameWinner(winnings, questionNumber);
         
         // Wait for walk away sound to finish
         await _soundService.WaitForSoundAsync(walkAwaySoundId);
@@ -2574,37 +2642,18 @@ public partial class ControlPanelForm : Form
             case ClosingStage.GameOver:
                 // Skip game over, move to underscore
                 _closingTimer?.Stop();
-                _ = Task.Run(async () =>
-                {
-                    await _soundService.StopAllSoundsAsync();
-                    if (!IsDisposed && IsHandleCreated)
-                    {
-                        BeginInvoke(() =>
-                        {
-                            if (!IsDisposed) MoveToUnderscoreStage();
-                        });
-                    }
-                });
+                if (!IsDisposed) MoveToUnderscoreStage();
                 break;
                 
             case ClosingStage.Underscore:
                 // Skip underscore, move to theme
                 _closingTimer?.Stop();
-                _ = Task.Run(async () =>
-                {
-                    await _soundService.StopAllSoundsAsync();
-                    if (!IsDisposed && IsHandleCreated)
-                    {
-                        BeginInvoke(() =>
-                        {
-                            if (!IsDisposed) MoveToThemeStage();
-                        });
-                    }
-                });
+                // MoveToThemeStage will handle stopping sounds and starting the theme
+                if (!IsDisposed) MoveToThemeStage();
                 break;
                 
             case ClosingStage.Theme:
-                // Skip to completion
+                // Theme is playing - clicking again will reset game
                 _closingTimer?.Stop();
                 CompleteClosing();
                 break;
@@ -2620,7 +2669,7 @@ public partial class ControlPanelForm : Form
         _closingStage = ClosingStage.Underscore;
         btnClosing.BackColor = Color.Orange;
         
-        _soundService.PlaySoundByKey("CloseUnderscore");
+        _soundService.QueueSoundByKey("CloseUnderscore", AudioPriority.Immediate);
         
         if (Program.DebugMode)
         {
@@ -2639,53 +2688,42 @@ public partial class ControlPanelForm : Form
         _closingStage = ClosingStage.Theme;
         btnClosing.BackColor = Color.Yellow;
         
-        // Stop underscore and play closing theme
+        // Play closing theme with immediate priority (crossfades from underscore)
+        _soundService.QueueSoundByKey("ClosingTheme", AudioPriority.Immediate);
+        
+        // Notify web clients that game is complete
         _ = Task.Run(async () =>
         {
-            await _soundService.StopAllSoundsAsync();
-            
-            if (!IsDisposed)
+            try
             {
-                // Play closing theme
-                _soundService.PlaySound(SoundEffect.CloseTheme, "close_theme", loop: false);
+                var sessionId = await GetActiveSessionIdAsync();
+                if (!string.IsNullOrEmpty(sessionId))
+                {
+                    await _webServerHost.BroadcastGameStateAsync(
+                        sessionId,
+                        GameStateType.GameComplete,
+                        "Thank you for watching! The show has concluded.",
+                        null
+                    );
+                    
+                    if (Program.DebugMode)
+                    {
+                        GameConsole.Log("[Closing] Broadcasted GameComplete state to web clients");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Log($"[Closing] Error broadcasting game complete: {ex.Message}");
             }
         });
         
         if (Program.DebugMode)
         {
-            GameConsole.Log("[Closing] Stage: Theme - playing sound (wait for completion)");
+            GameConsole.Log("[Closing] Stage: Theme - playing sound (let it complete naturally)");
         }
         
-        // Wait for closing theme to finish - in background
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await _soundService.WaitForSoundAsync("close_theme");
-                
-                if (!IsDisposed && IsHandleCreated)
-                {
-                    BeginInvoke(() =>
-                    {
-                        try
-                        {
-                            if (!IsDisposed)
-                            {
-                                CompleteClosing();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            GameConsole.Log($"[Closing] Error completing closing: {ex.Message}");
-                        }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                GameConsole.Log($"[Closing] Error waiting for theme: {ex.Message}");
-            }
-        });
+        // Note: Theme will play out naturally. User must manually click Reset Game when ready.
     }
     
     private void CompleteClosing()
@@ -2708,6 +2746,9 @@ public partial class ControlPanelForm : Form
         
         // Stop all sounds
         _soundService.StopAllSounds();
+        
+        // Clear game winner display from screens
+        _screenService.ClearGameWinnerDisplay();
         
         // Reset closing stage
         _closingStage = ClosingStage.NotStarted;
@@ -2790,6 +2831,7 @@ public partial class ControlPanelForm : Form
         _isAutomatedSequenceRunning = false;
         _gameOutcome = GameOutcome.InProgress;
         _firstRoundCompleted = false;
+        _finalWinningsAmount = null; // Clear stored winnings amount
         
         // Reset game service
         _gameService.ResetGame();
@@ -2799,6 +2841,9 @@ public partial class ControlPanelForm : Form
 
         // Reset FFF Online control panel state
         _fffWindow?.OnlinePanel.ResetFFFRound();
+        
+        // Clear winner display and confetti
+        _screenService.ClearGameWinnerDisplay();
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -2859,6 +2904,7 @@ public partial class ControlPanelForm : Form
         _pendingSafetyNetLevel = 0;
         _isAutomatedSequenceRunning = false;
         _gameOutcome = GameOutcome.InProgress;
+        _finalWinningsAmount = null; // Clear stored winnings amount
         
         // Reset game service
         _gameService.ResetGame();
@@ -2868,6 +2914,9 @@ public partial class ControlPanelForm : Form
 
         // Reset FFF Online control panel state
         _fffWindow?.OnlinePanel.ResetFFFRound();
+        
+        // Clear winner display and confetti
+        _screenService.ClearGameWinnerDisplay();
         
         // Clear screens
         _screenService.ResetAllScreens();
@@ -3590,7 +3639,7 @@ public partial class ControlPanelForm : Form
             // Start safety net lock-in animation WITHOUT sound, stay on dropped level after animation
             StartSafetyNetAnimation(droppedLevel, playSound: false, targetLevelAfterAnimation: droppedLevel);
             
-            // Wait for animation to complete using a timer (12 flashes × 400ms = 4800ms + small buffer)
+            // Wait for animation to complete using a timer (12 flashes Ã— 400ms = 4800ms + small buffer)
             var completionTimer = new System.Windows.Forms.Timer();
             completionTimer.Interval = 5000;
             completionTimer.Tick += (s, e) =>
