@@ -400,6 +400,28 @@ public class ScreenUpdateService
         }
     }
     
+    /// <summary>
+    /// Show game winner display (Thanks for Playing)
+    /// </summary>
+    public void ShowGameWinner(string amount, int questionLevel)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowGameWinner(amount, questionLevel);
+        }
+    }
+    
+    /// <summary>
+    /// Clear game winner display
+    /// </summary>
+    public void ClearGameWinnerDisplay()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ClearFFFDisplay();
+        }
+    }
+    
     #endregion
 }
 
@@ -408,6 +430,12 @@ public class ScreenUpdateService
 /// </summary>
 public interface IGameScreen
 {
+    /// <summary>
+    /// Gets whether this screen is a preview instance (part of the preview window).
+    /// Preview screens should skip intensive animations like confetti.
+    /// </summary>
+    bool IsPreview { get; }
+    
     void UpdateQuestion(Question question);
     void SelectAnswer(string answer);
     void RevealAnswer(string selectedAnswer, string correctAnswer, bool isCorrect);
@@ -436,6 +464,10 @@ public interface IGameScreen
     void HighlightFFFContestant(int index, bool isWinner = false);
     void ShowFFFWinner(string name, double? time = null);
     void ClearFFFDisplay();
+    
+    // Game winner display methods
+    void ShowGameWinner(string amount, int questionLevel);
+    void ClearGameWinnerDisplay();
 }
 
 #region Event Args

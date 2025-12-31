@@ -25,6 +25,12 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
+    /// <summary>
+    /// Gets or sets whether this screen is a preview instance.
+    /// Preview screens skip intensive animations like confetti.
+    /// </summary>
+    public bool IsPreview { get; set; } = false;
+    
     // PAF timer display
     private bool _showPAFTimer = false;
     private int _pafSecondsRemaining = 0;
@@ -1092,5 +1098,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     
     #endregion
     public void ClearFFFDisplay() { }
+    public void ShowGameWinner(string amount, int questionLevel) { }
+    public void ClearGameWinnerDisplay() { }
 }
 

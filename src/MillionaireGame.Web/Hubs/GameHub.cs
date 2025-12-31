@@ -385,6 +385,37 @@ public class GameHub : Hub
 
     #endregion
 
+    #region Game State Management
+
+    /// <summary>
+    /// Broadcast game state change to all clients in session
+    /// </summary>
+    public async Task BroadcastGameState(string sessionId, GameStateType state, string? message = null, object? data = null)
+    {
+        _sessionService.SetCurrentState(state);
+        
+        var stateData = new GameStateData
+        {
+            State = state,
+            Message = message,
+            Data = data,
+            Timestamp = DateTime.UtcNow
+        };
+        
+        _logger.LogInformation("Broadcasting game state {State} to session {SessionId}", state, sessionId);
+        await Clients.Group(sessionId).SendAsync("GameStateChanged", stateData);
+    }
+
+    /// <summary>
+    /// Get current game state (for new joiners)
+    /// </summary>
+    public GameStateType GetCurrentGameState()
+    {
+        return _sessionService.GetCurrentState();
+    }
+
+    #endregion
+
     #region Utilities
 
     /// <summary>

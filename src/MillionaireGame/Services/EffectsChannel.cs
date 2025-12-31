@@ -483,11 +483,11 @@ internal class EffectsMixerSource : ISampleSource
             
             if (maxAmplitude > 0)
             {
-                // Rate limit audio logging - log every 20th call (still ~2-5 times per second)
+                // Rate limit audio logging - log every 50th call (~1 time per second)
                 _audioLogCounter++;
-                if (_audioLogCounter >= 20)
+                if (_audioLogCounter >= 50)
                 {
-                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples, {activeEffectsCount} active, max: {maxAmplitude:F4} (logged 1/20 calls)");
+                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples, {activeEffectsCount} active, max: {maxAmplitude:F4} (logged 1/50 calls)");
                     _audioLogCounter = 0;
                 }
                 _silenceLogCounter = 0; // Reset silence counter when we have audio
