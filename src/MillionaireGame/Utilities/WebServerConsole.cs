@@ -8,7 +8,7 @@ namespace MillionaireGame.Utilities;
 /// </summary>
 public static class WebServerConsole
 {
-    private static WebServerLogWindow? _logWindow;
+    private static WebServerConsoleWindow? _logWindow;
     private static readonly FileLogger _fileLogger = new("webserver", 5);
     private static readonly object _lock = new();
 
@@ -25,7 +25,7 @@ public static class WebServerConsole
     /// <summary>
     /// Sets the log window instance
     /// </summary>
-    public static void SetWindow(WebServerLogWindow window)
+    public static void SetWindow(WebServerConsoleWindow window)
     {
         lock (_lock)
         {
@@ -43,7 +43,7 @@ public static class WebServerConsole
         {
             if (_logWindow == null || _logWindow.IsDisposed)
             {
-                _logWindow = new WebServerLogWindow();
+                _logWindow = new WebServerConsoleWindow();
             }
 
             if (!_logWindow.Visible)

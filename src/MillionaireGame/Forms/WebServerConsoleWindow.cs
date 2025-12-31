@@ -7,14 +7,14 @@ namespace MillionaireGame.Forms;
 /// <summary>
 /// Window that displays web server logs by tailing the log file
 /// </summary>
-public partial class WebServerLogWindow : Form
+public partial class WebServerConsoleWindow : Form
 {
     private readonly RichTextBox txtLog;
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private long _lastFilePosition;
     private int _lastLineCount;
 
-    public WebServerLogWindow()
+    public WebServerConsoleWindow()
     {
         InitializeComponent();
 
@@ -175,7 +175,7 @@ public partial class WebServerLogWindow : Form
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[WebServerLogWindow] Error reading log file: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[WebServerConsoleWindow] Error reading log file: {ex.Message}");
         }
     }
 

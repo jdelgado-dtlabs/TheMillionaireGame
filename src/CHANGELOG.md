@@ -88,6 +88,32 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Prevents log loss when console window is minimized
   * Location: GameConsole.cs
 
+- **Logging Architecture Refactor** ✅ COMPLETE (Priority 1)
+  * **File-First Logging**: Created FileLogger class as primary logger with async queue processing
+  * **GameConsole Refactor**: Simplified from 204 to ~155 lines, removed queue/background task, writes to FileLogger first
+  * **WebServerConsole Refactor**: Complete rewrite matching GameConsole pattern
+  * **Console Windows**: GameConsoleWindow and WebServerConsoleWindow now tail log files with 100ms refresh timer
+  * **File Rotation**: 5-file rotation system (game.log, game.1.log through game.4.log)
+  * **Thread Safety**: FileLogger uses concurrent queue and thread-safe FileStream operations
+  * **Color Coding**: DEBUG=Gray, INFO=Lime, WARN=Yellow, ERROR=Red in console displays
+  * **Obsolete Code Removal**: Deleted ConsoleLogger.cs (replaced by FileLogger)
+  * Location: FileLogger.cs, GameConsole.cs, WebServerConsole.cs, GameConsoleWindow.cs, WebServerConsoleWindow.cs
+
+- **Settings UI Improvements** ✅ COMPLETE
+  * Replaced console visibility checkboxes with "Open Console" buttons
+  * Buttons always enabled (removed DEBUG mode disable logic)
+  * Users can now reopen console windows after closing them
+  * Removed ShowConsole and ShowWebServerConsole settings (windows are independent)
+  * Location: OptionsDialog.cs, OptionsDialog.Designer.cs
+
+- **Naming Consistency Refactor** ✅ COMPLETE
+  * **GameLogWindow → GameConsoleWindow**: Renamed for clarity and consistency
+  * **ShowConsole → ShowGameConsole**: More descriptive setting name
+  * **WebServerLogWindow → WebServerConsoleWindow**: Parallel naming with GameConsoleWindow
+  * Updated all references across Program.cs, GameConsole.cs, WebServerConsole.cs, OptionsDialog.cs
+  * Improved code maintainability with predictable naming patterns
+  * Location: GameConsoleWindow.cs, WebServerConsoleWindow.cs, ApplicationSettings.cs, Program.cs
+
 ## [v0.9.5] - 2025-12-30
 
 ### Added
