@@ -20,6 +20,7 @@ public class ScreenUpdateService
     public event EventHandler<EventArgs>? GameReset;
     
     public string GetCorrectAnswer() => _currentQuestion?.CorrectAnswer ?? "A";
+    public Question? GetCurrentQuestion() => _currentQuestion;
 
     /// <summary>
     /// Register a screen to receive updates
@@ -146,6 +147,17 @@ public class ScreenUpdateService
         foreach (var screen in _registeredScreens)
         {
             screen.ShowATAResults(votes);
+        }
+    }
+
+    /// <summary>
+    /// Hide ATA voting results from all screens
+    /// </summary>
+    public void HideATAResults()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.HideATAResults();
         }
     }
 
@@ -412,6 +424,7 @@ public interface IGameScreen
     void ShowPAFTimer(int secondsRemaining, string stage);
     void ShowATATimer(int secondsRemaining, string stage);
     void ShowATAResults(Dictionary<string, int> votes);
+    void HideATAResults();
     void ShowLifelineIcons();
     void HideLifelineIcons();
     void SetLifelineIcon(int lifelineNumber, LifelineType type, LifelineIconState state);

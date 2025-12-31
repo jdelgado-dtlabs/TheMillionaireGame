@@ -185,5 +185,8 @@
     <!-- Third-Party Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     
-    <!-- Application Script -->
-    <script src="/js/app.js?v=20251227223200"></script>
+    <!-- Application Script with dynamic cache busting -->
+    <script>
+        // Load app.js with current timestamp to prevent caching
+        document.write('<script src="/js/app.js?v=' + Date.now() + '"><\/script>');
+    </script>

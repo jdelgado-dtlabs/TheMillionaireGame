@@ -42,7 +42,7 @@ public class FFFClientService : IAsyncDisposable
         }
         
         _connection = new HubConnectionBuilder()
-            .WithUrl($"{_serverUrl}/hubs/fff")
+            .WithUrl($"{_serverUrl}/hubs/game")
             .WithAutomaticReconnect()
             .Build();
         

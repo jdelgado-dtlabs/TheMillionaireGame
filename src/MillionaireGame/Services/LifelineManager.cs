@@ -4,6 +4,8 @@ using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
 using MillionaireGame.Hosting;
 using System.Drawing;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame.Services;
 
@@ -365,6 +367,9 @@ public class LifelineManager
         _screenService.ActivateLifeline(lifeline);
         _screenService.ShowATATimer(_ataSecondsRemaining, "Intro");
         
+        // Notify web clients: Show question in view-only mode during intro
+        await NotifyWebClientsATAIntro();
+        
         LogMessage?.Invoke("[Lifeline] ATA displayed on screens - intro timer started");
     }
     
@@ -373,7 +378,19 @@ public class LifelineManager
         switch (_ataStage)
         {
             case ATAStage.Intro:
-                StartATAVoting(buttonNumber);
+                // Check if offline mode
+                var webServerHost = _getWebServerHost();
+                bool isOffline = webServerHost == null || !webServerHost.IsRunning;
+                
+                if (isOffline)
+                {
+                    LogMessage?.Invoke("[ATA] Offline mode - skipping voting, going directly to results");
+                    CompleteATA();
+                }
+                else
+                {
+                    StartATAVoting(buttonNumber);
+                }
                 break;
             case ATAStage.Voting:
                 CompleteATA();
@@ -414,7 +431,19 @@ public class LifelineManager
             LogMessage?.Invoke($"[ATA] Timer reached 0 at {stageName} stage");
             if (_ataStage == ATAStage.Intro)
             {
-                StartATAVoting(_ataLifelineButtonNumber);
+                // Check if offline mode
+                var webServerHost = _getWebServerHost();
+                bool isOffline = webServerHost == null || !webServerHost.IsRunning;
+                
+                if (isOffline)
+                {
+                    LogMessage?.Invoke("[ATA] Offline mode - skipping voting, going directly to results");
+                    CompleteATA();
+                }
+                else
+                {
+                    StartATAVoting(_ataLifelineButtonNumber);
+                }
             }
             else
             {
@@ -446,6 +475,9 @@ public class LifelineManager
         
         _screenService.ShowATATimer(_ataSecondsRemaining, "Voting");
         
+        // Notify web clients: Enable voting
+        await NotifyWebClientsATAVoting(60);
+        
         LogMessage?.Invoke("[ATA] Voting timer started - 60 seconds");
     }
     
@@ -458,15 +490,18 @@ public class LifelineManager
         _ataTimer?.Dispose();
         _ataTimer = null;
         
-        // Play ending sound (IMMEDIATE priority will stop previous sounds automatically)
-        _soundService.PlaySound(SoundEffect.LifelineATAEnd);
+        // Notify web clients: End voting and show results
+        await NotifyWebClientsATAComplete();
         
-        // Wait for sound to complete (ATAEnd is ~3 seconds)
-        await Task.Delay(3500);
-        
-        // Try to get real voting results from WAPS database, fallback to offline mode
+        // Step 1: Get and show results first
         var finalResults = await GetATAResultsAsync();
         _screenService.ShowATAResults(finalResults);
+        
+        // Step 2: Play ending sound (IMMEDIATE priority will stop previous sounds automatically)
+        _soundService.PlaySound(SoundEffect.LifelineATAEnd);
+        
+        // Step 3: Results will persist on screen until answer is selected
+        // (No auto-hide - ClearATAFromScreens() will be called when answer is selected)
         
         _gameService.UseLifeline(LifelineType.AskTheAudience);
         ButtonStateChanged?.Invoke(_ataLifelineButtonNumber, Color.Gray, false);
@@ -481,6 +516,49 @@ public class LifelineManager
         SetOtherButtonsToStandby?.Invoke(_ataLifelineButtonNumber, false);
         
         LogMessage?.Invoke("[ATA] Completed and marked as used");
+    }
+
+    /// <summary>
+    /// Clear ATA results from all screens and notify web clients when answer is selected
+    /// </summary>
+    public async Task ClearATAFromScreens()
+    {
+        // Clear from physical screens
+        _screenService.HideATAResults();
+        
+        // Notify web clients to return to lobby
+        var webServerHost = _getWebServerHost();
+        if (webServerHost != null && webServerHost.IsRunning)
+        {
+            try
+            {
+                var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+                if (serviceScopeFactory != null)
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
+                    var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+                    
+                    if (hubContext != null && dbContext != null)
+                    {
+                        var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                            dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+                        
+                        if (activeSession != null)
+                        {
+                            await hubContext.Clients.Group(activeSession.Id).SendAsync("ATACleared");
+                            LogMessage?.Invoke("[ATA] Cleared from web clients");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"[ATA] Error clearing from web clients: {ex.Message}");
+            }
+        }
+        
+        LogMessage?.Invoke("[ATA] Cleared from screens");
     }
     
     /// <summary>
@@ -498,14 +576,22 @@ public class LifelineManager
         
         try
         {
-            var sessionService = webServerHost.GetService<MillionaireGame.Web.Services.SessionService>();
+            // Create a service scope to get fresh services
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                return;
+            }
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
             
             if (sessionService == null)
             {
                 return;
             }
             
-            var dbContext = webServerHost.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
             
             if (dbContext == null)
             {
@@ -577,7 +663,7 @@ public class LifelineManager
     {
         // Offline Mode: Generate realistic-looking voting distribution
         // Correct answer gets 40-80%, wrong answers split the remainder
-        // This mimics real audience behavior for demo/offline mode
+        // IMPORTANT: Correct answer must ALWAYS have the highest percentage
         var votes = new Dictionary<string, int>
         {
             { "A", 0 },
@@ -588,23 +674,29 @@ public class LifelineManager
         
         // Generate realistic percentage for correct answer (40-80%)
         int correctPercentage = _random.Next(40, 81);
-        votes[_ataCorrectAnswer] = correctPercentage;
         
         // Distribute remaining percentage across wrong answers
         int remainingPercentage = 100 - correctPercentage;
         var wrongAnswers = new[] { "A", "B", "C", "D" }.Where(a => a != _ataCorrectAnswer).ToArray();
         
         // Split remaining percentage across 3 wrong answers
+        // Each wrong answer can get at most (correctPercentage - 1) to ensure correct answer is always highest
+        int maxWrongPercentage = correctPercentage - 1;
+        
         for (int i = 0; i < wrongAnswers.Length - 1; i++)
         {
-            // Each wrong answer gets 0 to remaining percentage
-            int wrongPercentage = _random.Next(0, remainingPercentage + 1);
+            // Cap the wrong answer percentage to be less than correct answer
+            int maxAllowed = Math.Min(maxWrongPercentage, remainingPercentage);
+            int wrongPercentage = _random.Next(0, maxAllowed + 1);
             votes[wrongAnswers[i]] = wrongPercentage;
             remainingPercentage -= wrongPercentage;
         }
         
-        // Last wrong answer gets whatever's left
-        votes[wrongAnswers[^1]] = remainingPercentage;
+        // Last wrong answer gets whatever's left (capped to be less than correct answer)
+        votes[wrongAnswers[^1]] = Math.Min(remainingPercentage, maxWrongPercentage);
+        
+        // Assign correct answer percentage last
+        votes[_ataCorrectAnswer] = correctPercentage;
         
         LogMessage?.Invoke($"[ATA] Offline results: {votes["A"]}% A, {votes["B"]}% B, {votes["C"]}% C, {votes["D"]}% D (Correct: {_ataCorrectAnswer})");
         return votes;
@@ -626,8 +718,18 @@ public class LifelineManager
         
         try
         {
-            // Get SessionService from web server host
-            var sessionService = webServerHost.GetService<MillionaireGame.Web.Services.SessionService>();
+            // Create a service scope to get fresh services
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                LogMessage?.Invoke("[ATA] ServiceScopeFactory not available - falling back to offline mode");
+                return GeneratePlaceholderResults();
+            }
+
+            using var scope = serviceScopeFactory.CreateScope();
+            
+            // Get SessionService from scope
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
             
             if (sessionService == null)
             {
@@ -635,8 +737,8 @@ public class LifelineManager
                 return GeneratePlaceholderResults();
             }
             
-            // Get WAPSDbContext to query for active session
-            var dbContext = webServerHost.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            // Get WAPSDbContext from scope
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
             
             if (dbContext == null)
             {
@@ -683,6 +785,223 @@ public class LifelineManager
         }
     }
     
+    /// <summary>
+    /// Notify web clients that ATA intro has started (show question in view-only mode)
+    /// </summary>
+    private async Task NotifyWebClientsATAIntro()
+    {
+        var webServerHost = _getWebServerHost();
+        if (webServerHost == null || !webServerHost.IsRunning)
+        {
+            return; // Offline mode - no web clients
+        }
+
+        try
+        {
+            var question = _screenService.GetCurrentQuestion();
+            if (question == null)
+            {
+                LogMessage?.Invoke("[ATA] No current question to send to web clients");
+                return;
+            }
+
+            // Get the Game hub context (web clients are connected to GameHub)
+            var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
+            if (hubContext == null)
+            {
+                LogMessage?.Invoke("[ATA] GameHub context not available");
+                return;
+            }
+
+            // Create a service scope to get a fresh DbContext
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                LogMessage?.Invoke("[ATA] ServiceScopeFactory not available");
+                return;
+            }
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            if (dbContext == null)
+            {
+                return;
+            }
+
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+
+            if (activeSession == null)
+            {
+                LogMessage?.Invoke("[ATA] No active session found for web notification");
+                return;
+            }
+
+            LogMessage?.Invoke($"[ATA] Broadcasting ATAIntroStarted to session group: {activeSession.Id}");
+
+            // Broadcast intro message to web clients (showing question but voting disabled)
+            await hubContext.Clients.Group(activeSession.Id).SendAsync("ATAIntroStarted", new
+            {
+                QuestionText = question.QuestionText,
+                OptionA = question.AnswerA,
+                OptionB = question.AnswerB,
+                OptionC = question.AnswerC,
+                OptionD = question.AnswerD,
+                TimeLimit = 120,
+                StartTime = DateTime.UtcNow
+            });
+
+            LogMessage?.Invoke($"[ATA] Intro notification sent to web clients in session {activeSession.Id}");
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ATA] Error notifying web clients of intro: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Notify web clients that voting has started (enable voting)
+    /// </summary>
+    private async Task NotifyWebClientsATAVoting(int timeLimit)
+    {
+        var webServerHost = _getWebServerHost();
+        if (webServerHost == null || !webServerHost.IsRunning)
+        {
+            return; // Offline mode
+        }
+
+        try
+        {
+            var question = _screenService.GetCurrentQuestion();
+            if (question == null)
+            {
+                return;
+            }
+
+            // Create a service scope to get a fresh DbContext
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                return;
+            }
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            if (dbContext == null)
+            {
+                return;
+            }
+
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+
+            if (activeSession == null)
+            {
+                LogMessage?.Invoke("[ATA] No active session found for voting notification");
+                return;
+            }
+
+            LogMessage?.Invoke($"[ATA] Broadcasting VotingStarted to session group: {activeSession.Id}");
+
+            // Use the GameHub to broadcast voting started
+            var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
+            if (hubContext == null)
+            {
+                return;
+            }
+
+            await hubContext.Clients.Group(activeSession.Id).SendAsync("VotingStarted", new
+            {
+                QuestionText = question.QuestionText,
+                OptionA = question.AnswerA,
+                OptionB = question.AnswerB,
+                OptionC = question.AnswerC,
+                OptionD = question.AnswerD,
+                TimeLimit = timeLimit,
+                StartTime = DateTime.UtcNow
+            });
+
+            LogMessage?.Invoke($"[ATA] Voting notification sent to web clients in session {activeSession.Id}");
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ATA] Error notifying web clients of voting: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Notify web clients that ATA has completed (show results, then return to lobby)
+    /// </summary>
+    private async Task NotifyWebClientsATAComplete()
+    {
+        var webServerHost = _getWebServerHost();
+        if (webServerHost == null || !webServerHost.IsRunning)
+        {
+            return; // Offline mode
+        }
+
+        try
+        {
+            // Create a service scope to get fresh services
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                return;
+            }
+
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            if (dbContext == null)
+            {
+                return;
+            }
+
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+
+            if (activeSession == null)
+            {
+                LogMessage?.Invoke("[ATA] No active session found for completion notification");
+                return;
+            }
+
+            LogMessage?.Invoke($"[ATA] Broadcasting VotingEnded to session group: {activeSession.Id}");
+
+            // Get SessionService from scope
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
+            if (sessionService == null)
+            {
+                return;
+            }
+
+            // Calculate final percentages
+            var percentages = await sessionService.CalculateATAPercentagesAsync(activeSession.Id);
+            var totalVotes = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+
+            // Mark all voters as having used ATA
+            await sessionService.MarkATAUsedForVotersAsync(activeSession.Id);
+
+            // Broadcast completion to web clients via GameHub
+            var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
+            if (hubContext == null)
+            {
+                return;
+            }
+
+            await hubContext.Clients.Group(activeSession.Id).SendAsync("VotingEnded", new
+            {
+                EndTime = DateTime.UtcNow,
+                FinalResults = percentages,
+                TotalVotes = totalVotes
+            });
+
+            LogMessage?.Invoke($"[ATA] Completion notification sent to web clients in session {activeSession.Id}");
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ATA] Error notifying web clients of completion: {ex.Message}");
+        }
+    }
 
     
     #endregion

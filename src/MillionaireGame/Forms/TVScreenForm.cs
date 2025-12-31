@@ -242,6 +242,18 @@ public partial class TVScreenForm : Form, IGameScreen
         lblATA_D.Text = $"D: {(votes.ContainsKey("D") ? votes["D"] : 0)}%";
     }
 
+    public void HideATAResults()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(HideATAResults));
+            return;
+        }
+        
+        // Hide ATA panel
+        pnlATA.Visible = false;
+    }
+
     public void ResetScreen()
     {
         if (InvokeRequired)

@@ -228,19 +228,12 @@ public class WebServerHost : IDisposable
             WebServerConsole.Info("Step 1: Notifying SignalR clients to disconnect...");
             try
             {
-                var hubContext = _host.Services.GetService(typeof(IHubContext<FFFHub>)) as IHubContext<FFFHub>;
-                var ataHubContext = _host.Services.GetService(typeof(IHubContext<ATAHub>)) as IHubContext<ATAHub>;
+                var hubContext = _host.Services.GetService(typeof(IHubContext<GameHub>)) as IHubContext<GameHub>;
 
                 if (hubContext != null)
                 {
                     await hubContext.Clients.All.SendAsync("ServerShuttingDown");
-                    WebServerConsole.Debug("  - Sent shutdown notification to FFF hub clients");
-                }
-
-                if (ataHubContext != null)
-                {
-                    await ataHubContext.Clients.All.SendAsync("ServerShuttingDown");
-                    WebServerConsole.Debug("  - Sent shutdown notification to ATA hub clients");
+                    WebServerConsole.Debug("  - Sent shutdown notification to game hub clients");
                 }
 
                 // Give clients a moment to disconnect gracefully
@@ -360,8 +353,7 @@ public class WebServerHost : IDisposable
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
-            endpoints.MapHub<FFFHub>("/hubs/fff");
-            endpoints.MapHub<ATAHub>("/hubs/ata");
+            endpoints.MapHub<GameHub>("/hubs/game");
 
             // Health check endpoint
             endpoints.MapGet("/health", async context =>
