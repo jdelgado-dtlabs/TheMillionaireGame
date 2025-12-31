@@ -126,7 +126,7 @@ public partial class FFFOfflinePanel : UserControl
                 Text = $"Player {i + 1}:",
                 Location = new Point(20, yPosition + 5),
                 AutoSize = true,
-                Font = new Font("Arial", 10, FontStyle.Bold)
+                Font = CreateSafeFont("Arial", 10, FontStyle.Bold)
             };
             
             var textBox = new TextBox
@@ -136,7 +136,7 @@ public partial class FFFOfflinePanel : UserControl
                 Location = new Point(120, yPosition),
                 Size = new Size(350, 25),
                 MaxLength = 35,
-                Font = new Font("Arial", 10),
+                Font = CreateSafeFont("Arial", 10, FontStyle.Regular),
                 Tag = i
             };
             
@@ -431,6 +431,30 @@ public partial class FFFOfflinePanel : UserControl
         };
         
         _soundService?.PlaySound(sound, loop: false);
+    }
+    
+    /// <summary>
+    /// Creates a font with fallback to system defaults if the requested font is unavailable
+    /// </summary>
+    private static Font CreateSafeFont(string familyName, float size, FontStyle style)
+    {
+        try
+        {
+            return new Font(familyName, size, style);
+        }
+        catch (ArgumentException)
+        {
+            // Fallback to Segoe UI if Arial not available or doesn't support the style
+            try
+            {
+                return new Font("Segoe UI", size, style);
+            }
+            catch (ArgumentException)
+            {
+                // Last resort: use system default font
+                return new Font(SystemFonts.DefaultFont.FontFamily, size, style);
+            }
+        }
     }
     
     #endregion

@@ -74,10 +74,7 @@ public class ConsoleLogger
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
             var formattedMessage = $"[{timestamp}] {message}";
             
-            // Write to console
-            Console.WriteLine(formattedMessage);
-            
-            // Write to file
+            // Only write to file, not Console (GameLogWindow handles UI display)
             _logWriter?.WriteLine(formattedMessage);
         }
     }

@@ -29,10 +29,24 @@ public static class AudioDeviceManager
 
             foreach (var device in deviceCollection)
             {
+                var friendlyName = device.FriendlyName;
+                var deviceId = device.DeviceID;
+                
+                // Allow all devices now that we have DirectSound fallback for problematic ones
+                // If FriendlyName is empty, use a placeholder
+                if (string.IsNullOrWhiteSpace(friendlyName))
+                {
+                    friendlyName = $"Audio Device ({deviceId.Substring(0, Math.Min(8, deviceId.Length))}...)";
+                    if (Program.DebugMode)
+                    {
+                        Utilities.GameConsole.Debug($"[AudioDeviceManager] Device has empty name, using: {friendlyName}");
+                    }
+                }
+                
                 devices.Add(new AudioDeviceInfo
                 {
-                    DeviceId = device.DeviceID,
-                    FriendlyName = device.FriendlyName,
+                    DeviceId = deviceId,
+                    FriendlyName = friendlyName,
                     IsDefault = false
                 });
                 device.Dispose();

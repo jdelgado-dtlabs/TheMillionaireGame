@@ -160,7 +160,7 @@ namespace MillionaireGame.Services
                     {
                         if (Program.DebugMode)
                         {
-                            GameConsole.Warn(
+                            GameConsole.Debug(
                                 $"[AudioCueQueue] IMMEDIATE priority: {System.IO.Path.GetFileName(filePath)}, interrupting current"
                             );
                         }
@@ -172,12 +172,22 @@ namespace MillionaireGame.Services
                             _crossfading = true;
                             _crossfadePosition = 0;
                             _silenceSampleCount = 0; // Reset for crossfade
+                            
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Debug($"[AudioCueQueue] Starting crossfade: {System.IO.Path.GetFileName(_currentCue.FilePath)} → {System.IO.Path.GetFileName(filePath)}");
+                            }
                         }
                         else
                         {
                             _currentCue = cue;
                             _silenceSampleCount = 0; // Reset silence detection for new sound
                             _currentCueSamplesProcessed = 0; // Reset initial delay
+                            
+                            if (Program.DebugMode)
+                            {
+                                GameConsole.Debug($"[AudioCueQueue] Started playing: {System.IO.Path.GetFileName(filePath)}");
+                            }
                         }
                     }
                     else
@@ -383,6 +393,12 @@ namespace MillionaireGame.Services
         {
             lock (_lock)
             {
+                // Handle count=0 (device not requesting audio) - normal behavior
+                if (count == 0)
+                {
+                    return 0;
+                }
+                
                 if (_currentCue == null)
                 {
                     // Return silence instead of 0 to keep queue active in mixer

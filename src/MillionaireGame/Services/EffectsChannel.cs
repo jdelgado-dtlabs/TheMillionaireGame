@@ -411,14 +411,29 @@ internal class EffectsMixerSource : ISampleSource
                 var effect = kvp.Value;
                 Array.Clear(tempBuffer, 0, count);
 
-                int samplesRead = effect.Source.Read(tempBuffer, 0, count);
+                int samplesRead = 0;
+                
+                try
+                {
+                    samplesRead = effect.Source.Read(tempBuffer, 0, count);
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Error($"[EffectsMixer] Exception reading effect '{kvp.Key}': {ex.GetType().Name} - {ex.Message}");
+                    samplesRead = 0; // Treat exception as end of stream
+                }
 
                 if (samplesRead == 0)
                 {
                     // Effect completed - mark for removal
-                    effect.IsCompleted = true;
-                    effectsToRemove.Add(kvp.Key);
-                    completedEffects.Add(kvp.Key);
+                    // SPECIAL CASE: Never remove __queue__ - it should run continuously
+                    // (Audio devices sometimes request 0 samples, which queue correctly returns)
+                    if (kvp.Key != "__queue__")
+                    {
+                        effect.IsCompleted = true;
+                        effectsToRemove.Add(kvp.Key);
+                        completedEffects.Add(kvp.Key);
+                    }
                 }
                 else
                 {
@@ -473,35 +488,49 @@ internal class EffectsMixerSource : ISampleSource
         }
         
         // Calculate max amplitude and log OUTSIDE the lock
-        if (Program.DebugMode && activeEffectsCount > 0)
+        if (Program.DebugMode)
         {
-            for (int i = offset; i < offset + samplesReturned; i++)
+            // Calculate amplitude if we have data
+            if (samplesReturned > 0 && activeEffectsCount > 0)
             {
-                if (Math.Abs(buffer[i]) > maxAmplitude)
-                    maxAmplitude = Math.Abs(buffer[i]);
-            }
-            
-            if (maxAmplitude > 0)
-            {
-                // Rate limit audio logging - log every 50th call (~1 time per second)
-                _audioLogCounter++;
-                if (_audioLogCounter >= 50)
+                for (int i = offset; i < offset + samplesReturned; i++)
                 {
-                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples, {activeEffectsCount} active, max: {maxAmplitude:F4} (logged 1/50 calls)");
-                    _audioLogCounter = 0;
+                    if (Math.Abs(buffer[i]) > maxAmplitude)
+                        maxAmplitude = Math.Abs(buffer[i]);
                 }
-                _silenceLogCounter = 0; // Reset silence counter when we have audio
+            
+                if (maxAmplitude > 0)
+                {
+                    // Rate limit audio logging - log every 50th call (~1 time per second)
+                    _audioLogCounter++;
+                    if (_audioLogCounter >= 50)
+                    {
+                        GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples, {activeEffectsCount} active, max: {maxAmplitude:F4} (logged 1/50 calls)");
+                        _audioLogCounter = 0;
+                    }
+                    _silenceLogCounter = 0; // Reset silence counter when we have audio
+                }
+                else if (samplesReturned > 0)
+                {
+                    // Only log silence every 100th call to avoid flooding logs
+                    _silenceLogCounter++;
+                    if (_silenceLogCounter >= 100)
+                    {
+                        GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples (SILENCE), {activeEffectsCount} active (logged 1/100 calls)");
+                        _silenceLogCounter = 0;
+                    }
+                    _audioLogCounter = 0; // Reset audio counter when silent
+                }
             }
-            else if (samplesReturned > 0)
+            else if (samplesReturned > 0 && activeEffectsCount == 0)
             {
-                // Only log silence every 100th call to avoid flooding logs
+                // No effects playing but mixer is still reading - this keeps the stream alive
                 _silenceLogCounter++;
                 if (_silenceLogCounter >= 100)
                 {
-                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples (SILENCE), {activeEffectsCount} active (logged 1/100 calls)");
+                    GameConsole.Debug($"[EffectsMixer] {samplesReturned} samples (NO EFFECTS - KEEPALIVE SILENCE) (logged 1/100 calls)");
                     _silenceLogCounter = 0;
                 }
-                _audioLogCounter = 0; // Reset audio counter when silent
             }
             
             // Always log completed effects
