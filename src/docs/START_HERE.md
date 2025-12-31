@@ -1,9 +1,9 @@
 # 🚀 START HERE - Next Session Guide
 
 **Last Updated**: December 30, 2025  
-**Current Branch**: `master-csharp`  
-**Version**: v0.9.0-2512  
-**Status**: ✅ **99% COMPLETE - Final Push to v1.0**
+**Current Branch**: `feature/ata-dual-mode` (ready to merge)  
+**Version**: v0.9.5  
+**Status**: ✅ **ATA ONLINE COMPLETE - 3 Steps to v1.0**
 
 ---
 
@@ -15,14 +15,17 @@
 - ✅ **CSCore Audio System** - Complete with DSP, silence detection, crossfading
 - ✅ **Audio Settings UI** - Full configuration in Options dialog
 - ✅ **FFF Architecture** - Online/Offline dual-mode system
+- ✅ **ATA Dual-Mode** - Online voting with real-time updates COMPLETE ✅
+- ✅ **Hub Consolidation** - Unified GameHub for all game features
+- ✅ **Session Persistence** - Auto-reconnection on page refresh
 - ✅ **Shutdown System** - Progress tracking, graceful cleanup
 - ✅ **Settings Dialog** - All tabs standardized, no scrollbars
 - ✅ **Build Status** - Clean build, all tests passing
 - ✅ **Documentation** - Comprehensive, organized, archived
 
 **What's Next:**
-4 steps remaining to v1.0 (20-27 hours estimated):
-1. ATA Dual-Mode (3-4 hours) - Real-time voting
+3 steps remaining to v1.0 (17-23 hours estimated):
+1. ~~ATA Dual-Mode~~ ✅ COMPLETE
 2. WAPS Lobby States (4-5 hours) - State management
 3. Database Consolidation (3-4 hours) - Unified SQL Server
 4. Crash Handler + Installer (10-14 hours) - Production deployment
@@ -31,22 +34,27 @@
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-### **Priority 1: ATA Dual-Mode System** ⭐ CRITICAL (3-4 hours)
-**Goal**: Implement real-time Ask the Audience voting
+### **Priority 1: Merge ATA Feature Branch** ⭐ CRITICAL (10 min)
+**Goal**: Merge feature/ata-dual-mode into master-csharp
 
-**Phase 1 - Enhance Offline Mode (30 min):**
-- Modify `GeneratePlaceholderResults()` in LifelineManager.cs
-- Show 40-80% on correct answer, distribute rest across wrong answers
-- Mimics realistic audience behavior for offline/demo mode
+**Tasks:**
+- Review commit ee6d006 changes
+- Merge feature branch to master-csharp
+- Tag as v0.9.5
+- Delete feature branch
 
-**Phase 2 - Implement ATA Online (2.5-3 hours):**
-- Query WAPS database for real vote counts
-- Display real percentages as votes come in
-- Update all screens dynamically (Host, TV, Guest)
-- Test with 2-50 concurrent voters
-- Graceful fallback to offline mode
+**Completed Work:**
+- ✅ Real-time ATA voting with live percentage updates
+- ✅ Multi-phase flow (Intro → Voting → Results → Clear)
+- ✅ Hub consolidation (GameHub replaces FFFHub + ATAHub)
+- ✅ Vote persistence with duplicate prevention
+- ✅ Auto-reconnection and session management
+- ✅ Results persist until answer selected
 
-**Location**: `MillionaireGame/Services/LifelineManager.cs`, `MillionaireGame.Web/Services/SessionService.cs`
+---
+
+### **Priority 2: WAPS Lobby & State Management** 🔴 CRITICAL (4-5 hours)
+**Goal**: Complete web participant experience with proper state transitions
 
 ---
 
