@@ -40,6 +40,7 @@ public class PreviewScreenForm : Form
     private HostScreenForm _hostScreen;
     private GuestScreenForm _guestScreen;
     private TVScreenFormScalable _tvScreen;
+    private ScreenUpdateService _screenService;
     private PreviewOrientation _orientation;
     
     public PreviewOrientation Orientation => _orientation;
@@ -166,20 +167,33 @@ public class PreviewScreenForm : Form
         KeyPreview = true;
         KeyDown += PreviewScreenForm_KeyDown;
         
-        // Subscribe to screen invalidation events to keep preview updated
-        _hostScreen.Invalidated += (s, e) => _hostPanel.RefreshScreen();
-        _guestScreen.Invalidated += (s, e) => _guestPanel.RefreshScreen();
-        _tvScreen.Invalidated += (s, e) => _tvPanel.RefreshScreen();
+        // Store reference to screen service for event subscriptions
+        _screenService = screenService;
         
-        // Set up a timer to periodically refresh the preview
-        var refreshTimer = new System.Windows.Forms.Timer();
-        refreshTimer.Interval = 100; // Refresh every 100ms
-        refreshTimer.Tick += (s, e) => {
-            _hostPanel.RefreshScreen();
-            _guestPanel.RefreshScreen();
-            _tvPanel.RefreshScreen();
-        };
-        refreshTimer.Start();
+        // Subscribe to ScreenUpdateService events to invalidate cache only when state changes
+        // This is much more efficient than a polling timer
+        _screenService.QuestionUpdated += (s, e) => InvalidateAllCaches();
+        _screenService.AnswerSelected += (s, e) => InvalidateAllCaches();
+        _screenService.AnswerRevealed += (s, e) => InvalidateAllCaches();
+        _screenService.LifelineActivated += (s, e) => InvalidateAllCaches();
+        _screenService.MoneyUpdated += (s, e) => InvalidateAllCaches();
+        _screenService.GameReset += (s, e) => InvalidateAllCaches();
+        
+        // Also subscribe to screen invalidation events for immediate updates
+        // (e.g., animations, timer ticks)
+        _hostScreen.Invalidated += (s, e) => _hostPanel.InvalidateCache();
+        _guestScreen.Invalidated += (s, e) => _guestPanel.InvalidateCache();
+        _tvScreen.Invalidated += (s, e) => _tvPanel.InvalidateCache();
+    }
+
+    /// <summary>
+    /// Invalidates all preview panel caches, forcing a re-render on next paint
+    /// </summary>
+    private void InvalidateAllCaches()
+    {
+        _hostPanel?.InvalidateCache();
+        _guestPanel?.InvalidateCache();
+        _tvPanel?.InvalidateCache();
     }
 
     protected override void WndProc(ref Message m)
@@ -332,6 +346,8 @@ public class PreviewPanel : Panel
 {
     private ScalableScreenBase? _screen;
     private Label _label;
+    private Bitmap? _cachedScreenBitmap; // Cached screen render at design resolution
+    private bool _isCacheDirty = true; // Track if cache needs regeneration
 
     public PreviewPanel(ScalableScreenBase screen, string labelText)
     {
@@ -356,6 +372,25 @@ public class PreviewPanel : Panel
         _label.BringToFront();
     }
 
+    /// <summary>
+    /// Invalidates the cached screen bitmap, forcing a re-render on next paint
+    /// </summary>
+    public void InvalidateCache()
+    {
+        _isCacheDirty = true;
+        Invalidate();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _cachedScreenBitmap?.Dispose();
+            _cachedScreenBitmap = null;
+        }
+        base.Dispose(disposing);
+    }
+
     private void PreviewPanel_Paint(object? sender, PaintEventArgs e)
     {
         if (_screen == null) return;
@@ -371,41 +406,61 @@ public class PreviewPanel : Panel
             designHeight = screenForm.ClientSize.Height;
         }
 
-        // Create a bitmap to render the screen at its design resolution
-        using (var bitmap = new Bitmap(designWidth, designHeight))
-        using (var g = System.Drawing.Graphics.FromImage(bitmap))
+        // Regenerate cached bitmap if needed
+        if (_isCacheDirty || _cachedScreenBitmap == null || 
+            _cachedScreenBitmap.Width != designWidth || _cachedScreenBitmap.Height != designHeight)
         {
-            g.Clear(Color.Black);
-            
-            // Set up high-quality rendering
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            // Dispose old cached bitmap if size changed
+            if (_cachedScreenBitmap != null && 
+                (_cachedScreenBitmap.Width != designWidth || _cachedScreenBitmap.Height != designHeight))
+            {
+                _cachedScreenBitmap.Dispose();
+                _cachedScreenBitmap = null;
+            }
 
-            // Call the screen's protected RenderScreen method via reflection
-            var renderMethod = _screen.GetType().GetMethod("RenderScreen", 
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            renderMethod?.Invoke(_screen, new object[] { g });
+            // Create new cached bitmap if needed
+            if (_cachedScreenBitmap == null)
+            {
+                _cachedScreenBitmap = new Bitmap(designWidth, designHeight);
+            }
 
-            // Calculate scaling to fit panel while maintaining aspect ratio
-            float scaleX = (float)Width / designWidth;
-            float scaleY = (float)Height / designHeight;
-            float scale = Math.Min(scaleX, scaleY);
-            
-            int scaledWidth = (int)(designWidth * scale);
-            int scaledHeight = (int)(designHeight * scale);
-            int x = (Width - scaledWidth) / 2;
-            int y = (Height - scaledHeight) / 2;
+            // Render screen to cached bitmap
+            using (var g = System.Drawing.Graphics.FromImage(_cachedScreenBitmap))
+            {
+                g.Clear(Color.Black);
+                
+                // Set up high-quality rendering
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            // Scale and draw the bitmap to fit the panel with proper aspect ratio
-            e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            e.Graphics.DrawImage(bitmap, x, y, scaledWidth, scaledHeight);
+                // Call the screen's protected RenderScreen method via reflection
+                var renderMethod = _screen.GetType().GetMethod("RenderScreen", 
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                renderMethod?.Invoke(_screen, new object[] { g });
+            }
+
+            _isCacheDirty = false;
         }
+
+        // Calculate scaling to fit panel while maintaining aspect ratio
+        float scaleX = (float)Width / designWidth;
+        float scaleY = (float)Height / designHeight;
+        float scale = Math.Min(scaleX, scaleY);
+        
+        int scaledWidth = (int)(designWidth * scale);
+        int scaledHeight = (int)(designHeight * scale);
+        int x = (Width - scaledWidth) / 2;
+        int y = (Height - scaledHeight) / 2;
+
+        // Scale and draw the cached bitmap to fit the panel with proper aspect ratio
+        e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        e.Graphics.DrawImage(_cachedScreenBitmap, x, y, scaledWidth, scaledHeight);
     }
 
     // Trigger repaint when screen updates
     public void RefreshScreen()
     {
-        Invalidate();
+        InvalidateCache();
     }
 }
