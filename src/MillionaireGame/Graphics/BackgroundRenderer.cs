@@ -39,7 +39,7 @@ public class BackgroundRenderer
     {
         var backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
         
-        // If no background selected or path is invalid, fall back to black
+        // If no background selected or empty path, fall back to black
         if (string.IsNullOrWhiteSpace(backgroundPath))
         {
             g.Clear(Color.Black);
@@ -90,8 +90,26 @@ public class BackgroundRenderer
         // Load new background
         try
         {
-            // TODO Phase 4: Resolve relative path through ThemeManager
-            // For now, treat as absolute path or relative to application directory
+            // Check if it's an embedded resource
+            if (backgroundPath.StartsWith("embedded://"))
+            {
+                var resourceName = backgroundPath.Substring("embedded://".Length);
+                _cachedBackground = LoadEmbeddedResource(resourceName);
+                if (_cachedBackground != null)
+                {
+                    _cachedBackgroundPath = backgroundPath;
+                }
+                return _cachedBackground;
+            }
+
+            // Check if it's a custom placeholder (no actual file yet)
+            if (backgroundPath.StartsWith("custom://"))
+            {
+                // Return null, will fall back to black
+                return null;
+            }
+
+            // Regular file path
             var fullPath = Path.IsPathRooted(backgroundPath)
                 ? backgroundPath
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, backgroundPath);
@@ -108,6 +126,26 @@ public class BackgroundRenderer
             // Silently ignore loading errors
         }
 
+        return null;
+    }
+
+    private Image? LoadEmbeddedResource(string resourceName)
+    {
+        try
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var resourcePath = $"MillionaireGame.Graphics.{resourceName}";
+            
+            using var stream = assembly.GetManifestResourceStream(resourcePath);
+            if (stream != null)
+            {
+                return Image.FromStream(stream);
+            }
+        }
+        catch
+        {
+            // Silently ignore loading errors
+        }
         return null;
     }
 

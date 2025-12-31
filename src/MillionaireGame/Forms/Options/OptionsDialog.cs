@@ -975,6 +975,9 @@ public partial class OptionsDialog : Form
     // Broadcast Settings methods
     private void LoadBroadcastSettings()
     {
+        // Populate background dropdown with thumbnails
+        PopulateBackgroundDropdown();
+
         // Load background mode
         if (_settings.Broadcast.Mode == Core.Settings.BackgroundMode.Prerendered)
         {
@@ -985,8 +988,8 @@ public partial class OptionsDialog : Form
             radModeChromaKey.Checked = true;
         }
 
-        // Load selected background (will be populated when theme loads)
-        // For now, just store the path - it will be selected when backgrounds are loaded
+        // Load selected background
+        SelectBackgroundInDropdown(_settings.Broadcast.SelectedBackgroundPath);
 
         // Load chroma key color
         var chromaColor = _settings.Broadcast.ChromaKeyColor;
@@ -1004,9 +1007,9 @@ public partial class OptionsDialog : Form
             : Core.Settings.BackgroundMode.ChromaKey;
 
         // Save selected background
-        if (cmbBackground.SelectedItem != null)
+        if (cmbBackground.SelectedItem is BackgroundItem bgItem)
         {
-            _settings.Broadcast.SelectedBackgroundPath = cmbBackground.SelectedItem.ToString();
+            _settings.Broadcast.SelectedBackgroundPath = bgItem.Path;
         }
 
         // Save chroma key color (convert from Color to hex)
@@ -1020,10 +1023,21 @@ public partial class OptionsDialog : Form
         // Show/hide controls based on mode
         lblBackground.Visible = isPrerendered;
         cmbBackground.Visible = isPrerendered;
+        btnSelectBackground.Visible = isPrerendered;
 
         lblChromaColor.Visible = !isPrerendered;
         btnChromaColor.Visible = !isPrerendered;
         lblChromaColorPreview.Visible = !isPrerendered;
+
+        // Enable Select button only when Custom is selected
+        if (isPrerendered && cmbBackground.SelectedItem is BackgroundItem bgItem)
+        {
+            btnSelectBackground.Enabled = bgItem.IsCustom;
+        }
+        else
+        {
+            btnSelectBackground.Enabled = false;
+        }
     }
 
     private void radModePrerendered_CheckedChanged(object? sender, EventArgs e)
@@ -1069,6 +1083,271 @@ public partial class OptionsDialog : Form
             lblChromaColorPreview.BackColor = selectedColor;
             MarkChanged();
         }
+    }
+
+    private void PopulateBackgroundDropdown()
+    {
+        cmbBackground.Items.Clear();
+
+        // Add "Black" (None) option with black thumbnail
+        cmbBackground.Items.Add(new BackgroundItem
+        {
+            DisplayName = "Black",
+            Path = "",
+            IsEmbedded = false,
+            IsCustom = false
+        });
+
+        // Add embedded backgrounds (01_FFF.png through 04_FFF.png)
+        for (int i = 1; i <= 4; i++)
+        {
+            string resourceName = $"0{i}_FFF.png";
+            cmbBackground.Items.Add(new BackgroundItem
+            {
+                DisplayName = $"Background {i}",
+                Path = $"embedded://{resourceName}",
+                ResourceName = resourceName,
+                IsEmbedded = true,
+                IsCustom = false
+            });
+        }
+
+        // Add "Custom" option with white box thumbnail
+        cmbBackground.Items.Add(new BackgroundItem
+        {
+            DisplayName = "Custom",
+            Path = "custom://",
+            IsEmbedded = false,
+            IsCustom = true
+        });
+
+        // Select first item (Black) by default
+        if (cmbBackground.Items.Count > 0)
+        {
+            cmbBackground.SelectedIndex = 0;
+        }
+    }
+
+    private void SelectBackgroundInDropdown(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            // Select "Black" option
+            cmbBackground.SelectedIndex = 0;
+            return;
+        }
+
+        // Find matching background item
+        for (int i = 0; i < cmbBackground.Items.Count; i++)
+        {
+            if (cmbBackground.Items[i] is BackgroundItem bgItem)
+            {
+                if (bgItem.Path == path)
+                {
+                    cmbBackground.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        // If path not found and it's an absolute path, treat as custom
+        if (Path.IsPathRooted(path))
+        {
+            // Find Custom item and set its path
+            for (int i = 0; i < cmbBackground.Items.Count; i++)
+            {
+                if (cmbBackground.Items[i] is BackgroundItem bgItem && bgItem.IsCustom)
+                {
+                    bgItem.Path = path;
+                    cmbBackground.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        // Default to Black if not found
+        cmbBackground.SelectedIndex = 0;
+    }
+
+    private void cmbBackground_DrawItem(object? sender, DrawItemEventArgs e)
+    {
+        if (e.Index < 0) return;
+
+        e.DrawBackground();
+
+        if (cmbBackground.Items[e.Index] is BackgroundItem bgItem)
+        {
+            // Draw thumbnail (40x40 box on the left)
+            var thumbnailRect = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 2, 36, 36);
+            
+            if (bgItem.IsCustom)
+            {
+                // White box with "Custom" text
+                using var whiteBrush = new SolidBrush(Color.White);
+                e.Graphics.FillRectangle(whiteBrush, thumbnailRect);
+                using var borderPen = new Pen(Color.Gray);
+                e.Graphics.DrawRectangle(borderPen, thumbnailRect);
+                
+                using var font = new Font("Arial", 6, FontStyle.Bold);
+                using var textBrush = new SolidBrush(Color.Black);
+                var textFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                e.Graphics.DrawString("Custom", font, textBrush, thumbnailRect, textFormat);
+            }
+            else if (string.IsNullOrWhiteSpace(bgItem.Path))
+            {
+                // Black box for "Black" option
+                using var blackBrush = new SolidBrush(Color.Black);
+                e.Graphics.FillRectangle(blackBrush, thumbnailRect);
+                using var borderPen = new Pen(Color.Gray);
+                e.Graphics.DrawRectangle(borderPen, thumbnailRect);
+            }
+            else if (bgItem.IsEmbedded)
+            {
+                // Load and draw embedded resource thumbnail
+                try
+                {
+                    var image = LoadEmbeddedBackground(bgItem.ResourceName!);
+                    if (image != null)
+                    {
+                        e.Graphics.DrawImage(image, thumbnailRect);
+                    }
+                    else
+                    {
+                        // Fallback: gray box
+                        using var grayBrush = new SolidBrush(Color.Gray);
+                        e.Graphics.FillRectangle(grayBrush, thumbnailRect);
+                    }
+                }
+                catch
+                {
+                    // Fallback: gray box
+                    using var grayBrush = new SolidBrush(Color.Gray);
+                    e.Graphics.FillRectangle(grayBrush, thumbnailRect);
+                }
+            }
+            else
+            {
+                // Custom file path - try to load thumbnail
+                try
+                {
+                    if (File.Exists(bgItem.Path))
+                    {
+                        using var image = Image.FromFile(bgItem.Path);
+                        e.Graphics.DrawImage(image, thumbnailRect);
+                    }
+                    else
+                    {
+                        // File not found - red box
+                        using var redBrush = new SolidBrush(Color.DarkRed);
+                        e.Graphics.FillRectangle(redBrush, thumbnailRect);
+                    }
+                }
+                catch
+                {
+                    // Error loading - red box
+                    using var redBrush = new SolidBrush(Color.DarkRed);
+                    e.Graphics.FillRectangle(redBrush, thumbnailRect);
+                }
+            }
+
+            // Draw display name
+            var textRect = new Rectangle(e.Bounds.Left + 42, e.Bounds.Top, e.Bounds.Width - 42, e.Bounds.Height);
+            using var brush = new SolidBrush(e.ForeColor);
+            var format = new StringFormat { LineAlignment = StringAlignment.Center };
+            e.Graphics.DrawString(bgItem.DisplayName, e.Font!, brush, textRect, format);
+        }
+
+        e.DrawFocusRectangle();
+    }
+
+    private Image? LoadEmbeddedBackground(string resourceName)
+    {
+        try
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var resourcePath = $"MillionaireGame.Graphics.{resourceName}";
+            
+            using var stream = assembly.GetManifestResourceStream(resourcePath);
+            if (stream != null)
+            {
+                return Image.FromStream(stream);
+            }
+        }
+        catch
+        {
+            // Silently fail
+        }
+        return null;
+    }
+
+    private void cmbBackground_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        UpdateBroadcastControlVisibility();
+        MarkChanged();
+    }
+
+    private void btnSelectBackground_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            using var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All files (*.*)|*.*",
+                Title = "Select Custom Background",
+                RestoreDirectory = true
+            };
+
+            // Save current change state - DoEvents might trigger spurious change events
+            bool originalHasChanges = _hasChanges;
+
+            // Run on separate thread to avoid modal deadlock
+            DialogResult result = DialogResult.Cancel;
+            var thread = new System.Threading.Thread(() =>
+            {
+                result = openFileDialog.ShowDialog();
+            });
+            thread.SetApartmentState(System.Threading.ApartmentState.STA);
+            thread.Start();
+
+            // Keep UI responsive while waiting
+            while (thread.IsAlive)
+            {
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(10);
+            }
+
+            // Restore original change state
+            _hasChanges = originalHasChanges;
+
+            if (result == DialogResult.OK)
+            {
+                // Update the Custom item with the selected path
+                if (cmbBackground.SelectedItem is BackgroundItem bgItem && bgItem.IsCustom)
+                {
+                    bgItem.Path = openFileDialog.FileName;
+                    bgItem.DisplayName = $"Custom: {Path.GetFileName(openFileDialog.FileName)}";
+                    
+                    // Refresh the dropdown to show the updated item
+                    cmbBackground.Invalidate();
+                    MarkChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error selecting background: {ex.Message}", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    // Background item class for dropdown
+    private class BackgroundItem
+    {
+        public string DisplayName { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public string? ResourceName { get; set; }
+        public bool IsEmbedded { get; set; }
+        public bool IsCustom { get; set; }
     }
 
     // Soundpack management methods

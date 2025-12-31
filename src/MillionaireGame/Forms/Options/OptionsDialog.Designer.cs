@@ -56,6 +56,7 @@ namespace MillionaireGame.Forms.Options
             radModeChromaKey = new RadioButton();
             lblBackground = new Label();
             cmbBackground = new ComboBox();
+            btnSelectBackground = new Button();
             lblChromaColor = new Label();
             btnChromaColor = new Button();
             lblChromaColorPreview = new Label();
@@ -430,6 +431,7 @@ namespace MillionaireGame.Forms.Options
             grpBroadcast.Controls.Add(radModeChromaKey);
             grpBroadcast.Controls.Add(lblBackground);
             grpBroadcast.Controls.Add(cmbBackground);
+            grpBroadcast.Controls.Add(btnSelectBackground);
             grpBroadcast.Controls.Add(lblChromaColor);
             grpBroadcast.Controls.Add(btnChromaColor);
             grpBroadcast.Controls.Add(lblChromaColorPreview);
@@ -486,11 +488,26 @@ namespace MillionaireGame.Forms.Options
             // cmbBackground
             // 
             cmbBackground.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbBackground.DrawMode = DrawMode.OwnerDrawFixed;
             cmbBackground.FormattingEnabled = true;
+            cmbBackground.ItemHeight = 40;
             cmbBackground.Location = new Point(140, 67);
             cmbBackground.Name = "cmbBackground";
-            cmbBackground.Size = new Size(300, 23);
+            cmbBackground.Size = new Size(250, 23);
             cmbBackground.TabIndex = 4;
+            cmbBackground.DrawItem += cmbBackground_DrawItem;
+            cmbBackground.SelectedIndexChanged += cmbBackground_SelectedIndexChanged;
+            // 
+            // btnSelectBackground
+            // 
+            btnSelectBackground.Location = new Point(400, 66);
+            btnSelectBackground.Name = "btnSelectBackground";
+            btnSelectBackground.Size = new Size(80, 25);
+            btnSelectBackground.TabIndex = 5;
+            btnSelectBackground.Text = "Select...";
+            btnSelectBackground.UseVisualStyleBackColor = true;
+            btnSelectBackground.Visible = false;
+            btnSelectBackground.Click += btnSelectBackground_Click;
             // 
             // lblChromaColor
             // 
@@ -1488,6 +1505,7 @@ namespace MillionaireGame.Forms.Options
         private RadioButton radModeChromaKey;
         private Label lblBackground;
         private ComboBox cmbBackground;
+        private Button btnSelectBackground;
         private Label lblChromaColor;
         private Button btnChromaColor;
         private Label lblChromaColorPreview;
