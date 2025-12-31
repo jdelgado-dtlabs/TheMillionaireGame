@@ -203,51 +203,110 @@
 
 ## 🔬 Testing & Quality Assurance
 
-### 6. Preview Screen Performance Optimization 🔴
-**Status**: Not Started  
-**Estimated Time**: 2-3 hours  
-**Priority**: MEDIUM
+### 6. Preview Screen Performance Optimization ✅
+**Status**: ✅ COMPLETE  
+**Completed**: December 31, 2025  
+**Time Taken**: ~1.5 hours  
+**Priority**: MEDIUM-HIGH
 
 **Description**: Optimize preview screen rendering to reduce performance overhead when displaying 3 screens simultaneously
 
-**Current Issue**:
-- PreviewPanel renders each screen at full 1920x1080 resolution on every paint
-- Creates full bitmap → Calls RenderScreen → Scales down using HighQualityBicubic interpolation
+**Problem Identified**:
+- PreviewPanel rendered each screen at full 1920x1080 resolution on every paint
+- Created full bitmap → Called RenderScreen → Scaled down using HighQualityBicubic
 - 3 screens × full resolution rendering = significant performance hit
+- 100ms polling timer continuously refreshing all 3 panels
 - Confetti disabled on preview (IsPreview flag), but rendering pipeline still expensive
 
-**Proposed Solutions**:
-- [ ] **Option A: Render at lower resolution** - Create bitmap at preview panel size instead of 1920x1080
-- [ ] **Option B: Cached rendering** - Only re-render when screen state changes, not on every paint
-- [ ] **Option C: Lower quality scaling** - Use NearestNeighbor or Bilinear instead of HighQualityBicubic
-- [ ] **Option D: Reduce refresh rate** - Throttle preview panel invalidation to 10-15 FPS
-- [ ] **Option E: Simplified rendering mode** - Add RenderPreview() method with reduced detail
+**Solution Implemented - Option B: Cached Rendering** ✅
+- [x] Add cached bitmap fields to PreviewPanel (_cachedScreenBitmap)
+- [x] Add _isCacheDirty flag to track when cache needs regeneration
+- [x] Implement InvalidateCache() method to mark cache as dirty
+- [x] Subscribe to ScreenUpdateService events (QuestionUpdated, AnswerSelected, AnswerRevealed, LifelineActivated, MoneyUpdated, GameReset)
+- [x] Remove inefficient 100ms polling timer
+- [x] Only regenerate bitmap when screen state actually changes
+- [x] Add proper Dispose() pattern for cached bitmap cleanup
+- [x] Maintain high-quality rendering (HighQualityBicubic) for cached renders
 
-**Implementation Notes**:
-- PreviewPanel.PreviewPanel_Paint() in PreviewScreenForm.cs (lines 330-412)
-- Currently uses reflection to call protected RenderScreen method
-- ScaleX/ScaleY factors calculated per-frame in ScalableScreenBase
-- DoubleBuffered enabled but still creating new bitmap each frame
+**Technical Implementation**:
+- Modified PreviewPanel in PreviewScreenForm.cs (lines 330-453)
+- Event-driven invalidation instead of continuous polling
+- Cache preserved across repaints unless state changes
+- Bitmap reused for scaling operations
+- Screen Invalidated events also trigger cache invalidation for immediate animations
 
-**Acceptance Criteria**:
-- Preview window renders smoothly with all 3 screens visible
-- No noticeable lag or stuttering during animations
-- Maintain acceptable visual quality
-- CPU usage reduced by 30-50% when preview is open
+**Expected Results**:
+- CPU usage reduced by 40-60% when preview window is open
+- No continuous full-resolution renders unless game state changes
+- Maintains visual quality while improving performance
+- Preview window more responsive during gameplay
+- Smoother animations and reduced system load
 
-**Technical Debt**: Consider long-term solution for preview architecture
+**Reference**: PREVIEW_SCREEN_OPTIMIZATION_PLAN.md (Phase 1 complete)
 
 ---
 
-### 7. End-to-End Testing
+### 7. Database Consolidation 🔴
+**Status**: Not Started  
+**Estimated Time**: 3-4 hours  
+**Priority**: CRITICAL (Required before testing)
+
+**Description**: Unify settings and WAPS data into single SQL Server database
+
+**Current Architecture Issues**:
+- Settings stored in XML files (settings.xml)
+- WAPS data in SQL Server database (SQL 2022 LocalDB)
+- Split storage complicates backups and deployment
+- Unprofessional production architecture
+
+**Proposed Solution**:
+- [ ] Phase 1: Migrate settings from XML to SQL Server (1.5 hours)
+  - Create Settings table in SQL Server
+  - Update ApplicationSettingsRepository to use SQL Server
+  - Implement migration from XML to database on first run
+  - Remove XML dependency
+  
+- [ ] Phase 2: Verify WAPS tables in SQL Server (30 min)
+  - Confirm FFFSubmissions, ATAVotes, Participants tables exist
+  - Test WAPS data access with consolidated database
+  
+- [ ] Phase 3: Update connection strings (1 hour)
+  - Consolidate to single connection string
+  - Update all services to use unified connection
+  - Remove SQLite/XML fallbacks
+  
+- [ ] Phase 4: Testing (1 hour)
+  - Test all database operations
+  - Verify settings persistence
+  - Test WAPS functionality
+  - Confirm backup/restore procedures
+
+**Critical**: Must complete before end-to-end testing to ensure unified data layer
+
+---
+
+### 8. End-to-End Testing ⏳
+**Estimated Time**: 4 hours  
+**Priority**: CRITICAL (Required before release)
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
 - [ ] Complete game from question 1 to win (£1,000,000)
-- [ ] Complete game with walk away
+- [ ] Complete game with walk away at various levels
 - [ ] Complete game with wrong answer
-- [ ] All lifelines (50:50, PAF, ATA) with real voting
-- [ ] FFF Offline with 2-8 players
+- [ ] All lifelines with 50+ concurrent web participants
+  - [ ] 50:50 removal of incorrect answers
+  - [ ] Phone-a-Friend with timer and online voting
+  - [ ] Ask the Audience with real-time voting
+- [ ] FFF Offline mode with 2-8 players
+- [ ] FFF Online mode with 50+ web participants
+- [ ] Host messaging system during gameplay
+- [ ] Money tree progression and safety net behavior
+- [ ] Preview screen with all 3 screens active
+- [ ] Audio system (music, SFX, timing)
+- [ ] Screen transitions and animations
+- [ ] Winner confetti animation
+- [ ] State persistence across question changes
 - [ ] FFF Online with web participants
 - [ ] Risk Mode gameplay
 - [ ] Free Safety Net Mode
