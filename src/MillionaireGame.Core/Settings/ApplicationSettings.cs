@@ -63,6 +63,9 @@ public class ApplicationSettings
     public CrossfadeSettings Crossfade { get; set; } = new();
     public AudioProcessingSettings AudioProcessing { get; set; } = new();
 
+    // Broadcast Settings (TV Screen Background)
+    public BroadcastSettings Broadcast { get; set; } = new();
+
     // Debug Console Settings
     public bool ShowConsole { get; set; } = false;
     public bool ShowWebServerConsole { get; set; } = false;
@@ -134,9 +137,15 @@ public class ApplicationSettingsManager
                 if (!property.CanWrite)
                     continue;
 
-                if (dbSettings.TryGetValue(property.Name, out var value))
+                // Check if this is a nested settings object (class type, not primitive/string)
+                if (property.PropertyType.IsClass && property.PropertyType != typeof(string))
                 {
-                    // Convert string value to property type
+                    // Load nested object properties from database
+                    LoadNestedSettings(property.Name, property.GetValue(Settings), dbSettings);
+                }
+                else if (dbSettings.TryGetValue(property.Name, out var value))
+                {
+                    // Convert string value to property type for simple properties
                     object? convertedValue = ConvertValue(value, property.PropertyType);
                     if (convertedValue != null)
                     {
@@ -149,6 +158,31 @@ public class ApplicationSettingsManager
         {
             // Re-throw to caller
             throw;
+        }
+    }
+
+    private void LoadNestedSettings(string prefix, object? nestedObject, Dictionary<string, string> dbSettings)
+    {
+        if (nestedObject == null)
+            return;
+
+        var properties = nestedObject.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        
+        foreach (var property in properties)
+        {
+            if (!property.CanWrite)
+                continue;
+
+            string key = $"{prefix}.{property.Name}";
+            
+            if (dbSettings.TryGetValue(key, out var value))
+            {
+                object? convertedValue = ConvertValue(value, property.PropertyType);
+                if (convertedValue != null)
+                {
+                    property.SetValue(nestedObject, convertedValue);
+                }
+            }
         }
     }
 
@@ -180,15 +214,42 @@ public class ApplicationSettingsManager
                     continue;
 
                 var value = property.GetValue(Settings);
-                string? stringValue = value?.ToString() ?? string.Empty;
                 
-                await _repository.SaveSettingAsync(property.Name, stringValue);
+                // Check if this is a nested settings object (class type, not primitive/string)
+                if (value != null && property.PropertyType.IsClass && property.PropertyType != typeof(string))
+                {
+                    // Save nested object properties with prefix
+                    await SaveNestedSettingsAsync(property.Name, value);
+                }
+                else
+                {
+                    // Save simple property
+                    string? stringValue = value?.ToString() ?? string.Empty;
+                    await _repository.SaveSettingAsync(property.Name, stringValue);
+                }
             }
         }
         catch
         {
             // Re-throw to caller
             throw;
+        }
+    }
+
+    private async Task SaveNestedSettingsAsync(string prefix, object nestedObject)
+    {
+        var properties = nestedObject.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        
+        foreach (var property in properties)
+        {
+            if (!property.CanRead)
+                continue;
+
+            var value = property.GetValue(nestedObject);
+            string key = $"{prefix}.{property.Name}";
+            string? stringValue = value?.ToString() ?? string.Empty;
+            
+            await _repository.SaveSettingAsync(key, stringValue);
         }
     }
 
