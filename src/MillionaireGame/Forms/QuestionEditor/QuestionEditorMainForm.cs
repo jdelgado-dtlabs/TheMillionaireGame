@@ -1,5 +1,5 @@
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Models;
 using MillionaireGame.Core.Settings;

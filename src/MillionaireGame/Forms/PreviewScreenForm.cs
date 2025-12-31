@@ -416,7 +416,7 @@ public class PreviewPanel : Panel
         else
         {
             // Schedule a delayed update if not already scheduled
-            if (!_throttleTimer.Enabled)
+            if (!_throttleTimer!.Enabled)
             {
                 _throttleTimer.Start();
             }

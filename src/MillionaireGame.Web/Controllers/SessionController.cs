@@ -80,18 +80,6 @@ public class SessionController : ControllerBase
     }
 
     /// <summary>
-    /// Generate QR code for session join
-    /// </summary>
-    [HttpGet("{sessionId}/qr")]
-    public IActionResult GetQRCode(string sessionId)
-    {
-        var joinUrl = $"{Request.Scheme}://{Request.Host}/join?session={sessionId}";
-        var qrCodeBytes = _sessionService.GenerateQRCode(joinUrl);
-        
-        return File(qrCodeBytes, "image/png");
-    }
-
-    /// <summary>
     /// Start a session
     /// </summary>
     [HttpPost("{sessionId}/start")]

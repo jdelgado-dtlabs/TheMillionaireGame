@@ -8,13 +8,14 @@
     <Nullable>enable</Nullable>
     <AssemblyName>MillionaireGame</AssemblyName>
     <RootNamespace>MillionaireGame</RootNamespace>
-    <Version>0.2.2512.0</Version>
+    <Version>0.9.8</Version>
     <Authors>jdelgado-dtlabs</Authors>
     <Product>The Millionaire Game - C# Edition</Product>
     <Description>A self-written application based on the popular TV-show 'Who Wants to be a Millionaire' - Modern C# version</Description>
-    <Copyright>Copyright © 2025 jdelgado-dtlabs. Based on original work by Macronair.</Copyright>
-    <AssemblyVersion>0.2.2512.0</AssemblyVersion>
-    <FileVersion>0.2.2512.0</FileVersion>
+    <Copyright>Copyright © 2025-2026 Jean Francois Delgado. Based on original work by Marco Loenen (Macronair).</Copyright>
+    <NoWarn>$(NoWarn);NU1701;CS8669</NoWarn>
+    <AssemblyVersion>0.9.8.0</AssemblyVersion>
+    <FileVersion>0.9.8.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
     <EnableDefaultItems>true</EnableDefaultItems>
     <NoWarn>$(NoWarn);NU1701</NoWarn>
@@ -32,10 +33,8 @@
   <ItemGroup>
     <PackageReference Include="CSCore" Version="1.2.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.*" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="QRCoder" Version="1.7.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 

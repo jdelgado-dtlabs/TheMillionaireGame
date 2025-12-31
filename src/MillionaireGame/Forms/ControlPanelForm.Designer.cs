@@ -1,5 +1,7 @@
 #nullable disable
 
+using MillionaireGame.Utilities;
+
 namespace MillionaireGame.Forms
 {
     partial class ControlPanelForm
@@ -1043,10 +1045,7 @@ namespace MillionaireGame.Forms
             }
             catch (Exception ex)
             {
-                if (Program.DebugMode)
-                {
-                    Console.WriteLine($"[ControlPanelForm] Error loading image '{fileName}': {ex.Message}");
-                }
+                GameConsole.Debug($"[ControlPanelForm] Error loading image '{fileName}': {ex.Message}");
             }
             return null;
         }

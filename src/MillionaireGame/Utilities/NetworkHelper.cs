@@ -45,7 +45,7 @@ public static class NetworkHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting local IP addresses: {ex.Message}");
+            GameConsole.Error($"Error getting local IP addresses: {ex.Message}");
         }
 
         return addresses;
@@ -103,7 +103,7 @@ public static class NetworkHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error checking port ownership: {ex.Message}");
+            GameConsole.Error($"Error checking port ownership: {ex.Message}");
             return false;
         }
     }

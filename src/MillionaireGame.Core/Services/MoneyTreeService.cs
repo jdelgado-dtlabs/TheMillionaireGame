@@ -47,9 +47,9 @@ public class MoneyTreeService
                 _settings = loadedSettings;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error loading money tree settings: {ex.Message}");
+            // Use default settings on load error
             SaveDefaultSettings();
         }
     }
@@ -72,9 +72,9 @@ public class MoneyTreeService
             var serializer = new XmlSerializer(typeof(MoneyTreeSettings));
             serializer.Serialize(writer, _settings);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error saving money tree settings: {ex.Message}");
+            // Silently ignore save errors
         }
     }
 

@@ -639,7 +639,7 @@ public partial class OptionsDialog : Form
         var currentIP = _settings.AudienceServerIP;
         for (int i = 0; i < cmbServerIP.Items.Count; i++)
         {
-            var item = cmbServerIP.Items[i].ToString()!;
+            var item = cmbServerIP.Items[i]!.ToString()!;
             if (item.StartsWith(currentIP))
             {
                 cmbServerIP.SelectedIndex = i;
@@ -815,7 +815,7 @@ public partial class OptionsDialog : Form
     }
 
     // Change event handlers
-    private void Control_Changed(object sender, EventArgs e)
+    private void Control_Changed(object? sender, EventArgs e)
     {
         MarkChanged();
     }
@@ -1336,15 +1336,15 @@ public partial class OptionsDialog : Form
 
     private void btnImportPack_Click(object sender, EventArgs e)
     {
-        Console.WriteLine("[OptionsDialog] === IMPORT BUTTON CLICKED ===");
-        Console.WriteLine($"[OptionsDialog] Thread ID: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
-        Console.WriteLine($"[OptionsDialog] IsHandleCreated: {IsHandleCreated}");
-        Console.WriteLine($"[OptionsDialog] InvokeRequired: {InvokeRequired}");
+        GameConsole.Debug("[OptionsDialog] === IMPORT BUTTON CLICKED ===");
+        GameConsole.Debug($"[OptionsDialog] Thread ID: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+        GameConsole.Debug($"[OptionsDialog] IsHandleCreated: {IsHandleCreated}");
+        GameConsole.Debug($"[OptionsDialog] InvokeRequired: {InvokeRequired}");
         
         try
         {
-            Console.WriteLine("[OptionsDialog] Step 1: Entering try block");
-            Console.WriteLine("[OptionsDialog] Step 2: About to create OpenFileDialog");
+            GameConsole.Debug("[OptionsDialog] Step 1: Entering try block");
+            GameConsole.Debug("[OptionsDialog] Step 2: About to create OpenFileDialog");
             
             using var openFileDialog = new OpenFileDialog
             {
@@ -1603,7 +1603,9 @@ public partial class OptionsDialog : Form
                 ThousandsSeparator = true,
                 Tag = i // Store level number in tag
             };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
             numValue.ValueChanged += Control_Changed;
+#pragma warning restore CS8622
             
             // Safety net checkboxes for Q5 and Q10
             if (i == 5 || i == 10)
@@ -1616,7 +1618,9 @@ public partial class OptionsDialog : Form
                     Size = new Size(90, 20),
                     Tag = i
                 };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
                 chkSafetyNet.CheckedChanged += Control_Changed;
+#pragma warning restore CS8622
                 tabMoneyTree.Controls.Add(chkSafetyNet);
             }
             
@@ -1631,7 +1635,9 @@ public partial class OptionsDialog : Form
             };
             cmbCurrency.Items.AddRange(new object[] { "1", "2" });
             cmbCurrency.SelectedIndex = 0;
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
             cmbCurrency.SelectedIndexChanged += Control_Changed;
+#pragma warning restore CS8622
             
             tabMoneyTree.Controls.Add(lblQuestion);
             tabMoneyTree.Controls.Add(numValue);
@@ -1696,7 +1702,9 @@ public partial class OptionsDialog : Form
             Size = new Size(100, 23),
             MaxLength = 5
         };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
         txtCustomCurrency1.TextChanged += Control_Changed;
+#pragma warning restore CS8622
         
         var chkSuffix1 = new CheckBox
         {
@@ -1705,7 +1713,9 @@ public partial class OptionsDialog : Form
             Location = new Point(15, 155),
             Size = new Size(170, 20)
         };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
         chkSuffix1.CheckedChanged += Control_Changed;
+#pragma warning restore CS8622
         
         grpCurrency1.Controls.AddRange(new Control[] { radDollar1, radEuro1, radPound1, radYen1, radOther1, txtCustomCurrency1, chkSuffix1 });
         
@@ -1781,7 +1791,9 @@ public partial class OptionsDialog : Form
             MaxLength = 5,
             Enabled = false
         };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
         txtCustomCurrency2.TextChanged += Control_Changed;
+#pragma warning restore CS8622
         
         var chkSuffix2 = new CheckBox
         {
@@ -1791,7 +1803,9 @@ public partial class OptionsDialog : Form
             Size = new Size(170, 20),
             Enabled = false
         };
+#pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
         chkSuffix2.CheckedChanged += Control_Changed;
+#pragma warning restore CS8622
         
         grpCurrency2.Controls.AddRange(new Control[] { chkEnableCurrency2, radDollar2, radEuro2, radPound2, radYen2, radOther2, txtCustomCurrency2, chkSuffix2 });
         

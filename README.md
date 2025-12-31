@@ -1,6 +1,10 @@
 # The Millionaire Game
 
-A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game show experience, built with .NET 8 and WinForms.
+A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game show experience, built with .NET 8 and Windows Forms.
+
+**Version**: 0.9.8 (December 2025)  
+**Build Status**: ✅ **PERFECT** (0 warnings, 0 errors)  
+**Status**: 🎯 Pre-release testing phase
 
 ## Quick Start
 
@@ -8,46 +12,68 @@ See [`src/docs/START_HERE.md`](src/docs/START_HERE.md) for complete setup and bu
 
 ## Project Structure
 
-- **`src/`** - Main C# solution and projects
-  - `MillionaireGame/` - Main game application (WinForms)
+- **`src/`** - Main C# solution and projects (v0.9.8)
+  - `MillionaireGame/` - Main game application (Windows Forms)
   - `MillionaireGame.Core/` - Core business logic and services
-  - `MillionaireGame.Web/` - Web API and SignalR backend
-  - `MillionaireGame.FFFClient/` - Fastest Finger First client
-  - `MillionaireGame.QuestionEditor/` - Question database editor
-- **`archive-vbnet/`** - Original VB.NET implementation (archived, will be removed at v1.0)
+  - `MillionaireGame.Web/` - Web API and SignalR backend for WAPS
+- **`archive-vbnet/`** - Original VB.NET implementation (archived, preserved for reference)
 
 ## Documentation
 
 Comprehensive documentation is available in the [`src/docs/`](src/docs/) folder:
 
-- Project architecture and design
-- API reference
-- Development guides
-- Session notes and changelogs
+- **[START_HERE.md](src/docs/START_HERE.md)** - Development quick start guide
+- **[INDEX.md](src/docs/INDEX.md)** - Complete documentation navigation
+- **[V1.0_RELEASE_STATUS.md](src/docs/V1.0_RELEASE_STATUS.md)** - Release readiness tracking
 
-For detailed codebase documentation and developer manual, please visit the [**GitHub Wiki**](../../wiki).
+Browse by category:
+- **guides/** - How-to guides and tutorials
+- **reference/** - Architecture and technical documentation
+- **sessions/** - Development session logs
+- **archive/** - Historical documentation
 
 ## Features
 
-- Classic game show experience with authentic sound and visuals
-- Fastest Finger First contestant selection
-- Three lifelines: Phone-a-Friend, Ask the Audience, 50:50
-- Multi-screen support (Host control panel, TV display, audience view)
-- Web-based audience participation
-- Question database editor with CSV import/export
+### Core Game Experience
+- ✅ Classic game show format with authentic sound and visuals
+- ✅ Fastest Finger First contestant selection (online and offline modes)
+- ✅ **All six lifelines**: Phone-a-Friend, Ask the Audience, 50:50, Double Dip, Ask the Host, Switch the Question
+- ✅ Multi-screen support (Host control panel, TV display, audience view)
+- ✅ Progressive answer reveal system with automatic audio transitions
+- ✅ Risk Mode and Free Safety Net options
+- ✅ Dual currency support with per-level customization
+
+### Web-Based Audience Participation (WAPS)
+- ✅ Real-time audience voting via mobile web interface
+- ✅ FFF (Fastest Finger First) online mode
+- ✅ SignalR-based real-time communication
+- ✅ QR code joining for easy mobile access
+- ✅ Progressive Web App (PWA) for cross-platform support
+- ✅ Device telemetry and privacy-compliant data collection
+
+### Technical Excellence
+- ✅ **CSCore audio engine** with DSP (silence detection, crossfading, audio queue)
+- ✅ **Unified SQL Server database** (questions, FFF, ATA all in one)
+- ✅ Question database editor with CSV import/export
+- ✅ Comprehensive settings management
+- ✅ **Zero-warning build** (0 warnings, 0 errors)
 
 ## Technology Stack
 
-- **.NET 8** (C#, WinForms)
-- **CSCore** - Audio engine
-- **SignalR** - Real-time web communication
-- **SQLite** - Question database
+- **.NET 8.0-windows** - Modern framework with Windows Forms
+- **CSCore 1.2.1.2** - Professional audio engine with DSP capabilities
+- **SignalR 8.0.11** - Real-time web communication for WAPS
+- **Microsoft.Data.SqlClient 5.2.2** - Modern SQL Server connectivity
+- **Entity Framework Core 8.0.11** - Database ORM
+- **SQL Server** - Unified database for all game data
 
 ## Development Status
 
-🚧 **Active Development** - Migrating from VB.NET to C#
+✅ **Version 0.9.8** - All core features complete, perfect build quality (0 warnings, 0 errors)
 
-See [`src/docs/PRE_1.0_FINAL_CHECKLIST.md`](src/docs/active/PRE_1.0_FINAL_CHECKLIST.md) for current progress toward v1.0 release.
+**Current Focus**: End-to-end testing and v1.0 release preparation
+
+See [`src/docs/V1.0_RELEASE_STATUS.md`](src/docs/V1.0_RELEASE_STATUS.md) for detailed release readiness tracking.
 
 ## Contributing
 
@@ -55,8 +81,26 @@ This is a personal project, but feedback and suggestions are welcome via Issues.
 
 ## License
 
-*License information will be added before v1.0 release.*
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## Credits & Attribution
+
+**C# Modernization & Development**: Jean Francois Delgado ([@jdelgado-dtlabs](https://github.com/jdelgado-dtlabs)) (2024-2026)  
+**Original VB.NET Creator**: Marco Loenen ([@Macronair](https://github.com/Macronair)) (2017-2024)  
+
+This C# version represents a complete rewrite and substantial modernization of the original VB.NET implementation. While maintaining the core concept and inspiration from the original work, this version features:
+
+- Complete architectural redesign with modern .NET 8.0
+- Unified SQL Server database (migrated from SQLite)
+- Web-Based Audience Participation System (WAPS)
+- Advanced audio engine with DSP capabilities
+- All six lifelines fully implemented
+- Real-time SignalR communication
+- Progressive Web App (PWA) for mobile devices
+- And many other enhancements
+
+**Original Project**: [Macronair/TheMillionaireGame](https://github.com/Macronair/TheMillionaireGame)
 
 ---
 
-**Note:** This README is a placeholder and will be expanded with more detailed information as the project approaches v1.0 release. For now, please refer to the documentation in `src/docs/` and the GitHub Wiki.
+**Ready to dive in?** See [`src/docs/START_HERE.md`](src/docs/START_HERE.md) for development setup and current priorities.

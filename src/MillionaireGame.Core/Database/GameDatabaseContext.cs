@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using MillionaireGame.Core.Models;
 
 namespace MillionaireGame.Core.Database;
@@ -54,7 +54,9 @@ public class GameDatabaseContext : IDisposable
 
             var query = $"SELECT COUNT(*) FROM sys.databases WHERE name = '{DatabaseName}'";
             using var command = new SqlCommand(query, connection);
+#pragma warning disable CS8605 // Unboxing a possibly null value - SQL COUNT always returns int
             var result = (int)await command.ExecuteScalarAsync();
+#pragma warning restore CS8605
 
             return result > 0;
         }

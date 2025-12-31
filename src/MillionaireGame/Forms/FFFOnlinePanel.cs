@@ -65,7 +65,7 @@ public partial class FFFOnlinePanel : UserControl
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error initializing FFF repository: {ex.Message}");
+            GameConsole.Error($"Error initializing FFF repository: {ex.Message}");
         }
         
         // Stop audio on control disposal

@@ -1039,6 +1039,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         Invalidate();
     }
     
+    // IGameScreen interface stubs - FFF display not used on Host screen (only TVScreenFormScalable)
     public void ShowFFFContestant(int index, string name) { }
     public void ShowAllFFFContestants(List<string> names, List<double>? times = null) { }
     public void HighlightFFFContestant(int index, bool isWinner = false) { }

@@ -1,0 +1,46 @@
+MIT License
+
+Copyright (c) 2025-2026 Jean Francois Delgado (C# Modernization & Development)
+Copyright (c) 2017-2024 Marco Loenen (Macronair) (Original VB.NET Implementation)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+ATTRIBUTION NOTICE:
+
+This project is a complete C# modernization of "The Millionaire Game" originally
+created by Marco Loenen (Macronair) in VB.NET. While maintaining the core concept
+and inspiration from the original, this version represents a substantial rewrite
+with significant architectural improvements, new features, and enhanced capabilities
+including:
+
+- Complete migration to modern .NET 8.0 with C# 12
+- Unified SQL Server database architecture
+- Web-Based Audience Participation System (WAPS) with real-time SignalR communication
+- Advanced audio system with DSP capabilities
+- All six lifelines fully implemented
+- Progressive Web App (PWA) for mobile participation
+- And many other enhancements
+
+Original VB.NET project: https://github.com/Macronair/TheMillionaireGame
+
+Any derivative works, modifications, or distributions must include attribution to
+both the original creator (Marco Loenen/Macronair) and the C# modernization developer
+(Jean Francois Delgado) as specified in this license.

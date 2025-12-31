@@ -92,10 +92,9 @@ public class SqlSettingsManager
                 Settings = loadedSettings;
             }
         }
-        catch (Exception ex)
+        catch
         {
-            // Log error and use default settings
-            Console.WriteLine($"Error loading SQL settings: {ex.Message}");
+            // Use default settings on load error
             SaveDefaultSettings();
         }
     }
@@ -108,9 +107,9 @@ public class SqlSettingsManager
             using var writer = new StreamWriter(_filePath);
             serializer.Serialize(writer, Settings);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error saving SQL settings: {ex.Message}");
+            // Re-throw to caller
             throw;
         }
     }

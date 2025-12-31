@@ -1,4 +1,5 @@
 using System.Reflection;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Graphics;
 
@@ -80,10 +81,7 @@ public class TextureManager
         }
         catch (Exception ex)
         {
-            if (Program.DebugMode)
-            {
-                Console.WriteLine($"[TextureManager] Error loading texture '{fullResourceName}': {ex.Message}");
-            }
+            GameConsole.Debug($"[TextureManager] Error loading texture '{fullResourceName}': {ex.Message}");
         }
 
         return null;
@@ -143,10 +141,7 @@ public class TextureManager
         }
         catch (Exception ex)
         {
-            if (Program.DebugMode)
-            {
-                Console.WriteLine($"[TextureManager] Error loading money tree position '{fullResourceName}': {ex.Message}");
-            }
+            GameConsole.Debug($"[TextureManager] Error loading money tree position '{fullResourceName}': {ex.Message}");
         }
 
         return null;
@@ -184,10 +179,7 @@ public class TextureManager
         }
         catch (Exception ex)
         {
-            if (Program.DebugMode)
-            {
-                Console.WriteLine($"[TextureManager] Error loading money tree lock-in alt '{fullResourceName}': {ex.Message}");
-            }
+            GameConsole.Debug($"[TextureManager] Error loading money tree lock-in alt '{fullResourceName}': {ex.Message}");
         }
 
         // Fall back to regular position graphic if alternate not found

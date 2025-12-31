@@ -6,9 +6,11 @@ namespace MillionaireGame.Forms.About
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                _animationTimer?.Stop();
+                _animationTimer?.Dispose();
+                components?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -26,6 +28,7 @@ namespace MillionaireGame.Forms.About
             lblVersionLabel = new Label();
             lblVersion = new Label();
             lblBuildInfo = new Label();
+            lblLicense = new Label();
             btnClose = new Button();
             pnlBackground.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)picLogo).BeginInit();
@@ -42,11 +45,12 @@ namespace MillionaireGame.Forms.About
             pnlBackground.Controls.Add(lblVersionLabel);
             pnlBackground.Controls.Add(lblVersion);
             pnlBackground.Controls.Add(lblBuildInfo);
+            pnlBackground.Controls.Add(lblLicense);
             pnlBackground.Controls.Add(btnClose);
             pnlBackground.Dock = DockStyle.Fill;
             pnlBackground.Location = new Point(0, 0);
             pnlBackground.Name = "pnlBackground";
-            pnlBackground.Size = new Size(500, 280);
+            pnlBackground.Size = new Size(500, 320);
             pnlBackground.TabIndex = 0;
             // 
             // picLogo
@@ -91,10 +95,10 @@ namespace MillionaireGame.Forms.About
             lnkAuthor.LinkColor = Color.SkyBlue;
             lnkAuthor.Location = new Point(160, 125);
             lnkAuthor.Name = "lnkAuthor";
-            lnkAuthor.Size = new Size(180, 17);
+            lnkAuthor.Size = new Size(204, 17);
             lnkAuthor.TabIndex = 3;
             lnkAuthor.TabStop = true;
-            lnkAuthor.Text = "Author: Jean F Delgado";
+            lnkAuthor.Text = "C# Version: Jean Francois Delgado";
             lnkAuthor.LinkClicked += lnkAuthor_LinkClicked;
             // 
             // lnkOriginalAuthor
@@ -105,10 +109,10 @@ namespace MillionaireGame.Forms.About
             lnkOriginalAuthor.LinkColor = Color.SkyBlue;
             lnkOriginalAuthor.Location = new Point(160, 145);
             lnkOriginalAuthor.Name = "lnkOriginalAuthor";
-            lnkOriginalAuthor.Size = new Size(210, 13);
+            lnkOriginalAuthor.Size = new Size(250, 13);
             lnkOriginalAuthor.TabIndex = 7;
             lnkOriginalAuthor.TabStop = true;
-            lnkOriginalAuthor.Text = "Originally created by Marco Loenen";
+            lnkOriginalAuthor.Text = "Original VB.NET Version: Marco Loenen (Macronair)";
             lnkOriginalAuthor.LinkClicked += lnkOriginalAuthor_LinkClicked;
             // 
             // lblVersionLabel
@@ -117,7 +121,7 @@ namespace MillionaireGame.Forms.About
             lblVersionLabel.BackColor = Color.Transparent;
             lblVersionLabel.Font = new Font("Segoe UI", 9.75F);
             lblVersionLabel.ForeColor = Color.LightGray;
-            lblVersionLabel.Location = new Point(160, 165);
+            lblVersionLabel.Location = new Point(160, 170);
             lblVersionLabel.Name = "lblVersionLabel";
             lblVersionLabel.Size = new Size(56, 17);
             lblVersionLabel.TabIndex = 4;
@@ -129,11 +133,11 @@ namespace MillionaireGame.Forms.About
             lblVersion.BackColor = Color.Transparent;
             lblVersion.Font = new Font("Segoe UI", 9.75F);
             lblVersion.ForeColor = Color.White;
-            lblVersion.Location = new Point(220, 165);
+            lblVersion.Location = new Point(220, 170);
             lblVersion.Name = "lblVersion";
-            lblVersion.Size = new Size(50, 17);
+            lblVersion.Size = new Size(34, 17);
             lblVersion.TabIndex = 5;
-            lblVersion.Text = "0.1-2512";
+            lblVersion.Text = "0.9.8";
             // 
             // lblBuildInfo
             // 
@@ -141,11 +145,23 @@ namespace MillionaireGame.Forms.About
             lblBuildInfo.BackColor = Color.Transparent;
             lblBuildInfo.Font = new Font("Segoe UI", 8.25F);
             lblBuildInfo.ForeColor = Color.DarkGray;
-            lblBuildInfo.Location = new Point(160, 185);
+            lblBuildInfo.Location = new Point(160, 190);
             lblBuildInfo.Name = "lblBuildInfo";
-            lblBuildInfo.Size = new Size(150, 13);
+            lblBuildInfo.Size = new Size(162, 13);
             lblBuildInfo.TabIndex = 10;
-            lblBuildInfo.Text = "Built in: C# using .NET 8.0";
+            lblBuildInfo.Text = "Built with C# and .NET 8.0";
+            // 
+            // lblLicense
+            // 
+            lblLicense.AutoSize = true;
+            lblLicense.BackColor = Color.Transparent;
+            lblLicense.Font = new Font("Segoe UI", 8.25F);
+            lblLicense.ForeColor = Color.DarkGray;
+            lblLicense.Location = new Point(160, 210);
+            lblLicense.Name = "lblLicense";
+            lblLicense.Size = new Size(280, 26);
+            lblLicense.TabIndex = 11;
+            lblLicense.Text = "Licensed under MIT License\r\nCopyright © 2025-2026 Jean Francois Delgado";
             // 
             // btnClose
             // 
@@ -154,7 +170,7 @@ namespace MillionaireGame.Forms.About
             btnClose.FlatStyle = FlatStyle.Flat;
             btnClose.Font = new Font("Segoe UI", 9.75F, FontStyle.Bold);
             btnClose.ForeColor = Color.White;
-            btnClose.Location = new Point(200, 220);
+            btnClose.Location = new Point(200, 260);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(100, 35);
             btnClose.TabIndex = 6;
@@ -166,7 +182,7 @@ namespace MillionaireGame.Forms.About
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(500, 280);
+            ClientSize = new Size(500, 320);
             Controls.Add(pnlBackground);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -193,6 +209,7 @@ namespace MillionaireGame.Forms.About
         private Label lblVersionLabel;
         private Label lblVersion;
         private Label lblBuildInfo;
+        private Label lblLicense;
         private Button btnClose;
     }
 }

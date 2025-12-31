@@ -1,9 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MillionaireGame.Web.Data;
 using MillionaireGame.Web.Models;
-using QRCoder;
-using System.Drawing;
-using System.Drawing.Imaging;
 
 namespace MillionaireGame.Web.Services;
 
@@ -63,21 +60,6 @@ public class SessionService
         return await _context.Sessions
             .Include(s => s.Participants)
             .FirstOrDefaultAsync(s => s.Id == sessionId);
-    }
-
-    /// <summary>
-    /// Generate QR code for session join URL
-    /// </summary>
-    public byte[] GenerateQRCode(string joinUrl)
-    {
-        using var qrGenerator = new QRCodeGenerator();
-        var qrCodeData = qrGenerator.CreateQrCode(joinUrl, QRCodeGenerator.ECCLevel.Q);
-        using var qrCode = new QRCode(qrCodeData);
-        using var qrBitmap = qrCode.GetGraphic(20, Color.Black, Color.White, true);
-        
-        using var stream = new MemoryStream();
-        qrBitmap.Save(stream, ImageFormat.Png);
-        return stream.ToArray();
     }
 
     /// <summary>

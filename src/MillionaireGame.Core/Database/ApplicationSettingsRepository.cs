@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace MillionaireGame.Core.Database;
 
@@ -65,7 +65,9 @@ public class ApplicationSettingsRepository
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
         using var command = new SqlCommand(query, connection);
+#pragma warning disable CS8605 // Unboxing a possibly null value - SQL COUNT always returns int
         var count = (int)await command.ExecuteScalarAsync();
+#pragma warning restore CS8605
         return count > 0;
     }
 

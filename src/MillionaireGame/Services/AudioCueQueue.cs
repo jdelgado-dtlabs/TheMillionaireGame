@@ -461,7 +461,9 @@ namespace MillionaireGame.Services
             else
             {
                 // Normal playback from current cue
+#pragma warning disable CS8602 // Dereference of a possibly null reference - validated by calling code
                 int read = _currentCue.Source!.Read(buffer, offset, count);
+#pragma warning restore CS8602
 
                 // Handle manual fadeout (only if not crossfading)
                 if (_fadingOut && read > 0 && _fadeoutDurationSamples > 0)
@@ -643,7 +645,9 @@ namespace MillionaireGame.Services
                 else if (_nextCue != null && !_crossfading)
                 {
                     // Check if we're within crossfade distance of the end
+#pragma warning disable CS8602 // Dereference of a possibly null reference - validated by null check
                     long remainingSamples = _currentCue.Source!.Length - _currentCue.Source!.Position;
+#pragma warning restore CS8602
                     if (remainingSamples <= _crossfadeDurationSamples)
                     {
                         _crossfading = true;

@@ -4,16 +4,19 @@
 
 ## 🎮 Welcome to The Millionaire Game - Modern C# Edition!
 
-**Version**: 0.8.0-2512 (December 2025)
+**Version**: 0.9.8 (December 2025)
 
 This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture, maintainability, and a complete web-based audience participation system (WAPS).
 
+**Build Status**: ✅ **PERFECT** (0 warnings, 0 errors)
+
 ### 🔄 Current Status
 
-**Version 0.8.0-2512 Features:**
+**Version 0.9.8 Features:**
 - ✅ Core models and data structures
 - ✅ Settings management with XML persistence
-- ✅ Database layer with question repository
+- ✅ **Unified SQL Server database** (WAPS migrated from SQLite to SQL Server)
+- ✅ Question repository with full CRUD operations
 - ✅ Game logic services
 - ✅ Complete Control Panel UI
 - ✅ Progressive answer reveal system
@@ -22,7 +25,7 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ **Shutdown system with progress dialog** (component-level visibility, GameConsole logging)
 - ✅ **Question Editor** with CSV import/export and sound pack management
 - ✅ Audio transitions with automatic silence-based progression
-- ✅ Lifeline implementations (50:50, Phone-a-Friend, Ask the Audience)
+- ✅ **All six lifelines implemented**: 50:50, Phone-a-Friend, Ask the Audience, Double Dip, Ask the Host, Switch the Question
 - ✅ Dynamic lifeline assignment via settings
 - ✅ Host, Guest, and TV screen implementations
 - ✅ Money tree graphical display with animations
@@ -30,25 +33,23 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 - ✅ Game state management
 - ✅ Monitor selection with WMI metadata
 - ✅ Full-screen mode with auto-show capabilities
-- ✅ Web-Based Audience Participation System (WAPS)
-- ✅ FFF (Fastest Finger First) with mobile web interface
+- ✅ **Web-Based Audience Participation System (WAPS)** with unified SQL Server backend
+- ✅ **FFF (Fastest Finger First)** with mobile web interface
 - ✅ Real-time SignalR communication for audience participation
 - ✅ QR code joining for mobile devices
 - ✅ Progressive Web App (PWA) for cross-platform support
 - ✅ Device telemetry and privacy-compliant data collection
 - ✅ **Workspace reorganization** (clean structure, VB.NET archived)
-- 🚧 Real ATA voting integration (placeholder results currently)
-- 🚧 FFF Online as independent "game within a game" feature
-- 🚧 Switch the Question lifeline (pending)
+- ✅ **Real ATA voting integration** with actual participant votes
+- ✅ **FFF Online** as independent "game within a game" feature
+- ✅ **Zero-warning build** with modern best practices
 
-**Future Vision (Post v1.0):**
-- 🎯 FFF Online complete integration with graphics
-- 🎯 Real ATA voting with actual participant votes
-- 🎯 Multi-session support for concurrent games
-- 🎯 OBS/Streaming platform integration
-- 🎯 Elgato Stream Deck plugin
-- 🎯 Web-based mobile interface (FFF/ATA)
-- 🎯 QR code display system for audience participation
+**Ready for v1.0 Release:**
+- 🎯 All core features complete
+- 🎯 Perfect build quality (0 warnings, 0 errors)
+- 🎯 Full database migration complete
+- 🎯 Comprehensive documentation in place
+- 🎯 Testing in progress
 
 ## 🆕 What's New in the C# Version?
 
@@ -119,7 +120,7 @@ src/
 │   │   ├── TVScreenForm.cs          # TV/Audience display
 │   │   └── ...                      # Other dialogs
 │   ├── Services/                    # Application services
-│   │   ├── SoundService.cs          # Audio playback
+│   │   ├── SoundService.cs          # Audio playback with DSP
 │   │   └── ScreenUpdateService.cs   # Screen coordination
 │   └── lib/                         # Resources (sounds, images)
 ├── MillionaireGame.Core/            # Core library
@@ -128,17 +129,25 @@ src/
 │   │   ├── Question.cs
 │   │   ├── Lifeline.cs
 │   │   └── ...
-│   ├── Database/                    # Data access
+│   ├── Database/                    # Data access (unified SQL Server)
 │   │   ├── GameDatabaseContext.cs
 │   │   └── QuestionRepository.cs
 │   ├── Settings/                    # Configuration
 │   │   ├── ApplicationSettings.cs
 │   │   └── SqlSettings.cs
 │   ├── Game/                        # Game logic
-│   │   └── GameService.cs
+│   │   ├── GameService.cs
+│   │   └── LifelineManager.cs
 │   └── Helpers/                     # Utility classes
-├── MillionaireGame.QuestionEditor/  # Question editor
-└── MillionaireGame.FFFGuest/        # FFF client
+├── MillionaireGame.Web/             # Web API and SignalR (WAPS)
+│   ├── Hubs/                        # SignalR hubs
+│   ├── Controllers/                 # API controllers
+│   ├── Database/                    # WAPS database context
+│   └── wwwroot/                     # Web assets
+└── docs/                            # Comprehensive documentation
+    ├── INDEX.md                     # Documentation navigation
+    ├── START_HERE.md                # Quick start guide
+    └── ...                          # Architecture, guides, sessions
 ```
 
 ## 🎯 Features
@@ -151,26 +160,30 @@ src/
 - ✅ **Audio Settings UI** (comprehensive configuration in Options dialog)
 - ✅ **Shutdown progress dialog** (real-time component tracking, GameConsole logging)
 - ✅ Question-specific sound system with automatic silence-based transitions
-- ✅ Three lifelines: 50:50, Phone-a-Friend (30s timer), Ask the Audience (2min timer)
+- ✅ **All six lifelines**: 50:50, Phone-a-Friend (30s timer), Ask the Audience (2min timer), Double Dip, Ask the Host, Switch the Question
 - ✅ Risk Mode (2nd safety net disabled)
 - ✅ Free Safety Net Mode
-- ✅ SQL Server support (Local & Remote)
+- ✅ **Unified SQL Server database** (questions, FFF, ATA all in one database)
 - ✅ Question Editor with full CSV import/export
 - ✅ Game outcome tracking (Win/Walk Away/Wrong Answer)
 - ✅ Milestone prize calculations
 - ✅ Auto-show winnings feature with mutual exclusivity
 - ✅ Closing sequence with cancellation support
+- ✅ **Web-Based Audience Participation System (WAPS)** with real-time voting
+- ✅ **FFF (Fastest Finger First)** online mode with mobile web interface
 
-### In Progress
-- 🚧 Switch the Question lifeline
-- 🚧 Fastest Finger First networking
+## 💾 Database
 
-## 💾 Database Compatibility
+**Unified SQL Server Database** - All game data in one database:
+- ✅ Questions and answer options
+- ✅ FFF (Fastest Finger First) session data
+- ✅ ATA (Ask the Audience) voting data
+- ✅ Device telemetry and participant tracking
 
-The C# version uses the **same database schema** as the VB version, meaning:
-- ✅ Existing question databases work without modification
-- ✅ No data migration needed
-- ✅ Can run alongside VB version
+**Database Compatibility**:
+- Uses the **same core question schema** as the VB version
+- Enhanced with WAPS tables for web participation
+- No migration needed for existing question databases (automated merge on first run)
 
 ## ⚙️ Configuration
 
@@ -194,13 +207,13 @@ Compatible with VB version - includes:
 
 ## 🎵 Lifelines
 
-The same 6 lifelines are supported:
+All 6 lifelines are fully implemented:
 
 1. **50:50** - Remove two wrong answers
 2. **Plus One** (Phone-a-Friend) - 30 seconds to consult
-3. **Ask The Audience** - Virtual audience vote
-4. **Switch Question** - Get a different question
-5. **Double Dip** - Two chances to answer
+3. **Ask The Audience** - Real-time audience vote via web interface
+4. **Switch Question** - Get a different question at the same level
+5. **Double Dip** - Two chances to answer the same question
 6. **Ask The Host** - Host gives their opinion
 
 Each can be configured for availability:
@@ -242,67 +255,78 @@ gameService.LevelChanged += (sender, e) => {
 
 ## 🧪 Development Roadmap
 
-### Version 0.2-2512 (✅ Current)
+### Version 0.9.8 (✅ Current - December 2025)
 - [x] Project structure and core library
 - [x] Complete Control Panel with game flow
 - [x] Host, Guest, and TV screens
 - [x] Question Editor with CSV support
-- [x] Sound engine with question-specific audio
-- [x] Three lifelines: 50:50, PAF, ATA
+- [x] Sound engine with question-specific audio and DSP
+- [x] All six lifelines: 50:50, PAF, ATA, Switch, Double Dip, Ask the Host
 - [x] Progressive answer reveal system
 - [x] Game outcome tracking and winnings display
 - [x] Closing sequence management
-
-### Version 0.3 (⏳ Planned)
-- [ ] Switch the Question lifeline implementation
-- [ ] Double Dip lifeline
-- [ ] Ask the Host lifeline
-- [ ] FFF networking and online features
-- [ ] Enhanced screen transitions
+- [x] **Unified SQL Server database** (WAPS migration complete)
+- [x] **Web-Based Audience Participation System** with real-time voting
+- [x] **FFF Online** as independent feature
+- [x] **Zero-warning build** (0 warnings, 0 errors)
 
 ### Version 1.0 (⏳ In Progress - Target: Q1 2026)
-- [ ] FFF Online integration as "game within a game" feature
-- [ ] Real ATA voting with actual participant data
-- [ ] Hotkey mapping for lifelines (F8-F11)
-- [ ] Complete CSV import/export in Question Editor
-- [ ] Comprehensive end-to-end testing
-- [ ] Release builds and installers
-- [ ] User documentation
+- [ ] End-to-end testing (all game scenarios)
+- [ ] Performance testing and optimization
+- [ ] Release build creation
+- [ ] User documentation completion
+- [ ] Installation package
+
+### Post v1.0 (Future Enhancements)
+- [ ] Multi-session support for concurrent games
+- [ ] OBS/Streaming platform integration
+- [ ] Elgato Stream Deck plugin
+- [ ] Enhanced mobile web interface
+- [ ] Advanced analytics and game statistics
 
 ## 📚 Documentation
+
+### Quick Navigation
+- **[START_HERE.md](docs/START_HERE.md)** - Development quick start and current priorities
+- **[INDEX.md](docs/INDEX.md)** - Complete documentation navigation guide
+- **[V1.0_RELEASE_STATUS.md](docs/V1.0_RELEASE_STATUS.md)** - Release readiness tracking
 
 ### Active Documentation
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 - **[DEVELOPMENT_CHECKPOINT.md](DEVELOPMENT_CHECKPOINT.md)** - Current development status
-- **[docs/active/](docs/active/)** - Current planning documents
-  - PROJECT_AUDIT_2025.md - Comprehensive project audit (Dec 2025)
-  - PRE_1.0_FINAL_CHECKLIST.md - v1.0 completion checklist
+- **[docs/guides/](docs/guides/)** - How-to guides and tutorials
 - **[docs/reference/](docs/reference/)** - Architecture documentation
-  - WEB_SYSTEM_IMPLEMENTATION_PLAN.md - WAPS architecture
 
 ### Historical Documentation
-- **[ARCHIVE.md](ARCHIVE.md)** - Historical session logs (v0.2-v0.3)
 - **[docs/archive/](docs/archive/)** - Completed phases and planning documents
+- **[docs/sessions/](docs/sessions/)** - Development session logs
 
 ## 📝 Contributing
 
-Contributions to the C# migration are welcome! Please:
-1. Maintain compatibility with the original VB database schema
-2. Follow C# coding conventions
-3. Add XML documentation to public APIs
-4. Write async methods for I/O operations
+Contributions are welcome! Please:
+1. Follow C# coding conventions and project structure
+2. Add XML documentation to public APIs
+3. Write async methods for I/O operations
+4. Maintain attribution as specified in the LICENSE file
+5. Test thoroughly before submitting pull requests
 
 ## 📜 License
 
-Same license as the original project.
+This project is licensed under the **MIT License** - see the [LICENSE](../LICENSE) file for details.
 
-## 👏 Original Credits
+### Attribution Requirements
 
-**Created by**: Macronair  
+Any derivative works, modifications, or distributions must include attribution to:
+- **Jean Francois Delgado** (C# modernization and development, 2024-2026)
+- **Marco Loenen (Macronair)** (original VB.NET creator, 2017-2024)
+
+## 👏 Credits
+
+**C# Modernization & Development**: Jean Francois Delgado ([@jdelgado-dtlabs](https://github.com/jdelgado-dtlabs)) (2024-2026)  
+**Original VB.NET Creator**: Marco Loenen ([@Macronair](https://github.com/Macronair)) (2017-2024)  
 **Original Project**: https://github.com/Macronair/TheMillionaireGame  
-**Original Language**: Visual Basic .NET  
 
-This C# version is a loving modernization that preserves the vision and functionality of the original while bringing it to modern .NET.
+This C# version is a complete rewrite that substantially extends and modernizes the original concept with enhanced features, improved architecture, and new capabilities while honoring the inspiration and foundation provided by the original work.
 
 ## 📺 Demo
 

@@ -145,9 +145,9 @@ public class ApplicationSettingsManager
                 }
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error loading settings from database: {ex.Message}");
+            // Re-throw to caller
             throw;
         }
     }
@@ -185,9 +185,9 @@ public class ApplicationSettingsManager
                 await _repository.SaveSettingAsync(property.Name, stringValue);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error saving settings to database: {ex.Message}");
+            // Re-throw to caller
             throw;
         }
     }

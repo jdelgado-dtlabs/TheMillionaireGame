@@ -2,6 +2,55 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.9.8] - 2025-12-31
+
+### Added
+- **MIT License** ✅ COMPLETE
+  * Added MIT License with dual copyright (Jean Francois Delgado 2025-2026, Marco Loenen 2017-2024)
+  * Updated all documentation with proper attribution
+  * License clearly establishes project as substantial rewrite with attribution requirements
+  * Location: LICENSE, README.md, src/README.md
+
+### Changed
+- **About Dialog Enhancements** ✅ COMPLETE
+  * Dynamic version display from Assembly.GetName().Version (no more hardcoding)
+  * Added MIT License information with copyright notice
+  * Updated author attribution: "C# Version: Jean Francois Delgado"
+  * Updated original author: "Original VB.NET Version: Marco Loenen (Macronair)"
+  * Added animated sweeping light beams (6 beams, "lights down" effect)
+  * Animation only runs when dialog is visible (CPU-efficient)
+  * Beams sweep from outside-in to parallel and back (continuous loop)
+  * Dialog height increased to 320px to accommodate license info
+  * Location: Forms/About/AboutDialog.cs, AboutDialog.Designer.cs
+
+- **Copyright Updates** ✅ COMPLETE
+  * All copyrights updated to 2025-2026 for release in new year
+  * Project file copyright: "Copyright © 2025-2026 Jean Francois Delgado"
+  * Documentation updated with correct attribution and GitHub links
+  * Location: MillionaireGame.csproj, LICENSE, README files
+
+- **Package Cleanup** ✅ COMPLETE
+  * Removed obsolete packages: QRCoder, System.Data.SqlClient, EF Sqlite
+  * Updated to Microsoft.Data.SqlClient 5.2.2 across all projects
+  * Removed unused CSV package references
+  * Location: All .csproj files
+
+- **Code Quality Improvements** ✅ COMPLETE
+  * Eliminated all Console.WriteLine usage (migrated to GameConsole)
+  * Removed misleading comments on functional code
+  * Build warnings reduced from 36 to 0 (100% elimination)
+  * Surgical warning suppression with #pragma directives
+  * Version synchronization to v0.9.8 everywhere
+  * Location: Multiple files across solution
+
+- **Documentation Reorganization** ✅ COMPLETE
+  * Created comprehensive INDEX.md for documentation navigation
+  * Organized docs into guides/, reference/, sessions/, archive/
+  * Updated START_HERE.md with current v0.9.8 status
+  * Fixed duplicate priorities in START_HERE.md
+  * All READMEs updated to reflect v0.9.8 state
+  * Location: src/docs/
+
 ## [v0.9.5] - 2025-12-30
 
 ### Added

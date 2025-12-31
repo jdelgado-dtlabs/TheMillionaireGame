@@ -572,11 +572,6 @@ public partial class ControlPanelForm : Form
         // Update lifeline button labels based on settings
         UpdateLifelineButtonLabels();
         
-        // Load lifeline images based on settings
-        // TODO [POST-1.0 - ELIMINATED]: Lifeline icon polish not needed
-        // Status: Eliminated - Current setup works well, no additional complexity needed
-        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
-        
         // Update menu item enabled states based on settings
         UpdateScreenMenuItemStates();
         
@@ -986,10 +981,7 @@ public partial class ControlPanelForm : Form
 
     private void OnLifelineUsed(object? sender, LifelineUsedEventArgs e)
     {
-        // Update UI to show lifeline as used
-        // TODO [POST-1.0 - ELIMINATED]: Lifeline UI updates not needed
-        // Status: Eliminated - Current button color/state system sufficient
-        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
+        // Event handler required by GameService.LifelineUsed subscription - UI updates handled by LifelineManager
     }
 
     #endregion
@@ -1501,10 +1493,6 @@ public partial class ControlPanelForm : Form
         
         // Set lifelines to standby mode (orange, not clickable until all answers revealed)
         SetLifelineMode(LifelineMode.Standby);
-        
-        // TODO [POST-1.0 - ELIMINATED]: Screen dimming feature eliminated
-        // Status: Eliminated - Marked as "effect unnecessary" in previous checkpoints
-        // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
     }
 
     private void btnReveal_Click(object? sender, EventArgs e)
@@ -1728,8 +1716,6 @@ public partial class ControlPanelForm : Form
         // Disable Walk Away (grey)
         btnWalk.Enabled = false;
         btnWalk.BackColor = Color.Gray;
-        
-        // Reset button deprecated - automated sequences handle all resets
         
         // Disable lifelines immediately - round is over
         SetLifelineMode(LifelineMode.Inactive);
@@ -2095,9 +2081,6 @@ public partial class ControlPanelForm : Form
         }
     }
 
-    // DEPRECATED: Manual reset button (btnResetGame_Click) - Automated sequences handle all resets
-    // See: docs/archive/ControlPanelForm_cs_NOTES.md for archived implementation
-    
     private void btnLifeline1_Click(object? sender, EventArgs e)
     {
         _ = Task.Run(async () => await HandleLifelineClickAsync(1, btnLifeline1));
@@ -2712,7 +2695,7 @@ public partial class ControlPanelForm : Form
                 var sessionId = await GetActiveSessionIdAsync();
                 if (!string.IsNullOrEmpty(sessionId))
                 {
-                    await _webServerHost.BroadcastGameStateAsync(
+                    await _webServerHost!.BroadcastGameStateAsync(
                         sessionId,
                         GameStateType.GameComplete,
                         "Thank you for watching! The show has concluded.",

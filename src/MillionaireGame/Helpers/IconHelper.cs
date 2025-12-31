@@ -1,4 +1,5 @@
 using System.Reflection;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Helpers;
 
@@ -30,10 +31,7 @@ public static class IconHelper
         }
         catch (Exception ex)
         {
-            if (Program.DebugMode)
-            {
-                Console.WriteLine($"[IconHelper] Failed to load icon: {ex.Message}");
-            }
+            GameConsole.Debug($"[IconHelper] Failed to load icon: {ex.Message}");
         }
 
         return null;

@@ -427,6 +427,7 @@ internal class WebServerConsoleLoggerProvider : ILoggerProvider
         return new WebServerConsoleLogger(categoryName);
     }
 
+    // ILoggerProvider interface requirement - no resources to dispose
     public void Dispose() { }
 }
 
