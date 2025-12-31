@@ -27,64 +27,35 @@
 - ✅ **Documentation** - Comprehensive, organized, current
 
 **What's Next:**
-2 items remaining for v1.0 release:
-1. **Preview Screen Performance** (2-3 hours) - Optional optimization
-2. **End-to-End Testing** (4 hours) - Required before release
+3 items remaining for v1.0 release (must complete before testing):
+1. **Preview Screen Performance** (2-3 hours) - REQUIRED optimization
+2. **Database Consolidation** (3-4 hours) - REQUIRED before testing
+3. **End-to-End Testing** (4 hours) - REQUIRED before release
 
 ---
 
 ## 🎯 NEXT SESSION PRIORITIES
 
-### **Priority 1: Preview Screen Performance Optimization** 🔴 (2-3 hours)
+### **Priority 1: Preview Screen Performance Optimization** 🔴 CRITICAL (2-3 hours)
 **Goal**: Optimize preview rendering to reduce CPU overhead when displaying 3 screens
 
 **Current Issue:**
 - PreviewPanel renders each screen at full 1920x1080 on every paint
 - Creates bitmap → RenderScreen → Scales down with HighQualityBicubic
 - 3 screens × full resolution = significant performance hit
+- Preview window becomes sluggish during gameplay
 
 **Proposed Solutions:**
-1. **Cached Rendering** - Only re-render on state changes
+1. **Cached Rendering** - Only re-render on state changes (RECOMMENDED)
 2. **Lower Resolution** - Render at preview size instead of 1920x1080
 3. **Reduced Quality** - Use Bilinear instead of HighQualityBicubic
 4. **Throttled Refresh** - Limit preview invalidation to 10-15 FPS
 
-**Reference**: PRE_1.0_FINAL_CHECKLIST.md, PreviewScreenForm.cs (lines 330-412)
+**Reference**: PREVIEW_SCREEN_OPTIMIZATION_PLAN.md
 
 ---
 
-### **Priority 2: End-to-End Testing** ⭐ CRITICAL (4 hours)
-**Goal**: Comprehensive testing of all game features before v1.0 release
-- ✅ Auto-reconnection and session management
-- ✅ Results persist until answer selected
-
----
-
-### **Priority 2: WAPS Lobby & State Management** 🔴 CRITICAL (4-5 hours)
-**Goal**: Complete web participant experience with proper state transitions
-
----
-
-### **Priority 2: WAPS Lobby & State Management** 🔴 CRITICAL (4-5 hours)
-**Goal**: Complete web participant experience with proper state transitions
-
-**State Flows to Implement:**
-- **FFF Flow** (9 states): Lobby → Pick Player → Question → Timer → Results → Winner → Return
-- **ATA Flow** (5 states): Ready → Voting → Submit → Results → Return  
-- **Game Flow**: Initial lobby → Waiting lobby → Game phases → Complete → Cleanup
-
-**Tasks:**
-- Create GameStateType enum
-- Implement SignalR BroadcastGameState() method
-- Update web client JavaScript for state transitions
-- Wire state changes in ControlPanelForm and LifelineManager
-- Test with 10+ concurrent clients
-
-**Location**: `MillionaireGame.Web/Hubs/`, `MillionaireGame/Forms/ControlPanelForm.cs`
-
----
-
-### **Priority 3: Database Consolidation** 🟢 HIGH VALUE (3-4 hours)
+### **Priority 2: Database Consolidation** 🔴 CRITICAL (3-4 hours)
 **Goal**: Unify settings + WAPS into single SQL Server database
 
 **Benefits:**
@@ -92,87 +63,138 @@
 - Professional production architecture
 - Eliminate SQLite dependency
 - Consistent data access patterns
+- Simplified deployment and maintenance
 
 **Implementation:**
 - Phase 1: Migrate settings from XML to SQL Server (1.5 hours)
-- PhasDOCUMENTATION REFERENCE
+- Phase 2: Verify WAPS tables in SQL Server (30 min)
+- Phase 3: Update connection strings and services (1 hour)
+- Phase 4: Test all database operations (1 hour)
+
+**Critical**: Must complete before end-to-end testing to ensure unified data layer
+
+**Location**: Settings service, WAPS infrastructure, connection string management
+
+---
+
+### **Priority 3: End-to-End Testing** ⭐ CRITICAL (4 hours)
+**Goal**: Comprehensive testing of all game features before v1.0 release
+
+**Test Scenarios**:
+- Complete game from Q1 to £1,000,000 win
+- Complete game with walk away at various levels
+- Complete game with wrong answer
+- All lifelines (50:50, PAF, ATA) with real web voting
+- FFF Offline with 2-8 players
+- FFF Online with web participants
+- Risk Mode and Free Safety Net Mode
+- Monitor selection and full-screen modes
+- Sound playback for all cues
+- Settings persistence and loading
+- Web client state transitions (all lobby states)
+
+**Performance Tests**:
+- 50+ concurrent web participants
+- Answer submission load testing
+- Vote aggregation accuracy
+- Memory leak detection during extended gameplay
+- State synchronization with rapid changes
+
+**Compatibility Tests**:
+- Windows 10 & 11 x64
+- SQL Server Express 2019+
+- Multiple browsers (Chrome, Edge, Firefox, Safari)
+- Mobile devices (iOS, Android)
+
+**Reference**: PRE_1.0_FINAL_CHECKLIST.md
+
+---
+
+## 📚 DOCUMENTATION REFERENCE
 
 **Active Plans:**
-- `src/DEVELOPMENT_CHECKPOINT.md` - Complete session plan and current state
-- `docs/active/PRE_1.0_FINAL_CHECKLIST.md` - Master checklist
-- `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md` - Crash handler details
+- `docs/active/PRE_1.0_FINAL_CHECKLIST.md` - Master v1.0 checklist
+- `docs/active/PREVIEW_SCREEN_OPTIMIZATION_PLAN.md` - Preview performance plan
+- `docs/active/HOST_NOTES_SYSTEM_PLAN.md` - Host messaging system (COMPLETE ✅)
+- `DEVELOPMENT_CHECKPOINT.md` - Session state and checkpoints
 
-**Recent Completions (Archived):**
-- `docs/archive/WEB_INTEGRATION_PLAN.md` - Web integration (COMPLETE ✅)
-- `docs/archive/QUESTION_EDITOR_INTEGRATION_PLAN.md` - Question Editor (COMPLETE ✅)
-- `docs/archive/AUDIO_SYSTEM_STATUS.md` - Audio system (COMPLETE ✅)
-- `docs/archive/FFF_ONLINE_FLOW_DOCUMENT.md` - FFF architecture (COMPLETE ✅)
+**Completed & Archived:**
+- `docs/archive/WEB_INTEGRATION_PLAN.md` - Web server integration ✅
+- `docs/archive/QUESTION_EDITOR_INTEGRATION_PLAN.md` - Question Editor ✅
+- `docs/archive/AUDIO_SYSTEM_STATUS.md` - CSCore audio system ✅
+- `docs/archive/FFF_ONLINE_FLOW_DOCUMENT.md` - FFF architecture ✅
 
 **Recent Sessions:**
-- `docs/sessions/SESSION_2025-12-29_WEB_INTEGRATION.md`
-- `docs/sessions/SESSION_2025-12-29_FFF_REFACTOR.md`
-- `docs/sessions/PHASE_7_BUILD_VERIFICATION_COMPLETE.md`
-
-**Testing:**
-- `src/test-web-server.ps1` - Automated web server tests (7/8 passing)
+- `docs/sessions/SESSION_2025-12-30_ATA_ONLINE_COMPLETE.md`
+- `docs/sessions/SESSION_2025-12-31_WAPS_LOBBY_CONFETTI.md`
+- `docs/sessions/CHECKPOINT_2025-12-27.md`
 
 ---
 
-## 🏗️ COMPLETED SYSTEMS (v0.9.0)
+## 🏗️ COMPLETED FEATURES (v0.9.8)
 
-### Core Features ✅
-- Core Game Engine (Questions 1-15, money tree, risk mode)
-- All Lifelines (50:50, PAF, ATA-offline, Switch, Double Dip, Ask Host)
-- FFF Dual-Mode (Online web-based + Offline local)
-- Multi-Screen Support (Host, Guest, TV with independent content)
-- Question Editor (CRUD, CSV import/export, validation)
-- Settings Management (persistence, UI, validation)
+### Core Game Systems ✅
+- Complete gameplay engine (Q1-Q15, money tree, all game modes)
+- All lifelines fully functional (50:50, PAF, ATA online/offline, Switch, Double Dip, Ask Host)
+- FFF dual-mode (Online web + Offline local)
+- Multi-screen support (Host, Guest, TV with independent content)
+- Question Editor with CSV import/export
+- Settings management with UI
 
-### Technical Systems ✅
-- CSCore Audio System (DSP, silence detection, crossfading, 50ms transitions)
-- Web Server Integration (single executable, embedded ASP.NET Core)
-- WAPS Infrastructure (SignalR, database, real-time communication)
-- Shutdown System (graceful cleanup, progress tracking)
-- Graphics System (animations, smooth rendering)
-- Build System (clean builds, organized output)
+### Technical Excellence ✅
+- CSCore audio system (DSP, silence detection, crossfading, 50ms transitions)
+- Web server integration (single executable, embedded ASP.NET Core)
+- WAPS infrastructure (SignalR, real-time communication, session persistence)
+- Host notes/messaging system (real-time, event-based)
+- Lobby state management (9 states: Lobby, Waiting, FFF, ATA, GameComplete)
+- Winner celebration animation (physics-based confetti, Q11+)
+- Preview screen with IsPreview optimization
 
-### Quality & Documentation ✅
-- Comprehensive documentation (organized, archived, searchable)
-- Automated testing (web endpoints, SignalR hubs)
-- Clean codebase (standardized UI, no major warnings)
+### Quality & Maintenance ✅
+- Clean codebase (removed 566 lines of deprecated code)
+- Organized documentation (active plans, archived completions)
+- Build status: Clean (18 warnings, down from 22)
+- Comprehensive testing infrastructure
 
 ---
 
-## 🎯 MILESTONE: 99% Complete!
+## 🎯 MILESTONE: v1.0 READY FOR FINAL PUSH
 
-**After completing Priority 1 & 2**, the game will have:
-- ✅ All core gameplay features
-- ✅ All lifelines fully functional (including ATA Online)
-- ✅ Complete web participant experience with state management
+**Status**: All critical features complete! 3 tasks before testing.
+
+**What's Done**:
+- ✅ All gameplay features implemented
+- ✅ All lifelines fully functional with online capabilities
+- ✅ Complete web participant experience
 - ✅ Professional audio system
-- ✅ All production features except crash handler and installer
+- ✅ Host communication tools
+- ✅ State management system
 
-**Remaining for v1.0**: Only crash handler and installer for production deployment!
+**What's Left**:
+- 🔴 Preview screen performance optimization (2-3 hours) - REQUIRED
+- 🔴 Database consolidation (3-4 hours) - REQUIRED before testing
+- 🔴 End-to-end testing (4 hours) - REQUIRED before release
+
+**Total Time to v1.0**: 9-11 hours remaining
+
+**After Completion**:
+- Optional: Crash handler implementation
+- Optional: Production installer
+- Ready for v1.0 release!
+
+---
+
+## 📊 Version History
+
+- **v0.9.8** (December 31, 2025): WAPS lobby states, confetti animation, code cleanup complete
+- **v0.9.7** (December 30, 2025): ATA dual-mode and host notes/messaging complete
+- **v0.9.5** (December 27, 2025): FFF online and question editor CSV features complete
+- **v1.0.0** (Target: January 2026): Production release after testing
 
 ---
 
-## 📊 Version Timeline
-
-- **v0.9.0 (Current)**: 99% feature-complete, 4 tasks to v1.0
-- **v0.9.5 (Next)**: After ATA + WAPS Lobby completion
-- **v1.0.0 (Target)**: After crash handler + installer (estimated 1-2 weeks)
-
----
-
-**Current Date**: December 30, 2025  
-**Next Milestone**: ATA + WAPS Lobby (7-9 hours)  
-**Final Target**: v1.0.0 production release500+ lines of code
-- 5 critical bugs fixed
-- 100% tests passing
-- Production-ready system
-
-**Ready to rock! 🎸**
-
----
+**Last Updated**: December 31, 2025  
+**Current Branch**: `feature/preview-screen-performance`  
+**Next Milestone**: Preview optimization → Database consolidation → E2E testing → v1.0 release
 
 *"Go do that voodoo that you do so well!" - Harvey Korman*
