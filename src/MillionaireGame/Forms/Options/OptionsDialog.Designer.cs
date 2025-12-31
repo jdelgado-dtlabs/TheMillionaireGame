@@ -47,8 +47,8 @@ namespace MillionaireGame.Forms.Options
             cmbMonitorTV = new ComboBox();
             btnIdentifyMonitors = new Button();
             grpConsole = new GroupBox();
-            chkShowConsole = new CheckBox();
-            chkShowWebServiceConsole = new CheckBox();
+            btnOpenGameConsole = new Button();
+            btnOpenWebServerConsole = new Button();
             tabBroadcast = new TabPage();
             grpBroadcast = new GroupBox();
             lblBackgroundMode = new Label();
@@ -386,33 +386,35 @@ namespace MillionaireGame.Forms.Options
             // 
             // grpConsole
             // 
-            grpConsole.Controls.Add(chkShowConsole);            grpConsole.Controls.Add(chkShowWebServiceConsole);            grpConsole.Location = new Point(16, 340);
+            grpConsole.Controls.Add(btnOpenGameConsole);
+            grpConsole.Controls.Add(btnOpenWebServerConsole);
+            grpConsole.Location = new Point(16, 340);
             grpConsole.Name = "grpConsole";
             grpConsole.Size = new Size(620, 90);
             grpConsole.TabIndex = 2;
             grpConsole.TabStop = false;
-            grpConsole.Text = "Console";
+            grpConsole.Text = "Console Windows";
             // 
-            // chkShowConsole
+            // btnOpenGameConsole
             // 
-            chkShowConsole.AutoSize = true;
-            chkShowConsole.Location = new Point(20, 25);
-            chkShowConsole.Name = "chkShowConsole";
-            chkShowConsole.Size = new Size(103, 19);
-            chkShowConsole.TabIndex = 0;
-            chkShowConsole.Text = "Show Console";
-            chkShowConsole.UseVisualStyleBackColor = true;
-            chkShowConsole.CheckedChanged += Control_Changed;            // 
-            // chkShowWebServiceConsole
+            btnOpenGameConsole.Location = new Point(20, 25);
+            btnOpenGameConsole.Name = "btnOpenGameConsole";
+            btnOpenGameConsole.Size = new Size(200, 30);
+            btnOpenGameConsole.TabIndex = 0;
+            btnOpenGameConsole.Text = "Open Game Console";
+            btnOpenGameConsole.UseVisualStyleBackColor = true;
+            btnOpenGameConsole.Click += btnOpenGameConsole_Click;
             // 
-            chkShowWebServiceConsole.AutoSize = true;
-            chkShowWebServiceConsole.Location = new Point(20, 55);
-            chkShowWebServiceConsole.Name = "chkShowWebServiceConsole";
-            chkShowWebServiceConsole.Size = new Size(200, 19);
-            chkShowWebServiceConsole.TabIndex = 1;
-            chkShowWebServiceConsole.Text = "Show Web Service Console";
-            chkShowWebServiceConsole.UseVisualStyleBackColor = true;
-            chkShowWebServiceConsole.CheckedChanged += chkShowWebServiceConsole_CheckedChanged;            // 
+            // btnOpenWebServerConsole
+            // 
+            btnOpenWebServerConsole.Location = new Point(240, 25);
+            btnOpenWebServerConsole.Name = "btnOpenWebServerConsole";
+            btnOpenWebServerConsole.Size = new Size(200, 30);
+            btnOpenWebServerConsole.TabIndex = 1;
+            btnOpenWebServerConsole.Text = "Open Web Server Console";
+            btnOpenWebServerConsole.UseVisualStyleBackColor = true;
+            btnOpenWebServerConsole.Click += btnOpenWebServerConsole_Click;
+            // 
             // tabBroadcast
             // 
             tabBroadcast.Controls.Add(grpBroadcast);
@@ -1581,8 +1583,8 @@ namespace MillionaireGame.Forms.Options
         private Button btnRefreshDevices;
         private Label lblMixerInfo;
         private GroupBox grpConsole;
-        private CheckBox chkShowConsole;
-        private CheckBox chkShowWebServiceConsole;
+        private Button btnOpenGameConsole;
+        private Button btnOpenWebServerConsole;
         private GroupBox grpAudienceServer;
         private Label lblServerIP;
         private ComboBox cmbServerIP;

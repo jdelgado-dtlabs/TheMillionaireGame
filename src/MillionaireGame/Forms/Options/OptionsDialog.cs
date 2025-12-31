@@ -120,21 +120,7 @@ public partial class OptionsDialog : Form
         // Load broadcast settings (TV screen background)
         LoadBroadcastSettings();
         
-        // Load console settings
-        chkShowConsole.Checked = _settings.ShowConsole;
-        chkShowWebServiceConsole.Checked = _settings.ShowWebServerConsole;
-#if DEBUG
-        // In debug mode, always show console and disable checkbox
-        chkShowConsole.Checked = true;
-        chkShowConsole.Enabled = false;
-        // In debug mode, always show web service console and disable checkbox
-        chkShowWebServiceConsole.Checked = true;
-        chkShowWebServiceConsole.Enabled = false;
-#else
-        // In release mode, allow user control
-        chkShowConsole.Enabled = true;
-        chkShowWebServiceConsole.Enabled = true;
-#endif
+        // Console windows are always available via buttons (removed settings)
         
         // Load money tree settings
         LoadMoneyTreeSettings();
@@ -382,11 +368,7 @@ public partial class OptionsDialog : Form
         // Save broadcast settings (TV screen background)
         SaveBroadcastSettings();
 
-        // Console settings (only save in release mode, debug is always true)
-#if !DEBUG
-        _settings.ShowConsole = chkShowConsole.Checked;
-        _settings.ShowWebServerConsole = chkShowWebServiceConsole.Checked;
-#endif
+        // Console windows are opened via buttons, no settings to save
 
         // Save money tree settings
         SaveMoneyTreeSettings();
@@ -802,22 +784,14 @@ public partial class OptionsDialog : Form
 
     #endregion
 
-    private void chkShowWebServiceConsole_CheckedChanged(object sender, EventArgs e)
+    private void btnOpenGameConsole_Click(object sender, EventArgs e)
     {
-        // Only update WebService console visibility if web server is running
-        var controlPanel = Application.OpenForms.OfType<ControlPanelForm>().FirstOrDefault();
-        if (controlPanel?.IsWebServerRunning == true)
-        {
-            if (chkShowWebServiceConsole.Checked)
-            {
-                WebServerConsole.Show();
-            }
-            else
-            {
-                WebServerConsole.Hide();
-            }
-        }
-        MarkChanged();
+        GameConsole.Show();
+    }
+
+    private void btnOpenWebServerConsole_Click(object sender, EventArgs e)
+    {
+        WebServerConsole.Show();
     }
 
     // Change event handlers
