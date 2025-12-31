@@ -7,39 +7,35 @@
 
 ## 🎯 Critical Path (Must Complete for v1.0)
 
-### 1. Host Notes/Messaging System 🔴
-**Status**: Not Started  
-**Estimated Time**: 2-3 hours  
+### 1. Host Notes/Messaging System ✅
+**Status**: ✅ COMPLETE  
+**Completed**: December 30, 2025  
+**Time Taken**: ~2.5 hours  
 **Priority**: HIGH
 
 **Description**: Real-time messaging system from Control Panel to Host Screen
 
-**Requirements**:
-- [ ] Event-based messaging infrastructure (HostMessageEventArgs)
-- [ ] Control Panel UI: Multi-line TextBox + Send button
-- [ ] Keyboard shortcuts: Enter to send, Alt+Enter for newline
-- [ ] Host Screen display: Semi-transparent message box (300-400px)
-- [ ] Message validation (no empty messages)
-- [ ] Thread-safe UI updates with Invoke()
-- [ ] Non-blocking message delivery
-- [ ] Message persistence during question changes
+**Completed**:
+- [x] Event-based messaging infrastructure (HostMessageEventArgs)
+- [x] Control Panel UI: Multi-line TextBox + Send button
+- [x] Keyboard shortcuts: Enter to send, Alt+Enter for newline
+- [x] Host Screen display: Semi-transparent message box (300-400px)
+- [x] Message validation (no empty messages)
+- [x] Thread-safe UI updates with BeginInvoke()
+- [x] Non-blocking message delivery
+- [x] Message persistence during question changes
+- [x] Preview window integration with event subscription
 
-**Implementation Details**:
-- Add MessageSent event to ControlPanelForm
-- Subscribe HostScreenForm to message events
-- Position message box in top-right corner of Host Screen
-- Multi-line textbox on Control Panel (~60-80px height)
-- Standard chat interface behavior (Enter/Alt+Enter)
+**Technical Implementation**:
+- MessageSent event in ControlPanelForm
+- HostScreenForm.OnMessageReceived() method
+- Message box at (180, 570) with dynamic height
+- Explanation box at (180, 490) for question clues
+- All 80 questions updated with contextual explanations
 
-**Acceptance Criteria**:
-- Messages appear instantly on Host Screen
-- Enter key sends message, Alt+Enter adds newline
-- Empty messages are blocked
-- No UI freezing or performance impact
-- Messages remain visible during gameplay
-- Clean, professional appearance
+**Result**: Fully functional host messaging system operational. Messages appear instantly on Host Screen with no UI blocking. Explanation system provides contextual clues for hosts during gameplay.
 
-**Reference**: HOST_NOTES_SYSTEM_PLAN.md
+**Reference**: HOST_NOTES_SYSTEM_PLAN.md, CHANGELOG.md (v0.8.1-2512)
 
 ---
 
@@ -207,7 +203,43 @@
 
 ## 🔬 Testing & Quality Assurance
 
-### 6. End-to-End Testing
+### 6. Preview Screen Performance Optimization 🔴
+**Status**: Not Started  
+**Estimated Time**: 2-3 hours  
+**Priority**: MEDIUM
+
+**Description**: Optimize preview screen rendering to reduce performance overhead when displaying 3 screens simultaneously
+
+**Current Issue**:
+- PreviewPanel renders each screen at full 1920x1080 resolution on every paint
+- Creates full bitmap → Calls RenderScreen → Scales down using HighQualityBicubic interpolation
+- 3 screens × full resolution rendering = significant performance hit
+- Confetti disabled on preview (IsPreview flag), but rendering pipeline still expensive
+
+**Proposed Solutions**:
+- [ ] **Option A: Render at lower resolution** - Create bitmap at preview panel size instead of 1920x1080
+- [ ] **Option B: Cached rendering** - Only re-render when screen state changes, not on every paint
+- [ ] **Option C: Lower quality scaling** - Use NearestNeighbor or Bilinear instead of HighQualityBicubic
+- [ ] **Option D: Reduce refresh rate** - Throttle preview panel invalidation to 10-15 FPS
+- [ ] **Option E: Simplified rendering mode** - Add RenderPreview() method with reduced detail
+
+**Implementation Notes**:
+- PreviewPanel.PreviewPanel_Paint() in PreviewScreenForm.cs (lines 330-412)
+- Currently uses reflection to call protected RenderScreen method
+- ScaleX/ScaleY factors calculated per-frame in ScalableScreenBase
+- DoubleBuffered enabled but still creating new bitmap each frame
+
+**Acceptance Criteria**:
+- Preview window renders smoothly with all 3 screens visible
+- No noticeable lag or stuttering during animations
+- Maintain acceptable visual quality
+- CPU usage reduced by 30-50% when preview is open
+
+**Technical Debt**: Consider long-term solution for preview architecture
+
+---
+
+### 7. End-to-End Testing
 **Estimated Time**: 4 hours
 
 **Test Scenarios**:
