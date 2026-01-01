@@ -12,6 +12,10 @@ public class HotkeyHandler
     private readonly Action? _onF5; // New Question
     private readonly Action? _onF6; // Reveal Answer
     private readonly Action? _onF7; // Lights Down
+    private readonly Action? _onF8; // Lifeline 1
+    private readonly Action? _onF9; // Lifeline 2
+    private readonly Action? _onF10; // Lifeline 3
+    private readonly Action? _onF11; // Lifeline 4
     private readonly Action? _onHome; // Toggle Tree
     private readonly Action? _onEnd; // Walk Away
     private readonly Action? _onInsert; // To Hot Seat
@@ -30,6 +34,10 @@ public class HotkeyHandler
         Action? onF5 = null,
         Action? onF6 = null,
         Action? onF7 = null,
+        Action? onF8 = null,
+        Action? onF9 = null,
+        Action? onF10 = null,
+        Action? onF11 = null,
         Action? onHome = null,
         Action? onEnd = null,
         Action? onInsert = null,
@@ -47,6 +55,10 @@ public class HotkeyHandler
         _onF5 = onF5;
         _onF6 = onF6;
         _onF7 = onF7;
+        _onF8 = onF8;
+        _onF9 = onF9;
+        _onF10 = onF10;
+        _onF11 = onF11;
         _onHome = onHome;
         _onEnd = onEnd;
         _onInsert = onInsert;
@@ -88,6 +100,18 @@ public class HotkeyHandler
             case Keys.F7:
                 _onF7?.Invoke();
                 break;
+            case Keys.F8:
+                _onF8?.Invoke();
+                break;
+            case Keys.F9:
+                _onF9?.Invoke();
+                break;
+            case Keys.F10:
+                _onF10?.Invoke();
+                break;
+            case Keys.F11:
+                _onF11?.Invoke();
+                break;
             case Keys.End:
                 _onEnd?.Invoke();
                 break;
@@ -125,35 +149,8 @@ public class HotkeyHandler
     /// </summary>
     public bool ProcessKeyPress(Keys keyData, bool ctrlPressed, bool altPressed)
     {
-        // Handle Ctrl+1-4 for lifeline activation (if needed in future)
-        if (ctrlPressed)
-        {
-            switch (keyData)
-            {
-                case Keys.D1:
-                case Keys.NumPad1:
-                    // TODO [POST-1.0]: Lifeline 1 hotkey mapping
-                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
-                    // See: docs/active/PRE_1.0_FINAL_CHECKLIST.md - Deferred section
-                    return true;
-                case Keys.D2:
-                case Keys.NumPad2:
-                    // TODO [POST-1.0]: Lifeline 2 hotkey mapping
-                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
-                    return true;
-                case Keys.D3:
-                case Keys.NumPad3:
-                    // TODO [POST-1.0]: Lifeline 3 hotkey mapping
-                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
-                    return true;
-                case Keys.D4:
-                case Keys.NumPad4:
-                    // TODO [POST-1.0]: Lifeline 4 hotkey mapping
-                    // Status: Deferred to v1.2 (will implement with Elgato Stream Deck integration)
-                    return true;
-            }
-        }
-
+        // Ctrl+1-4 reserved for future features (e.g., Stream Deck integration)
+        // Lifeline hotkeys implemented as F8-F11 (see ProcessKeyPress above)
         return ProcessKeyPress(keyData);
     }
 }
