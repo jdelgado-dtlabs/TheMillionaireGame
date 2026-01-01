@@ -122,6 +122,14 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Startup order: ControlPanel → Preview/Screens → GameConsole → WebServerConsole
   * Location: Program.cs, ControlPanelForm.cs
 
+- **Lifeline Hotkey Mapping** ✅ COMPLETE
+  * Added F8-F11 keyboard shortcuts for direct lifeline activation
+  * F8 → Lifeline Button 1, F9 → Lifeline Button 2, F10 → Lifeline Button 3, F11 → Lifeline Button 4
+  * Hotkeys map to button positions (respects user's lifeline configuration)
+  * Respects button state (inactive/demo/standby/active modes)
+  * Enables complete keyboard control without mouse interaction
+  * Location: HotkeyHandler.cs, ControlPanelForm.cs
+
 ## [v0.9.5] - 2025-12-30
 
 ### Added
