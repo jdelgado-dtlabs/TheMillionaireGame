@@ -133,7 +133,7 @@ public class AudioMixer : IDisposable
             
             // CRITICAL: Verify the device actually works by checking if audio flows CONTINUOUSLY
             // Some devices (wireless displays) work briefly then stop pulling audio
-            var startPosition = _mixer.LastReadPosition;
+            var startPosition = _mixer!.LastReadPosition;
             var startTime = DateTime.Now;
             
             output.Play();
@@ -143,7 +143,7 @@ public class AudioMixer : IDisposable
             for (int i = 0; i < 50; i++)
             {
                 System.Threading.Thread.Sleep(10);
-                if (_mixer.LastReadPosition > startPosition)
+                if (_mixer!.LastReadPosition > startPosition)
                 {
                     audioFlowing = true;
                     break;
@@ -198,7 +198,7 @@ public class AudioMixer : IDisposable
                 output.Initialize(_mixer!.ToWaveSource());
                 output.Volume = _masterVolume;
                 
-                var startPosition = _mixer.LastReadPosition;
+                var startPosition = _mixer!.LastReadPosition;
                 var startTime = DateTime.Now;
                 
                 output.Play();
@@ -207,7 +207,7 @@ public class AudioMixer : IDisposable
                 for (int i = 0; i < 50; i++)
                 {
                     System.Threading.Thread.Sleep(10);
-                    if (_mixer.LastReadPosition > startPosition)
+                    if (_mixer!.LastReadPosition > startPosition)
                     {
                         audioFlowing = true;
                         break;
@@ -239,7 +239,7 @@ public class AudioMixer : IDisposable
             output.Initialize(_mixer!.ToWaveSource());
             output.Volume = _masterVolume;
             
-            var startPosition = _mixer.LastReadPosition;
+            var startPosition = _mixer!.LastReadPosition;
             var startTime = DateTime.Now;
             
             output.Play();
@@ -248,7 +248,7 @@ public class AudioMixer : IDisposable
             for (int i = 0; i < 50; i++)
             {
                 System.Threading.Thread.Sleep(10);
-                if (_mixer.LastReadPosition > startPosition)
+                if (_mixer!.LastReadPosition > startPosition)
                 {
                     audioFlowing = true;
                     break;
