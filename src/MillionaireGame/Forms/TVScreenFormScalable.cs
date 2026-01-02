@@ -153,7 +153,13 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
             return;
         }
         
-        // If money tree is showing, render it (takes over entire screen)
+        // Draw lifeline icons first (if visible) so they appear behind other content
+        if (_showLifelineIcons)
+        {
+            DrawLifelineIcons(g);
+        }
+        
+        // If money tree is showing, render it on top
         if (_showMoneyTree)
         {
             DrawMoneyTreeGraphical(g);

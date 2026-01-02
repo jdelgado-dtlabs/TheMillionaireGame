@@ -3986,7 +3986,10 @@ public partial class ControlPanelForm : Form
             ? Core.Graphics.LifelineIconState.Hidden 
             : Core.Graphics.LifelineIconState.Normal;
         
-        for (int i = 1; i <= 4; i++)
+        // Only initialize lifelines up to TotalLifelines count
+        int totalLifelines = _appSettings.Settings.TotalLifelines;
+        
+        for (int i = 1; i <= totalLifelines; i++)
         {
             var button = GetLifelineButtonByNumber(i);
             if (button != null && button.Visible)

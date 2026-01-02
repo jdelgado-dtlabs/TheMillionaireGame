@@ -43,7 +43,7 @@ public class LifelineManager
     private int _athLifelineButtonNumber = 0;
     
     // Lifeline icon ping animation state
-    private Dictionary<int, (LifelineType type, System.Windows.Forms.Timer timer)> _activePings = new();
+    private Dictionary<int, (LifelineType type, CancellationTokenSource cts)> _activePings = new();
     
     // Click cooldown protection
     private DateTime _lastClickTime = DateTime.MinValue;
@@ -1313,31 +1313,23 @@ public class LifelineManager
     /// <summary>
     /// Ping a lifeline icon (turn yellow/bling for 2 seconds) - for demo mode
     /// </summary>
-    public void PingLifelineIcon(int lifelineNumber, LifelineType type)
+    public async void PingLifelineIcon(int lifelineNumber, LifelineType type)
     {
         LogMessage?.Invoke($"[LifelineManager] Pinging lifeline {lifelineNumber} ({type})");
         
         // Set icon to bling state
         _screenService.SetLifelineIcon(lifelineNumber, type, LifelineIconState.Bling);
         
-        // Create independent timer for this ping - each lifeline gets its own timer
-        var timer = new System.Windows.Forms.Timer();
-        timer.Interval = 2000; // 2 seconds
-        timer.Tick += (s, e) => PingTimer_Tick(lifelineNumber, timer);
-        
-        // Store this timer (will replace any existing one for this lifeline)
-        if (_activePings.ContainsKey(lifelineNumber))
+        // Cancel any existing ping for this lifeline
+        if (_activePings.TryGetValue(lifelineNumber, out var existing))
         {
-            // If there's already a timer for this lifeline, just add the new one
-            // The old one will complete on its own
-            _activePings[lifelineNumber] = (type, timer);
-        }
-        else
-        {
-            _activePings.Add(lifelineNumber, (type, timer));
+            existing.cts.Cancel();
+            existing.cts.Dispose();
         }
         
-        timer.Start();
+        // Create cancellation token for this ping
+        var cts = new CancellationTokenSource();
+        _activePings[lifelineNumber] = (type, cts);
         
         // Play ping sound based on lifeline number
         SoundEffect soundEffect = lifelineNumber switch
@@ -1349,20 +1341,26 @@ public class LifelineManager
             _ => SoundEffect.LifelinePing1
         };
         _soundService.PlaySound(soundEffect);
-    }
-    
-    private void PingTimer_Tick(int lifelineNumber, System.Windows.Forms.Timer timer)
-    {
-        timer.Stop();
-        timer.Dispose();
         
-        // Remove from dictionary if this is the current timer for this lifeline
-        if (_activePings.TryGetValue(lifelineNumber, out var ping) && ping.timer == timer)
+        // Wait 2 seconds then return to normal
+        try
         {
-            _activePings.Remove(lifelineNumber);
+            await Task.Delay(2000, cts.Token);
             
-            // Return icon to normal state
-            _screenService.SetLifelineIcon(lifelineNumber, ping.type, LifelineIconState.Normal);
+            // Remove from dictionary and return icon to normal state
+            if (_activePings.TryGetValue(lifelineNumber, out var ping) && ping.cts == cts)
+            {
+                _activePings.Remove(lifelineNumber);
+                _screenService.SetLifelineIcon(lifelineNumber, type, LifelineIconState.Normal);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Ping was cancelled, do nothing
+        }
+        finally
+        {
+            cts.Dispose();
         }
     }
     
