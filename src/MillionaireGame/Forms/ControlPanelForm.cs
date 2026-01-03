@@ -563,6 +563,12 @@ public partial class ControlPanelForm : Form
 
     private void ControlPanelForm_Load(object? sender, EventArgs e)
     {
+        // Update window title to show debug mode
+        if (Program.DebugMode)
+        {
+            this.Text += " - DEBUG ENABLED";
+        }
+        
         // Initialize game to level 0
         _gameService.ChangeLevel(0);
         UpdateMoneyDisplay();
@@ -635,6 +641,7 @@ public partial class ControlPanelForm : Form
         GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
         GameConsole.Info($"Version: v0.9.8 Debug Build");
         GameConsole.Info($"Started: {DateTime.Now}");
+        GameConsole.Warn("⚠ DEBUG MODE IS ACTIVE - Verbose logging enabled");
         GameConsole.LogSeparator();
         GameConsole.Info("Application initialized successfully.");
 #else
