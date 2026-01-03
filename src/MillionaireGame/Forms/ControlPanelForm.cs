@@ -2613,26 +2613,18 @@ public partial class ControlPanelForm : Form
                 nmrLevel.Value = 0;
                 ResetAllControls();
                 
+                // Check if a game round is active (player is between Q1-Q15)
+                bool isGameRoundActive = _gameService.State.CurrentLevel > 0 || _isAutomatedSequenceRunning;
+                
                 // Stop all sounds and play game over if round is in progress
                 _ = Task.Run(async () =>
                 {
                     await _soundService.StopAllSoundsAsync();
                     
-                    // Check if round is in progress
-                    if (_isAutomatedSequenceRunning && !IsDisposed)
+                    if (isGameRoundActive && !IsDisposed)
                     {
                         // Round in progress - play game over sound first
-                        if (IsHandleCreated)
-                        {
-                            BeginInvoke(() =>
-                            {
-                                if (!IsDisposed)
-                                {
-                                    btnClosing.BackColor = Color.Red;
-                                }
-                            });
-                        }
-                            _soundService.PlaySoundByKey("GameOver");
+                        _soundService.PlaySoundByKey("GameOver");
                         
                         if (Program.DebugMode)
                         {
@@ -2645,6 +2637,9 @@ public partial class ControlPanelForm : Form
                             {
                                 if (!IsDisposed)
                                 {
+                                    btnClosing.BackColor = Color.Red;
+                                    btnClosing.Enabled = true;  // Ensure button is enabled for skip
+                                    
                                     // Set timer for 5 seconds, then move to underscore
                                     _closingTimer = new System.Windows.Forms.Timer();
                                     _closingTimer.Interval = 5000;
@@ -2666,12 +2661,6 @@ public partial class ControlPanelForm : Form
                         }
                     }
                 });
-                
-                // For synchronous case (no round in progress), handle outside Task.Run
-                if (!_isAutomatedSequenceRunning)
-                {
-                    // Will be handled by Task.Run callback above
-                }
                 break;
                 
             case ClosingStage.GameOver:
