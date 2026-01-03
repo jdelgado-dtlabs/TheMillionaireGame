@@ -138,26 +138,6 @@ internal static class Program
     }
 
     /// <summary>
-    /// Shows or hides the console window based on the current setting
-    /// </summary>
-    public static void UpdateConsoleVisibility(bool showGameConsole)
-    {
-        #if DEBUG
-        // In debug mode, console is always visible
-        return;
-        #else
-        if (showGameConsole)
-        {
-            GameConsole.Show();
-        }
-        else
-        {
-            GameConsole.Hide();
-        }
-        #endif
-    }
-
-    /// <summary>
     /// Handles unhandled exceptions in Windows Forms UI threads
     /// </summary>
     private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)

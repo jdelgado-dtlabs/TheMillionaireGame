@@ -585,9 +585,9 @@ public partial class ControlPanelForm : Form
         // Initialize web server host first
         InitializeWebServer();
         
-        // Initialize WebService console only if web server will be started
+        // Initialize WebService console only if in debug mode and web server will be started
         // (before auto-start so it doesn't steal focus)
-        if ((Program.DebugMode || _appSettings.Settings.ShowWebServerConsole) && _appSettings.Settings.AudienceServerAutoStart)
+        if (Program.DebugMode && _appSettings.Settings.AudienceServerAutoStart)
         {
             WebServerConsole.Show();
         }
@@ -621,7 +621,8 @@ public partial class ControlPanelForm : Form
         
         // Initialize GameConsole LAST (after all screens are shown)
         // This prevents it from stealing focus and ensures proper icon loading
-        if (Program.DebugMode || _appSettings.Settings.ShowGameConsole)
+        // Only auto-show in debug mode; otherwise user must manually open via menu
+        if (Program.DebugMode)
         {
             var gameConsoleWindow = new GameConsoleWindow();
             gameConsoleWindow.Show();
@@ -825,16 +826,6 @@ public partial class ControlPanelForm : Form
             Invoke(new Action(() => OnWebServerStarted(sender, baseUrl)));
             return;
         }
-        
-        // Show WebService console when server starts
-#if DEBUG
-        WebServerConsole.Show();
-#else
-        if (_appSettings.Settings.ShowWebServerConsole)
-        {
-            WebServerConsole.Show();
-        }
-#endif
         
         // Log to WebService console
         WebServerConsole.LogSeparator();

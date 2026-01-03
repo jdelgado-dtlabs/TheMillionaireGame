@@ -66,10 +66,6 @@ public class ApplicationSettings
     // Broadcast Settings (TV Screen Background)
     public BroadcastSettings Broadcast { get; set; } = new();
 
-    // Debug Console Settings
-    public bool ShowGameConsole { get; set; } = false;
-    public bool ShowWebServerConsole { get; set; } = false;
-
     // Web Server / Audience Participation Settings
     public string AudienceServerIP { get; set; } = "127.0.0.1";
     public int AudienceServerPort { get; set; } = 5278;
