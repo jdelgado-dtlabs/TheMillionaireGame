@@ -101,6 +101,9 @@ public partial class ControlPanelForm : Form
     // Track if automated sequence is running (walk away, thanks for playing)
     private bool _isAutomatedSequenceRunning = false;
     
+    // Track if current round has completed (win/loss/walk away)
+    private bool _roundCompleted = false;
+    
     // Lifeline manager handles all lifeline logic
     private LifelineManager? _lifelineManager;
     
@@ -2587,6 +2590,9 @@ public partial class ControlPanelForm : Form
         // Reset automated sequence flag
         _isAutomatedSequenceRunning = false;
         
+        // Mark round as completed
+        _roundCompleted = true;
+        
         // Mark that at least one round has been completed
         _firstRoundCompleted = true;
         
@@ -2629,8 +2635,8 @@ public partial class ControlPanelForm : Form
                     await _soundService.StopAllSoundsAsync();
                     
                     // Only play GameOver if round was interrupted (not after walk away/win/loss completion)
-                    // Check if we're NOT in automated sequence (completion sequences set this flag)
-                    bool shouldPlayGameOver = isGameRoundActive && !_isAutomatedSequenceRunning;
+                    // Check if round is active AND not completed
+                    bool shouldPlayGameOver = isGameRoundActive && !_roundCompleted;
                     
                     if (shouldPlayGameOver && !IsDisposed)
                     {
@@ -2972,6 +2978,7 @@ public partial class ControlPanelForm : Form
         _pendingSafetyNetLevel = 0;
         _closingStage = ClosingStage.NotStarted;
         _isAutomatedSequenceRunning = false;
+        _roundCompleted = false;
         _gameOutcome = GameOutcome.InProgress;
         _firstRoundCompleted = false;
         _finalWinningsAmount = null; // Clear stored winnings amount
@@ -3046,6 +3053,7 @@ public partial class ControlPanelForm : Form
         _isExplainGameActive = false;
         _pendingSafetyNetLevel = 0;
         _isAutomatedSequenceRunning = false;
+        _roundCompleted = false;
         _gameOutcome = GameOutcome.InProgress;
         _finalWinningsAmount = null; // Clear stored winnings amount
         
