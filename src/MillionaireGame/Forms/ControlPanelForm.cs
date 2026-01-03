@@ -2606,15 +2606,29 @@ public partial class ControlPanelForm : Form
         switch (_closingStage)
         {
             case ClosingStage.NotStarted:
+                // Capture game state BEFORE any resets
+                bool isGameRoundActive = _gameService.State.CurrentLevel > 0 || _isAutomatedSequenceRunning;
+                
+                GameConsole.Debug($"[Closing] Starting closure - GameRoundActive: {isGameRoundActive}, CurrentLevel: {_gameService.State.CurrentLevel}, AutomatedSeq: {_isAutomatedSequenceRunning}");
+                
                 // Start closing sequence
                 _closingStage = ClosingStage.GameOver;
                 
-                // Reset question level and clear all questions/lifelines
-                nmrLevel.Value = 0;
-                ResetAllControls();
+                // Clear question display but DON'T reset controls yet
+                txtQuestion.Clear();
+                txtA.Clear();
+                txtB.Clear();
+                txtC.Clear();
+                txtD.Clear();
+                txtExplain.Clear();
+                lblAnswer.Text = string.Empty;
                 
-                // Check if a game round is active (player is between Q1-Q15)
-                bool isGameRoundActive = _gameService.State.CurrentLevel > 0 || _isAutomatedSequenceRunning;
+                // Hide question and answers from screens
+                _screenService.ShowQuestion(false);
+                _screenService.RemoveAnswer("A");
+                _screenService.RemoveAnswer("B");
+                _screenService.RemoveAnswer("C");
+                _screenService.RemoveAnswer("D");
                 
                 // Stop all sounds and play game over if round is in progress
                 _ = Task.Run(async () =>
@@ -2624,6 +2638,7 @@ public partial class ControlPanelForm : Form
                     if (isGameRoundActive && !IsDisposed)
                     {
                         // Round in progress - play game over sound first
+                        GameConsole.Debug("[Closing] Playing GameOver sound for active round");
                         _soundService.PlaySoundByKey("GameOver");
                         
                         if (Program.DebugMode)
@@ -2652,6 +2667,7 @@ public partial class ControlPanelForm : Form
                     else if (!IsDisposed)
                     {
                         // No round in progress - skip game over, go straight to underscore
+                        GameConsole.Debug("[Closing] No active round - skipping GameOver, moving to Underscore");
                         if (IsHandleCreated)
                         {
                             BeginInvoke(() =>
@@ -2692,6 +2708,7 @@ public partial class ControlPanelForm : Form
     {
         _closingStage = ClosingStage.Underscore;
         btnClosing.BackColor = Color.Orange;
+        btnClosing.Enabled = true;  // Ensure button is enabled for skip
         
         _soundService.QueueSoundByKey("CloseUnderscore", AudioPriority.Immediate);
         
@@ -2711,6 +2728,7 @@ public partial class ControlPanelForm : Form
     {
         _closingStage = ClosingStage.Theme;
         btnClosing.BackColor = Color.Yellow;
+        btnClosing.Enabled = true;  // Ensure button is enabled for final click
         
         // Play closing theme with immediate priority (crossfades from underscore)
         _soundService.QueueSoundByKey("ClosingTheme", AudioPriority.Immediate);
@@ -2773,6 +2791,10 @@ public partial class ControlPanelForm : Form
         
         // Clear game winner display from screens
         _screenService.ClearGameWinnerDisplay();
+        
+        // NOW reset all controls for next round
+        nmrLevel.Value = 0;
+        ResetAllControls();
         
         // Reset closing stage
         _closingStage = ClosingStage.NotStarted;
