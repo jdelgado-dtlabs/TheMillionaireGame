@@ -40,8 +40,12 @@ namespace MillionaireGame.Services
         
         /// <summary>
         /// Event raised when all audio in the queue has finished playing (queue becomes empty)
+        /// Only fires once per transition from playing to empty
         /// </summary>
         public event EventHandler? QueueCompleted;
+        
+        // Track whether we've already fired the completion event for the current empty state
+        private bool _completionEventFired = false;
         
         // Silence detection state
         private int _silenceSampleCount = 0;
@@ -132,6 +136,9 @@ namespace MillionaireGame.Services
         {
             lock (_lock)
             {
+                // Reset completion flag when new audio is queued
+                _completionEventFired = false;
+                
                 if (priority == AudioPriority.Normal && _normalQueue.Count >= _queueLimit)
                 {
                     if (Program.DebugMode)
@@ -658,8 +665,12 @@ namespace MillionaireGame.Services
                     // Nothing queued - return silence to stay active in mixer
                     else
                     {
-                        // Raise QueueCompleted event when everything finishes
-                        QueueCompleted?.Invoke(this, EventArgs.Empty);
+                        // Raise QueueCompleted event only once when transitioning to empty state
+                        if (!_completionEventFired)
+                        {
+                            _completionEventFired = true;
+                            QueueCompleted?.Invoke(this, EventArgs.Empty);
+                        }
                         
                         Array.Clear(buffer, offset, count);
                         return count;
