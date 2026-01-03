@@ -1346,18 +1346,8 @@ public partial class ControlPanelForm : Form
             // Walk Away button will be enabled (green) after all answers are revealed
             // See the answer reveal step 5 logic below
             
-            // Enable Closing (green) for Q2-14 only (disable at Q1 and Q15)
-            if (questionNumber >= 2 && questionNumber <= 14)
-            {
-                btnClosing.Enabled = true;
-                btnClosing.BackColor = Color.LimeGreen;
-                btnClosing.ForeColor = Color.Black;
-            }
-            else
-            {
-                btnClosing.Enabled = false;
-                btnClosing.BackColor = Color.Gray;
-            }
+            // Closing button logic handled in ShowWinningsAndEnableButtons based on round completion
+            // Do not enable here - only enable after round completion or Q6+ answer on round 2+
         }
         catch (Exception ex)
         {
@@ -2633,15 +2623,19 @@ public partial class ControlPanelForm : Form
                 _screenService.RemoveAnswer("C");
                 _screenService.RemoveAnswer("D");
                 
-                // Stop all sounds and play game over if round is in progress
+                // Stop all sounds and play game over ONLY if round is actively in progress (not after completion)
                 _ = Task.Run(async () =>
                 {
                     await _soundService.StopAllSoundsAsync();
                     
-                    if (isGameRoundActive && !IsDisposed)
+                    // Only play GameOver if round was interrupted (not after walk away/win/loss completion)
+                    // Check if we're NOT in automated sequence (completion sequences set this flag)
+                    bool shouldPlayGameOver = isGameRoundActive && !_isAutomatedSequenceRunning;
+                    
+                    if (shouldPlayGameOver && !IsDisposed)
                     {
                         // Round in progress - play game over sound first
-                        GameConsole.Debug("[Closing] Playing GameOver sound for active round");
+                        GameConsole.Debug("[Closing] Playing GameOver sound for interrupted round");
                         _soundService.PlaySoundByKey("GameOver");
                         
                         if (Program.DebugMode)
@@ -3712,6 +3706,14 @@ public partial class ControlPanelForm : Form
             // Disable Walk Away until next question is fully revealed (grey)
             btnWalk.Enabled = false;
             btnWalk.BackColor = Color.Gray;
+            
+            // Enable Closing (green) on Q6+ if round 2 or higher
+            if (_firstRoundCompleted)
+            {
+                btnClosing.Enabled = true;
+                btnClosing.BackColor = Color.LimeGreen;
+                btnClosing.ForeColor = Color.Black;
+            }
         }
         // For Q15, enable Thanks for Playing (green)
         else if (currentQuestionNumber == 15)
