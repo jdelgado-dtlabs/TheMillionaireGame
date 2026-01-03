@@ -2727,8 +2727,14 @@ public partial class ControlPanelForm : Form
     private void MoveToThemeStage()
     {
         _closingStage = ClosingStage.Theme;
-        btnClosing.BackColor = Color.Yellow;
-        btnClosing.Enabled = true;  // Ensure button is enabled for final click
+        
+        // Disable Closing button - no more clicks needed, theme will play out
+        btnClosing.BackColor = Color.Gray;
+        btnClosing.Enabled = false;
+        
+        // Disable Reset Round button
+        btnResetRound.Enabled = false;
+        btnResetRound.BackColor = Color.Gray;
         
         // Disable remaining active buttons during theme
         btnLightsDown.Enabled = false;
