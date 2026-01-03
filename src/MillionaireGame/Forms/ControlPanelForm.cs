@@ -1927,6 +1927,13 @@ public partial class ControlPanelForm : Form
                 UpdateMoneyTreeOnScreens(0);
             }
             
+            // If in explain game mode, ensure lifeline icons remain visible after hiding money tree
+            if (_isExplainGameActive)
+            {
+                _screenService.ShowLifelineIcons();
+                GameConsole.Debug("[MoneyTree] Re-enabled lifeline icon rendering after hiding money tree in explain game mode");
+            }
+            
             // Update button state
             btnShowMoneyTree.BackColor = Color.LimeGreen;
             btnShowMoneyTree.ForeColor = Color.Black;

@@ -728,25 +728,23 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
                     g.DrawRectangle(borderPen, scaledBounds.X, scaledBounds.Y, scaledBounds.Width, scaledBounds.Height);
                 }
                 
-                // Draw contestant name (left side of strap)
+                // Draw contestant name and time together (left side of strap)
                 // VB.NET position: X=379 (scaled to 570px for 1920 width)
                 using var font = new Font("Copperplate Gothic Bold", 30, FontStyle.Bold); // Scaled from 20.25pt
                 Color textColor = isHighlighted ? Color.Black : Color.White;
                 using var brush = new SolidBrush(textColor);
                 using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
                 
-                // Name text bounds (left offset matching VB.NET layout)
-                DrawScaledText(g, name, font, brush,
-                    designBounds.X + 570, designBounds.Y, designBounds.Width - 1200, designBounds.Height, format);
-                
-                // Draw time (right side of strap) if available
+                // Build display text: name followed by time (if available) with 2 spaces between
+                string displayText = name;
                 if (_fffTimes.Count > i && _fffTimes[i] > 0)
                 {
-                    using var timeFormat = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
-                    var timeText = $"{_fffTimes[i]:F2}s";
-                    DrawScaledText(g, timeText, font, brush,
-                        designBounds.X + 1200, designBounds.Y, designBounds.Width - 1300, designBounds.Height, timeFormat);
+                    displayText = $"{name}  {_fffTimes[i]:F2}s";
                 }
+                
+                // Draw combined text (name + time) starting from left offset
+                DrawScaledText(g, displayText, font, brush,
+                    designBounds.X + 570, designBounds.Y, designBounds.Width - 1200, designBounds.Height, format);
                 
                 currentY += spacing; // Move to next strap position
             }
