@@ -42,7 +42,7 @@
             <input type="text" id="sessionCode" placeholder="Session code (or from URL)" style="display: none;" />
             
             <div class="info">
-                <strong>✨ Name Requirements:</strong><br>
+                <strong>&#x2728; Name Requirements:</strong><br>
                 • 1-35 characters<br>
                 • No emojis or special symbols<br>
                 • No inappropriate language<br>
@@ -50,7 +50,7 @@
             </div>
             
             <div class="privacy-notice">
-                <strong>🔒 Privacy Notice:</strong><br>
+                <strong>&#x1F512; Privacy Notice:</strong><br>
                 We collect anonymous usage data (device type, OS version, browser, play duration) for statistics. 
                 Your name and all identifying information are deleted after the show. By clicking "Join Session", 
                 you agree to these terms.
@@ -67,7 +67,7 @@
              with no buttons (waiting for host to select FFF players)
         -->
         <div id="connectedScreen" class="screen">
-            <div class="status connected">✓ Connected to Session</div>
+            <div class="status connected">&#x2713; Connected to Session</div>
             
             <div class="info">
                 <strong>Session:</strong> <span id="displaySessionId"></span><br>
@@ -76,11 +76,11 @@
                 <strong>Connection ID:</strong> <span id="displayConnectionId"></span>
             </div>
             
-            <button id="btnTestReconnect">🔄 Test Reconnect (Disconnect & Reconnect)</button>
+            <button id="btnTestReconnect">&#x1F504; Test Reconnect (Disconnect & Reconnect)</button>
             <button id="btnLeave">Leave Session</button>
             
             <div class="info" style="margin-top: 20px; background: rgba(0, 255, 0, 0.1);">
-                <strong>✓ Protected Features:</strong><br>
+                <strong>&#x2713; Protected Features:</strong><br>
                 • Your participant ID is saved in localStorage<br>
                 • If you refresh or disconnect, you'll reconnect with the same ID<br>
                 • Duplicate votes/answers are prevented server-side<br>
@@ -90,7 +90,7 @@
         
         <!-- FFF Question Screen -->
         <div id="fffQuestionScreen" class="screen">
-            <div class="status connected">⚡ Fastest Finger First</div>
+            <div class="status connected">&#x26A1; Fastest Finger First</div>
             
             <h2 id="fffQuestionText" style="color: #FFD700; margin: 20px 0; font-size: 1.3em;"></h2>
             
@@ -99,7 +99,7 @@
             </div>
             
             <div class="info" style="margin-bottom: 20px; background: rgba(255, 215, 0, 0.1);">
-                <strong>⚡ Instructions:</strong><br>
+                <strong>&#x26A1; Instructions:</strong><br>
                 • Tap answers to reorder them<br>
                 • Put them in the correct sequence<br>
                 • Submit when ready - fastest correct answer wins!
@@ -116,7 +116,7 @@
         
         <!-- FFF Waiting Screen -->
         <div id="fffWaitingScreen" class="screen">
-            <div class="status connected">⚡ Fastest Finger First</div>
+            <div class="status connected">&#x26A1; Fastest Finger First</div>
             
             <h2 id="fffWaitingMessage" style="color: #FFD700; margin: 40px 20px; font-size: 1.4em; text-align: center;">
                 Results are being calculated.<br>
@@ -127,14 +127,14 @@
         
         <!-- FFF Result Screen -->
         <div id="fffResultScreen" class="screen">
-            <div class="status connected">⚡ Results</div>
+            <div class="status connected">&#x26A1; Results</div>
             
             <h2 id="fffResultMessage" style="color: #FFD700; margin: 40px 20px; font-size: 1.4em; text-align: center;"></h2>
         </div>
 
         <!-- ATA Voting Screen -->
         <div id="ataVotingScreen" class="screen">
-            <div class="status connected">📊 Ask The Audience</div>
+            <div class="status connected">&#x1F4CA; Ask The Audience</div>
             
             <h2 id="ataQuestionText" style="color: #FFD700; margin: 20px 0;"></h2>
             
@@ -190,3 +190,6 @@
         // Load app.js with current timestamp to prevent caching
         document.write('<script src="/js/app.js?v=' + Date.now() + '"><\/script>');
     </script>
+
+</body>
+</html>
