@@ -2837,6 +2837,7 @@ public partial class ControlPanelForm : Form
         // Clear all visual elements on screens to create pristine "blank slate" appearance
         // This gives the impression of a reset without actually resetting game data
         _screenService.ShowQuestion(false);  // Hide question/answers display on all screens
+        _screenService.RevealAnswer(string.Empty, string.Empty, false);  // Clear reveal state (removes green/red highlighting)
         _screenService.HideWinnings();  // Clear money tree display
         _screenService.ClearQuestionAndAnswerText();  // Clear question/answer text on host/guest screens
         
