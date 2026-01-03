@@ -2,6 +2,72 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v0.9.8] - 2026-01-03
+
+### Added
+- **Closing Sequence Auto-Completion** ✅ COMPLETE
+  * QueueCompleted event system through audio stack (AudioCueQueue → EffectsChannel → SoundService)
+  * Event-based detection when closing theme finishes playing
+  * _completionEventFired flag prevents repeated firing while queue empty
+  * Event fires in both paths: normal empty queue AND silence-detected fadeout
+  * Replaces unreliable hardcoded 45-second timer
+  * Location: Services/AudioCueQueue.cs, Services/EffectsChannel.cs, Services/SoundService.cs
+
+- **Debug Mode Runtime Support** ✅ COMPLETE
+  * --debug flag now works in Release builds for production troubleshooting
+  * UpdateWindowTitle() helper maintains " - DEBUG ENABLED" suffix through web server lifecycle
+  * Console visibility uses runtime Program.DebugMode checks instead of compile-time #if DEBUG
+  * Location: Forms/ControlPanelForm.cs, Program.cs
+
+### Changed
+- **Closing Sequence Visual Clearing** ✅ COMPLETE
+  * CompleteClosing() now clears all visual elements for pristine "blank slate" appearance
+  * Added RevealAnswer(string.Empty, string.Empty, false) to clear answer highlight states
+  * Clears Q&A display, money tree, answer highlights (orange/green/red), and rug text
+  * All buttons disabled except Reset Game (red border)
+  * Location: Forms/ControlPanelForm.cs (CompleteClosing method)
+
+- **Event Subscription in Closing** ✅ COMPLETE
+  * MoveToThemeStage() subscribes to SoundService.EffectsQueueCompleted event
+  * Replaces timer-based approach with audio completion detection
+  * Automatically triggers CompleteClosing() when theme finishes
+  * Location: Forms/ControlPanelForm.cs (MoveToThemeStage method)
+
+### Fixed
+- **QueueCompleted Event Not Firing** ✅ COMPLETE
+  * Added event trigger in silence-detected fadeout completion path (line ~612)
+  * Event now fires when audio fades out due to silence detection
+  * Previously only fired in normal empty queue path
+  * Critical fix for automatic closing completion
+  * Location: Services/AudioCueQueue.cs (Read method)
+
+- **Debug Title Cleared by Web Server** ✅ COMPLETE
+  * UpdateWindowTitle() helper ensures debug suffix persists
+  * Called from ControlPanelForm_Load, OnWebServerStarted, OnWebServerStopped
+  * Title maintains " - DEBUG ENABLED" through all lifecycle events
+  * Location: Forms/ControlPanelForm.cs
+
+- **Green Answer Highlight Persisting** ✅ COMPLETE
+  * RevealAnswer(empty) call clears _selectedAnswer, _correctAnswer, _isRevealing states
+  * Removes all answer highlights: orange (selected), green (correct), red (wrong)
+  * ShowQuestion(false) hides display, RevealAnswer(empty) clears state
+  * Location: Forms/ControlPanelForm.cs (CompleteClosing method)
+
+### Removed
+- **Deprecated Console Settings** ✅ COMPLETE
+  * Removed ShowGameConsole property from ApplicationSettings
+  * Removed ShowWebServerConsole property from ApplicationSettings
+  * Removed UpdateConsoleVisibility() method from Program.cs (18 lines)
+  * Removed call to deprecated method in OptionsDialog.SaveSettings()
+  * Location: MillionaireGame.Core/Settings/ApplicationSettings.cs, Program.cs, OptionsDialog.cs
+
+### Technical Details
+- **Event Architecture**: QueueCompleted propagates through 3 layers with single-fire flag system
+- **Audio Completion**: Fires in both normal empty queue and silence-detected fadeout paths
+- **State Clearing**: Distinction between hiding display (ShowQuestion) vs clearing state (RevealAnswer)
+- **Runtime Checks**: Console display logic uses Program.DebugMode instead of #if DEBUG
+- **Helper Methods**: UpdateWindowTitle() centralizes title management for consistency
+
 ## [v0.9.8] - 2025-12-31
 
 ### Added

@@ -2,7 +2,7 @@
 **The Millionaire Game - C# Edition**  
 **Target Version**: 1.0  
 **Status**: Ready for Testing  
-**Last Updated**: January 3, 2026
+**Last Updated**: January 3, 2026 (v0.9.8)
 
 ---
 
@@ -10,7 +10,8 @@
 
 All critical features have been implemented and completed. The application is feature-complete and ready for comprehensive end-to-end testing before v1.0 release.
 
-**Completed Tasks**: See [PRE_1.0_COMPLETED_TASKS.md](../archive/PRE_1.0_COMPLETED_TASKS.md) for full archive (14 major features, ~35 hours development)
+**Current Version**: v0.9.8 - Closing Sequence & Debug Mode Complete  
+**Completed Tasks**: See [PRE_1.0_COMPLETED_TASKS.md](../archive/PRE_1.0_COMPLETED_TASKS.md) for full archive (15 major features, ~38 hours development)
 
 ---
 
@@ -37,6 +38,8 @@ All critical features have been implemented and completed. The application is fe
 - [x] Money tree progression and safety net behavior
 - [x] Risk Mode gameplay with dynamic safety nets
 - [x] Free Safety Net Mode gameplay
+- [x] Closing sequence with automatic completion
+- [x] Visual clearing after closing theme (pristine display)
 
 **Lifeline Testing**:
 - [x] **50:50** - Removal of two incorrect answers
@@ -64,6 +67,8 @@ All critical features have been implemented and completed. The application is fe
 - [x] Message display on Host Screen
 - [x] Question explanations display
 - [x] All 80 questions have contextual clues
+- [x] Debug mode with --debug flag (works in Release builds)
+- [x] Runtime debug title persistence through web server lifecycle
 
 **Web Participant System (WAPS)**:
 - [ ] Session creation and management
@@ -91,6 +96,8 @@ All critical features have been implemented and completed. The application is fe
 - [x] Timing synchronization with visuals
 - [x] DSP effects (silence detection, crossfading)
 - [x] Sound pack switching
+- [x] QueueCompleted event system for audio-dependent workflows
+- [x] Automatic closing theme completion detection
 
 **Data Management**:
 - [x] Settings persistence and loading
@@ -196,7 +203,11 @@ All critical features have been implemented and completed. The application is fe
 - [x] Preview screen performance with 3 screens
 - [x] Console window icon loading order
 - [x] Database consolidation (SQLite → SQL Server)
-- [x] Build warnings (all eliminated)
+- [x] Build warnings (all eliminated - 0 warnings)
+- [x] Closing sequence completion detection
+- [x] Visual artifacts after closing (green answer highlights)
+- [x] Debug mode title persistence
+- [x] Runtime debug flag support in Release builds
 
 **Document Any New Issues Found**:
 - [ ] Create GitHub issues for any bugs found during testing
@@ -222,12 +233,12 @@ All critical features have been implemented and completed. The application is fe
 **Must Pass**:
 1. ✅ All core game flow scenarios complete successfully
 2. ✅ All lifelines function correctly (offline and online modes)
-3. ✅ FFF Online works with 10+ participants without errors
-4. ✅ ATA Online works with 10+ participants without errors
-5. ✅ Web client state machine handles all transitions correctly
+3. ⏳ FFF Online works with 10+ participants without errors
+4. ⏳ ATA Online works with 10+ participants without errors
+5. ⏳ Web client state machine handles all transitions correctly
 6. ✅ No crashes during 5 consecutive full game runs
 7. ✅ Build produces 0 warnings, 0 errors
-8. ✅ All critical bugs fixed
+8. ✅ All critical bugs fixed (closing sequence, debug mode, visual clearing)
 
 **Should Pass** (Can defer minor issues to v1.1):
 1. ⚠️ All edge cases handled gracefully
@@ -259,7 +270,9 @@ All critical features have been implemented and completed. The application is fe
 
 ## 📚 Reference Documents
 
-- **Completed Features**: [PRE_1.0_COMPLETED_TASKS.md](../archive/PRE_1.0_COMPLETED_TASKS.md)
+- **Completed Features**: [PRE_1.0_COMPLETED_TASKS.md](../archive/PRE_1.0_COMPLETED_TASKS.md)  
+**Recent Session**: [SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md](../sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md)  
+**Development Checkpoint**: [DEVELOPMENT_CHECKPOINT.md](../../DEVELOPMENT_CHECKPOINT.md)
 - **Release Status**: [V1.0_RELEASE_STATUS.md](V1.0_RELEASE_STATUS.md)
 - **Testing Guide**: [PRE_V1.0_TESTING_CHECKLIST.md](../PRE_V1.0_TESTING_CHECKLIST.md)
 - **Architecture**: [WEB_SYSTEM_IMPLEMENTATION_PLAN.md](../reference/WEB_SYSTEM_IMPLEMENTATION_PLAN.md)

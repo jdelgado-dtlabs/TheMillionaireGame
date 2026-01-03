@@ -1,7 +1,7 @@
 # Pre-v1.0 Live Testing Checklist
-**Date:** December 31, 2025  
+**Date:** January 3, 2026  
 **Status:** Ready for live testing with actual audience  
-**Commit:** c24a624
+**Commit:** b51c745 (Closing Sequence & Debug Mode Complete)
 
 ---
 
@@ -14,6 +14,19 @@
 - [x] Added GeneralUpdate event with 13 trigger points across all screen updates
 - [x] Added Paint event subscriptions for immediate cache invalidation
 - [x] Implemented throttled updates (100ms) to prevent frame drops
+
+### Closing Sequence Issues
+- [x] Closing theme completion not detected - Implemented QueueCompleted event system
+- [x] Event not firing after silence fadeout - Added trigger in fadeout completion path
+- [x] Green answer highlight persisting after closing - Added RevealAnswer(empty) call
+- [x] Visual artifacts remaining - Complete clearing of Q&A, money tree, highlights
+- [x] Pristine "blank slate" appearance achieved
+
+### Debug Mode Issues
+- [x] Debug title cleared by web server - Created UpdateWindowTitle() helper
+- [x] --debug flag ignored in Release - Replaced compile-time with runtime checks
+- [x] Debug mode title persists through web server lifecycle
+- [x] Runtime flag works in Release builds for production troubleshooting
 
 ### Sound System Issues
 - [x] ExplainGame sound cue calling wrong soundpack key (ExplainGame vs ExplainRules)
@@ -51,6 +64,7 @@
 - [x] Preview screen displays all three panels correctly
 - [x] Web server starts on http://localhost:5000
 - [x] Console window shows successful initialization
+- [x] Debug mode activates with --debug flag (if testing Release build)
 
 ### Sound System Check
 - [x] All soundpack files loaded successfully
@@ -116,6 +130,20 @@
 7. [ ] Reach Q6 - verify music stops before Lights Down
 8. [ ] Test safety net lock-in at Q5 and Q10
 9. [ ] Money tree animation visible in preview
+10. [ ] Continue to Q15 or wrong answer
+11. [ ] Test closing sequence (after Q15 win or wrong answer)
+
+### Scenario 3a: Closing Sequence Test
+1. [ ] Complete Q15 or lose at any level
+2. [ ] Click Closing button
+3. [ ] Underscore animation plays (150 seconds or skip)
+4. [ ] Theme music plays automatically after underscore
+5. [ ] Preview screen updates throughout closing
+6. [ ] CompleteClosing() triggers automatically when theme finishes
+7. [ ] All visual elements clear: Q&A, money tree, answer highlights
+8. [ ] Pristine "blank slate" display achieved
+9. [ ] Only Reset Game button enabled (red border)
+10. [ ] Closing and Reset Round buttons disabled
 
 ### Scenario 4: Lifeline Usage
 **50:50 Lifeline:**
@@ -169,9 +197,10 @@
 ## 🐛 Known Limitations (Document if encountered)
 
 ### Minor Issues (Won't affect gameplay):
-- 19 build warnings (nullability annotations) - safe to ignore
+- 0 build warnings - All resolved!
 - Money tree animation in preview shows final frame only (by design - performance)
 - Preview screen throttled to 10 FPS (100ms intervals) - prevents lag
+- Closing sequence triggers automatically via sound event (no manual intervention)
 
 ### Critical Issues (Stop testing if encountered):
 - Database connection failures
@@ -215,15 +244,17 @@
 ## 🚀 v1.0 Release Criteria
 
 - [ ] All critical bugs resolved
-- [ ] Complete Explain Game → FFF → Q1-Q15 flow successful
+- [ ] Complete Explain Game → FFF → Q1-Q15 → Closing flow successful
 - [ ] Web-based audience participation stable with 10+ participants
 - [ ] All lifelines functional
 - [ ] Sound system stable throughout entire show
 - [ ] Preview screen updates reliably
+- [ ] Closing sequence completes automatically with pristine display
+- [ ] Debug mode works in Release builds (--debug flag)
 - [ ] No game-breaking bugs discovered during live test
 
 ---
 
-**Last Updated:** December 31, 2025  
-**Commit Hash:** c24a624  
+**Last Updated:** January 3, 2026  
+**Commit Hash:** b51c745  
 **Branch:** master-csharp

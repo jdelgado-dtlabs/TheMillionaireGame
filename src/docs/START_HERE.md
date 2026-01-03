@@ -1,6 +1,6 @@
 # 🚀 START HERE - Next Session Guide
 
-**Last Updated**: December 31, 2025  
+**Last Updated**: January 3, 2026  
 **Current Branch**: `master-csharp`  
 **Version**: v0.9.8  
 **Status**: ✅ **ALL CRITICAL FEATURES COMPLETE - Ready for Testing**
@@ -31,6 +31,8 @@
 - ✅ **Naming Consistency** - GameConsoleWindow, WebServerConsoleWindow, ShowGameConsole
 - ✅ **Icon Loading Fix** - Corrected window initialization order, icons display properly
 - ✅ **Lifeline Hotkeys** - F8-F11 keyboard shortcuts for lifeline activation
+- ✅ **Closing Sequence** - Auto-completion via sound events, pristine visual clearing
+- ✅ **Debug Mode** - Runtime flag support (--debug), persistent title, Release build compatible
 - ✅ **Build Status** - ✅ **PERFECT BUILD: 0 warnings, 0 errors**
 - ✅ **Documentation** - Comprehensive, organized, current
 
@@ -65,6 +67,8 @@ dotnet publish src/MillionaireGame/MillionaireGame.csproj -c Release --output ".
 - FFF Offline with 2-8 players
 - FFF Online with web participants
 - Risk Mode and Free Safety Net Mode
+- Closing sequence with auto-completion and visual clearing
+- Debug mode testing (--debug flag in Release builds)
 - Monitor selection and full-screen modes
 - Sound playback for all cues
 - Settings persistence and loading
@@ -94,9 +98,11 @@ dotnet publish src/MillionaireGame/MillionaireGame.csproj -c Release --output ".
 
 **Current Status:**
 - `docs/active/V1.0_RELEASE_STATUS.md` - Consolidated v1.0 release status
-- `docs/PRE_V1.0_TESTING_CHECKLIST.md` - Testing procedures
+- `docs/active/PRE_1.0_FINAL_CHECKLIST.md` - Testing checklist (updated for v0.9.8)
 
 **Recent Sessions:**
+- `docs/sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md` - Closing sequence & debug mode complete
+- `docs/sessions/SESSION_2026-01-03_CLEANUP.md` - Pre-session cleanup
 - `docs/sessions/SESSION_2025-12-31_RELEASE_BUILD_PREP.md` - Code quality & build optimization
 - `docs/sessions/SESSION_2025-12-31_PERFORMANCE_AND_DATABASE.md` - Performance & database consolidation
 - `docs/sessions/SESSION_2025-12-30_ATA_ONLINE_COMPLETE.md` - ATA dual-mode completion
@@ -138,11 +144,13 @@ dotnet publish src/MillionaireGame/MillionaireGame.csproj -c Release --output ".
 - ✅ All gameplay features implemented
 - ✅ All lifelines fully functional with online capabilities
 - ✅ Complete web participant experience
-- ✅ Professional audio system
+- ✅ Professional audio system with event-based completion
 - ✅ Host communication tools
 - ✅ State management system
 - ✅ Preview screen optimized
 - ✅ Database consolidated to SQL Server
+- ✅ Closing sequence with pristine visual clearing
+- ✅ Debug mode with runtime flag support
 
 **What's Left**:
 - 🔴 End-to-end testing (4 hours) - REQUIRED before release
@@ -158,6 +166,7 @@ dotnet publish src/MillionaireGame/MillionaireGame.csproj -c Release --output ".
 
 ## 📊 Version History
 
+- **v0.9.8** (January 3, 2026): Closing sequence auto-completion, debug mode runtime support, pristine visual clearing - all features complete
 - **v0.9.8** (December 31, 2025): Code quality complete - 0 warnings, 0 errors, all features ready
 - **v0.9.7** (December 31, 2025): Preview optimization, database consolidation, WAPS lobby states
 - **v0.9.6** (December 30, 2025): ATA dual-mode and host notes/messaging complete
@@ -166,7 +175,7 @@ dotnet publish src/MillionaireGame/MillionaireGame.csproj -c Release --output ".
 
 ---
 
-**Last Updated**: December 31, 2025  
+**Last Updated**: January 3, 2026  
 **Current Branch**: `master-csharp`  
 **Next Milestone**: E2E testing → v1.0 release
 

@@ -32,6 +32,7 @@ Documents for active development and near-term planning:
 Chronological session summaries and checkpoints:
 
 **Recent Sessions (Jan 2026)**:
+- **[`SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md`](sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md)** - Closing sequence & debug mode complete
 - **[`SESSION_2026-01-03_CLEANUP.md`](sessions/SESSION_2026-01-03_CLEANUP.md)** - Unicode emoji fix & Stream Deck cleanup
 
 **Recent Sessions (Dec 2025)**:
