@@ -920,13 +920,13 @@ function endFFFQuestion(data) {
  */
 function showFFFRankings(data) {
     if (!data.rankings || data.rankings.length === 0) {
-        showFFFMessage("≡ƒôè No correct answers submitted.", false);
+        showFFFMessage("&#x2713; No correct answers submitted.", false);
         return;
     }
     
-    let message = "≡ƒôè <strong>Results:</strong><br><br>";
+    let message = "&#x1F3C6; <strong>Results:</strong><br><br>";
     data.rankings.forEach((rank, index) => {
-        const medal = index === 0 ? "≡ƒÑç" : index === 1 ? "≡ƒÑê" : index === 2 ? "≡ƒÑë" : `${index + 1}.`;
+        const medal = index === 0 ? "&#x1F947;" : index === 1 ? "&#x1F948;" : index === 2 ? "&#x1F949;" : `${index + 1}.`;
         message += `${medal} ${rank.displayName} - ${rank.timeElapsed.toFixed(1)}s<br>`;
     });
     
@@ -1247,7 +1247,7 @@ function clearSessionData() {
         sessionExpiryTimer = null;
     }
     
-    console.log("Γ£ô All session data cleared");
+    console.log("&#x2713; All session data cleared");
 }
 
 /**
