@@ -618,6 +618,13 @@ namespace MillionaireGame.Services
                                 }
                                 _silenceSampleCount = 0;
                                 
+                                // Fire completion event since queue is now empty
+                                if (!_completionEventFired)
+                                {
+                                    _completionEventFired = true;
+                                    QueueCompleted?.Invoke(this, EventArgs.Empty);
+                                }
+                                
                                 // Return silence for remaining buffer
                                 if (read < count)
                                 {
