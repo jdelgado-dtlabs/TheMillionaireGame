@@ -2787,10 +2787,14 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            GameConsole.Log("[Closing] Stage: Theme - playing sound (let it complete naturally)");
+            GameConsole.Log("[Closing] Stage: Theme - playing sound (45s)");
         }
         
-        // Note: Theme will play out naturally. User must manually click Reset Game when ready.
+        // Set timer for 45 seconds, then complete closing sequence
+        _closingTimer = new System.Windows.Forms.Timer();
+        _closingTimer.Interval = 45000;  // 45 seconds for closing theme
+        _closingTimer.Tick += (s, args) => { _closingTimer?.Stop(); CompleteClosing(); };
+        _closingTimer.Start();
     }
     
     private void CompleteClosing()
