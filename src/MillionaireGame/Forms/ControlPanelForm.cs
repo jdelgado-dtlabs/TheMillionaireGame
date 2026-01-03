@@ -1350,7 +1350,9 @@ public partial class ControlPanelForm : Form
             // See the answer reveal step 5 logic below
             
             // Closing button logic handled in ShowWinningsAndEnableButtons based on round completion
-            // Do not enable here - only enable after round completion or Q6+ answer on round 2+
+            // Disable Closing button when loading new question (will re-enable after answer reveal on Q6+ for round 2+)
+            btnClosing.Enabled = false;
+            btnClosing.BackColor = Color.Gray;
         }
         catch (Exception ex)
         {
@@ -2613,6 +2615,10 @@ public partial class ControlPanelForm : Form
                 // Start closing sequence
                 _closingStage = ClosingStage.GameOver;
                 
+                // Disable Walk Away button immediately
+                btnWalk.Enabled = false;
+                btnWalk.BackColor = Color.Gray;
+                
                 // Clear question display but DON'T reset controls yet
                 txtQuestion.Clear();
                 txtA.Clear();
@@ -3715,7 +3721,8 @@ public partial class ControlPanelForm : Form
             btnWalk.Enabled = false;
             btnWalk.BackColor = Color.Gray;
             
-            // Enable Closing (green) on Q6+ if round 2 or higher
+            // Enable Closing (green) on Q6+ if round 2 or higher - only immediately after answer reveal
+            // This gets enabled here and then disabled again in LoadNewQuestion
             if (_firstRoundCompleted)
             {
                 btnClosing.Enabled = true;
