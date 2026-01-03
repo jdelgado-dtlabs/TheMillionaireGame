@@ -25,6 +25,7 @@ This index helps you find the right documentation for your needs.
 Documents for active development and near-term planning:
 
 - **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - Consolidated v1.0 release readiness status
+- **[`PRE_1.0_FINAL_CHECKLIST.md`](active/PRE_1.0_FINAL_CHECKLIST.md)** - Streamlined v1.0 testing checklist
 - **[`CRASH_HANDLER_IMPLEMENTATION_PLAN.md`](active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md)** - Future watchdog implementation (post-1.0)
 
 ### `/sessions/` - Development History
@@ -71,6 +72,10 @@ SQL scripts for database management:
 
 ### `/archive/` - Historical Documents
 Completed phases and legacy documentation:
+
+**Completed Tasks**:
+- **[`PRE_1.0_COMPLETED_TASKS.md`](archive/PRE_1.0_COMPLETED_TASKS.md)** - Complete archive of 14 major features (v0.9.8)
+- **[`LIFELINE_HOTKEY_MAPPING_PLAN.md`](archive/LIFELINE_HOTKEY_MAPPING_PLAN.md)** - Completed keyboard shortcut implementation
 
 **Completed Phases**:
 - **[`phases/PHASE_5.2_COMPLETE.md`](archive/phases/PHASE_5.2_COMPLETE.md)**
