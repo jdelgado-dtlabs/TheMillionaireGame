@@ -2771,7 +2771,8 @@ public partial class ControlPanelForm : Form
     private void CompleteClosing()
     {
         _closingStage = ClosingStage.Complete;
-        btnClosing.BackColor = Color.LimeGreen;
+        btnClosing.BackColor = Color.Gray;
+        btnClosing.Enabled = false;
         
         // Stop and dispose timer if still running
         if (_closingTimer != null)
@@ -2783,7 +2784,7 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            GameConsole.Log("[Closing] Complete - resetting application");
+            GameConsole.Log("[Closing] Complete - game is over, shutting down");
         }
         
         // Stop all sounds
@@ -2792,9 +2793,16 @@ public partial class ControlPanelForm : Form
         // Clear game winner display from screens
         _screenService.ClearGameWinnerDisplay();
         
-        // NOW reset all controls for next round
+        // Clear all questions and displays
         nmrLevel.Value = 0;
-        ResetAllControls();
+        txtQuestion.Clear();
+        txtA.Clear();
+        txtB.Clear();
+        txtC.Clear();
+        txtD.Clear();
+        txtExplain.Clear();
+        lblAnswer.Text = string.Empty;
+        txtID.Clear();
         
         // Reset closing stage
         _closingStage = ClosingStage.NotStarted;
@@ -2802,10 +2810,57 @@ public partial class ControlPanelForm : Form
         // Reset first round flag
         _firstRoundCompleted = false;
         
-        // Enable Host Intro (green) for next show
-        btnHostIntro.Enabled = true;
-        btnHostIntro.BackColor = Color.LimeGreen;
-        btnHostIntro.ForeColor = Color.Black;
+        // DISABLE ALL BUTTONS - game is completely over
+        btnHostIntro.Enabled = false;
+        btnHostIntro.BackColor = Color.Gray;
+        
+        btnPickPlayer.Enabled = false;
+        btnPickPlayer.BackColor = Color.Gray;
+        
+        btnExplainGame.Enabled = false;
+        btnExplainGame.BackColor = Color.Gray;
+        
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        btnNewQuestion.Enabled = false;
+        btnNewQuestion.BackColor = Color.Gray;
+        
+        btnReveal.Enabled = false;
+        btnReveal.BackColor = Color.Gray;
+        
+        btnWalk.Enabled = false;
+        btnWalk.BackColor = Color.Gray;
+        
+        btnA.Enabled = false;
+        btnA.BackColor = Color.Gray;
+        btnB.Enabled = false;
+        btnB.BackColor = Color.Gray;
+        btnC.Enabled = false;
+        btnC.BackColor = Color.Gray;
+        btnD.Enabled = false;
+        btnD.BackColor = Color.Gray;
+        
+        btnLifeline1.Enabled = false;
+        btnLifeline1.BackColor = Color.Gray;
+        btnLifeline2.Enabled = false;
+        btnLifeline2.BackColor = Color.Gray;
+        btnLifeline3.Enabled = false;
+        btnLifeline3.BackColor = Color.Gray;
+        btnLifeline4.Enabled = false;
+        btnLifeline4.BackColor = Color.Gray;
+        
+        btnShowMoneyTree.Enabled = false;
+        btnShowMoneyTree.BackColor = Color.Gray;
+        
+        // Keep Reset Game enabled (red) for manual app reset or shutdown
+        btnResetGame.Enabled = true;
+        btnResetGame.BackColor = Color.Gray;
+        btnResetGame.FlatAppearance.BorderColor = Color.Red;
+        btnResetGame.FlatAppearance.BorderSize = 3;
+        btnResetGame.ForeColor = Color.Black;
+        
+        GameConsole.Info("[Closing] Show complete. Use Reset Game to restart or close the application.");
         
         // Disable all other broadcast buttons (grey)
         btnPickPlayer.Enabled = false;
