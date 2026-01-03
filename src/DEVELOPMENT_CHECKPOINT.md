@@ -1,6 +1,6 @@
-# Development Checkpoint - v0.9.5
-**Date**: December 30, 2025  
-**Version**: 0.9.5 (ATA Online Complete)  
+# Development Checkpoint - v0.9.8
+**Date**: January 3, 2026  
+**Version**: 0.9.8 (Closing Sequence & Debug Mode Complete)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
@@ -10,17 +10,17 @@
 
 ### What to Do When You Return
 
-**CURRENT STATE**: ✅ **ATA ONLINE COMPLETE** - Full dual-mode Ask the Audience implementation working with live voting
+**CURRENT STATE**: ✅ **CLOSING SEQUENCE COMPLETE** - Automatic completion detection, pristine visual clearing, runtime debug mode support
 
-**STATUS UPDATE**: Major milestone achieved - ATA dual-mode system fully operational:
-- ✅ ATA Offline mode with realistic placeholder results
-- ✅ ATA Online mode with real-time voting from web clients
-- ✅ Hub architecture consolidated (GameHub replaces FFFHub and ATAHub)
-- ✅ Vote persistence and database integration
-- ✅ Web client reconnection and session management
-- ✅ Multi-phase voting flow (Intro → Voting → Results → Clear on answer selection)
+**STATUS UPDATE**: Polish phase complete - closing sequence and debug mode fully refined:
+- ✅ ATA dual-mode system (Offline + Online with live voting)
+- ✅ Closing sequence automatic completion via sound events
+- ✅ Complete visual clearing (Q&A, money tree, answer highlights)
+- ✅ Runtime debug mode support (--debug flag in Release builds)
+- ✅ Persistent debug title through web server lifecycle
+- ✅ Deprecated settings cleanup (console visibility)
 
-#### Quick Status Check - v0.9.5
+#### Quick Status Check - v0.9.8
 1. ✅ **Web Server Integration** - Single executable, GameHub consolidated endpoint
 2. ✅ **CSCore Audio System** - Complete with DSP, silence detection, crossfading
 3. ✅ **Audio Settings UI** - Full configuration in Options dialog
@@ -33,9 +33,11 @@
 10. ✅ **Host Notes System** - Complete messaging and explanation display
 11. ✅ **Code Quality** - 74% warning reduction (66→17), removed test code
 12. ✅ **ATA System** - COMPLETE - Full dual-mode with online voting
-13. ⏳ **WAPS Lobby** - Infrastructure complete, needs state management refinements
-14. ⏳ **Crash Handler** - Planned, not started
-15. ⏳ **Installer** - Not started
+13. ✅ **Closing Sequence** - COMPLETE - Auto-completion, visual clearing, pristine display
+14. ✅ **Debug Mode** - COMPLETE - Runtime flag support, persistent title
+15. ⏳ **WAPS Lobby** - Infrastructure complete, needs state management refinements
+16. ⏳ **Crash Handler** - Planned, not started
+17. ⏳ **Installer** - Not started
 
 ---
 
@@ -58,7 +60,35 @@
 
 **Location**: `MillionaireGame.Web/Hubs/`, `MillionaireGame/Forms/ControlPanelForm.cs`
 
-**After Morning Session**: Game will be **99% feature-complete** ✅
+---
+
+## 🎯 Latest Session Summary (January 3, 2026)
+
+### Closing Sequence & Debug Mode Refinement ✅ COMPLETE
+
+**Problems Solved**:
+1. ✅ Closing theme completion not detected - Implemented QueueCompleted event system
+2. ✅ Event not firing after silence fadeout - Added trigger in fadeout path
+3. ✅ Debug title cleared by web server - Created UpdateWindowTitle() helper
+4. ✅ --debug flag ignored in Release - Replaced compile-time with runtime checks
+5. ✅ Green answer highlight persisting - Added RevealAnswer(empty) call
+
+**Files Modified** (7 files):
+- AudioCueQueue.cs - Event system with _completionEventFired flag
+- EffectsChannel.cs, SoundService.cs - Event passthrough
+- ControlPanelForm.cs - Event subscription, title helper, visual clearing
+- ApplicationSettings.cs - Removed deprecated console settings
+- Program.cs - Removed deprecated UpdateConsoleVisibility()
+- OptionsDialog.cs - Removed deprecated method call
+
+**Results**:
+- Closing sequence triggers automatically when theme finishes
+- Complete visual clearing: Q&A, money tree, all highlights (orange/green/red)
+- Debug mode works in Release builds with --debug flag
+- Title persists "DEBUG ENABLED" through web server lifecycle
+- Clean, maintainable codebase with deprecated code removed
+
+**Documentation**: SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md
 
 ---
 
@@ -190,7 +220,31 @@ MillionaireGameWatchdog.exe (always running)
 - [ ] Create uninstaller
 - [ ] Digital signature (code signing certificate)
 
-**Installer Features**:
+**I🎉 Recent Achievements (v0.9.8)
+
+### Closing Sequence System ✅
+- **Event-Based Completion**: QueueCompleted event fires when theme finishes
+- **Visual Clearing**: Complete "blank slate" - Q&A, money tree, all highlights removed
+- **Auto-Detection**: No hardcoded timers, adapts to audio length changes
+- **Multi-Path Events**: Fires in both normal empty queue and silence-detected fadeout
+- **Flag System**: Prevents repeated firing, resets when new audio queued
+
+### Debug Mode Improvements ✅
+- **Runtime Flag Support**: --debug works in Release builds for production troubleshooting
+- **Persistent Title**: "DEBUG ENABLED" suffix maintained through web server lifecycle
+- **Helper Method**: UpdateWindowTitle() centralizes state-dependent updates
+- **Runtime Checks**: Console visibility uses Program.DebugMode instead of #if DEBUG
+- **Code Cleanup**: Removed deprecated ShowGameConsole/ShowWebServerConsole settings
+
+### Code Quality ✅
+- **Deprecated Removal**: UpdateConsoleVisibility() method deleted (18 lines)
+- **State Management**: Clear distinction between hiding display vs clearing state
+- **Event Architecture**: Reusable pattern for audio-dependent workflows
+- **Comprehensive Paths**: All code paths trigger completion events
+
+---
+
+## nstaller Features**:
 - [ ] Welcome screen with project branding
 - [ ] License agreement (if applicable)
 - [ ] Component selection (Main app, SQL Server, Sample content)
@@ -218,7 +272,7 @@ MillionaireGameWatchdog.exe (always running)
 
 ---
 
-## 📊 Progress Summary
+## 📊 Progress Summary8
 
 ### Completed Systems (v0.9.0)
 - ✅ Core Game Engine (Questions 1-15, money tree, risk mode)
@@ -234,13 +288,14 @@ MillionaireGameWatchdog.exe (always running)
 - ✅ Graphics System (animations, smooth rendering)
 - ✅ Build System (clean builds, organized output)
 - ✅ Documentation (comprehensive, organized, searchable)
+- ✅ Closing Sequence (auto-completion, visual clearing, pristine display)
+- ✅ Debug Mode (runtime flag support, persistent title)
+WAPS Lobby States** (4-5 hours) - Full state management for web clients
+2. ⏳ **Database Consolidation** (3-4 hours) - Unify settings + WAPS into SQL Server
+3. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
+4. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
 
-### Remaining Work to v1.0
-1. ⏳ **ATA Dual-Mode** (3-4 hours) - Offline enhancement + Online real-time voting
-2. ⏳ **WAPS Lobby States** (4-5 hours) - Full state management for web clients
-3. ⏳ **Database Consolidation** (3-4 hours) - Unify settings + WAPS into SQL Server
-4. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
-5. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
+**Estimated Total**: 15-23urs) - Professional Windows installer with dependencies
 
 **Estimated Total**: 20-27 hours to v1.0.0 release
 
@@ -320,11 +375,11 @@ After Database Consolidation (optional):
 After morning session completion, the game will have:
 - ✅ All core gameplay features
 - ✅ All lifelines fully functional (including ATA Online)
-- ✅ Complete web participant experience with state management
-- ✅ Professional audio system
-- ✅ Multi-screen support
-- ✅ Comprehensive settings
-- ✅ Question management tools
+- ✅ Complete web pJanuary 3, 2026  
+**Next Session**: TBD  
+**Recent Work**: Closing sequence polish + debug mode improvements  
+**Version**: v0.9.8 (stable, tested)  
+**Final Target**: v1.0.0 (estimated 15-23 hours remaining
 
 **Remaining**: Only crash handler and installer for production deployment!
 
