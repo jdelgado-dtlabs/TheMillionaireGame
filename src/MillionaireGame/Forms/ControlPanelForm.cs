@@ -563,11 +563,8 @@ public partial class ControlPanelForm : Form
 
     private void ControlPanelForm_Load(object? sender, EventArgs e)
     {
-        // Update window title to show debug mode
-        if (Program.DebugMode)
-        {
-            this.Text += " - DEBUG ENABLED";
-        }
+        // Set initial window title with debug mode indicator
+        UpdateWindowTitle();
         
         // Initialize game to level 0
         _gameService.ChangeLevel(0);
@@ -590,18 +587,10 @@ public partial class ControlPanelForm : Form
         
         // Initialize WebService console only if web server will be started
         // (before auto-start so it doesn't steal focus)
-#if DEBUG
-        // Always show in debug mode
-        if (_appSettings.Settings.AudienceServerAutoStart)
+        if ((Program.DebugMode || _appSettings.Settings.ShowWebServerConsole) && _appSettings.Settings.AudienceServerAutoStart)
         {
             WebServerConsole.Show();
         }
-#else
-        if (_appSettings.Settings.ShowWebServerConsole && _appSettings.Settings.AudienceServerAutoStart)
-        {
-            WebServerConsole.Show();
-        }
-#endif
         
         // Auto-start web server if enabled in settings
         if (_appSettings.Settings.AudienceServerAutoStart)
@@ -632,32 +621,28 @@ public partial class ControlPanelForm : Form
         
         // Initialize GameConsole LAST (after all screens are shown)
         // This prevents it from stealing focus and ensures proper icon loading
-#if DEBUG
-        // Always show in debug mode
-        var gameConsoleWindow = new GameConsoleWindow();
-        gameConsoleWindow.Show();
-        GameConsole.SetWindow(gameConsoleWindow);
-        
-        GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
-        GameConsole.Info($"Version: v0.9.8 Debug Build");
-        GameConsole.Info($"Started: {DateTime.Now}");
-        GameConsole.Warn("⚠ DEBUG MODE IS ACTIVE - Verbose logging enabled");
-        GameConsole.LogSeparator();
-        GameConsole.Info("Application initialized successfully.");
-#else
-        if (_appSettings.Settings.ShowGameConsole)
+        if (Program.DebugMode || _appSettings.Settings.ShowGameConsole)
         {
             var gameConsoleWindow = new GameConsoleWindow();
             gameConsoleWindow.Show();
             GameConsole.SetWindow(gameConsoleWindow);
             
-            GameConsole.Info("===== THE MILLIONAIRE GAME - Console =====");
-            GameConsole.Info($"Version: v0.9.8");
-            GameConsole.Info($"Started: {DateTime.Now}");
+            if (Program.DebugMode)
+            {
+                GameConsole.Info("===== THE MILLIONAIRE GAME - Debug Console =====");
+                GameConsole.Info($"Version: v0.9.8 Debug Build");
+                GameConsole.Info($"Started: {DateTime.Now}");
+                GameConsole.Warn("⚠ DEBUG MODE IS ACTIVE - Verbose logging enabled");
+            }
+            else
+            {
+                GameConsole.Info("===== THE MILLIONAIRE GAME - Console =====");
+                GameConsole.Info($"Version: v0.9.8");
+                GameConsole.Info($"Started: {DateTime.Now}");
+            }
             GameConsole.LogSeparator();
             GameConsole.Info("Application initialized successfully.");
         }
-#endif
         
         // Bring Control Panel to front after everything else loads
         // Use BeginInvoke to let all other windows finish loading first
@@ -858,7 +843,7 @@ public partial class ControlPanelForm : Form
         WebServerConsole.LogSeparator();
         
         // Log to console or status bar if available
-        Text = $"The Millionaire Game - Control Panel [Web Server: {baseUrl}]";
+        UpdateWindowTitle(baseUrl);
     }
 
     private void OnWebServerStopped(object? sender, EventArgs e)
@@ -878,7 +863,7 @@ public partial class ControlPanelForm : Form
         WebServerConsole.Hide();
         
         // Reset title
-        Text = "The Millionaire Game - Control Panel";
+        UpdateWindowTitle();
     }
 
     private void OnWebServerError(object? sender, Exception ex)
@@ -887,6 +872,26 @@ public partial class ControlPanelForm : Form
         // No UI thread marshalling needed
         WebServerConsole.Error($"Ã¢ÂÅ’ Error: {ex.Message}");
         GameConsole.Error($"[Web Server] {ex.Message}");
+    }
+    
+    /// <summary>
+    /// Update the window title with optional web server URL and debug mode indicator
+    /// </summary>
+    private void UpdateWindowTitle(string? webServerUrl = null)
+    {
+        string baseTitle = "The Millionaire Game - Control Panel";
+        
+        if (!string.IsNullOrEmpty(webServerUrl))
+        {
+            baseTitle += $" [Web Server: {webServerUrl}]";
+        }
+        
+        if (Program.DebugMode)
+        {
+            baseTitle += " - DEBUG ENABLED";
+        }
+        
+        Text = baseTitle;
     }
 
     #endregion
