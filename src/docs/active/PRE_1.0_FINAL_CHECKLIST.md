@@ -17,29 +17,31 @@ All critical features have been implemented and completed. The application is fe
 ## ⏳ Remaining Tasks for v1.0
 
 ### 1. End-to-End Testing ⏳
-**Status**: NOT STARTED  
-**Estimated Time**: 4-6 hours  
+**Status**: IN PROGRESS - Offline Complete, Online Testing Underway  
+**Estimated Time**: 4-6 hours (3 hours complete, 1-3 hours remaining)  
 **Priority**: CRITICAL (Required before release)  
 **Assigned**: QA/Testing Team
 
 **Description**: Comprehensive testing of all game features, flows, and edge cases to ensure production readiness.
+
+**Progress**: ✅ All offline components tested and verified. 🔄 Online web-based testing in progress.
 
 ---
 
 #### Test Scenarios
 
 **Core Game Flow**:
-- [ ] Complete game from Q1 to win (£1,000,000)
-- [ ] Complete game with walk away at various levels (Q5, Q10, Q14)
-- [ ] Complete game with wrong answer at various levels
-- [ ] Money tree progression and safety net behavior
-- [ ] Risk Mode gameplay with dynamic safety nets
-- [ ] Free Safety Net Mode gameplay
+- [x] Complete game from Q1 to win (£1,000,000)
+- [x] Complete game with walk away at various levels (Q5, Q10, Q14)
+- [x] Complete game with wrong answer at various levels
+- [x] Money tree progression and safety net behavior
+- [x] Risk Mode gameplay with dynamic safety nets
+- [x] Free Safety Net Mode gameplay
 
 **Lifeline Testing**:
-- [ ] **50:50** - Removal of two incorrect answers
-- [ ] **Phone-a-Friend (PAF)** - Timer countdown (30s), audio cues
-- [ ] **Ask the Audience (ATA) Offline** - Realistic percentage generation (40-70% for correct)
+- [x] **50:50** - Removal of two incorrect answers
+- [x] **Phone-a-Friend (PAF)** - Timer countdown (30s), audio cues
+- [x] **Ask the Audience (ATA) Offline** - Realistic percentage generation (40-70% for correct)
 - [ ] **Ask the Audience (ATA) Online** - Real-time voting with 10+ web participants
   - Vote submission and persistence
   - Duplicate vote prevention
@@ -48,7 +50,7 @@ All critical features have been implemented and completed. The application is fe
   - Graceful fallback to offline mode if web unavailable
 
 **FFF (Fastest Finger First)**:
-- [ ] **FFF Offline Mode** - Local gameplay with 2-8 players
+- [x] **FFF Offline Mode** - Local gameplay with 2-8 players
 - [ ] **FFF Online Mode** - Web-based gameplay with 10+ participants
   - Question display and timer
   - Answer submission and ordering
@@ -58,10 +60,10 @@ All critical features have been implemented and completed. The application is fe
   - All lobby state transitions
 
 **Host Features**:
-- [ ] Host messaging system - Send messages during gameplay
-- [ ] Message display on Host Screen
-- [ ] Question explanations display
-- [ ] All 80 questions have contextual clues
+- [x] Host messaging system - Send messages during gameplay
+- [x] Message display on Host Screen
+- [x] Question explanations display
+- [x] All 80 questions have contextual clues
 
 **Web Participant System (WAPS)**:
 - [ ] Session creation and management
@@ -78,24 +80,24 @@ All critical features have been implemented and completed. The application is fe
 - [ ] Automatic cache clearing
 
 **Visual Features**:
-- [ ] Winner confetti animation (Q11+ only)
-- [ ] Screen transitions and animations
-- [ ] Preview window with all 3 screens active
-- [ ] Monitor selection and full-screen mode
+- [x] Winner confetti animation (Q11+ only)
+- [x] Screen transitions and animations
+- [x] Preview window with all 3 screens active
+- [x] Monitor selection and full-screen mode
 
 **Audio System**:
-- [ ] Music playback for all game phases
-- [ ] Sound effects for all actions
-- [ ] Timing synchronization with visuals
-- [ ] DSP effects (silence detection, crossfading)
-- [ ] Sound pack switching
+- [x] Music playback for all game phases
+- [x] Sound effects for all actions
+- [x] Timing synchronization with visuals
+- [x] DSP effects (silence detection, crossfading)
+- [x] Sound pack switching
 
 **Data Management**:
-- [ ] Settings persistence and loading
-- [ ] Database operations (create, read, update, delete)
-- [ ] Question editor functionality
-- [ ] CSV import/export
-- [ ] Backup/restore procedures
+- [x] Settings persistence and loading
+- [x] Database operations (create, read, update, delete)
+- [x] Question editor functionality
+- [x] CSV import/export
+- [x] Backup/restore procedures
 
 ---
 
@@ -110,28 +112,28 @@ All critical features have been implemented and completed. The application is fe
 - [ ] State synchronization with rapid state changes
 
 **Resource Management**:
-- [ ] Memory usage monitoring during extended gameplay (2+ hours)
-- [ ] Memory leak detection
-- [ ] CPU usage with preview window active
-- [ ] Disk I/O for logging and database operations
+- [x] Memory usage monitoring during extended gameplay (2+ hours)
+- [x] Memory leak detection
+- [x] CPU usage with preview window active
+- [x] Disk I/O for logging and database operations
 - [ ] Network bandwidth with multiple web clients
 
 **Stability Tests**:
-- [ ] Complete 5 full games without crashes
-- [ ] Rapid question cycling (F5 spam test)
-- [ ] Rapid lifeline activation/deactivation
+- [x] Complete 5 full games without crashes
+- [x] Rapid question cycling (F5 spam test)
+- [x] Rapid lifeline activation/deactivation
 - [ ] Network interruption recovery
-- [ ] Database connection loss handling
+- [x] Database connection loss handling
 
 ---
 
 #### Compatibility Tests
 
 **Operating Systems**:
-- [ ] Windows 10 x64 (Build 1909+)
-- [ ] Windows 11 x64 (All builds)
-- [ ] SQL Server Express 2019
-- [ ] SQL Server 2022 (LocalDB)
+- [x] Windows 10 x64 (Build 1909+)
+- [x] Windows 11 x64 (All builds)
+- [x] SQL Server Express 2019
+- [x] SQL Server 2022 (LocalDB)
 
 **Web Browser Testing**:
 - [ ] Chrome (latest)
@@ -161,10 +163,10 @@ All critical features have been implemented and completed. The application is fe
 - [ ] Server shutdown during active ATA voting
 
 **Database Issues**:
-- [ ] Database connection failure
-- [ ] SQL Server not running
-- [ ] Corrupted database recovery
-- [ ] Transaction rollback scenarios
+- [x] Database connection failure
+- [x] SQL Server not running
+- [x] Corrupted database recovery
+- [x] Transaction rollback scenarios
 
 **User Input Edge Cases**:
 - [ ] Empty participant names
@@ -175,15 +177,15 @@ All critical features have been implemented and completed. The application is fe
 - [ ] Invalid keyboard shortcuts
 
 **Game State Edge Cases**:
-- [ ] Walk away at Q1 (should give £0)
-- [ ] Walk away at Q5 (should give Q4 prize: £1,000)
-- [ ] Walk away at Q10 (should give Q9 prize: £32,000)
-- [ ] Wrong answer at Q1-4 (should give £0)
-- [ ] Wrong answer at Q5-9 (should give Q4 prize: £1,000)
-- [ ] Wrong answer at Q10-14 (should give Q9 prize: £32,000)
-- [ ] All lifelines used before final question
-- [ ] FFF with 0 participants
-- [ ] ATA with 0 votes
+- [x] Walk away at Q1 (should give £0)
+- [x] Walk away at Q5 (should give Q4 prize: £1,000)
+- [x] Walk away at Q10 (should give Q9 prize: £32,000)
+- [x] Wrong answer at Q1-4 (should give £0)
+- [x] Wrong answer at Q5-9 (should give Q4 prize: £1,000)
+- [x] Wrong answer at Q10-14 (should give Q9 prize: £32,000)
+- [x] All lifelines used before final question
+- [x] FFF with 0 participants
+- [x] ATA with 0 votes
 
 ---
 
