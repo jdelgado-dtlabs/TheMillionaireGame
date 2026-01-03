@@ -2730,6 +2730,25 @@ public partial class ControlPanelForm : Form
         btnClosing.BackColor = Color.Yellow;
         btnClosing.Enabled = true;  // Ensure button is enabled for final click
         
+        // Disable remaining active buttons during theme
+        btnLightsDown.Enabled = false;
+        btnLightsDown.BackColor = Color.Gray;
+        
+        btnLifeline1.Enabled = false;
+        btnLifeline1.BackColor = Color.Gray;
+        btnLifeline2.Enabled = false;
+        btnLifeline2.BackColor = Color.Gray;
+        btnLifeline3.Enabled = false;
+        btnLifeline3.BackColor = Color.Gray;
+        btnLifeline4.Enabled = false;
+        btnLifeline4.BackColor = Color.Gray;
+        
+        btnShowMoneyTree.Enabled = false;
+        btnShowMoneyTree.BackColor = Color.Gray;
+        
+        btnActivateRiskMode.Enabled = false;
+        btnActivateRiskMode.BackColor = Color.Gray;
+        
         // Play closing theme with immediate priority (crossfades from underscore)
         _soundService.QueueSoundByKey("ClosingTheme", AudioPriority.Immediate);
         
