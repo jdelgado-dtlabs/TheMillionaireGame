@@ -38,6 +38,11 @@ namespace MillionaireGame.Services
         private int _crossfadePosition = 0;
         private WaveFormat _waveFormat;
         
+        /// <summary>
+        /// Event raised when all audio in the queue has finished playing (queue becomes empty)
+        /// </summary>
+        public event EventHandler? QueueCompleted;
+        
         // Silence detection state
         private int _silenceSampleCount = 0;
         private int _silenceDurationSamples = 0;
@@ -653,6 +658,9 @@ namespace MillionaireGame.Services
                     // Nothing queued - return silence to stay active in mixer
                     else
                     {
+                        // Raise QueueCompleted event when everything finishes
+                        QueueCompleted?.Invoke(this, EventArgs.Empty);
+                        
                         Array.Clear(buffer, offset, count);
                         return count;
                     }

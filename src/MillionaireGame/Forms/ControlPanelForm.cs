@@ -2758,6 +2758,21 @@ public partial class ControlPanelForm : Form
         // Play closing theme with immediate priority (crossfades from underscore)
         _soundService.QueueSoundByKey("ClosingTheme", AudioPriority.Immediate);
         
+        // Subscribe to completion event to trigger CompleteClosing when theme finishes
+        EventHandler? completionHandler = null;
+        completionHandler = (s, e) =>
+        {
+            // Unsubscribe to prevent multiple triggers
+            _soundService.EffectsQueueCompleted -= completionHandler;
+            
+            // Call CompleteClosing on UI thread
+            if (!IsDisposed)
+            {
+                BeginInvoke(new Action(CompleteClosing));
+            }
+        };
+        _soundService.EffectsQueueCompleted += completionHandler;
+        
         // Notify web clients that game is complete
         _ = Task.Run(async () =>
         {
@@ -2787,14 +2802,8 @@ public partial class ControlPanelForm : Form
         
         if (Program.DebugMode)
         {
-            GameConsole.Log("[Closing] Stage: Theme - playing sound (45s)");
+            GameConsole.Log("[Closing] Stage: Theme - playing sound, will auto-complete when finished");
         }
-        
-        // Set timer for 45 seconds, then complete closing sequence
-        _closingTimer = new System.Windows.Forms.Timer();
-        _closingTimer.Interval = 45000;  // 45 seconds for closing theme
-        _closingTimer.Tick += (s, args) => { _closingTimer?.Stop(); CompleteClosing(); };
-        _closingTimer.Start();
     }
     
     private void CompleteClosing()

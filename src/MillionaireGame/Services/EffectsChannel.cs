@@ -23,6 +23,11 @@ public class EffectsChannel : IDisposable
     private bool _disposed = false;
     private float _volume = 1.0f;
 
+    /// <summary>
+    /// Event raised when all audio in the effects queue has finished playing
+    /// </summary>
+    public event EventHandler? QueueCompleted;
+
     public EffectsChannel(SilenceDetectionSettings? silenceSettings = null, 
         CrossfadeSettings? crossfadeSettings = null)
     {
@@ -45,6 +50,9 @@ public class EffectsChannel : IDisposable
         // CRITICAL: Add the queue's output stream to the mixer so queued audio plays through
         // Use a special identifier so it persists and isn't removed like normal effects
         _mixerSource.AddEffect("__queue__", _cueQueue);
+        
+        // Wire up queue completion event
+        _cueQueue.QueueCompleted += (s, e) => QueueCompleted?.Invoke(this, EventArgs.Empty);
         
         // Always log this critical initialization step
         GameConsole.Info("[EffectsChannel] Audio queue connected to mixer");
