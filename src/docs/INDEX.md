@@ -1,6 +1,6 @@
 # Documentation Index
 **The Millionaire Game - C# Edition**  
-**Last Updated**: December 31, 2025
+**Last Updated**: January 3, 2026
 
 This index helps you find the right documentation for your needs.
 
@@ -29,6 +29,9 @@ Documents for active development and near-term planning:
 
 ### `/sessions/` - Development History
 Chronological session summaries and checkpoints:
+
+**Recent Sessions (Jan 2026)**:
+- **[`SESSION_2026-01-03_CLEANUP.md`](sessions/SESSION_2026-01-03_CLEANUP.md)** - Unicode emoji fix & Stream Deck cleanup
 
 **Recent Sessions (Dec 2025)**:
 - **[`SESSION_2025-12-31_RELEASE_BUILD_PREP.md`](sessions/SESSION_2025-12-31_RELEASE_BUILD_PREP.md)** - Code quality & build optimization
