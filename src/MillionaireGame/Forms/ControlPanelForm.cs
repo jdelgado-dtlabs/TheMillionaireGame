@@ -2818,7 +2818,13 @@ public partial class ControlPanelForm : Form
         // Clear game winner display from screens
         _screenService.ClearGameWinnerDisplay();
         
-        // Clear all questions and displays
+        // Clear all visual elements on screens to create pristine "blank slate" appearance
+        // This gives the impression of a reset without actually resetting game data
+        _screenService.ShowQuestion(false);  // Hide question/answers display on all screens
+        _screenService.HideWinnings();  // Clear money tree display
+        _screenService.ClearQuestionAndAnswerText();  // Clear question/answer text on host/guest screens
+        
+        // Clear all questions and displays on control panel
         nmrLevel.Value = 0;
         txtQuestion.Clear();
         txtA.Clear();
