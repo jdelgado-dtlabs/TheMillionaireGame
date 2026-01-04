@@ -542,9 +542,34 @@ public partial class ControlPanelForm : Form
     {
         GameConsole.Info($"[ControlPanel] Stream Deck answer locked: {e.Answer} ({(e.IsCorrect ? "CORRECT" : "INCORRECT")})");
         
-        // The Stream Deck already shows correct/incorrect feedback to the host
-        // We just need to track that an answer has been locked in
+        // Stream Deck events fire on background thread - must invoke to UI thread
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => OnStreamDeckAnswerLocked(sender, e)));
+            return;
+        }
+        
+        // Simulate clicking the corresponding answer button
         _currentAnswer = e.Answer.ToString();
+        
+        Button? targetButton = e.Answer switch
+        {
+            'A' => btnA,
+            'B' => btnB,
+            'C' => btnC,
+            'D' => btnD,
+            _ => null
+        };
+        
+        if (targetButton != null && targetButton.Enabled && targetButton.Visible)
+        {
+            GameConsole.Debug($"[ControlPanel] Triggering answer button {e.Answer} click");
+            targetButton.PerformClick();
+        }
+        else
+        {
+            GameConsole.Warn($"[ControlPanel] Answer button {e.Answer} not available");
+        }
     }
     
     /// <summary>
@@ -554,10 +579,22 @@ public partial class ControlPanelForm : Form
     {
         GameConsole.Info("[ControlPanel] Stream Deck reveal triggered");
         
+        // Stream Deck events fire on background thread - must invoke to UI thread
+        if (InvokeRequired)
+        {
+            Invoke(new Action(() => OnStreamDeckRevealTriggered(sender, e)));
+            return;
+        }
+        
         // Simulate clicking the Reveal button
         if (btnReveal.Enabled && btnReveal.Visible)
         {
-            Invoke(new Action(() => btnReveal.PerformClick()));
+            GameConsole.Debug("[ControlPanel] Triggering reveal button click");
+            btnReveal.PerformClick();
+        }
+        else
+        {
+            GameConsole.Warn("[ControlPanel] Reveal button not available");
         }
     }
     

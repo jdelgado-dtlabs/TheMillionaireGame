@@ -38,8 +38,27 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.11" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="StreamDeckSharp" Version="6.1.0" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
+    <!-- StreamDeckSharp NuGet package removed - using custom build with Module 6 support -->
+    <!-- SixLabors.ImageSharp is needed by StreamDeck integration -->
     <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Custom StreamDeck DLLs with Module 6 support -->
+  <!-- TODO: Remove after upstream PR is merged and NuGet package is updated -->
+  <ItemGroup>
+    <Reference Include="StreamDeckSharp">
+      <HintPath>lib\StreamDeck\StreamDeckSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="OpenMacroBoard.SDK">
+      <HintPath>lib\StreamDeck\OpenMacroBoard.SDK.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="HidSharp">
+      <HintPath>lib\StreamDeck\HidSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

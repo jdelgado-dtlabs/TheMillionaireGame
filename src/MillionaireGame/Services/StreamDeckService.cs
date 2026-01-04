@@ -7,6 +7,7 @@ using StreamDeckSharp;
 using MillionaireGame.Utilities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace MillionaireGame.Services
 {
@@ -92,7 +93,7 @@ namespace MillionaireGame.Services
                     string layoutInfo = "unknown layout";
                     if (layout is OpenMacroBoard.SDK.GridKeyLayout grid)
                     {
-                        layoutInfo = $"{grid.Area.Width}x{grid.Area.Height} grid";
+                        layoutInfo = $"{grid.CountX}x{grid.CountY} grid ({grid.Area.Width}x{grid.Area.Height}px)";
                     }
                     GameConsole.Debug($"  - {dev.DeviceName}: {layout.Count} buttons, {layoutInfo}");
                 }
@@ -113,9 +114,10 @@ namespace MillionaireGame.Services
                     // Check layout dimensions
                     if (keyLayout is OpenMacroBoard.SDK.GridKeyLayout gridLayout)
                     {
-                        if (gridLayout.Area.Width != 3 || gridLayout.Area.Height != 2)
+                        // CountX = columns, CountY = rows (NOT Area which is pixels!)
+                        if (gridLayout.CountX != 3 || gridLayout.CountY != 2)
                         {
-                            GameConsole.Info($"[StreamDeck] Skipping {deviceRef.DeviceName} ({gridLayout.Area.Width}x{gridLayout.Area.Height} layout) - requires 3x2 layout");
+                            GameConsole.Info($"[StreamDeck] Skipping {deviceRef.DeviceName} ({gridLayout.CountX}x{gridLayout.CountY} layout) - requires 3x2 layout");
                             continue;
                         }
 
@@ -187,33 +189,50 @@ namespace MillionaireGame.Services
         /// </summary>
         private void SetButtonImage(int row, int col, string filename)
         {
-            if (!_isConnected || _device == null) return;
+            if (!_isConnected || _device == null)
+            {
+                GameConsole.Debug($"[StreamDeck] Skipping SetButtonImage (not connected): {filename}");
+                return;
+            }
 
             try
             {
                 string imagePath = Path.Combine(_imageBasePath, filename);
                 
+                GameConsole.Info($"[StreamDeck] 🔍 Looking for: {imagePath}");
+                
                 if (!File.Exists(imagePath))
                 {
-                    GameConsole.Warn($"[StreamDeck] Image not found: {filename}");
+                    GameConsole.Error($"[StreamDeck] ❌ IMAGE NOT FOUND: {imagePath}");
+                    GameConsole.Info($"[StreamDeck] Base path: {_imageBasePath}");
                     SetButtonBlank(row, col);
                     return;
                 }
 
                 // Convert row/col to Stream Deck key index
-                // Stream Deck uses single index: index = (row * columns) + col
+                // Module 6 uses ROW-MAJOR ordering: index = (row * columns) + col
+                // Physical layout: [0 1 2]
+                //                  [3 4 5]
                 int keyIndex = (row * 3) + col;
 
-                // Load image and set to key
+                GameConsole.Info($"[StreamDeck] 🔍 MAPPING: {filename} → Physical(row{row},col{col}) → KeyIndex[{keyIndex}]");
+
+                // Load image and resize to 80x80 for Module 6 (per official specs)
                 using (var image = SixLabors.ImageSharp.Image.Load<Rgb24>(imagePath))
                 {
+                    GameConsole.Debug($"[StreamDeck] Image loaded: {image.Width}x{image.Height}px, resizing to 80x80");
+                    
+                    // Resize to 80x80 for Stream Deck Module 6 (official spec)
+                    image.Mutate(x => x.Resize(80, 80));
+                    
                     var keyBitmap = KeyBitmap.Create.FromImageSharpImage(image);
                     _device.SetKeyBitmap(keyIndex, keyBitmap);
+                    GameConsole.Debug($"[StreamDeck] Image set to key {keyIndex} successfully");
                 }
             }
             catch (Exception ex)
             {
-                GameConsole.Error($"[StreamDeck] Failed to set button image: {ex.Message}");
+                GameConsole.Error($"[StreamDeck] Failed to set button image '{filename}': {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -370,9 +389,11 @@ namespace MillionaireGame.Services
 
             try
             {
-                // Convert key index to row/col
-                int row = e.Key / 3;
-                int col = e.Key % 3;
+                // Convert key index to row/col (row-major)
+                int row = e.Key / 3;  // row = key_index / columns
+                int col = e.Key % 3;  // col = key_index % columns
+
+                GameConsole.Debug($"[StreamDeck] Key {e.Key} pressed → row{row},col{col}");
 
                 // Determine which button was pressed
                 if (row == ANSWER_A_ROW && col == ANSWER_A_COL)
