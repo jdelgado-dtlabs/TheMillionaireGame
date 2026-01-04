@@ -13,11 +13,20 @@ Before installing The Millionaire Game, ensure your system meets the following r
 > ⚠️ **Note**: This application is Windows-only. macOS and Linux are not supported.
 
 ### Runtime
-- **.NET 8 Desktop Runtime** (x64)
-  - Required for application execution
+- **.NET 8 Desktop Runtime** (x64) - **REQUIRED**
+  - Essential for application execution
   - Approximately 50 MB download
   - **Download**: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
   - Select "Desktop Runtime" for Windows x64
+
+### Database
+- **SQL Server Express** - **REQUIRED**
+  - Free edition from Microsoft
+  - Approximately 200 MB download
+  - **Download**: [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)
+  - Or use full SQL Server if available
+  
+> 💡 **Note**: SQL Server LocalDB (included with .NET SDK) is NOT sufficient for runtime. SQL Server Express or full SQL Server is required.
 
 ### Hardware
 - **Processor**: Dual-core CPU (2 GHz or faster)
@@ -44,29 +53,35 @@ Before installing The Millionaire Game, ensure your system meets the following r
 ## Recommended Configuration
 
 ### For Best Experience
-- **OS**: Windows 11
+- **OS**: Windows 11 (64-bit)
 - **Processor**: Quad-core CPU (3 GHz+)
 - **RAM**: 8 GB or more
 - **Display**: Dual monitors (1920x1080 each)
-- **Network**: For audience participation features
+- **Network**: Ethernet or WiFi for audience participation
 - **Audio**: External speakers or sound system
+- **Database**: SQL Server Express or full SQL Server
 
 ---
 
-## Optional Components
+## Database Requirements
 
-### Database Server
-By default, the application uses **SQL Server LocalDB** (embedded), which is included with .NET installation.
+The application **requires** SQL Server Express (minimum) or SQL Server (full version).
 
-For advanced users or multi-machine setups:
-- **SQL Server Express** (free)
-- **SQL Server** (full version)
+### SQL Server Express (Minimum Required)
+- **Download**: [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)
+- Free edition from Microsoft
+- Sufficient for single-machine setups
+- 10 GB database size limit (more than enough)
 
-Benefits:
+### SQL Server (Recommended for Advanced Use)
+- Full-featured version
+- Required for multi-machine setups
 - Centralized question database
-- Multi-user access to questions
+- Multi-user access
 - Remote database hosting
-- Advanced backup options
+- Advanced backup and recovery
+
+> ⚠️ **Important**: SQL Server LocalDB is NOT sufficient. You must install SQL Server Express or full SQL Server.
 
 ### Network Requirements
 **For Web Audience Participation:**
@@ -153,6 +168,12 @@ The application supports Windows display scaling:
 2. Run: `dotnet --list-runtimes`
 3. Look for `Microsoft.WindowsDesktop.App 8.0.x`
 
+### Verify SQL Server Installation
+1. Open PowerShell
+2. Run: `sqlcmd -S localhost -Q "SELECT @@VERSION"`
+3. Should display SQL Server version information
+4. If command not found, SQL Server is not installed
+
 ### Check Display Resolution
 1. Right-click desktop → Display Settings
 2. Verify resolution under "Display resolution"
@@ -167,6 +188,13 @@ The application supports Windows display scaling:
 2. Download "Desktop Runtime x64" installer
 3. Run installer (requires administrator)
 4. Restart computer (recommended)
+
+### If SQL Server Not Installed
+1. Visit [SQL Server Express Download](https://www.microsoft.com/sql-server/sql-server-downloads)
+2. Download "Express" edition
+3. Run installer (requires administrator)
+4. Choose "Basic" installation for simplest setup
+5. Restart computer after installation
 
 ### If Windows Too Old
 1. Check for Windows Updates
