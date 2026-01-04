@@ -60,7 +60,42 @@ public partial class OptionsDialog : Form
         // Wire up audio device refresh button
         btnRefreshDevices.Click += (s, e) => LoadAudioDevices();
         
+        // Load Stream Deck button images
+        LoadStreamDeckImages();
+        
         LoadSettings();
+    }
+
+    private void LoadStreamDeckImages()
+    {
+        try
+        {
+            string imageBasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "image", "streamdeck");
+            
+            // Load button images
+            LoadImageToPictureBox(picDynamic, Path.Combine(imageBasePath, "blank.png"));
+            LoadImageToPictureBox(picAnswerA, Path.Combine(imageBasePath, "answer-a.png"));
+            LoadImageToPictureBox(picAnswerB, Path.Combine(imageBasePath, "answer-b.png"));
+            LoadImageToPictureBox(picReveal, Path.Combine(imageBasePath, "answer-reveal.png"));
+            LoadImageToPictureBox(picAnswerC, Path.Combine(imageBasePath, "answer-c.png"));
+            LoadImageToPictureBox(picAnswerD, Path.Combine(imageBasePath, "answer-d.png"));
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Warn($"[OptionsDialog] Failed to load Stream Deck images: {ex.Message}");
+        }
+    }
+    
+    private void LoadImageToPictureBox(PictureBox pictureBox, string imagePath)
+    {
+        if (File.Exists(imagePath))
+        {
+            pictureBox.Image = Image.FromFile(imagePath);
+        }
+        else
+        {
+            GameConsole.Warn($"[OptionsDialog] Image not found: {imagePath}");
+        }
     }
 
     private void LoadSettings()
@@ -127,6 +162,9 @@ public partial class OptionsDialog : Form
         
         // Load audience/web server settings
         LoadAudienceSettings();
+        
+        // Load Stream Deck settings
+        chkEnableStreamDeck.Checked = _settings.StreamDeckEnabled;
         
         // Update dropdown enabled states based on full-screen checkboxes
         UpdateDropdownEnabledStates();
@@ -600,6 +638,9 @@ public partial class OptionsDialog : Form
         
         // Save auto-start
         _settings.AudienceServerAutoStart = chkAutoStart.Checked;
+        
+        // Save Stream Deck settings
+        _settings.StreamDeckEnabled = chkEnableStreamDeck.Checked;
     }
 
     private void PopulateIPAddresses()
