@@ -15,4 +15,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Embed wwwroot files as resources -->
+    <EmbeddedResource Include="wwwroot\**\*.*" />
+  </ItemGroup>
+
 </Project>

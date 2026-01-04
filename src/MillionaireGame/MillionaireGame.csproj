@@ -42,25 +42,17 @@
   <ItemGroup>
     <!-- Exclude sound and image files from single file bundle - will be copied manually after publish -->
     <Content Remove="lib\sounds\**\*.*" />
-    <Content Remove="lib\image\**\*.*" />
     <None Include="lib\sounds\**\*.*">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
-    <None Include="lib\image\**\*.*">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
   <!-- Copy sounds and images after publish to avoid embedding in single file -->
   <Target Name="CopyAssets" AfterTargets="Publish">
     <ItemGroup>
-      <SoundsFiles Include="$(ProjectDir)lib\sounds\**\*.*" />
-      <ImageFiles Include="$(ProjectDir)lib\image\**\*.*" />
+      <SoundsFiles Include="lib\sounds\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
   <ItemGroup>
@@ -68,13 +60,6 @@
     <Content Remove="..\MillionaireGame.Web\wwwroot\**\*.*" />
   </ItemGroup>
   
-  <ItemGroup>
-    <!-- Exclude specific files from publish output -->
-    <None Include="*.lnk" CopyToOutputDirectory="Never" />
-    <None Include="*.bak" CopyToOutputDirectory="Never" />
-    <None Include="*.ps1" CopyToOutputDirectory="Never" />
-  </ItemGroup>
-
   <ItemGroup>
     <!-- Embed logo image and icon as resources -->
     <EmbeddedResource Include="lib\image\logo.png" />
