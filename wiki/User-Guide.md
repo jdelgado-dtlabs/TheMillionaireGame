@@ -74,7 +74,7 @@ The TV Screen is the main visual display for contestants and audience.
 - **Question Mode**: Current question with 4 answers
 - **Lifeline Results**: 50:50 elimination, audience poll chart
 - **Win/Lose Screens**: Final results with animations
-- **Full Screen**: Press `F11` to maximize
+
 
 **Visual Elements:**
 
@@ -485,9 +485,9 @@ D: ———
 Enable web server for real-time audience voting:
 
 1. **Enable Web Server**
-   - Settings tab → Web Integration
+   - Settings tab → Audience
    - Click **"Start Web Server"**
-   - Note IP address and port (e.g., `192.168.1.100:5000`)
+   - Note IP address and port (e.g., `192.168.1.100:5278`)
 
 2. **Audience Joins**
    - Audience members visit URL on phones
@@ -562,23 +562,23 @@ The Millionaire Game features a comprehensive sound system for immersive gamepla
 - Question reading audio (if imported)
 - Host commentary (custom recordings)
 
-### Volume Controls
+### Gain Controls
 
-**Master Volume:**
-- Control Panel → Audio section
-- Slider: 0% (mute) to 100% (full)
-- Affects all audio
+**Audio Processing Settings:**
+- Settings → Sounds tab → Audio Settings tab
+- Access Audio Processing section
 
-**Individual Controls:**
-- **Music Volume**: Background music level
-- **Effects Volume**: Sound effects level
-- **Voice Volume**: Narration level
+**Gain Controls:**
+- **Master Gain**: Overall audio level (-20dB to +20dB, default: 0dB)
+- **Effects Gain**: Sound effects level (-20dB to +20dB, default: 0dB)
+- **Music Gain**: Background music level (-20dB to +20dB, default: 0dB)
 
-**Quick Mute:**
-- Press `M` key to toggle mute
-- Useful for technical pauses
+**Additional Audio Processing:**
+- **Enable Limiter**: Prevents audio clipping
+- **Silence Detection**: Auto-detects when sounds end
+- **Crossfade**: Smooth transitions between sounds
 
-### Sound Profiles
+### Sound Packs
 
 Switch between different sound sets for variety or branding.
 
@@ -611,9 +611,9 @@ lib/sounds/Default/
    - `lifeline_audience.mp3`
    - `win_game.mp3`
 
-3. **Select Sound Set**
-   - Settings → Audio
-   - Sound Profile dropdown
+3. **Select Sound Pack**
+   - Settings → Sounds tab → Soundpack tab
+   - Sound Pack dropdown
    - Select "MyCustomSet"
    - Click **"Apply"**
 
@@ -681,10 +681,10 @@ lib/sounds/Default/
    - Application opens on primary display
    - Drag Control Panel to secondary display
 
-4. **Full Screen TV Screen**
-   - Click **"Full Screen"** in Control Panel
-   - Or press `F11`
-   - TV Screen expands to cover entire primary monitor
+4. **Maximize TV Screen**
+   - Maximize TV Screen window on primary monitor
+   - Enters borderless fullscreen mode
+   - TV Screen fills entire primary monitor
 
 5. **Save Layout**
    - Settings → Display
@@ -727,19 +727,19 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
 
 1. **Open Settings**
    - Control Panel → Settings tab
-   - Web Integration section
+   - Audience tab
 
 2. **Configure Server**
-   - **Port**: Default 5000 (HTTP) and 5001 (HTTPS)
+   - **Port**: Default 5278
    - **Bind Address**: 
-     - `localhost`: Local testing only
-     - `0.0.0.0`: Accept connections from network
-   - **Enable HTTPS**: Optional (requires certificate)
+     - `127.0.0.1 - Localhost Only`: Local testing only
+     - `0.0.0.0 - All Interfaces (Open to All)`: Accept connections from any network
+     - Local IP with /prefix (e.g., `192.168.1.100/24 - Local Network`): Restrict to local network
 
 3. **Start Server**
    - Click **"Start Web Server"**
    - Server status shows "Running"
-   - Connection URL displayed (e.g., `http://192.168.1.100:5000`)
+   - Connection URL displayed (e.g., `http://192.168.1.100:5278`)
 
 ### Audience Connection
 
@@ -862,8 +862,9 @@ The TV screen supports background customization:
 - Avoid: Colors used in game UI (green, red, yellow, orange)
 
 **Change Background:**
-- Settings → Broadcast → Background
-- Select from 6 pre-rendered options or enable chroma key
+- Settings tab → Broadcast tab
+- Select between Theme Background (prerendered) or Chroma Key (solid color) mode
+- Choose from dropdown or configure chroma key color
 - Changes apply to TV screen only
 
 > **Note**: Full theme system (including UI color schemes) planned for v1.2
@@ -921,7 +922,7 @@ Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMi
 
 **1 Hour Before:**
 - [ ] Launch application
-- [ ] Set up displays (TV Screen full screen)
+- [ ] Set up displays (maximize TV Screen window)
 - [ ] Test audio levels with venue speakers
 - [ ] Start web server (if using audience voting)
 - [ ] Have audience join and test
@@ -964,7 +965,7 @@ Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMi
 **Explore More:**
 - [Troubleshooting](Troubleshooting) - Solutions to common problems
 - [Configuration Files](Configuration-Files) - Advanced settings
-- [Stream Deck Integration](Stream-Deck-Integration) - Physical controls *(Coming Soon)*
+- [Stream Deck Integration](Stream-Deck-Integration) - Host controls with 6 button module
 
 **Get Help:**
 - [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) - Report bugs
