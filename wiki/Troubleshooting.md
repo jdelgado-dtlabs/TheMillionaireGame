@@ -374,10 +374,10 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Questions Tab**
-   - Control Panel → Database menu → Question Editor
+1. **Open Question Editor**
+   - Control Panel → Game menu → Editor
    - Opens standalone Question Editor window
-   - View question count per difficulty level
+   - View question count per difficulty level in Regular Questions and FFF Questions tabs
 
 2. **Import Questions from CSV**
    - In Question Editor: Toolbar → Import button
@@ -402,9 +402,10 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Telemetry Enabled**
-   - Settings → Telemetry
-   - Ensure "Enable Telemetry" checked
+1. **Telemetry is Always Enabled**
+   - There is no setting to disable telemetry
+   - All games are automatically tracked in the database
+   - If telemetry not appearing, it's a database issue
 
 2. **Database Space**
    - Check disk space on drive containing `%LocalAppData%\TheMillionaireGame\`
