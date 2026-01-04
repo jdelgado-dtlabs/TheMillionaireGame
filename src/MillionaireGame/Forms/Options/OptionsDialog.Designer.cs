@@ -107,6 +107,23 @@ namespace MillionaireGame.Forms.Options
             numTotalLifelines = new NumericUpDown();
             lblTotalLifelines = new Label();
             tabSounds = new TabPage();
+            tabStreamDeck = new TabPage();
+            grpStreamDeckConfig = new GroupBox();
+            chkEnableStreamDeck = new CheckBox();
+            lblStreamDeckInfo = new Label();
+            pnlStreamDeckLayout = new Panel();
+            picDynamic = new PictureBox();
+            picAnswerA = new PictureBox();
+            picAnswerB = new PictureBox();
+            picReveal = new PictureBox();
+            picAnswerC = new PictureBox();
+            picAnswerD = new PictureBox();
+            lblDynamic = new Label();
+            lblAnswerA = new Label();
+            lblAnswerB = new Label();
+            lblReveal = new Label();
+            lblAnswerC = new Label();
+            lblAnswerD = new Label();
             tabControlSounds = new TabControl();
             tabSoundpack = new TabPage();
             tabAudio = new TabPage();
@@ -160,6 +177,15 @@ namespace MillionaireGame.Forms.Options
             grpConsole.SuspendLayout();
             tabBroadcast.SuspendLayout();
             grpBroadcast.SuspendLayout();
+            tabStreamDeck.SuspendLayout();
+            grpStreamDeckConfig.SuspendLayout();
+            pnlStreamDeckLayout.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)picDynamic).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerA).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerB).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)picReveal).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerC).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerD).BeginInit();
             tabLifelines.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numTotalLifelines).BeginInit();
             tabSounds.SuspendLayout();
@@ -188,6 +214,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Controls.Add(tabLifelines);
             tabControl.Controls.Add(tabMoneyTree);
             tabControl.Controls.Add(tabSounds);
+            tabControl.Controls.Add(tabStreamDeck);
             tabControl.Controls.Add(tabAudience);
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
@@ -1235,6 +1262,185 @@ namespace MillionaireGame.Forms.Options
             dgvSoundPackInfo.Size = new Size(588, 310);
             dgvSoundPackInfo.TabIndex = 8;
             // 
+            // tabStreamDeck
+            // 
+            tabStreamDeck.AutoScroll = true;
+            tabStreamDeck.Controls.Add(grpStreamDeckConfig);
+            tabStreamDeck.Location = new Point(4, 24);
+            tabStreamDeck.Name = "tabStreamDeck";
+            tabStreamDeck.Padding = new Padding(3);
+            tabStreamDeck.Size = new Size(652, 438);
+            tabStreamDeck.TabIndex = 8;
+            tabStreamDeck.Text = "Stream Deck";
+            tabStreamDeck.UseVisualStyleBackColor = true;
+            // 
+            // grpStreamDeckConfig
+            // 
+            grpStreamDeckConfig.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            grpStreamDeckConfig.Controls.Add(chkEnableStreamDeck);
+            grpStreamDeckConfig.Controls.Add(lblStreamDeckInfo);
+            grpStreamDeckConfig.Controls.Add(pnlStreamDeckLayout);
+            grpStreamDeckConfig.Location = new Point(6, 6);
+            grpStreamDeckConfig.Name = "grpStreamDeckConfig";
+            grpStreamDeckConfig.Size = new Size(640, 420);
+            grpStreamDeckConfig.TabIndex = 0;
+            grpStreamDeckConfig.TabStop = false;
+            grpStreamDeckConfig.Text = "Stream Deck Integration";
+            // 
+            // chkEnableStreamDeck
+            // 
+            chkEnableStreamDeck.AutoSize = true;
+            chkEnableStreamDeck.Location = new Point(15, 25);
+            chkEnableStreamDeck.Name = "chkEnableStreamDeck";
+            chkEnableStreamDeck.Size = new Size(200, 19);
+            chkEnableStreamDeck.TabIndex = 0;
+            chkEnableStreamDeck.Text = "Enable Stream Deck Integration";
+            chkEnableStreamDeck.UseVisualStyleBackColor = true;
+            chkEnableStreamDeck.CheckedChanged += (s, e) => _hasChanges = true;
+            // 
+            // lblStreamDeckInfo
+            // 
+            lblStreamDeckInfo.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblStreamDeckInfo.Location = new Point(15, 50);
+            lblStreamDeckInfo.Name = "lblStreamDeckInfo";
+            lblStreamDeckInfo.Size = new Size(610, 60);
+            lblStreamDeckInfo.TabIndex = 1;
+            lblStreamDeckInfo.Text = "Stream Deck provides physical button control for the host to lock in contestant answers and reveal results.\n\n" +
+                "Button Layout (6-button Stream Deck):";
+            // 
+            // pnlStreamDeckLayout
+            // 
+            pnlStreamDeckLayout.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            pnlStreamDeckLayout.BorderStyle = BorderStyle.FixedSingle;
+            pnlStreamDeckLayout.Controls.Add(lblDynamic);
+            pnlStreamDeckLayout.Controls.Add(lblAnswerA);
+            pnlStreamDeckLayout.Controls.Add(lblAnswerB);
+            pnlStreamDeckLayout.Controls.Add(lblReveal);
+            pnlStreamDeckLayout.Controls.Add(lblAnswerC);
+            pnlStreamDeckLayout.Controls.Add(lblAnswerD);
+            pnlStreamDeckLayout.Controls.Add(picDynamic);
+            pnlStreamDeckLayout.Controls.Add(picAnswerA);
+            pnlStreamDeckLayout.Controls.Add(picAnswerB);
+            pnlStreamDeckLayout.Controls.Add(picReveal);
+            pnlStreamDeckLayout.Controls.Add(picAnswerC);
+            pnlStreamDeckLayout.Controls.Add(picAnswerD);
+            pnlStreamDeckLayout.Location = new Point(15, 115);
+            pnlStreamDeckLayout.Name = "pnlStreamDeckLayout";
+            pnlStreamDeckLayout.Size = new Size(280, 200);
+            pnlStreamDeckLayout.TabIndex = 2;
+            // 
+            // Row 1: Dynamic, A, B
+            // picDynamic
+            // 
+            picDynamic.Location = new Point(10, 10);
+            picDynamic.Name = "picDynamic";
+            picDynamic.Size = new Size(72, 72);
+            picDynamic.SizeMode = PictureBoxSizeMode.StretchImage;
+            picDynamic.TabIndex = 0;
+            picDynamic.TabStop = false;
+            // 
+            // lblDynamic
+            // 
+            lblDynamic.Location = new Point(10, 85);
+            lblDynamic.Name = "lblDynamic";
+            lblDynamic.Size = new Size(72, 30);
+            lblDynamic.TabIndex = 1;
+            lblDynamic.Text = "Feedback";
+            lblDynamic.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // picAnswerA
+            // 
+            picAnswerA.Location = new Point(94, 10);
+            picAnswerA.Name = "picAnswerA";
+            picAnswerA.Size = new Size(72, 72);
+            picAnswerA.SizeMode = PictureBoxSizeMode.StretchImage;
+            picAnswerA.TabIndex = 2;
+            picAnswerA.TabStop = false;
+            // 
+            // lblAnswerA
+            // 
+            lblAnswerA.Location = new Point(94, 85);
+            lblAnswerA.Name = "lblAnswerA";
+            lblAnswerA.Size = new Size(72, 30);
+            lblAnswerA.TabIndex = 3;
+            lblAnswerA.Text = "Answer A";
+            lblAnswerA.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // picAnswerB
+            // 
+            picAnswerB.Location = new Point(178, 10);
+            picAnswerB.Name = "picAnswerB";
+            picAnswerB.Size = new Size(72, 72);
+            picAnswerB.SizeMode = PictureBoxSizeMode.StretchImage;
+            picAnswerB.TabIndex = 4;
+            picAnswerB.TabStop = false;
+            // 
+            // lblAnswerB
+            // 
+            lblAnswerB.Location = new Point(178, 85);
+            lblAnswerB.Name = "lblAnswerB";
+            lblAnswerB.Size = new Size(72, 30);
+            lblAnswerB.TabIndex = 5;
+            lblAnswerB.Text = "Answer B";
+            lblAnswerB.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // Row 2: Reveal, C, D
+            // picReveal
+            // 
+            picReveal.Location = new Point(10, 120);
+            picReveal.Name = "picReveal";
+            picReveal.Size = new Size(72, 72);
+            picReveal.SizeMode = PictureBoxSizeMode.StretchImage;
+            picReveal.TabIndex = 6;
+            picReveal.TabStop = false;
+            // 
+            // lblReveal
+            // 
+            lblReveal.Location = new Point(10, 195);
+            lblReveal.Name = "lblReveal";
+            lblReveal.Size = new Size(72, 30);
+            lblReveal.Name = "lblReveal";
+            lblReveal.Size = new Size(72, 30);
+            lblReveal.TabIndex = 7;
+            lblReveal.Text = "Reveal";
+            lblReveal.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // picAnswerC
+            // 
+            picAnswerC.Location = new Point(94, 120);
+            picAnswerC.Name = "picAnswerC";
+            picAnswerC.Size = new Size(72, 72);
+            picAnswerC.SizeMode = PictureBoxSizeMode.StretchImage;
+            picAnswerC.TabIndex = 8;
+            picAnswerC.TabStop = false;
+            // 
+            // lblAnswerC
+            // 
+            lblAnswerC.Location = new Point(94, 195);
+            lblAnswerC.Name = "lblAnswerC";
+            lblAnswerC.Size = new Size(72, 30);
+            lblAnswerC.TabIndex = 9;
+            lblAnswerC.Text = "Answer C";
+            lblAnswerC.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // picAnswerD
+            // 
+            picAnswerD.Location = new Point(178, 120);
+            picAnswerD.Name = "picAnswerD";
+            picAnswerD.Size = new Size(72, 72);
+            picAnswerD.SizeMode = PictureBoxSizeMode.StretchImage;
+            picAnswerD.TabIndex = 10;
+            picAnswerD.TabStop = false;
+            // 
+            // lblAnswerD
+            // 
+            lblAnswerD.Location = new Point(178, 195);
+            lblAnswerD.Name = "lblAnswerD";
+            lblAnswerD.Size = new Size(72, 30);
+            lblAnswerD.TabIndex = 11;
+            lblAnswerD.Text = "Answer D";
+            lblAnswerD.TextAlign = ContentAlignment.TopCenter;
+            // 
             // tabAudience
             // 
             tabAudience.AutoScroll = true;
@@ -1453,6 +1659,16 @@ namespace MillionaireGame.Forms.Options
             tabMixer.PerformLayout();
             grpAudioDevice.ResumeLayout(false);
             grpAudioDevice.PerformLayout();
+            tabStreamDeck.ResumeLayout(false);
+            grpStreamDeckConfig.ResumeLayout(false);
+            grpStreamDeckConfig.PerformLayout();
+            pnlStreamDeckLayout.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)picDynamic).EndInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerA).EndInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerB).EndInit();
+            ((System.ComponentModel.ISupportInitialize)picReveal).EndInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerC).EndInit();
+            ((System.ComponentModel.ISupportInitialize)picAnswerD).EndInit();
             tabAudience.ResumeLayout(false);
             grpAudienceServer.ResumeLayout(false);
             grpAudienceServer.PerformLayout();
@@ -1597,6 +1813,23 @@ namespace MillionaireGame.Forms.Options
         private Button btnStopServer;
         private Label lblServerStatus;
         private Label lblAudienceInfo;
+        private TabPage tabStreamDeck;
+        private GroupBox grpStreamDeckConfig;
+        private CheckBox chkEnableStreamDeck;
+        private Label lblStreamDeckInfo;
+        private Panel pnlStreamDeckLayout;
+        private PictureBox picDynamic;
+        private PictureBox picAnswerA;
+        private PictureBox picAnswerB;
+        private PictureBox picReveal;
+        private PictureBox picAnswerC;
+        private PictureBox picAnswerD;
+        private Label lblDynamic;
+        private Label lblAnswerA;
+        private Label lblAnswerB;
+        private Label lblReveal;
+        private Label lblAnswerC;
+        private Label lblAnswerD;
     }
 }
 

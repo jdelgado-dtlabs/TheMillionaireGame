@@ -70,6 +70,9 @@ public class ApplicationSettings
     public string AudienceServerIP { get; set; } = "127.0.0.1";
     public int AudienceServerPort { get; set; } = 5278;
     public bool AudienceServerAutoStart { get; set; } = false;
+
+    // Stream Deck Integration Settings
+    public bool StreamDeckEnabled { get; set; } = false;
 }
 
 /// <summary>

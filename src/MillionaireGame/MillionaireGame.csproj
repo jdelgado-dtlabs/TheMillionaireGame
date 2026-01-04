@@ -38,6 +38,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.11" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="StreamDeckSharp" Version="6.1.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
