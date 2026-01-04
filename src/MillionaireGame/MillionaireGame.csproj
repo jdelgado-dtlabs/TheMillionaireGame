@@ -53,8 +53,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy web server files to output directory (embedded in single file) -->
-    <None Include="..\MillionaireGame.Web\wwwroot\**\*.*" LinkBase="wwwroot\" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Web server files - do not copy to output, will be served from embedded resources -->
+    <Content Remove="..\MillionaireGame.Web\wwwroot\**\*.*" />
   </ItemGroup>
   
   <ItemGroup>
