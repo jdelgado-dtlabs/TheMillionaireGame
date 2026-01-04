@@ -528,16 +528,10 @@ Before diving into specific issues, try these general fixes:
    - Look for high CPU or memory usage
    - Close unnecessary applications
 
-2. **Reduce Visual Effects**
-   - Settings → Display
-   - Disable "Confetti Animations"
-   - Enable "Reduce Animations"
-   - Lower frame rate if needed
-
-3. **Update Graphics Drivers**
+2. **Update Graphics Drivers**
    - Outdated drivers can cause slowness
 
-4. **Disable Background Processes**
+3. **Disable Background Processes**
    - Close browser tabs
    - Disable Windows indexing temporarily
    - Close cloud sync (OneDrive, Dropbox)
