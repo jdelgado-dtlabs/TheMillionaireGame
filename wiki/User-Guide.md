@@ -98,6 +98,29 @@ The TV Screen is the main visual display for contestants and audience.
   - Custom background file option
   - Chroma key mode for streaming
 
+### Guest Screen (Contestant Display)
+
+Separate window shown to the contestant during the main game phase.
+
+**Display:**
+- Money tree (always visible, right side, upper 2/3 height)
+- Current question and 4 answers (lower third)
+- Lifeline icons with status indicators
+- Ask the Audience results (when active)
+- Phone a Friend / Ask the Audience timers (when active)
+- Black background (not customizable)
+
+**Features:**
+- Shows contestant's selected answer highlighted
+- Displays correct/wrong answer reveals
+- Shows 50:50 eliminated answers
+- Auto-scales from 1920x1080 base resolution
+- Money tree highlights current level
+
+**Purpose:** Provides clear view of question, answers, and progress for contestant without showing correct answer or host notes.
+
+Access: Screens menu → Guest Screen
+
 ### Host Screen (Optional)
 
 Separate window for host/moderator with:
@@ -105,6 +128,7 @@ Separate window for host/moderator with:
 - Money tree display with current level
 - Ask the Audience results (when active)
 - Lifeline status indicators
+- Host notes from Control Panel
 
 Access: Screens menu → Host Screen
 
