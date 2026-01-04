@@ -332,44 +332,108 @@ Question,AnswerA,AnswerB,AnswerC,AnswerD,CorrectAnswer,Level,Category
 
 ### Fastest Finger First (FFF)
 
-The qualifying round where multiple contestants compete.
+The qualifying round where contestants compete. FFF automatically switches between two modes based on WAPS (Web Audience Participation Server) status.
 
-#### Setup FFF Round
+#### FFF Modes
+
+**Online Mode** (WAPS Running):
+- Participants join via mobile devices
+- Compete in real-time ordering question
+- Fastest correct answer wins
+- Automatic tracking and ranking
+
+**Offline Mode** (WAPS Not Running):
+- Manual player selection
+- Animated random selection process
+- No ordering question involved
+- Visual player introduction sequence
+
+#### Online Mode Setup (Web-Based)
 
 1. **Start FFF**
-   - Click **"Start FFF"** button
-   - Or press `Ctrl+F` hotkey
+   - Click **"Start FFF"** button (`Ctrl+F`)
+   - FFF window opens automatically in Online Mode (if WAPS is running)
 
-2. **Enter Contestants**
-   - Add 2-8 contestant names
-   - Assign seat numbers (1-8)
-   - Click **"Begin FFF Round"**
+2. **FFF Intro**
+   - Click **"FFF Intro"** button
+   - Plays lights down and intro sounds
 
-3. **FFF Question Appears**
-   - TV Screen shows ordering question
+3. **Reveal Answers**
+   - Click **"Reveal Answers"**
+   - Ordering question appears on TV Screen
+   - Question sent to all connected participants' devices
    - Example: "Order these planets by distance from Sun:"
      - A: Mars
      - B: Earth
      - C: Venus
      - D: Mercury
-   - Correct order: D, C, B, A (Mercury → Venus → Earth → Mars)
+   - 20-second countdown timer starts
+   - Participants reorder answers on their devices and submit
 
-4. **Record Contestant Responses**
-   - Each contestant gives their answer order
-   - Enter times (e.g., 5.3 seconds)
-   - Enter their answer sequence (e.g., "DCBA")
+4. **View Submissions**
+   - Monitor real-time submissions in Control Panel
+   - See participant names and answer sequences as they arrive
+   - Timer counts down to zero
 
-5. **Show Results**
-   - Click **"Show Results"**
-   - TV Screen displays:
-     - All contestant times
-     - Correct answer highlighted
-     - Winner announced
-   - Fastest correct answer wins
+5. **Reveal Correct Order**
+   - Click **"Reveal Correct Answers"** multiple times (once per answer)
+   - Correct order revealed one answer at a time on TV Screen
+   - Example: 1st correct = D (Mercury), 2nd = C (Venus), 3rd = B (Earth), 4th = A (Mars)
+   - Each click plays reveal sound
 
-6. **Proceed to Main Game**
+6. **Show Rankings**
+   - Click **"Show Rankings"**
+   - Displays top contestants with correct answers
+   - Shows names and response times
+   - If 2-8 correct: Shows all correct contestants ranked by speed
+   - If only 1 correct: Skips directly to winner
+
+7. **Reveal Winner**
+   - Click **"Reveal Winner"**
+   - Announces fastest contestant with correct answer
+   - Winner's name displayed on TV Screen
+
+8. **Proceed to Main Game**
    - Winner becomes main game contestant
-   - Click **"Start Main Game"** with winner
+   - Close FFF window (clears TV display)
+   - Winner automatically selected for main game
+
+#### Offline Mode Setup (Local Selection)
+
+1. **Start FFF**
+   - Click **"Start FFF"** button (`Ctrl+F`)
+   - FFF window opens automatically in Offline Mode (if WAPS is not running)
+
+2. **Select Player Count**
+   - Choose 2-8 players using dropdown
+   - Default: 8 players
+
+3. **Enter Player Names**
+   - Fill in text boxes with contestant names
+   - Names will be displayed on TV Screen
+
+4. **FFF Intro**
+   - Click **"FFF Intro"** button
+   - Plays lights down sound
+
+5. **Player Introduction**
+   - Click **"Player Intro"** button
+   - Each player introduced on TV Screen individually
+   - 3-second interval between players
+   - All players shown together after introductions
+
+6. **Random Selection**
+   - Click **"Random Select"** button
+   - Animated selection sequence on TV Screen
+   - Random picker sound plays
+   - Selected player highlighted as winner
+
+7. **Proceed to Main Game**
+   - Selected player becomes main game contestant
+   - Close FFF window (clears TV display)
+   - Winner automatically selected for main game
+
+**Note:** Offline mode does NOT use ordering questions. It's purely a visual selection tool for live events without web participation.
 
 ### Main Game Flow
 
