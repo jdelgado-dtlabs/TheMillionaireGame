@@ -207,10 +207,11 @@ Customize your game configuration (money tree, lifelines, currency) through the 
    - Can create themed ladders (points, tokens, etc.)
 
 4. **Safety Nets**
-   - Check boxes at Level 5 and Level 10 to set safety nets
-   - **First Safety Net**: Typically Level 5 (e.g., $1,000)
-   - **Second Safety Net**: Typically Level 10 (e.g., $32,000)
+   - Check boxes at Level 5 and Level 10 to enable/disable safety nets
+   - **First Safety Net**: Level 5 (e.g., $1,000) - fixed level
+   - **Second Safety Net**: Level 10 (e.g., $32,000) - fixed level
    - Contestants cannot fall below these amounts once reached
+   - Safety net levels cannot be changed; only enabled or disabled
 
 5. **Lifeline Configuration** (Lifelines tab)
    
