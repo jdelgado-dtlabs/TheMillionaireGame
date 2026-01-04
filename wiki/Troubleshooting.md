@@ -253,8 +253,8 @@ Before diving into specific issues, try these general fixes:
    - Should return `True`
    - If False, reinstall application
 
-4. **Select Correct Sound Profile**
-   - Settings → Audio → Sound Profile
+4. **Select Correct Sound Pack**
+   - Settings → Sounds tab → Soundpack tab
    - Select "Default"
    - Click "Apply"
 
@@ -274,9 +274,9 @@ Before diving into specific issues, try these general fixes:
    - Default is 0dB for both channels
 
 2. **Verify Sound Files**
-   - Navigate to: `lib/sounds/[CurrentProfile]/`
-   - Check for missing files (see [User Guide - Sound Files](User-Guide#audio-system))
-   - Re-download or copy from Default profile
+   - Navigate to: `C:\Program Files\The Millionaire Game\lib\sounds\Default\`
+   - Check for missing files (sound files should be .mp3, .wav, or .ogg)
+   - If files missing, reinstall application
 
 3. **Audio Format Issues**
    - Sound files must be MP3, WAV, or OGG
@@ -374,12 +374,14 @@ Before diving into specific issues, try these general fixes:
 **Solutions:**
 
 1. **Check Questions Tab**
-   - Control Panel → Questions tab
+   - Control Panel → Database menu → Question Editor
+   - Opens standalone Question Editor window
    - View question count per difficulty level
 
-2. **Import Sample Questions**
-   - Questions tab → "Import Sample Questions"
-   - Loads 50 default questions
+2. **Import Questions from CSV**
+   - In Question Editor: Toolbar → Import button
+   - Select CSV file with questions
+   - See User Guide for CSV format
 
 3. **Verify Database**
    ```powershell
@@ -388,10 +390,10 @@ Before diving into specific issues, try these general fixes:
    # Should show Status: Running
    ```
 
-4. **Reimport Questions**
-   - If you have backup CSV:
-   - Questions tab → Import CSV
-   - Select your question file
+4. **Reset Used Questions**
+   - In Question Editor: Toolbar → Reset Used button
+   - Marks all questions as unused
+   - Allows questions to be reused
 
 ### Telemetry Not Saving
 
