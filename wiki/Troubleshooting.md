@@ -457,9 +457,11 @@ Before diving into specific issues, try these general fixes:
 
 1. **Check Bind Address Configuration**
    - Settings → Audience
-   - Set bind address to **Network** or **Public** (NOT localhost)
-   - Localhost only allows connections from the host computer
-   - Network/Public allows connections from other devices
+   - Select either:
+     - A local IP address with `/prefix` (e.g., `192.168.1.100/24 - Local Network`)
+     - OR `0.0.0.0 - All Interfaces (Open to All)` for all networks
+   - Do NOT use `127.0.0.1 - Localhost Only` (only allows connections from the host computer)
+   - Local IP restricts to that network subnet, 0.0.0.0 allows all interfaces
    - Restart web server after changing setting
 
 2. **Check Network Connection**
