@@ -99,14 +99,24 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 
 *Screenshots and demo videos coming soon*
 
-### Control Panel
-The operator's command center with full game control.
+The application features multiple display interfaces for different roles:
 
-### TV Screen
-The main display for contestants and audience.
+### Desktop Application Views
 
-### Audience Web Interface
-Mobile-friendly voting for "Ask the Audience" lifeline.
+1. **Control Panel** - Operator's command center with full game control
+2. **TV Screen** - Main display for contestants and audience
+3. **Host Screen** - Private host view with answers and contestant info
+4. **Guest Screen** - Additional audience display
+5. **FFF Offline Mode** - Local Fastest Finger First interface
+6. **FFF Online Mode** - Web-based FFF with live contestant feeds
+
+### Mobile/Web Application
+
+7. **Mobile Web Interface** - Progressive Web App for audience participation
+   - **FFF Online** - Participate in Fastest Finger First rounds
+   - **Ask the Audience** - Vote on answer choices in real-time
+   - QR code joining for easy access
+   - Live result updates via SignalR
 
 ---
 
