@@ -3758,6 +3758,7 @@ public partial class ControlPanelForm : Form
         UpdateMoneyTreeOnScreens(_gameService.MoneyTree.GetDisplayLevel(_gameService.State.CurrentLevel, _gameService.State.GameWin)); // Update money tree to level 15
         _gameOutcome = GameOutcome.Win; // Player won the game!
         _isAutomatedSequenceRunning = true; // Mark sequence as automated
+        _roundCompleted = true; // Mark round as completed - prevents GameOver sound when Closing is clicked
         
         // Stop final answer sound immediately (it was already stopped above but ensure it's stopped)
         if (!string.IsNullOrEmpty(_currentFinalAnswerKey))
