@@ -39,18 +39,29 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy sound files to output directory -->
-    <None Include="lib\sounds\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Copy sound files to output directory (excluded from single file) -->
+    <None Include="lib\sounds\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy image files to output directory -->
-    <None Include="lib\image\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Copy image files to output directory (excluded from single file) -->
+    <None Include="lib\image\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy web server files to output directory -->
+    <!-- Copy web server files to output directory (embedded in single file) -->
     <None Include="..\MillionaireGame.Web\wwwroot\**\*.*" LinkBase="wwwroot\" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <!-- Exclude specific files from publish output -->
+    <None Include="*.lnk" CopyToOutputDirectory="Never" />
+    <None Include="*.bak" CopyToOutputDirectory="Never" />
+    <None Include="*.ps1" CopyToOutputDirectory="Never" />
   </ItemGroup>
 
   <ItemGroup>
