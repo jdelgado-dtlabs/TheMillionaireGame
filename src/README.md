@@ -4,7 +4,7 @@
 
 ## 🎮 Welcome to The Millionaire Game - Modern C# Edition!
 
-**Version**: 0.9.8 (December 2025)
+**Version**: 1.0.0 (January 2026)
 
 This is the **modernized C# version** of The Millionaire Game, a self-written application based on the popular TV show "Who Wants to be a Millionaire". This version maintains all the functionality of the original VB.NET version while bringing it to modern .NET with improved architecture, maintainability, and a complete web-based audience participation system (WAPS).
 
@@ -12,7 +12,7 @@ This is the **modernized C# version** of The Millionaire Game, a self-written ap
 
 ### 🔄 Current Status
 
-**Version 0.9.8 Features:**
+**Version 1.0.0 Features:**
 - ✅ Core models and data structures
 - ✅ Settings management with XML persistence
 - ✅ **Unified SQL Server database** (WAPS migrated from SQLite to SQL Server)
@@ -255,7 +255,7 @@ gameService.LevelChanged += (sender, e) => {
 
 ## 🧪 Development Roadmap
 
-### Version 0.9.8 (✅ Current - December 2025)
+### Version 1.0.0 (✅ Current - January 2026)
 - [x] Project structure and core library
 - [x] Complete Control Panel with game flow
 - [x] Host, Guest, and TV screens

@@ -1,6 +1,6 @@
 # Documentation Index
 **The Millionaire Game - C# Edition**  
-**Version**: v0.9.9  
+**Version**: v1.0.0  
 **Last Updated**: January 3, 2026  
 **Status**: ✅ Ready for v1.0 Release
 

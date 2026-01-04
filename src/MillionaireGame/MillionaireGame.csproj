@@ -8,14 +8,14 @@
     <Nullable>enable</Nullable>
     <AssemblyName>MillionaireGame</AssemblyName>
     <RootNamespace>MillionaireGame</RootNamespace>
-    <Version>0.9.8</Version>
+    <Version>1.0.0</Version>
     <Authors>jdelgado-dtlabs</Authors>
     <Product>The Millionaire Game - C# Edition</Product>
     <Description>A self-written application based on the popular TV-show 'Who Wants to be a Millionaire' - Modern C# version</Description>
     <Copyright>Copyright © 2025-2026 Jean Francois Delgado. Based on original work by Marco Loenen (Macronair).</Copyright>
     <NoWarn>$(NoWarn);NU1701;CS8669</NoWarn>
-    <AssemblyVersion>0.9.8.0</AssemblyVersion>
-    <FileVersion>0.9.8.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
     <EnableDefaultItems>true</EnableDefaultItems>
     <!-- Exclude lib folders from default compilation -->

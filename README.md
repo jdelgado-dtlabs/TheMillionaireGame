@@ -2,9 +2,9 @@
 
 A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game show experience, built with .NET 8 and Windows Forms.
 
-**Version**: 0.9.8 (December 2025)  
+**Version**: 1.0.0 (January 2026)  
 **Build Status**: ✅ **PERFECT** (0 warnings, 0 errors)  
-**Status**: 🎯 Pre-release testing phase
+**Status**: 🎉 v1.0 Release
 
 ## Quick Start
 
@@ -12,7 +12,7 @@ See [`src/docs/START_HERE.md`](src/docs/START_HERE.md) for complete setup and bu
 
 ## Project Structure
 
-- **`src/`** - Main C# solution and projects (v0.9.8)
+- **`src/`** - Main C# solution and projects (v1.0.0)
   - `MillionaireGame/` - Main game application (Windows Forms)
   - `MillionaireGame.Core/` - Core business logic and services
   - `MillionaireGame.Web/` - Web API and SignalR backend for WAPS
