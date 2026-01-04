@@ -455,7 +455,14 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Network Connection**
+1. **Check Bind Address Configuration**
+   - Settings → Web Integration
+   - Set bind address to **Network** or **Public** (NOT localhost)
+   - Localhost only allows connections from the host computer
+   - Network/Public allows connections from other devices
+   - Restart web server after changing setting
+
+2. **Check Network Connection**
    - Ensure audience on same WiFi network
    - Try pinging computer:
    ```powershell
@@ -467,16 +474,16 @@ Before diving into specific issues, try these general fixes:
    ping 192.168.1.100
    ```
 
-2. **Firewall Rules**
+3. **Firewall Rules**
    - Windows Firewall must allow incoming connections
    - Create inbound rule for port 5278
 
-3. **Use Correct URL**
+4. **Use Correct URL**
    - Not `localhost` (only works on host computer)
    - Use IP address shown in Control Panel
    - Example: `http://192.168.1.100:5278`
 
-4. **Router AP Isolation**
+5. **Router AP Isolation**
    - Some routers isolate devices (hotel/public WiFi)
    - Cannot communicate between devices
    - Use different network or disable AP isolation
