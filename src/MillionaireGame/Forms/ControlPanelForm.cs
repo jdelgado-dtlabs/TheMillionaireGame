@@ -3779,6 +3779,11 @@ public partial class ControlPanelForm : Form
         btnLightsDown.Enabled = false;
         btnLightsDown.BackColor = Color.Gray;
         
+        // Enable Closing button (green) - round will complete after Q15 win sequence
+        btnClosing.Enabled = true;
+        btnClosing.BackColor = Color.LimeGreen;
+        btnClosing.ForeColor = Color.Black;
+        
         // Wait for Q15 correct sound to finish (approximately 20-30 seconds) using a timer
         var q15Timer = new System.Windows.Forms.Timer();
         q15Timer.Interval = 25000;
