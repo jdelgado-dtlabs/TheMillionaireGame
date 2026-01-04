@@ -1,11 +1,25 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace MillionaireGame.Watchdog;
 
 class Program
 {
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+
     static void Main(string[] args)
     {
+        // Hide console window on startup
+        var consoleWindow = GetConsoleWindow();
+        ShowWindow(consoleWindow, SW_HIDE);
+        
         Console.Title = "Millionaire Game - Watchdog";
         
         var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -44,7 +58,7 @@ class Program
         }
 
         // Start monitoring
-        var monitor = new ProcessMonitor(appPath, appArgs);
+        var monitor = new ProcessMonitor(appPath, appArgs, () => ShowConsoleWindow());
         
         try
         {
@@ -52,6 +66,7 @@ class Program
         }
         catch (Exception ex)
         {
+            ShowConsoleWindow();
             Console.WriteLine($"[Watchdog] FATAL ERROR: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
             Console.WriteLine();
@@ -62,5 +77,11 @@ class Program
         {
             monitor.Shutdown();
         }
+    }
+
+    private static void ShowConsoleWindow()
+    {
+        var consoleWindow = GetConsoleWindow();
+        ShowWindow(consoleWindow, SW_SHOW);
     }
 }

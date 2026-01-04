@@ -9,16 +9,18 @@ public class ProcessMonitor
 {
     private readonly string _applicationPath;
     private readonly string[] _applicationArgs;
+    private readonly Action _showConsoleCallback;
     private readonly HeartbeatListener _heartbeatListener;
     private readonly CrashReportGenerator _reportGenerator;
     private Process? _process;
     private DateTime _processStartTime;
     private bool _shutdownRequested;
 
-    public ProcessMonitor(string applicationPath, string[] applicationArgs)
+    public ProcessMonitor(string applicationPath, string[] applicationArgs, Action showConsoleCallback)
     {
         _applicationPath = applicationPath;
         _applicationArgs = applicationArgs;
+        _showConsoleCallback = showConsoleCallback;
         _heartbeatListener = new HeartbeatListener();
         _reportGenerator = new CrashReportGenerator();
 
@@ -191,6 +193,9 @@ public class ProcessMonitor
 
     private void HandleCrash(CrashInfo crashInfo)
     {
+        // Show console window for crash notification
+        _showConsoleCallback();
+        
         // Generate crash report
         var reportPath = _reportGenerator.GenerateReport(crashInfo);
         
