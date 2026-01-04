@@ -167,7 +167,7 @@ Before diving into specific issues, try these general fixes:
    - TV Screen may be on disconnected monitor
 
 3. **Check Full Screen Settings**
-   - Settings → General tab → Multiple Monitor Control
+   - Settings → Sounds tab → Multiple Monitor Control
    - Verify correct monitor selected for TV Screen
    - Enable/disable "Auto Full Screen TV Screen" as needed
 
@@ -182,7 +182,7 @@ Before diving into specific issues, try these general fixes:
 **Solutions:**
 
 1. **Enable Full Screen**
-   - Settings → General tab → Multiple Monitor Control
+   - Settings → Sounds tab → Multiple Monitor Control
    - Check "Auto Full Screen TV Screen"
    - Select correct monitor from dropdown
    - Restart application
