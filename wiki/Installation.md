@@ -9,181 +9,160 @@ This guide walks you through installing The Millionaire Game on your Windows com
 Before installing, ensure your system meets the [System Requirements](System-Requirements).
 
 **You will need:**
-- Windows 10/11 (64-bit)
-- .NET 8 Desktop Runtime
-- Approximately 300 MB free disk space
+- Windows 10/11 x64
+- .NET 8 Desktop Runtime (Will be downloaded and installed if not already)
+- SQL Server Express (Will be downloaded and installed if not already)
+- Approximately 400 MB free disk space (Includes application and SQL database)
 
 ---
 
 ## Installation Methods
 
-### Method 1: Standard Installation (Recommended)
+> **Note**: The installer is built with Inno Setup. For technical details about the installation process, see the setup script at `installer/MillionaireGameSetup.iss` in the repository.
 
-This method uses the Windows installer for easy setup and updates.
+### Standard Installation
+
+The Windows installer handles all dependencies and configuration automatically.
 
 #### Step 1: Download the Installer
 1. Visit the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 2. Find the latest release (e.g., `v1.0.0`)
 3. Download `MillionaireGameSetup.exe`
 
-#### Step 2: Install .NET 8 Runtime (If Not Installed)
-1. If prompted, the installer will detect missing .NET 8 Runtime
-2. Download from: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-3. Run the .NET installer first
-4. Restart and return to the game installer
-
-#### Step 3: Run the Installer
+#### Step 2: Run the Installer
 1. Double-click `MillionaireGameSetup.exe`
 2. Windows SmartScreen may appear:
    - Click "More info"
    - Click "Run anyway"
 3. Follow the installation wizard:
    - Accept the license agreement
+   - Choose installation scope (per user or per system)
    - Choose installation folder (default: `C:\Program Files\The Millionaire Game\`)
    - Select Start Menu folder
-   - Choose desktop shortcut option
+   - Choose optional components:
+     - Desktop shortcut
+     - **Initialize SQL Server database** (creates dbMillionaire and imports sample questions) - *Unchecked by default*
+   - The installer will automatically detect and install missing dependencies:
+     - .NET 8 Desktop Runtime (if needed)
+     - SQL Server Express (if needed)
 4. Click **Install**
-5. Wait for installation to complete (~1-2 minutes)
+5. Wait for installation to complete (may take several minutes if dependencies are being installed)
 6. Click **Finish**
 
-#### Step 4: First Launch
+#### Step 3: First Launch
 1. Launch from Start Menu or desktop shortcut
 2. The application will:
-   - Initialize database (first run only)
    - Create default configuration files
-   - Load sample question set
-3. Welcome screen appears - you're ready to play!
-
----
-
-### Method 2: Portable Installation
-
-For users who prefer portable/USB installations without system modifications.
-
-#### Step 1: Download Portable Package
-1. Visit the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
-2. Download `MillionaireGame-Portable-v1.0.0.zip`
-
-#### Step 2: Extract Files
-1. Right-click the ZIP file → Extract All
-2. Choose destination folder (e.g., `C:\Games\MillionaireGame` or USB drive)
-3. Extract all contents
-
-#### Step 3: Install .NET 8 Runtime
-The portable version still requires .NET 8 Desktop Runtime installed on the system.
-- Download: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Install if not present
-
-#### Step 4: Run the Application
-1. Navigate to extracted folder
-2. Double-click `MillionaireGame.exe`
-3. First-run initialization will occur
-
-**Portable Mode Features:**
-- No system registry changes
-- All data stored in application folder
-- Can run from USB drive
-- Easy backup (copy entire folder)
+   - Connect to SQL Server Express database
+   - Verify installation integrity
+3. Control Panel opens - you're ready to configure and play!
 
 ---
 
 ## Post-Installation Setup
 
-### Database Configuration
+### Database Setup
 
-By default, the application uses **SQL Server LocalDB** (embedded database).
+The application requires **SQL Server Express** (installed automatically by the installer).
 
-#### Option A: Use LocalDB (Default)
-No configuration needed! LocalDB is automatically configured on first launch.
+#### Database Initialization
 
-**Database Location:**
-```
-%LOCALAPPDATA%\The Millionaire Game\Database\
-```
+During installation, you can optionally check **"Initialize SQL Server database"** to automatically:
+- Create the `dbMillionaire` database
+- Import 80 generic trivia questions for the main game
+- Import 41 ordering questions for Fastest Finger First
 
-#### Option B: Use SQL Server
-For advanced users with existing SQL Server installations:
+**If you skipped database initialization during install:**
+1. Locate `init_database.sql` in the installation folder
+2. Run the script manually against your SQL Server Express instance
+3. This will create the database and populate the question tables
 
-1. Open `App.config` in installation folder
-2. Modify connection string:
-```xml
-<connectionStrings>
-  <add name="MillionaireDB" 
-       connectionString="Server=YOUR_SERVER;Database=MillionaireGame;Integrated Security=True;" 
-       providerName="System.Data.SqlClient" />
-</connectionStrings>
-```
-3. Run `init_database.sql` script on your SQL Server
-4. Restart application
+**Included Questions:**
+These generic trivia questions are free to use and serve as templates for creating your own question sets.
+
+**Note:** The application automatically creates settings and WAPS (Web Audience Participation System) tables on first launch. Only the question tables require manual initialization if not done during installation.
 
 ---
 
-### Sound Files Setup
+### Sound Pack Management
 
-The application includes default sounds, but you can add custom sound sets.
+The application includes a default sound pack. Custom sound packs are managed through the built-in interface.
 
-#### Default Sounds Location
-```
-[Installation Folder]\lib\sounds\Default\
-```
+#### Adding Custom Sound Packs
+1. Open **Control Panel** → **Game** → **Settings** → **Sounds** tab → **Soundpack** tab
+2. Click **Export Example** to get a blank sound pack ZIP with XML structure
+3. Add your audio files to the ZIP and update XML mappings
+4. Click **Import** and select your customized ZIP
+5. The application validates and installs the sound pack automatically
 
-#### Adding Custom Sounds
-1. Create new folder: `lib\sounds\MyCustomSet\`
-2. Copy sound files (see [Sound File Requirements](#sound-file-requirements))
-3. Restart application
-4. Select sound set in Settings → Audio
+#### Removing Sound Packs
+1. Navigate to the same **Soundpack** tab
+2. Select the sound pack to remove
+3. Click **Remove**
+
+> **Warning**: The default sound pack cannot be removed through the interface. If you manually delete the default sound pack files, you will lose all audio functionality.
+
+> **Note**: For complete sound pack documentation, see the [Sound Pack System Guide](Sound-Pack-System) *(Coming Soon)*
 
 ---
 
 ### Display Configuration
 
+The application provides multiple screen outputs for different purposes:
+
+**Available Screens:**
+- **TV Screen** - Main display for audience throughout the entire game. Can be captured with streaming software and broadcast to platforms that support individual window streaming.
+- **Host Screen** - Private screen for the game host showing answers and contestant information. Used only during the main game.
+- **Guest Screen** - Display for the contestant showing their view. Used only during the main game.
+- **Preview Screen** - Supervision tool for the Control Panel operator to monitor all three screens simultaneously. Has limitations: TV screen animations cannot be scaled properly, so some visual updates may not display accurately in preview. Not intended for streaming.
+
 #### Single Monitor Setup
 1. Launch application
-2. Control Panel and TV Screen open on same display
-3. Arrange windows as needed (Control Panel bottom, TV Screen top)
+2. Control Panel opens by default
+3. Open individual screens via **Screens** menu as needed
+4. Use **Preview Screen** to supervise what's being displayed without opening all screens
+5. Manual window positioning is supported but not persistent
 
-#### Dual Monitor Setup (Recommended)
-1. Connect second monitor to computer
+#### Multi-Monitor Setup (Recommended)
+1. Connect monitors (supports 2, 3, or 4 monitor setups)
 2. Configure Windows display settings (Extend displays)
 3. Launch application
-4. Drag TV Screen to primary display (e.g., TV/projector)
-5. Keep Control Panel on secondary display (operator screen)
+4. Go to **Game** → **Settings** → **Screens** tab
+5. Assign each screen to a specific display:
+   - Each display can only be assigned to one screen
+   - Once assigned, the screen will automatically maximize on that display at startup
+   - Assignments are persistent across application restarts
+6. Configured screens will automatically open and position on their assigned displays
+
+**Note**: Manual drag-and-drop positioning works but is not saved between sessions. Use the Settings > Screens tab for persistent display assignments.
 
 ---
 
 ## Verifying Installation
 
-### Quick Test
-1. Launch The Millionaire Game
-2. In Control Panel, click "New Game"
-3. Click "Start FFF" (Fastest Finger First)
-4. Verify:
-   - ✅ TV Screen displays correctly
-   - ✅ Sounds play when buttons clicked
-   - ✅ No error messages in console log
+1. Launch The Millionaire Game from Start Menu or desktop shortcut
+2. The application will start and open the Control Panel
+3. If the database is not available, the application will display an error message and will not start
+4. For a complete walkthrough of running your first game, follow the [Quick Start Guide](Quick-Start-Guide)
 
-### Full Test
-Follow the [Quick Start Guide](Quick-Start-Guide) to run a complete game.
+**Note**: The database is required for the application to operate. If there are any database connectivity issues, the application will not launch and will display an error explaining the problem.
 
 ---
 
 ## Updating the Application
 
-### Standard Installation Update
-1. Download newer installer from Releases page
-2. Run installer - it will detect existing installation
-3. Choose "Update" or "Reinstall"
-4. Your settings and databases are preserved
+1. Download the new installer from the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
+2. Run the installer
+3. The installer will:
+   - Detect the existing installation
+   - Automatically uninstall the previous version
+   - Install the new version
+4. Your user data is preserved:
+   - Database remains intact
+   - Settings are maintained
+   - Custom sound packs are retained
 
-### Portable Installation Update
-1. Download new portable ZIP
-2. Extract to temporary folder
-3. **Backup your data:**
-   - Copy `Data\` folder (databases)
-   - Copy `App.config` (if customized)
-   - Copy `lib\sounds\` (custom sounds)
-4. Replace program files with new version
-5. Restore backed-up data folders
+**Note**: This process works for both updates and reinstallation of the same version. Great for restoring the application to pristine condition if issues occur.
 
 ---
 
@@ -198,12 +177,14 @@ Follow the [Quick Start Guide](Quick-Start-Guide) to run a complete game.
 **Optional Cleanup:**
 Remove user data (not deleted by uninstaller):
 ```
-%LOCALAPPDATA%\The Millionaire Game\
-%APPDATA%\The Millionaire Game\
+%APPDATA%\MillionaireGame\
+%LOCALAPPDATA%\MillionaireGame\
 ```
 
-### Portable Installation
-Simply delete the folder containing the application.
+**Program Files Location:**
+```
+C:\Program Files\The Millionaire Game\
+```
 
 ---
 
@@ -228,69 +209,21 @@ If using web audience participation features, configure Windows Firewall:
 
 ---
 
-## Sound File Requirements
-
-If adding custom sound sets, follow these specifications:
-
-### Required Files
-```
-lib/sounds/[YourSetName]/
-├── intro.mp3               # Opening music
-├── fff_question.mp3        # FFF question reading
-├── fff_thinking.mp3        # FFF countdown
-├── fff_reveal.mp3          # FFF results
-├── question_reading.mp3    # Main game question
-├── thinking_music_1.mp3    # Level 1-5
-├── thinking_music_2.mp3    # Level 6-10
-├── thinking_music_3.mp3    # Level 11-15
-├── final_answer.mp3        # Final answer cue
-├── correct_answer.mp3      # Correct answer reveal
-├── wrong_answer.mp3        # Wrong answer
-├── walk_away.mp3           # Player walks away
-├── lifeline_5050.mp3       # 50:50 activation
-├── lifeline_phone.mp3      # Phone a Friend
-├── lifeline_audience.mp3   # Ask the Audience
-└── win_game.mp3            # Top prize win
-```
-
-### Audio Specifications
-- **Format**: MP3, WAV, OGG, or FLAC
-- **Bitrate**: 128-320 kbps (MP3)
-- **Sample Rate**: 44.1 kHz or 48 kHz
-- **Channels**: Mono or Stereo
-
-> **Note**: Audio powered by CSCore library with DSP capabilities (silence detection, crossfading)
-
----
-
 ## Troubleshooting Installation
-
-### Issue: ".NET 8 not found"
-**Solution:** Install .NET 8 Desktop Runtime from Microsoft
 
 ### Issue: "Database initialization failed"
 **Solution:** 
-- Check disk space (need ~100 MB)
-- Run as administrator
-- Check antivirus isn't blocking
+- Verify SQL Server Express is installed and running
+- Check SQL Server service status in Windows Services
+- Ensure sufficient disk space (~100 MB for database)
+- Run application as administrator
+- Check antivirus/firewall isn't blocking SQL Server
+- Try running `init_database.sql` manually from installation folder
 
-### Issue: "Application won't start"
-**Solution:**
-- Check Event Viewer for errors
-- Verify .NET version: `dotnet --list-runtimes`
-- Reinstall application
-
-### Issue: "Sounds not playing"
-**Solution:**
-- Verify sound files exist in `lib\sounds\Default\`
-- Check Windows volume mixer
-- Test with different sound set
-
-### Issue: "TV Screen not appearing"
-**Solution:**
-- Check if blocked by taskbar (set taskbar to auto-hide)
-- Verify display resolution supported
-- Check graphics drivers updated
+**Other Issues:**
+- Dependency installation (-.NET 8, SQL Server Express) is handled automatically by the installer
+- Sound pack issues are handled by the application's fallback to default sounds
+- For additional troubleshooting, see the [Troubleshooting Guide](Troubleshooting)
 
 ---
 
