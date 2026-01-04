@@ -121,14 +121,28 @@ Separate window shown to the contestant during the main game phase.
 
 Access: Screens menu → Guest Screen
 
-### Host Screen (Optional)
+### Host Screen
 
-Separate window for host/moderator with:
-- Current question and correct answer highlighted
-- Money tree display with current level
+Separate window for the host/moderator to view during gameplay.
+
+**Display:**
+- Money tree (always visible, right side, upper 2/3 height)
+- Current question and 4 answers (lower third)
+- **Correct answer highlighted** (key difference from Guest Screen)
+- Lifeline icons with status indicators
 - Ask the Audience results (when active)
-- Lifeline status indicators
+- Phone a Friend / Ask the Audience timers (when active)
 - Host notes from Control Panel
+- Black background (not customizable)
+
+**Features:**
+- Shows contestant's selected answer highlighted
+- Displays correct/wrong answer reveals
+- Shows 50:50 eliminated answers
+- Auto-scales from 1920x1080 base resolution
+- Money tree highlights current level
+
+**Purpose:** Allows host/moderator to see the correct answer and game status without revealing it to the contestant. Use Host Screen for the moderator and Guest Screen for the contestant.
 
 Access: Screens menu → Host Screen
 
