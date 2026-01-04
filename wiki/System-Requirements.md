@@ -39,14 +39,21 @@ Before installing The Millionaire Game, ensure your system meets the following r
   - Support for 1920x1080 resolution
 
 ### Display
-- **Primary Display (TV Screen)**: 
-  - 1920x1080 (Full HD) - **Recommended**
-  - 1280x720 (HD) - Minimum
+- **Control Panel** (Main Interface) - **REQUIRED**
+  - Minimum: 1280x720 (HD)
+  - Recommended: 1366x768 or higher
+  - This is your primary operator interface
+  
+- **TV Screen, Host Screen, Guest Screen** (Optional)
+  - Can be opened on separate monitors or same display
+  - Recommended: 1920x1080 (Full HD) per screen
+  - Minimum: 1280x720 (HD)
   - Higher resolutions supported (4K, etc.)
-- **Secondary Display (Control Panel)**: 
-  - Optional but highly recommended
-  - 1366x768 or higher
-  - Can share primary display if needed
+  
+- **Preview Window** (Built-in)
+  - Integrated preview of TV/Host/Guest screens
+  - Available within Control Panel for supervision
+  - Useful for single-monitor setups
 
 ---
 
@@ -119,21 +126,23 @@ The application supports Windows display scaling:
 
 ## Performance Considerations
 
-### Single Monitor Setup
-- Works, but less convenient for operators
-- Control panel and TV screen share same display
-- Recommended for testing or casual use
+### Single Monitor Setup (Basic)
+- Control Panel only (required)
+- Use built-in preview window to monitor TV/Host/Guest screens
+- Ideal for testing, development, or solo operation
+- Fully functional for all game features
 
-### Dual Monitor Setup
-- Optimal configuration
-- Control panel on secondary monitor
-- TV screen on primary (1920x1080)
-- Full separation of operator and player views
+### Dual Monitor Setup (Recommended)
+- Control Panel on one monitor (operator view)
+- TV Screen on second monitor (audience/contestant view)
+- Best for live events and presentations
+- Clear separation of operator and player views
 
-### Triple Monitor Setup
-- Advanced configuration
-- Control panel + TV Screen + Host/Guest screen
-- Requires manual window positioning
+### Multi-Monitor Setup (Advanced)
+- Control Panel on primary monitor
+- TV Screen, Host Screen, and/or Guest Screen on additional monitors
+- Maximum flexibility for large productions
+- Each screen independently positioned and sized
 
 ---
 
