@@ -18,7 +18,8 @@
     <FileVersion>0.9.8.0</FileVersion>
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
     <EnableDefaultItems>true</EnableDefaultItems>
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <!-- Exclude lib folders from default compilation -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);lib\sounds\**;lib\image\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,18 +40,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Copy sound files to output directory (excluded from single file) -->
-    <None Include="lib\sounds\**\*.*" CopyToOutputDirectory="PreserveNewest">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    <!-- Exclude sound and image files from single file bundle - will be copied manually after publish -->
+    <Content Remove="lib\sounds\**\*.*" />
+    <Content Remove="lib\image\**\*.*" />
+    <None Include="lib\sounds\**\*.*">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Include="lib\image\**\*.*">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Copy image files to output directory (excluded from single file) -->
-    <None Include="lib\image\**\*.*" CopyToOutputDirectory="PreserveNewest">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-    </None>
-  </ItemGroup>
+  <!-- Copy sounds and images after publish to avoid embedding in single file -->
+  <Target Name="CopyAssets" AfterTargets="Publish">
+    <ItemGroup>
+      <SoundsFiles Include="$(ProjectDir)lib\sounds\**\*.*" />
+      <ImageFiles Include="$(ProjectDir)lib\image\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 
   <ItemGroup>
     <!-- Web server files - do not copy to output, will be served from embedded resources -->
