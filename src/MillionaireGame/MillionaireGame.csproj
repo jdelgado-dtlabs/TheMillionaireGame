@@ -60,6 +60,16 @@
     <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
+  <!-- Copy sounds and images after build for Debug/Release builds (not just Publish) -->
+  <Target Name="CopyAssetsDebug" AfterTargets="Build">
+    <ItemGroup>
+      <SoundsFiles Include="lib\sounds\**\*.*" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(OutputPath)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(OutputPath)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
   <ItemGroup>
     <!-- Web server files - do not copy to output, will be served from embedded resources -->
     <Content Remove="..\MillionaireGame.Web\wwwroot\**\*.*" />
