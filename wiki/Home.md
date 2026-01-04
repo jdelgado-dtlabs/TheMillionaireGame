@@ -115,7 +115,7 @@ The application features multiple display interfaces for different roles:
 7. **Mobile Web Interface** - Progressive Web App for audience participation
    - **FFF Online** - Participate in Fastest Finger First rounds
    - **Ask the Audience** - Vote on answer choices in real-time
-   - QR code joining for easy access
+   - Direct URL joining (IP address and port)
    - Live result updates via SignalR
 
 ---
