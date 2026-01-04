@@ -431,7 +431,7 @@ Before diving into specific issues, try these general fixes:
    ```powershell
    netstat -ano | findstr :5278
    ```
-   - Change port in Settings → Web Integration
+   - Change port in Settings → Audience
 
 2. **Firewall Blocking**
    - Windows Firewall may block server
@@ -445,7 +445,7 @@ Before diving into specific issues, try these general fixes:
    - Run application as administrator
 
 4. **Invalid Configuration**
-   - Settings → Web Integration
+   - Settings → Audience
    - Verify bind address: `0.0.0.0` (all interfaces) or `localhost` (local only)
    - Reset to defaults if unsure
 
@@ -456,7 +456,7 @@ Before diving into specific issues, try these general fixes:
 **Solutions:**
 
 1. **Check Bind Address Configuration**
-   - Settings → Web Integration
+   - Settings → Audience
    - Set bind address to **Network** or **Public** (NOT localhost)
    - Localhost only allows connections from the host computer
    - Network/Public allows connections from other devices
