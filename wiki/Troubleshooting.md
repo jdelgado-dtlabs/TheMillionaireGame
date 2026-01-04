@@ -620,8 +620,8 @@ Before diving into specific issues, try these general fixes:
    - May indicate state corruption
 
 2. **Restart Game**
-   - Save progress if possible
-   - Start fresh game
+   - Control Panel → Reset Game button (Delete key)
+   - Clears game state and starts fresh
 
 ---
 
