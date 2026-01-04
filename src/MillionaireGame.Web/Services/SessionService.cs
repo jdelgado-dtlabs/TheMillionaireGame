@@ -752,5 +752,87 @@ public class SessionService
         _logger.LogInformation("Marked {Count} participants as having used ATA in session {SessionId}", 
             voters.Count, sessionId);
     }
+    
+    /// <summary>
+    /// Get participant telemetry aggregates for current session
+    /// </summary>
+    public async Task<(int totalCount, Dictionary<string, int> deviceTypes, Dictionary<string, int> browserTypes, Dictionary<string, int> osTypes)> GetParticipantTelemetryAsync(string sessionId)
+    {
+        var participants = await _context.Participants
+            .Where(p => p.SessionId == sessionId && p.IsActive)
+            .ToListAsync();
+        
+        var totalCount = participants.Count;
+        
+        // Count device types
+        var deviceTypes = participants
+            .Where(p => !string.IsNullOrEmpty(p.DeviceType))
+            .GroupBy(p => p.DeviceType!)
+            .ToDictionary(g => g.Key, g => g.Count());
+        
+        // Count browser types
+        var browserTypes = participants
+            .Where(p => !string.IsNullOrEmpty(p.BrowserType))
+            .GroupBy(p => p.BrowserType!)
+            .ToDictionary(g => g.Key, g => g.Count());
+        
+        // Count OS types
+        var osTypes = participants
+            .Where(p => !string.IsNullOrEmpty(p.OSType))
+            .GroupBy(p => p.OSType!)
+            .ToDictionary(g => g.Key, g => g.Count());
+        
+        return (totalCount, deviceTypes, browserTypes, osTypes);
+    }
+    
+    /// <summary>
+    /// Finalize ATA telemetry after voting ends
+    /// </summary>
+    public async Task FinalizeATATelemetryAsync(string sessionId, string mode = "Online")
+    {
+        // Get participant count for completion rate
+        var (totalCount, _, _, _) = await GetParticipantTelemetryAsync(sessionId);
+        
+        // Get recent votes (last 5 minutes)
+        var recentVoteCutoff = DateTime.UtcNow.AddMinutes(-5);
+        var votes = await _context.ATAVotes
+            .Where(v => v.SessionId == sessionId && v.SubmittedAt > recentVoteCutoff)
+            .ToListAsync();
+        
+        var totalVotes = votes.Count;
+        
+        // Count votes per option
+        var votesA = votes.Count(v => v.SelectedOption == "A");
+        var votesB = votes.Count(v => v.SelectedOption == "B");
+        var votesC = votes.Count(v => v.SelectedOption == "C");
+        var votesD = votes.Count(v => v.SelectedOption == "D");
+        
+        // Calculate percentages
+        var percentageA = totalVotes > 0 ? (double)votesA / totalVotes * 100 : 0;
+        var percentageB = totalVotes > 0 ? (double)votesB / totalVotes * 100 : 0;
+        var percentageC = totalVotes > 0 ? (double)votesC / totalVotes * 100 : 0;
+        var percentageD = totalVotes > 0 ? (double)votesD / totalVotes * 100 : 0;
+        
+        // Calculate completion rate
+        var completionRate = totalCount > 0 ? (double)totalVotes / totalCount * 100 : 0;
+        
+        var ataData = new ATATelemetryData
+        {
+            TotalVotesCast = totalVotes,
+            VotesForA = votesA,
+            VotesForB = votesB,
+            VotesForC = votesC,
+            VotesForD = votesD,
+            PercentageA = percentageA,
+            PercentageB = percentageB,
+            PercentageC = percentageC,
+            PercentageD = percentageD,
+            VotingCompletionRate = completionRate,
+            Mode = mode
+        };
+        
+        TelemetryBridge.OnATAStats?.Invoke(ataData);
+        _logger.LogInformation("[Telemetry] ATA stats recorded: {Total} votes, Completion: {Completion:F1}%, Mode: {Mode}",
+            totalVotes, completionRate, mode);
+    }
 }
-

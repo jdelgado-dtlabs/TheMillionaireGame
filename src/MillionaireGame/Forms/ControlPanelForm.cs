@@ -7,6 +7,7 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Hosting;
 using MillionaireGame.Utilities;
 using MillionaireGame.Web.Models;
+using MillionaireGame.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame.Forms;
@@ -107,12 +108,16 @@ public partial class ControlPanelForm : Form
     // Lifeline manager handles all lifeline logic
     private LifelineManager? _lifelineManager;
     
+    // Telemetry services for game statistics
+    private readonly TelemetryService _telemetryService = TelemetryService.Instance;
+    private readonly CsvExportService _csvExportService = new CsvExportService();
+    
     // Closing sequence state tracking
     private System.Windows.Forms.Timer? _closingTimer;
     private ClosingStage _closingStage = ClosingStage.NotStarted;
     
-    // Track if at least one round has been completed
-    private bool _firstRoundCompleted = false;
+    // Track round number (0 = no rounds, 1+ = round count)
+    private int _roundNumber = 0;
     
     // Track if bed music should be restarted after lifeline use (for Q1-5)
     private bool _shouldRestartBedMusic = false;
@@ -1486,6 +1491,11 @@ public partial class ControlPanelForm : Form
             }
             GameConsole.Debug("[LightsDown] Lights down sound finished");
             
+            // Start new round telemetry tracking
+            _roundNumber++;
+            _telemetryService.StartNewRound(_roundNumber);
+            GameConsole.Debug($"[Telemetry] Started Round {_roundNumber}");
+            
             // Load question - this updates all screens
             await LoadNewQuestion();
             
@@ -2522,6 +2532,13 @@ public partial class ControlPanelForm : Form
 
     private void btnExplainGame_Click(object? sender, EventArgs e)
     {
+        // Start new game telemetry session (game start time)
+        if (_roundNumber == 0)
+        {
+            _telemetryService.StartNewGame();
+            GameConsole.Debug("[Telemetry] Started new game session");
+        }
+        
         // Play game explanation audio on loop
         _soundService.PlaySound(SoundEffect.ExplainGame, loop: true);
         
@@ -2595,8 +2612,16 @@ public partial class ControlPanelForm : Form
         // Mark round as completed
         _roundCompleted = true;
         
-        // Mark that at least one round has been completed
-        _firstRoundCompleted = true;
+        // Complete round telemetry
+        var outcomeText = _gameOutcome switch
+        {
+            GameOutcome.Win => "Win",
+            GameOutcome.Drop => "Walk Away",
+            GameOutcome.Wrong => "Incorrect Answer",
+            _ => "Unknown"
+        };
+        _telemetryService.CompleteRound(outcomeText, winnings, questionNumber);
+        GameConsole.Debug($"[Telemetry] Completed Round {_roundNumber} - {outcomeText}, Winnings: {winnings}");
         
         // Don't automatically reset - let user manually reset with Reset Round button
         // All buttons should already be disabled at this point except Closing
@@ -2840,6 +2865,21 @@ public partial class ControlPanelForm : Form
         // Clear game winner display from screens
         _screenService.ClearGameWinnerDisplay();
         
+        // Export telemetry data to CSV if any rounds were played
+        if (_roundNumber > 0)
+        {
+            try
+            {
+                _telemetryService.CompleteGame();
+                var csvPath = _csvExportService.ExportWithDefaults(_telemetryService.GetCurrentGameData());
+                GameConsole.Info($"[Telemetry] Game statistics exported to: {csvPath}");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[Telemetry] Failed to export CSV: {ex.Message}");
+            }
+        }
+        
         // Clear all visual elements on screens to create pristine "blank slate" appearance
         // This gives the impression of a reset without actually resetting game data
         _screenService.ShowQuestion(false);  // Hide question/answers display on all screens
@@ -2861,8 +2901,9 @@ public partial class ControlPanelForm : Form
         // Reset closing stage
         _closingStage = ClosingStage.NotStarted;
         
-        // Reset first round flag
-        _firstRoundCompleted = false;
+        // Reset round number and telemetry
+        _roundNumber = 0;
+        _telemetryService.Reset();
         
         // DISABLE ALL BUTTONS - game is completely over
         btnHostIntro.Enabled = false;
@@ -2986,7 +3027,6 @@ public partial class ControlPanelForm : Form
         _isAutomatedSequenceRunning = false;
         _roundCompleted = false;
         _gameOutcome = GameOutcome.InProgress;
-        _firstRoundCompleted = false;
         _finalWinningsAmount = null; // Clear stored winnings amount
         
         // Reset game service
@@ -3726,7 +3766,7 @@ public partial class ControlPanelForm : Form
             
             // Enable Closing (green) on Q6+ if round 2 or higher - only immediately after answer reveal
             // This gets enabled here and then disabled again in LoadNewQuestion
-            if (_firstRoundCompleted)
+            if (_roundNumber >= 2)
             {
                 btnClosing.Enabled = true;
                 btnClosing.BackColor = Color.LimeGreen;
@@ -3971,7 +4011,7 @@ public partial class ControlPanelForm : Form
         btnWalk.BackColor = Color.Gray;
         
         // Keep Closing enabled after first round completes
-        if (_firstRoundCompleted)
+        if (_roundNumber >= 1)
         {
             btnClosing.Enabled = true;
             btnClosing.BackColor = Color.LimeGreen;

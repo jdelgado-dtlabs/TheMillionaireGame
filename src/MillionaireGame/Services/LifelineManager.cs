@@ -18,6 +18,7 @@ public class LifelineManager
     private readonly SoundService _soundService;
     private readonly ScreenUpdateService _screenService;
     private readonly Func<WebServerHost?> _getWebServerHost;
+    private readonly TelemetryService _telemetryService = TelemetryService.Instance;
     
     // PAF state tracking
     private PAFStage _pafStage = PAFStage.NotStarted;
@@ -98,6 +99,11 @@ public class LifelineManager
         {
             return;
         }
+        
+        // Record lifeline usage in telemetry
+        var questionNumber = _gameService.State.CurrentLevel;
+        _telemetryService.RecordLifelineUsage(type.ToString(), questionNumber);
+        LogMessage?.Invoke($"[Telemetry] Recorded lifeline {type} usage at Q{questionNumber}");
         
         // Mark multi-stage lifelines as active and set other buttons to standby
         bool isMultiStage = type is LifelineType.PlusOne or LifelineType.AskTheAudience or LifelineType.DoubleDip or LifelineType.AskTheHost;
@@ -496,6 +502,9 @@ public class LifelineManager
         // Step 1: Get and show results first
         var finalResults = await GetATAResultsAsync();
         _screenService.ShowATAResults(finalResults);
+        
+        // Collect participant telemetry and ATA stats from web server
+        await CollectWebTelemetryAsync();
         
         // Step 2: Play ending sound (IMMEDIATE priority will stop previous sounds automatically)
         _soundService.PlaySound(SoundEffect.LifelineATAEnd);
@@ -1361,6 +1370,64 @@ public class LifelineManager
         finally
         {
             cts.Dispose();
+        }
+    }
+    
+    /// <summary>
+    /// Collect participant telemetry and finalize ATA telemetry from web server
+    /// </summary>
+    private async Task CollectWebTelemetryAsync()
+    {
+        try
+        {
+            var webServerHost = _getWebServerHost();
+            if (webServerHost == null || !webServerHost.IsRunning)
+            {
+                LogMessage?.Invoke("[Telemetry] Web server not running - skipping telemetry collection");
+                return;
+            }
+            
+            var serviceScopeFactory = webServerHost.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+            if (serviceScopeFactory == null)
+            {
+                LogMessage?.Invoke("[Telemetry] Service scope factory not available");
+                return;
+            }
+            
+            using var scope = serviceScopeFactory.CreateScope();
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
+            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+            
+            if (sessionService == null || dbContext == null)
+            {
+                LogMessage?.Invoke("[Telemetry] Session service or DB context not available");
+                return;
+            }
+            
+            // Get active session
+            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+            
+            if (activeSession == null)
+            {
+                LogMessage?.Invoke("[Telemetry] No active session found");
+                return;
+            }
+            
+            // Collect participant telemetry
+            var (totalCount, deviceTypes, browserTypes, osTypes) = await sessionService.GetParticipantTelemetryAsync(activeSession.Id);
+            _telemetryService.UpdateParticipantStats(totalCount, deviceTypes, browserTypes, osTypes);
+            LogMessage?.Invoke($"[Telemetry] Participant stats: {totalCount} total, {deviceTypes.Count} device types, {browserTypes.Count} browsers");
+            
+            // Finalize ATA telemetry (determine if it was online or offline mode)
+            var voteCount = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            var mode = voteCount > 0 ? "Online" : "Offline";
+            await sessionService.FinalizeATATelemetryAsync(activeSession.Id, mode);
+            LogMessage?.Invoke($"[Telemetry] ATA stats finalized - Mode: {mode}");
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[Telemetry] Error collecting web telemetry: {ex.Message}");
         }
     }
     

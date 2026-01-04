@@ -1,6 +1,8 @@
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Models.Telemetry;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
 using MillionaireGame.Utilities;
@@ -130,6 +132,9 @@ internal static class Program
         services.AddSingleton(soundService);
         
         ServiceProvider = services.BuildServiceProvider();
+        
+        // Wire up telemetry bridge callbacks
+        SetupTelemetryBridge();
 
         // Create and run main control panel (FIRST window to show)
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
@@ -214,5 +219,61 @@ internal static class Program
         {
             GameConsole.Info("User chose to continue after unhandled exception.");
         }
+    }
+    
+    /// <summary>
+    /// Setup telemetry bridge callbacks to receive data from web server
+    /// </summary>
+    private static void SetupTelemetryBridge()
+    {
+        var telemetryService = TelemetryService.Instance;
+        
+        // Wire up participant stats callback
+        Web.Services.TelemetryBridge.OnParticipantStats = (totalCount, deviceTypes, browserTypes, osTypes) =>
+        {
+            telemetryService.UpdateParticipantStats(totalCount, deviceTypes, browserTypes, osTypes);
+            GameConsole.Debug($"[Telemetry Bridge] Participant stats updated: {totalCount} total");
+        };
+        
+        // Wire up FFF stats callback
+        Web.Services.TelemetryBridge.OnFFFStats = (fffData) =>
+        {
+            var fffStats = new FFFStats
+            {
+                TotalSubmissions = fffData.TotalSubmissions,
+                CorrectSubmissions = fffData.CorrectSubmissions,
+                IncorrectSubmissions = fffData.IncorrectSubmissions,
+                WinnerName = fffData.WinnerName,
+                WinnerTimeMs = fffData.WinnerTimeMs,
+                AverageResponseTimeMs = fffData.AverageResponseTimeMs,
+                FastestResponseTimeMs = fffData.FastestResponseTimeMs,
+                SlowestResponseTimeMs = fffData.SlowestResponseTimeMs
+            };
+            telemetryService.SetFFFStats(fffStats);
+            GameConsole.Debug($"[Telemetry Bridge] FFF stats updated: {fffStats.TotalSubmissions} submissions");
+        };
+        
+        // Wire up ATA stats callback
+        Web.Services.TelemetryBridge.OnATAStats = (ataData) =>
+        {
+            var ataStats = new ATAStats
+            {
+                TotalVotesCast = ataData.TotalVotesCast,
+                VotesForA = ataData.VotesForA,
+                VotesForB = ataData.VotesForB,
+                VotesForC = ataData.VotesForC,
+                VotesForD = ataData.VotesForD,
+                PercentageA = ataData.PercentageA,
+                PercentageB = ataData.PercentageB,
+                PercentageC = ataData.PercentageC,
+                PercentageD = ataData.PercentageD,
+                VotingCompletionRate = ataData.VotingCompletionRate,
+                Mode = ataData.Mode
+            };
+            telemetryService.SetATAStats(ataStats);
+            GameConsole.Debug($"[Telemetry Bridge] ATA stats updated: {ataStats.TotalVotesCast} votes");
+        };
+        
+        GameConsole.Debug("[Telemetry Bridge] Callbacks registered successfully");
     }
 }

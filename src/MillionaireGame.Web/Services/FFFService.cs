@@ -116,6 +116,28 @@ public class FFFService
         }
         catch { /* WebService console not available - ignore */ }
 
+        // Update telemetry with FFF performance stats
+        var fffWinner = correctSubmissions.FirstOrDefault();
+        var avgResponseTime = submissions.Any() ? submissions.Average(s => s.TimeElapsed) : 0;
+        var fastestTime = correctSubmissions.Any() ? correctSubmissions.Min(s => s.TimeElapsed) : 0;
+        var slowestTime = correctSubmissions.Any() ? correctSubmissions.Max(s => s.TimeElapsed) : 0;
+        
+        var fffData = new FFFTelemetryData
+        {
+            TotalSubmissions = submissions.Count,
+            CorrectSubmissions = correctSubmissions.Count,
+            IncorrectSubmissions = submissions.Count - correctSubmissions.Count,
+            WinnerName = fffWinner?.Participant?.DisplayName ?? "None",
+            WinnerTimeMs = fffWinner?.TimeElapsed ?? 0,
+            AverageResponseTimeMs = avgResponseTime,
+            FastestResponseTimeMs = fastestTime,
+            SlowestResponseTimeMs = slowestTime
+        };
+        
+        TelemetryBridge.OnFFFStats?.Invoke(fffData);
+        _logger.LogInformation("[Telemetry] FFF stats recorded: {Total} submissions, {Correct} correct, Winner: {Winner} ({Time}ms)",
+            submissions.Count, correctSubmissions.Count, fffData.WinnerName, fffData.WinnerTimeMs);
+
         return new FFFResults
         {
             Winner = correctSubmissions.FirstOrDefault(),
