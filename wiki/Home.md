@@ -178,10 +178,12 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 ## 🙏 Credits
 
-- **C# Version**: Jean Francois Delgado ([@jdelgado-dtlabs](https://github.com/jdelgado-dtlabs))
-- **Original VB.NET Version**: Marco Loenen ([@Macronair](https://github.com/Macronair))
+- **C# Version**: Jean Francois Delgado ([@jdelgado-dtlabs](https://github.com/jdelgado-dtlabs)) - Complete rewrite and modernization
+- **Original VB.NET Concept**: Marco Loenen - Original VB.NET implementation (no longer in this repository)
 - **Sound Effects**: Various sources (see attributions)
 - **Graphics**: Pre-rendered assets for 1920x1080
+
+> **Note**: This C# version is a complete independent rewrite by Jean Francois Delgado. The original VB.NET version was created by Marco Loenen and has been archived.
 
 ---
 
