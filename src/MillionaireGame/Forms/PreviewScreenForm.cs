@@ -39,7 +39,7 @@ public class PreviewScreenForm : Form
     private PreviewPanel _tvPanel;
     private HostScreenForm _hostScreen;
     private GuestScreenForm _guestScreen;
-    private TVScreenFormScalable _tvScreen;
+    private TVScreenForm _tvScreen;
     private ScreenUpdateService _screenService;
     private PreviewOrientation _orientation;
     
@@ -63,7 +63,7 @@ public class PreviewScreenForm : Form
         _guestScreen.CreateControl(); // Force control creation without showing
         screenService.RegisterScreen(_guestScreen); // Register to receive display updates
         
-        _tvScreen = new TVScreenFormScalable();
+        _tvScreen = new TVScreenForm();
         _tvScreen.IsPreview = true; // Mark as preview to skip intensive animations
         _tvScreen.Initialize(gameService.MoneyTree);
         _tvScreen.CreateControl(); // Force control creation without showing
@@ -479,8 +479,8 @@ public class PreviewPanel : Panel
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-                // Render background first (for TVScreenFormScalable)
-                if (_screen is TVScreenFormScalable tvScreen)
+                // Render background first (for TVScreenForm)
+                if (_screen is TVScreenForm tvScreen)
                 {
                     var bgRenderer = tvScreen.GetType().GetField("_backgroundRenderer", 
                         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)

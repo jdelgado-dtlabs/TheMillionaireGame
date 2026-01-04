@@ -11,9 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace MillionaireGame.Forms;
 
 /// <summary>
-/// TV screen with scalable rendering - proof of concept
+/// TV screen with scalable rendering
 /// </summary>
-public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
+public class TVScreenForm : ScalableScreenBase, IGameScreen
 {
     private Question? _currentQuestion;
     private string? _selectedAnswer;
@@ -86,7 +86,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     private readonly RectangleF _answerCBounds = new(0, 920, 950, 100);
     private readonly RectangleF _answerDBounds = new(970, 920, 950, 100);
 
-    public TVScreenFormScalable()
+    public TVScreenForm()
     {
         IconHelper.ApplyToForm(this);
         

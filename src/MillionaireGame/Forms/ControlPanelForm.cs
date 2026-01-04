@@ -1010,7 +1010,7 @@ public partial class ControlPanelForm : Form
         _hostScreen?.UpdateMoneyTreeLevel(level, currentMode);
         _guestScreen?.UpdateMoneyTreeLevel(level, currentMode);
         
-        if (_tvScreen is TVScreenFormScalable tvScalable)
+        if (_tvScreen is TVScreenForm tvScalable)
         {
             tvScalable.UpdateMoneyTreeLevel(level);
         }
@@ -2109,8 +2109,8 @@ public partial class ControlPanelForm : Form
             });
         }
         
-        // TV screen (scalable version)
-        if (_tvScreen is TVScreenFormScalable tvScalable)
+        // TV screen
+        if (_tvScreen is TVScreenForm tvScalable)
         {
             tvScalable.Invoke((MethodInvoker)delegate
             {
@@ -4413,7 +4413,7 @@ public partial class ControlPanelForm : Form
         {
             // Use the final winnings amount if available, otherwise current value
             var amountToShow = _finalWinningsAmount ?? _gameService.State.CurrentValue;
-            if (screen is TVScreenFormScalable scalableScreen)
+            if (screen is TVScreenForm scalableScreen)
             {
                 scalableScreen.ShowWinningsAmount(amountToShow);
             }
@@ -4431,7 +4431,7 @@ public partial class ControlPanelForm : Form
             screen.ShowWinnings(currentState);
             
             // If demo is active, sync the current demo level (only works for scalable screens)
-            if (_isMoneyTreeDemoActive && _moneyTreeDemoLevel > 0 && screen is TVScreenFormScalable tvScalable)
+            if (_isMoneyTreeDemoActive && _moneyTreeDemoLevel > 0 && screen is TVScreenForm tvScalable)
             {
                 tvScalable.UpdateMoneyTreeLevel(_moneyTreeDemoLevel);
             }
@@ -4452,7 +4452,7 @@ public partial class ControlPanelForm : Form
         if (_tvScreen == null || (_tvScreen as Form)?.IsDisposed == true)
         {
             // Use the new scalable TV screen
-            var tvForm = new TVScreenFormScalable();
+            var tvForm = new TVScreenForm();
             tvForm.Initialize(_gameService.MoneyTree);
             _tvScreen = tvForm;
             _screenService.RegisterScreen(_tvScreen);

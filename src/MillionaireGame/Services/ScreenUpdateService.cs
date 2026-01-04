@@ -199,7 +199,7 @@ public class ScreenUpdateService
             // Keep icons visible on Host/Guest screens
             foreach (var screen in _registeredScreens)
             {
-                if (screen is TVScreenFormScalable)
+                if (screen is TVScreenForm)
                 {
                     screen.HideLifelineIcons();
                 }
@@ -235,7 +235,7 @@ public class ScreenUpdateService
         
         foreach (var screen in _registeredScreens)
         {
-            if (screen is TVScreenFormScalable scalableScreen)
+            if (screen is TVScreenForm scalableScreen)
             {
                 scalableScreen.ShowWinningsAmount(amount);
             }
