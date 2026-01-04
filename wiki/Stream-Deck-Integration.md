@@ -1,189 +1,237 @@
 # Stream Deck Integration
 
-The Millionaire Game includes full support for Elgato Stream Deck hardware, allowing hosts to control the game using physical buttons. This guide covers setup, configuration, and available controls.
+The Millionaire Game includes direct hardware integration with Elgato Stream Deck devices, allowing hosts to lock in and reveal answers using physical buttons. This guide covers setup, configuration, and available controls.
 
 ---
 
 ## 🎮 Overview
 
-Stream Deck integration provides tactile, visual control over game operations through a dedicated 6-button module. Each button is context-aware, showing relevant actions based on the current game state.
+Stream Deck integration provides tactile, visual control over answer locking and reveal operations during gameplay. The 6-button layout displays answer choices (A, B, C, D), a reveal button, and a dynamic feedback indicator that shows correctness before revealing to the audience.
 
 ### Key Benefits
-- **Physical Control** - Tactile feedback for confident operation
-- **Visual Feedback** - Button states update in real-time
-- **Streamlined Workflow** - Most common actions at your fingertips
-- **Host-Focused** - Designed specifically for host control operations
+- **Physical Control** - Tactile feedback for confident answer locking
+- **Visual Feedback** - Button states update in real-time with game state
+- **Pre-Reveal Confirmation** - See if answer is correct/incorrect before revealing to audience
+- **Direct Hardware Control** - No Stream Deck software required while playing
+
+### Important Note
+This integration communicates directly with Stream Deck hardware through the StreamDeckSharp library (OpenMacroBoard SDK). The official Elgato Stream Deck software must be **CLOSED** while using The Millionaire Game, as both applications cannot control the device simultaneously.
 
 ---
 
 ## 📋 Requirements
 
-### Hardware
-- **Elgato Stream Deck** (any model)
-- **Minimum 6 buttons** recommended for full host control module
-- USB connection to the PC running The Millionaire Game
+### Supported Hardware
+- **Stream Deck Module 6** (6 buttons, 3x2 layout) - Fully tested ✅
+- **Stream Deck Mini** (6 buttons, 3x2 layout) - Should work, not tested ⚠️
+
+**Note:** This application includes a custom build of StreamDeckSharp with Module 6 (USB PID 0x00B8) support. The official NuGet package does not yet include this support, so custom DLLs are bundled in `lib/StreamDeck/` until the upstream pull request is merged.
+
+### Unsupported Hardware
+- Stream Deck (15 buttons) - Requires 6-button layout
+- Stream Deck XL (32 buttons) - Requires 6-button layout
+- Stream Deck MK.2 (15 buttons) - Requires 6-button layout
+- Stream Deck Plus - Different layout, not tested
 
 ### Software
-- **Stream Deck Software** - Latest version from Elgato
 - **The Millionaire Game v1.0+** - Stream Deck support built-in
-- **Windows 10/11** - Required for both applications
+- **Windows 10/11** - Required operating system
+- **NO Stream Deck Software Required** - Direct hardware control via StreamDeckSharp library
+- **Stream Deck Software Must Be CLOSED** - Conflicts with direct hardware control
 
 ---
 
 ## 🔧 Setup
 
-### 1. Install Stream Deck Software
+### 1. Hardware Connection
 
-1. Download from [Elgato's website](https://www.elgato.com/en/downloads)
-2. Install and connect your Stream Deck device
-3. Verify device is recognized in Stream Deck software
+1. **Close Stream Deck Software** - The official Elgato software MUST be closed
+   - Right-click system tray icon → Exit
+   - Or kill via Task Manager if needed
+2. **Connect Stream Deck Device** - Plug in via USB
+3. **Verify Device** - Device will be detected automatically by The Millionaire Game when enabled
 
-### 2. Configure The Millionaire Game
+### 2. Enable in Application
 
-1. Launch The Millionaire Game
+1. Launch **The Millionaire Game**
 2. Open **Control Panel**
-3. Navigate to **Settings** → **Stream Deck**
-4. Enable **Stream Deck Integration**
-5. Configure button layout (6-button host control module)
+3. Navigate to **Game** → **Settings** → **StreamDeck** tab
+4. Check **Enable Stream Deck Integration**
+5. Click **Save** to apply settings
+6. **Restart The Millionaire Game** - Required for Stream Deck initialization
 
-### 3. Link Actions to Buttons
+### 3. Verify Connection
 
-The application communicates directly with Stream Deck hardware through the Elgato SDK:
+After restarting with Stream Deck enabled:
 
-1. Launch **The Millionaire Game** with Stream Deck enabled
-2. The application automatically detects connected Stream Deck devices
-3. Buttons are automatically configured based on your saved layout
-4. Button states update in real-time as game state changes
+1. Check **Game Console** (Game → Settings → Screens tab → Open Console)
+2. Look for initialization messages:
+   ```
+   [StreamDeck] Detected 1 Stream Deck device(s):
+     - Stream Deck Module 6: 6 buttons, 3x2 grid (96x96px)
+   [StreamDeck] Found compatible device: Stream Deck Module 6
+   [StreamDeck] Connected to Stream Deck Module 6 (2x3 layout)
+   [StreamDeckIntegration] Initialized successfully
+   ```
+3. Stream Deck should show all blank buttons initially
+
+### Troubleshooting Setup
+
+**Device Not Detected:**
+- Verify Stream Deck software is CLOSED (check Task Manager)
+- Unplug and replug USB cable
+- Try different USB port (USB 2.0 or 3.0, Module 6 uses USB 2.0 protocol)
+- Verify custom StreamDeckSharp DLLs are present in application's `lib/StreamDeck/` folder
+
+**Integration Failed:**
+- Restart application with Stream Deck plugged in
+- Check Windows Device Manager for USB device
+- Verify Stream Deck works in official Elgato software first
+- Review logs in `%LocalAppData%\TheMillionaireGame\Logs\`
 
 ---
 
-## 🎯 Host Control Module (6 Buttons)
+## 🎯 Button Layout (6 Buttons)
 
-The recommended layout uses 6 buttons for essential host operations:
+The application uses a fixed 6-button layout optimized for answer lock and reveal workflow:
 
-### Button Layout
+### Physical Layout
 
 ```
-┌─────────┬─────────┬─────────┐
-│ Button 1│ Button 2│ Button 3│
-│  REVEAL │  ANSWER │ LIFELINE│
-├─────────┼─────────┼─────────┤
-│ Button 4│ Button 5│ Button 6│
-│  NEXT Q │   WALK  │  FINAL  │
-└─────────┴─────────┴─────────┘
+┌─────────────┬─────────────┬─────────────┐
+│  Dynamic    │  Answer A   │  Answer B   │
+│  (Row 0)    │  (Row 0)    │  (Row 0)    │
+│             │             │             │
+│  Feedback   │      A      │      B      │
+│  Indicator  │             │             │
+├─────────────┼─────────────┼─────────────┤
+│  Reveal     │  Answer C   │  Answer D   │
+│  (Row 1)    │  (Row 1)    │  (Row 1)    │
+│             │             │             │
+│      👁     │      C      │      D      │
+│             │             │             │
+└─────────────┴─────────────┴─────────────┘
 ```
 
-### Button Functions
+### Button Mapping
 
-#### Button 1: REVEAL
-- **Primary Action**: Reveal correct answer after contestant response
-- **Game Phase**: Main game question resolution
-- **Visual State**: Highlights in green when available
-- **Usage**: Press after contestant has locked in their answer
+**Row 0 (Top Row):**
+- **Col 0:** Dynamic Feedback Indicator (not pressable)
+- **Col 1:** Answer A
+- **Col 2:** Answer B
 
-#### Button 2: ANSWER
-- **Primary Action**: Lock in contestant's answer selection
-- **Game Phase**: During question with selected answer
-- **Visual State**: Orange when answer is selected but not locked
-- **Usage**: Confirm contestant's choice before revealing
-
-#### Button 3: LIFELINE
-- **Primary Action**: Quick access to lifeline activation
-- **Game Phase**: Active question with available lifelines
-- **Visual State**: Blue with lifeline icons
-- **Usage**: Opens lifeline selection menu
-
-#### Button 4: NEXT Q
-- **Primary Action**: Advance to next question
-- **Game Phase**: After correct answer or walk away
-- **Visual State**: Green arrow when ready to proceed
-- **Usage**: Progress through the money ladder
-
-#### Button 5: WALK
-- **Primary Action**: Contestant walks away with current winnings
-- **Game Phase**: Active question before answer lock
-- **Visual State**: Yellow warning indicator
-- **Usage**: Activate when contestant chooses to leave
-
-#### Button 6: FINAL
-- **Primary Action**: Final answer confirmation
-- **Game Phase**: After answer selected, before lock
-- **Visual State**: Red when in "final answer" mode
-- **Usage**: Dramatic final answer moment before lock
+**Row 1 (Bottom Row):**
+- **Col 0:** Reveal Button
+- **Col 1:** Answer C
+- **Col 2:** Answer D
 
 ---
 
-## 🎨 Button States
+## 🎮 How It Works
 
-Buttons dynamically change appearance based on game state:
+### Workflow
 
-### Available (Active)
-- **Appearance**: Full color, bright icon
-- **Behavior**: Press to activate function
-- **Indicator**: Pulsing or solid color
+1. **Question Displayed**
+   - Answer buttons A, B, C, D become active (show answer icons)
+   - Dynamic button and Reveal button are blank (disabled)
+   - Host waits for contestant to make their choice
 
-### Unavailable (Disabled)
-- **Appearance**: Dimmed/grayed out
-- **Behavior**: No action when pressed
-- **Indicator**: Faded icon
+2. **Host Locks Answer**
+   - Press the button corresponding to contestant's answer (A, B, C, or D)
+   - Selected answer button shows "lock" icon (answer-a-lock.png, etc.)
+   - Other answer buttons go blank (disabled)
+   - **Dynamic button shows feedback:**
+     - ✅ Green checkmark = Correct answer
+     - ❌ Red X = Incorrect answer
+   - Reveal button becomes active
 
-### In Progress
-- **Appearance**: Animated or flashing
-- **Behavior**: Action is executing
-- **Indicator**: Progress animation
+3. **Host Reveals Answer**
+   - Press the Reveal button (bottom left)
+   - Game performs reveal sequence on screens
+   - All buttons go blank (disabled) after reveal
+   - Ready for next question
 
-### Completed
-- **Appearance**: Success checkmark or color change
-- **Behavior**: Brief confirmation before returning to normal
-- **Indicator**: Green flash or checkmark
+### Context-Aware Behavior
 
----
-
-## ⚙️ Configuration Options
-
-### Button Customization
-
-Access via **Settings** → **Stream Deck**:
-
-- **Button Icons** - Choose from preset icons or upload custom images
-- **Button Labels** - Show/hide text labels on buttons
-- **Color Scheme** - Match your event branding
-- **Haptic Feedback** - Enable vibration confirmation (if supported)
-
-### Action Mapping
-
-Customize which game actions map to which buttons:
-
-1. Open **Stream Deck Settings** in The Millionaire Game
-2. Select **Action Mapping**
-3. Drag and drop actions to desired button positions
-4. Save configuration
-
-### Profiles
-
-Create multiple button profiles for different scenarios:
-
-- **Standard Game** - Main game host controls
-- **FFF Mode** - Fastest Finger First controls
-- **Practice Mode** - Training/demo controls
+- **No Active Question:** All buttons blank (disabled)
+- **Question Displayed:** Answer buttons active, Dynamic/Reveal blank
+- **Answer Locked:** Locked answer highlighted, Dynamic shows correctness, Reveal active
+- **After Reveal:** All buttons blank until next question
 
 ---
 
-## 🔄 Context-Aware Behavior
+## 🎨 Button Images
 
-The Stream Deck integration is fully context-aware:
+The following images are used (located in `lib/image/streamdeck/`):
 
-### During Fastest Finger First
-- Buttons show FFF-specific actions
-- Start round, reveal order, select winner
+### Answer Buttons (Active State)
+- `answer-a.png` - Answer A button
+- `answer-b.png` - Answer B button
+- `answer-c.png` - Answer C button
+- `answer-d.png` - Answer D button
 
-### During Main Game
-- Standard host control layout active
-- Question navigation, answer handling, lifelines
+### Answer Buttons (Locked State)
+- `answer-a-lock.png` - Answer A locked
+- `answer-b-lock.png` - Answer B locked
+- `answer-c-lock.png` - Answer C locked
+- `answer-d-lock.png` - Answer D locked
 
-### During Break/Idle
-- Minimal active buttons
-- Start new game, load settings, exit
+### Reveal Button
+- `answer-reveal.png` - Reveal button (active)
+
+### Dynamic Feedback
+- `correct.png` - Green checkmark (correct answer)
+- `wrong.png` - Red X (incorrect answer)
+
+### Disabled State
+- `blank.png` - Blank/disabled button
+
+**Image Specifications:**
+- Resolution: 96x96 pixels (automatically resized from source images)
+- Format: PNG with transparency support
+- Color Space: RGB24
+
+---
+
+## ⚙️ Technical Details
+
+### Library & SDK
+- **StreamDeckSharp (Custom Build)** - Open-source .NET library for Stream Deck hardware with Module 6 support
+- **OpenMacroBoard SDK** - Cross-device abstraction layer
+- **Upstream Repository:** [github.com/OpenMacroBoard/StreamDeckSharp](https://github.com/OpenMacroBoard/StreamDeckSharp)
+- **Custom Fork (Module 6 Support):** [github.com/jdelgado-dtlabs/StreamDeckSharp](https://github.com/jdelgado-dtlabs/StreamDeckSharp) (branch: `add-streamdeck-module6-support`)
+
+**Note:** This application bundles custom-built StreamDeckSharp DLLs located in `lib/StreamDeck/` that include Module 6 support. A pull request has been submitted to the upstream repository. Once merged, the application will switch back to the official NuGet package.
+
+### Device Detection
+The application automatically enumerates all connected Stream Deck devices at startup and selects the first device matching these criteria:
+- **Button Count:** Exactly 6 buttons
+- **Layout:** 3x2 grid (3 columns, 2 rows)
+
+### Key Indexing
+Stream Deck uses row-major ordering for key indices:
+```
+Physical Layout:  [0] [1] [2]
+                  [3] [4] [5]
+
+Calculation: index = (row × 3) + col
+```
+
+### Event System
+- **AnswerButtonPressed** - Fired when A, B, C, or D pressed
+- **RevealButtonPressed** - Fired when Reveal button pressed
+- **DeviceConnected** - Fired when device connects/reconnects
+- **DeviceDisconnected** - Fired when device disconnects
+
+### Integration with ControlPanelForm
+The `StreamDeckIntegration` class bridges StreamDeckService events to ControlPanelForm:
+- **AnswerLockedByHost** - Triggers answer lock logic in Control Panel
+- **RevealTriggeredByHost** - Triggers reveal sequence in Control Panel
+- **DeviceStatusChanged** - Updates UI connection status indicator
+
+### Brightness
+- Default brightness: 80%
+- Set during initialization via `SetBrightness(80)`
 
 ---
 
@@ -191,104 +239,163 @@ The Stream Deck integration is fully context-aware:
 
 ### Stream Deck Not Detected
 
-**Symptoms**: Application doesn't recognize Stream Deck device
+**Symptoms:** 
+- Console shows "No Stream Deck devices found"
+- Console shows "Stream Deck Module 6 (PID 0x00B8) is NOT supported"
 
-**Solutions**:
-1. Verify Stream Deck software is running
-2. Check USB connection
-3. Restart Stream Deck service
-4. Restart The Millionaire Game
+**Solutions:**
+1. **Close Stream Deck Software** - The official Elgato software conflicts with direct hardware control
+   - Right-click system tray icon → Exit
+   - Check Task Manager → End "Stream Deck" process
+3. **Verify USB Connection** - Unplug and replug device
+4. **Try Different USB Port** - USB 2.0 or 3.0 (Module 6 uses USB 2.0 protocol via USB-C connector)
+5. **Check Device Manager** - Verify device shows up under "Human Interface Devices"
+6. **Restart Application** - Close and reopen The Millionaire Game
+
+### Wrong Device Layout
+
+**Symptoms:** 
+- Console shows "Skipping [Device Name] (X buttons) - requires 6-button device"
+- Console shows "Skipping [Device Name] (XxY layout) - requires 3x2 layout"
+
+**Solutions:**
+1. **Use Compatible Device** - Requires 6-button device with 3x2 layout (Module 6 or Mini)
+2. **Disconnect Other Devices** - Unplug other Stream Deck models to avoid conflicts
 
 ### Buttons Not Responding
 
-**Symptoms**: Pressing buttons has no effect
+**Symptoms:** Pressing buttons has no effect
 
-**Solutions**:
-1. Check if Stream Deck integration is enabled in settings
-2. Verify correct profile is active
-3. Confirm game is in focus (not minimized)
-4. Check for action mapping conflicts
+**Solutions:**
+1. **Verify Integration Enabled** - Check Game → Settings → General → Enable Stream Deck Integration
+2. **Restart Application** - Integration initializes at startup
+3. **Check Active Question** - Buttons only work during active questions
+4. **Review Console Logs** - Check for "Answer X pressed" messages when pressing buttons
+5. **Answer Already Locked** - Can only lock once per question
 
-### Icons Not Updating
+### Images Not Displaying
 
-**Symptoms**: Button states don't change with game state
+**Symptoms:** 
+- Buttons show blank or missing images
+- Console shows "IMAGE NOT FOUND" errors
 
-**Solutions**:
-1. Restart Stream Deck software
-2. Re-enable integration in The Millionaire Game
-3. Clear Stream Deck cache
-4. Update Stream Deck software to latest version
+**Solutions:**
+1. **Verify Image Files** - Check `lib/image/streamdeck/` folder contains all required PNG files:
+   - answer-a.png, answer-b.png, answer-c.png, answer-d.png
+   - answer-a-lock.png, answer-b-lock.png, answer-c-lock.png, answer-d-lock.png
+   - answer-reveal.png, correct.png, wrong.png, blank.png
+2. **Check File Permissions** - Ensure application can read image files
+3. **Reinstall Application** - May restore missing image files
 
-### Action Delay
+### Device Disconnects During Use
 
-**Symptoms**: Noticeable lag between button press and action
+**Symptoms:** Console shows "Device disconnected" during gameplay
 
-**Solutions**:
-1. Close unnecessary background applications
-2. Check CPU usage in Task Manager
-3. Verify Stream Deck polling rate in settings
-4. Update USB drivers
+**Solutions:**
+1. **Check USB Cable** - Ensure cable is securely connected
+2. **Try Different USB Port** - Avoid USB hubs, use direct motherboard connection
+3. **Update USB Drivers** - Check Windows Update for driver updates
+4. **Power Supply** - Some USB ports may not provide enough power
+
+### Answer Lock Not Working
+
+**Symptoms:** Pressing answer buttons has no effect
+
+**Solutions:**
+1. **Wait for Question Display** - Buttons only active after question loads
+2. **Check Console** - Look for "No active question - ignoring button press" warning
+3. **Verify Not Already Locked** - Can only lock once per question (check for "Answer already locked" message)
+4. **Integration State** - Verify integration didn't disconnect (check console for device status)
 
 ---
 
 ## 💡 Best Practices
 
-### Host Operation
+### Operational Workflow
 
-1. **Practice First** - Familiarize yourself with button layout before live events
-2. **Visual Confirmation** - Always check game state after button press
-3. **Backup Controls** - Keep keyboard shortcuts handy as backup
-4. **Button Discipline** - Avoid accidental presses during dramatic moments
+1. **Test Before Events** - Verify all buttons work before contestants arrive
+2. **Keep Console Open** - Monitor device connection status during live events
+3. **Physical Placement** - Position Stream Deck within easy reach of host podium
+4. **Practice Session** - Familiarize yourself with button positions and workflow
+5. **Backup Plan** - Keep keyboard shortcuts handy (F1-F4 for answers, F6 for reveal)
 
-### Event Setup
+### Pre-Event Checklist
 
-1. **Test Beforehand** - Verify all buttons work before contestants arrive
-2. **Spare Device** - Keep backup Stream Deck if possible
-3. **Clear Layout** - Use simple, readable button labels
-4. **Lighting** - Ensure button labels are visible in event lighting
+- [ ] Stream Deck plugged in via USB
+- [ ] Stream Deck software CLOSED
+- [ ] The Millionaire Game running with Stream Deck enabled
+- [ ] Console shows "Initialized successfully"
+- [ ] All buttons showing blank (disabled) at startup
+- [ ] Test answer lock + reveal with practice question
 
-### Custom Configurations
+### During Gameplay
 
-1. **Match Branding** - Customize colors to match event theme
-2. **Simplify Layout** - Only show buttons you actually use
-3. **Save Profiles** - Create profiles for different event types
-4. **Document Changes** - Keep notes on custom configurations
+1. **Wait for Contestant** - Don't lock answer until contestant verbally confirms
+2. **Check Dynamic Button** - Green check or red X appears immediately after locking
+3. **Dramatic Pause** - Use the pre-reveal feedback to build suspense before pressing Reveal
+4. **Button Discipline** - Avoid accidental presses by resting hands away from device
+
+### Troubleshooting During Events
+
+If device disconnects mid-event:
+1. **Switch to Keyboard** - Use F1-F4 (answers) and F6 (reveal) hotkeys
+2. **Don't Restart** - Avoid interrupting gameplay to fix Stream Deck
+3. **Fix After Round** - Replug device during break, check console for reconnection
+4. **Continue Without** - Stream Deck is optional, all features accessible via keyboard
 
 ---
 
 ## 🔗 Related Documentation
 
-- **[Quick Start Guide](Quick-Start-Guide)** - Basic game operation
+- **[Quick Start Guide](Quick-Start-Guide)** - Basic game operation and hotkeys
 - **[User Guide](User-Guide)** - Complete feature documentation
 - **[Troubleshooting](Troubleshooting)** - General problem solving
-- **[Configuration Files](Configuration-Files)** - Advanced settings
+- **[Building from Source](Building-from-Source)** - Developer information
 
 ---
 
 ## 📞 Support
 
-**Issues with Stream Deck Integration?**
+### Application Issues
 - [Report a Bug](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
 - [Ask Questions](https://github.com/jdelgado-dtlabs/TheMillionaireGame/discussions)
-- [Elgato Support](https://help.elgato.com/) - For Stream Deck hardware issues
+
+### Stream Deck Hardware Issues
+- [Elgato Support](https://help.elgato.com/) - For hardware problems, driver issues, official software
+
+### StreamDeckSharp Library (Custom Build)
+- [Report Library Issues](https://github.com/jdelgado-dtlabs/StreamDeckSharp/issues) - For bugs or device support requests with the custom Module 6 build
+- **Note:** This application uses a custom build with Module 6 support. Issues should be reported to the custom fork maintainer who will add support and submit pull requests to upstream
 
 ---
 
 ## 📝 Version History
 
-### v1.0
-- ✅ Initial Stream Deck support
-- ✅ 6-button host control module
+### v1.0 (Current)
+- ✅ Stream Deck Module 6 support (6 buttons, 3x2 layout) - Fully tested
+- ✅ Stream Deck Mini compatibility (6 buttons, 3x2 layout) - Should work, not tested
+- ✅ Direct hardware control via custom StreamDeckSharp build (includes Module 6 support)
+- ✅ Answer lock and reveal workflow
+- ✅ Pre-reveal correctness feedback (Dynamic button)
 - ✅ Context-aware button states
-- ✅ Custom action mapping
-- ✅ Profile support
+- ✅ Auto-detection and enumeration
 
-### Future Enhancements
-- 🔄 15-button full control layout
-- 🔄 Multi-page button profiles
-- 🔄 Advanced animation effects
-- 🔄 Custom button image uploads
+### Known Limitations
+- **Custom DLLs:** Application bundles custom StreamDeckSharp build in `lib/StreamDeck/` until upstream PR is merged
+- **15-Button Layouts:** Not supported - requires 3x2 (6 button) layout
+- **Multiple Devices:** Only first compatible device used
+- **Custom Images:** Fixed image set, no UI for customization (can manually replace images in `lib/image/streamdeck/`)
+- **FFF Mode:** No Stream Deck integration for Fastest Finger First (main game only)
+- **Lifelines:** No Stream Deck buttons for lifeline activation (use Control Panel buttons)
+
+### Future Enhancements (Post-v1.0)
+- 🔄 Switch to official StreamDeckSharp NuGet package (once Module 6 PR is merged)
+- 🔄 15-button layout support for Stream Deck / MK.2 (full game control)
+- 🔄 Custom image upload via UI
+- 🔄 FFF mode button integration
+- 🔄 Lifeline quick buttons
+- 🔄 Multi-device support (select device via settings)
 
 ---
 
-**Ready to use Stream Deck?** Make sure Stream Deck software is running, then enable integration in The Millionaire Game settings!
+**Ready to use Stream Deck?** Close the Stream Deck software, enable integration in settings, restart the application, and verify connection in the Game Console!

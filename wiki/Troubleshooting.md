@@ -11,7 +11,7 @@ Before diving into specific issues, try these general fixes:
 1. **Restart the Application**
 2. **Update to Latest Version** - Check [Releases](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 3. **Check .NET Runtime** - Ensure .NET 8 Desktop Runtime installed
-4. **Review Logs** - Check `Logs/` folder for error details
+4. **Review Logs** - Check `%LocalAppData%\TheMillionaireGame\Logs\` for error details
 5. **Run as Administrator** - Right-click → Run as administrator
 
 ---
@@ -92,7 +92,7 @@ Before diving into specific issues, try these general fixes:
    - Uninstall completely
    - Delete leftover files:
      - `C:\Program Files\The Millionaire Game\`
-     - `%LOCALAPPDATA%\The Millionaire Game\`
+     - `%LocalAppData%\TheMillionaireGame\`
    - Reinstall fresh
 
 ### Application Crashes on Startup
@@ -102,22 +102,24 @@ Before diving into specific issues, try these general fixes:
 **Solutions:**
 
 1. **Check Crash Reports**
-   - Location: `Logs/CrashReports/`
+   - Location: `%LocalAppData%\TheMillionaireGame\CrashReports\`
    - Open most recent report
    - Check for specific error
 
 2. **Database Issues**
    - Delete corrupt database:
      ```powershell
-     Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse
+     Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse
      ```
    - Application will recreate on next launch
 
 3. **Reset Configuration**
-   - Delete settings:
+   - Settings stored in database, delete ApplicationSettings table:
      ```powershell
-     Remove-Item "$env:APPDATA\The Millionaire Game\settings.json"
+     # Delete entire database to reset all settings
+     Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse
      ```
+   - Application will recreate with defaults on next launch
 
 4. **Graphics Driver Update**
    - Outdated drivers can cause crashes
@@ -141,7 +143,7 @@ Before diving into specific issues, try these general fixes:
 
 3. **Orphaned Lock File**
    ```powershell
-   Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\.lock"
+   Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\.lock"
    ```
 
 ---
@@ -365,8 +367,8 @@ Before diving into specific issues, try these general fixes:
 
 3. **Verify Database**
    ```powershell
-   # Check if database file exists
-   Test-Path "$env:LOCALAPPDATA\The Millionaire Game\Database\Questions.mdf"
+   # Check if database exists
+   Test-Path "$env:LOCALAPPDATA\TheMillionaireGame\Database\"
    ```
 
 4. **Reimport Questions**
@@ -385,7 +387,7 @@ Before diving into specific issues, try these general fixes:
    - Ensure "Enable Telemetry" checked
 
 2. **Database Space**
-   - Check disk space on drive containing `%LOCALAPPDATA%`
+   - Check disk space on drive containing `%LocalAppData%\TheMillionaireGame\`
    - Need at least 100 MB free
 
 3. **Database Permissions**
@@ -519,7 +521,7 @@ Before diving into specific issues, try these general fixes:
 
 1. **Check for Infinite Loops**
    - Shouldn't happen but may be bug
-   - Check Logs/ for errors
+   - Check `%LocalAppData%\TheMillionaireGame\Logs\` for errors
    - Report to developers if consistent
 
 2. **Disable Auto-Updates**
@@ -634,14 +636,14 @@ If issue persists, gather this information for support:
    ```
 
 2. **Application Logs**
-   - Collect all files from `Logs/` folder
+   - Collect all files from `%LocalAppData%\TheMillionaireGame\Logs\`
 
 3. **Crash Reports**
-   - From `Logs/CrashReports/`
+   - From `%LocalAppData%\TheMillionaireGame\CrashReports\`
 
 4. **Configuration Files**
    - `App.config`
-   - `%APPDATA%\The Millionaire Game\settings.json`
+   - Database: `%LocalAppData%\TheMillionaireGame\Database\` (contains all settings)
 
 5. **Screenshots/Videos**
    - Capture the issue occurring
@@ -660,7 +662,7 @@ For detailed logging:
 
 3. Reproduce issue
 
-4. Check `Logs/debug.log` for detailed information
+4. Check `%LocalAppData%\TheMillionaireGame\Logs\` for detailed log files
 
 ### Safe Mode Launch
 
@@ -684,7 +686,7 @@ If database corrupted beyond recovery:
 
 ```powershell
 # Full reset (WARNING: Loses all data)
-Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse -Force
+Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse -Force
 
 # Application recreates database on next launch
 ```
