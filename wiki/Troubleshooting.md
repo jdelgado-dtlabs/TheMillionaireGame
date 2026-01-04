@@ -102,7 +102,7 @@ Before diving into specific issues, try these general fixes:
 **Solutions:**
 
 1. **Check Crash Reports**
-   - Location: `%LocalAppData%\TheMillionaireGame\CrashReports\`
+   - Location: `%LocalAppData%\MillionaireGame\CrashReports\`
    - Open most recent report
    - Check for specific error
 
@@ -647,7 +647,7 @@ If issue persists, gather this information for support:
    - Collect all files from `%LocalAppData%\TheMillionaireGame\Logs\`
 
 3. **Crash Reports**
-   - From `%LocalAppData%\TheMillionaireGame\CrashReports\`
+   - From `%LocalAppData%\MillionaireGame\CrashReports\`
 
 4. **Configuration Files**
    - `App.config`
