@@ -56,13 +56,6 @@ The Control Panel is your command center for running the game.
    - Error messages
    - Game state updates
 
-6. **Tabs** (Right Side)
-   - **Game**: Main game controls
-   - **Questions**: Question management
-   - **Profiles**: Game profile editor
-   - **Settings**: Application configuration
-   - **Telemetry**: Game statistics
-
 ### TV Screen (Player/Audience Display)
 
 The TV Screen is the main visual display for contestants and audience.
@@ -87,43 +80,37 @@ The TV Screen is the main visual display for contestants and audience.
 ### Host Screen (Optional)
 
 Separate window for host/moderator with:
-- Current question and correct answer
-- Contestant information
-- Game status
-- Private notes
+- Current question and correct answer highlighted
+- Money tree display with current level
+- Ask the Audience results (when active)
+- Lifeline status indicators
+
+Access: Screens menu → Host Screen
 
 ---
 
 ## Game Setup
 
-### Creating Game Profiles
+### Configuring Game Settings
 
-Game profiles store your game configuration (money tree, lifelines, currency).
+Customize your game configuration (money tree, lifelines, currency) through the Settings dialog.
 
-#### Step-by-Step Profile Creation
+#### Accessing Settings
 
-1. **Open Profile Manager**
-   - Control Panel → **Profiles** tab
-   - Click **"New Profile"**
+1. **Open Settings Dialog**
+   - Control Panel → **Game** menu → **Settings**
+   - Opens Settings window with multiple tabs
 
-2. **Basic Information**
-   - **Profile Name**: Descriptive name (e.g., "Standard USD Game")
-   - **Description**: Optional notes
+2. **Money Tree Configuration** (Money Tree tab)
 
-3. **Currency Configuration**
+   **Currency Options:**
+   - **Currency 1**: Select primary currency ($, €, £, ¥, or custom text)
+   - **Currency 2**: Optional second currency for dual-currency games
+   - Enable "Currency 2" checkbox to use dual currency mode
+   - Set currency position (prefix or suffix)
+   - Assign which currency applies to each question level
 
-   **Single Currency Mode:**
-   - Select primary currency (USD, EUR, GBP, etc.)
-   - Define 15 prize amounts (levels 1-15)
-
-   **Dual Currency Mode:**
-   - Enable "Use Dual Currency"
-   - Select primary currency (e.g., USD)
-   - Select secondary currency (e.g., EUR)
-   - Define prizes for both currencies
-   - Useful for international events
-
-4. **Money Tree Setup**
+3. **Prize Values**
 
    **Default Money Tree (US Version):**
    ```
@@ -149,41 +136,33 @@ Game profiles store your game configuration (money tree, lifelines, currency).
    - Use any currency format
    - Can create themed ladders (points, tokens, etc.)
 
-5. **Safety Nets**
+4. **Safety Nets**
+   - Check boxes at Level 5 and Level 10 to set safety nets
    - **First Safety Net**: Typically Level 5 (e.g., $1,000)
    - **Second Safety Net**: Typically Level 10 (e.g., $32,000)
    - Contestants cannot fall below these amounts once reached
 
-6. **Lifeline Configuration**
+5. **Lifeline Configuration** (Lifelines tab)
    
-   Available lifelines:
-   - ✅ **50:50**: Eliminate two wrong answers
-   - ✅ **Phone a Friend**: 30-second call to helper
-   - ✅ **Ask the Audience**: Audience votes on answer
-   - ✅ **Switch Question**: Replace current question (same difficulty)
+   **Total Lifelines**: Set how many lifelines are available (1-4)
    
-   Options:
-   - Enable/disable individual lifelines
-   - Set quantity (e.g., two 50:50s)
-   - Customize lifeline names
+   **Configure Each Lifeline:**
+   - **Lifeline Type**: Choose from 50:50, Phone a Friend (Plus One), Ask the Audience, Ask the Host, Switch Question
+   - **Availability**: Set when lifeline becomes active:
+     - Always Available
+     - After Question 5
+     - After Question 10
+     - In Risk Mode Only
 
-7. **Save Profile**
-   - Click **"Save Profile"**
-   - Profile available in New Game menu
+6. **Save Settings**
+   - Click **"OK"** to save all changes
+   - Settings apply immediately to the game
 
-#### Example Profiles
-
-**Educational Profile:**
-- Currency: "Points"
-- Lower stakes (100-10,000 points)
-- All lifelines enabled
-- No dual currency
-
-**High-Stakes Event:**
-- Currency: USD
-- Standard money tree ($100 - $1M)
-- Limited lifelines (remove Switch)
-- Dual currency for international audience
+**Example Configurations:**
+- **Educational**: Use "Points" as currency, lower prize values (100-10,000)
+- **International Event**: Enable Currency 2, assign different currencies to different question levels
+- **High Stakes**: Standard US money tree ($100 - $1M), all 4 lifelines enabled
+- **Challenge Mode**: Disable safety nets, limit lifelines to 2-3
 
 ---
 
@@ -206,9 +185,13 @@ The game randomly selects questions from the appropriate level range.
 
 #### Using the Question Editor
 
-1. **Open Question Manager**
-   - Control Panel → **Questions** tab
-   - Click **"Add Question"**
+1. **Open Question Editor**
+   - Control Panel → **Game** menu → **Editor**
+   - Opens standalone Question Editor window
+   - Two tabs: **Regular Questions** and **FFF Questions**
+
+2. **Add New Question**
+   - Click **"Add"** button in toolbar
 
 2. **Enter Question Details**
    ```
@@ -223,13 +206,13 @@ The game randomly selects questions from the appropriate level range.
    Category: Geography (optional)
    ```
 
-3. **Set Difficulty**
+4. **Set Difficulty**
    - Level 1-5: Easy
    - Level 6-10: Medium
    - Level 11-14: Hard
    - Level 15: Final question
 
-4. **Save Question**
+5. **Save Question**
    - Click **"Save"**
    - Question added to database
 
@@ -246,21 +229,12 @@ Question,AnswerA,AnswerB,AnswerC,AnswerD,CorrectAnswer,Level,Category
 ```
 
 **Import Steps:**
-1. Control Panel → **Questions** tab
-2. Click **"Import CSV"**
+1. Open Question Editor (Game → Editor)
+2. Click **"Import"** button in toolbar
 3. Select your CSV file
-4. Review preview
+4. Choose question type (Regular or FFF)
 5. Click **"Import"**
-
-#### SQL Import
-
-For advanced users with existing SQL databases:
-
-```sql
-INSERT INTO Questions (QuestionText, AnswerA, AnswerB, AnswerC, AnswerD, CorrectAnswer, DifficultyLevel, Category)
-VALUES 
-('Question text here', 'Answer A', 'Answer B', 'Answer C', 'Answer D', 'B', 5, 'Science');
-```
+6. Click **"Refresh"** to see imported questions
 
 ### Organizing Questions
 
@@ -271,15 +245,15 @@ VALUES
 - Regularly review and update questions
 - Test questions before live events
 
-**Question Database Location:**
-```
-%LOCALAPPDATA%\The Millionaire Game\Database\Questions.mdf
-```
+**Question Database:**
+- Stored in SQL Server Express database: `dbMillionaire`
+- Tables: `Questions` (regular) and `FFFQuestions` (Fastest Finger First)
 
 **Backup Questions:**
-1. Questions tab → **"Export"**
-2. Choose format (CSV or SQL)
-3. Save backup file
+1. Open Question Editor (Game → Editor)
+2. Click **"Export"** button in toolbar
+3. Choose question type (Regular or FFF)
+4. Save as CSV file
 
 ---
 
@@ -793,10 +767,9 @@ The application tracks comprehensive game statistics.
 
 ### Viewing Telemetry
 
-1. **Open Telemetry Tab**
-   - Control Panel → Telemetry tab
+**Note:** Telemetry viewing interface is planned for a future release. Currently, telemetry data is automatically saved to the database but there is no built-in viewer.
 
-2. **Game History**
+**Current Telemetry:**
    - List of all games played
    - Date, contestant name, final prize
    - Win/loss status
