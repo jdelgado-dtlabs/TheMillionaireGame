@@ -13,6 +13,18 @@ namespace MillionaireGame.Services
     /// <summary>
     /// Manages Stream Deck device connection, button rendering, and input events.
     /// Provides host control interface for answer lock-in and reveal during gameplay.
+    /// 
+    /// IMPORTANT: Stream Deck Module 6 (USB PID 0x00B8) is NOT supported by StreamDeckSharp 6.1.0 yet.
+    /// The device will not be detected. Supported devices include:
+    /// - Stream Deck (15 buttons)
+    /// - Stream Deck Mini (6 buttons, PID 0x0063/0x0090)
+    /// - Stream Deck XL (32 buttons)
+    /// - Stream Deck MK.2 (15 buttons)
+    /// 
+    /// For Module 6 support, either:
+    /// 1. Wait for StreamDeckSharp library update
+    /// 2. Use Stream Deck Mini as temporary alternative (same 6-button layout)
+    /// 3. Contribute Module 6 support to github.com/OpenMacroBoard/StreamDeckSharp
     /// </summary>
     public class StreamDeckService : IDisposable
     {
@@ -67,7 +79,22 @@ namespace MillionaireGame.Services
                 if (!devices.Any())
                 {
                     GameConsole.Warn("[StreamDeck] No Stream Deck devices found");
+                    GameConsole.Warn("[StreamDeck] NOTE: Stream Deck Module 6 (PID 0x00B8) is NOT supported by StreamDeckSharp 6.1.0");
+                    GameConsole.Warn("[StreamDeck] Supported: Stream Deck, Stream Deck Mini (PID 0x0063/0x0090), Stream Deck XL, Stream Deck MK.2");
                     return false;
+                }
+
+                // Debug: Log all detected devices
+                GameConsole.Debug($"[StreamDeck] Detected {devices.Count()} Stream Deck device(s):");
+                foreach (var dev in devices)
+                {
+                    var layout = dev.Keys;
+                    string layoutInfo = "unknown layout";
+                    if (layout is OpenMacroBoard.SDK.GridKeyLayout grid)
+                    {
+                        layoutInfo = $"{grid.Area.Width}x{grid.Area.Height} grid";
+                    }
+                    GameConsole.Debug($"  - {dev.DeviceName}: {layout.Count} buttons, {layoutInfo}");
                 }
 
                 // Find a device with 6 buttons in 3x2 layout (Stream Deck Module 6)
@@ -96,6 +123,10 @@ namespace MillionaireGame.Services
                         targetDevice = deviceRef as StreamDeckSharp.StreamDeckDeviceReference;
                         GameConsole.Info($"[StreamDeck] Found compatible device: {deviceRef.DeviceName}");
                         break;
+                    }
+                    else
+                    {
+                        GameConsole.Warn($"[StreamDeck] {deviceRef.DeviceName} has unexpected key layout type: {keyLayout.GetType().Name}");
                     }
                 }
 
