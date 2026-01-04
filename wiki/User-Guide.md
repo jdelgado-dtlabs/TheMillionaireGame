@@ -73,30 +73,41 @@ The Control Panel is your command center for running the game.
 
 **Note:** The Money Tree button (Item 6) affects visibility on the TV Screen. Game Console and Web Server Console are shown when the associated button in Settings → Screens is clicked. They show by default when in debug mode.
 
-### TV Screen (Player/Audience Display)
+### TV Screen (Broadcast Display)
 
-The TV Screen is the main visual display for contestants and audience.
+Main visual display window for the audience and broadcast/streaming output.
+
+**Display:**
+- Customizable background (Settings → Broadcast tab):
+  - 6 pre-rendered backgrounds
+  - Black background option
+  - Custom background file option
+  - Chroma key mode for streaming
+- Question and 4 answers (lower third, when active)
+- Lifeline results overlays (50:50 eliminations, ATA poll charts)
+- Money tree display (full screen, when shown)
+- FFF contestant list and results
+- Win/Lose screens with animations
+
+**Features:**
+- Pre-rendered graphics (auto-scales from 1920x1080 base)
+- Animated transitions between display modes
+- Confetti effects on wins (higher question levels)
+- Background displays when no game content is active
+- Supports fullscreen mode for presentations
+- Multiple display modes automatically switch based on game state
 
 **Display Modes:**
-
-- **Background Only**: Shows selected background when no content is active
+- **Background Only**: Shows selected background when idle
 - **FFF Mode**: Fastest Finger First contestant list and results
 - **Question Mode**: Current question with 4 answers
 - **Lifeline Results**: 50:50 elimination, Ask the Audience poll chart
 - **Money Tree**: Prize ladder display
 - **Win/Lose Screens**: Final results with animations and confetti
 
+**Purpose:** Primary broadcast output for audience viewing, streaming/recording, and projection. Unlike Guest/Host screens, TV Screen focuses on presentation and visual impact rather than gameplay information.
 
-**Visual Elements:**
-
-- Pre-rendered graphics (auto-scales from 1920x1080 base)
-- Animated transitions
-- Confetti effects (on wins)
-- Customizable background (Settings → Broadcast tab):
-  - 6 pre-rendered backgrounds
-  - Black background option
-  - Custom background file option
-  - Chroma key mode for streaming
+Access: Screens menu → TV Screen
 
 ### Guest Screen (Contestant Display)
 
