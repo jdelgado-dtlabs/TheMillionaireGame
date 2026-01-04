@@ -49,17 +49,19 @@ The Control Panel is your command center for running the game.
    - Fade Out All Sounds, Stop All Audio
 
 5. **Lifeline Buttons** (Right Side - Middle)
-   - ATA (Ask the Audience)
-   - PAF (Phone a Friend / Plus One)
-   - 50:50
+   - Up to 4 buttons that are reprogrammable via Settings → Lifelines
+   - Default configuration: ATA, PAF, 50:50, Switch Question
+   - Number and types can be customized (1-4 lifelines total)
+
+6. **Money Tree and Risk Mode** (Right Side)
+   - Show Money Tree (toggle display)
    - Activate Risk Mode (yellow button)
 
-6. **Game Control Buttons** (Right Side - Bottom)
+7. **Reset Buttons** (Right Side - Bottom)
    - Round (Reset Round)
    - Game (Reset Game)
-   - Show Money Tree (toggle display)
 
-7. **Game Status** (Bottom Section)
+8. **Game Status** (Bottom Section)
    - Question # selector and current level
    - Money displays (If Correct, If Walk, Current, If Wrong)
    - Questions left counter
