@@ -679,16 +679,17 @@ If issue persists, gather this information for support:
 
 For detailed logging:
 
-1. Edit `App.config`:
-   ```xml
-   <add key="LogLevel" value="Debug" />
+1. Launch application with debug flag:
+   ```powershell
+   # From installation directory
+   .\MillionaireGame.exe --debug
    ```
 
-2. Restart application
+2. Reproduce issue
 
-3. Reproduce issue
+3. Check `%LocalAppData%\TheMillionaireGame\Logs\` for detailed log files
 
-4. Check `%LocalAppData%\TheMillionaireGame\Logs\` for detailed log files
+**Note**: Debug mode shows additional logging information and enables debug console windows.
 
 ### Database Repair
 
