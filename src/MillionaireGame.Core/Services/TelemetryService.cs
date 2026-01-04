@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Models.Telemetry;
+using MillionaireGame.Core.Settings;
 
 namespace MillionaireGame.Core.Services;
 
@@ -12,10 +13,22 @@ public class TelemetryService
 
     private GameTelemetry _currentGame;
     private RoundTelemetry? _currentRound;
+    private MoneyTreeSettings? _moneyTreeSettings;
 
     private TelemetryService()
     {
         _currentGame = new GameTelemetry();
+    }
+
+    /// <summary>
+    /// Set the money tree settings for currency tracking
+    /// </summary>
+    public void SetMoneyTreeSettings(MoneyTreeSettings settings)
+    {
+        _moneyTreeSettings = settings;
+        _currentGame.Currency1Name = settings.Currency;
+        _currentGame.Currency2Name = settings.Currency2;
+        _currentGame.Currency2Enabled = settings.Currency2Enabled;
     }
 
     /// <summary>
@@ -60,8 +73,52 @@ public class TelemetryService
         _currentRound.FinalWinnings = finalWinnings;
         _currentRound.FinalQuestionReached = questionReached;
 
+        // Calculate currency breakdown if settings are available
+        if (_moneyTreeSettings != null)
+        {
+            CalculateCurrencyBreakdown(_currentRound, questionReached);
+        }
+
         _currentGame.Rounds.Add(_currentRound);
         _currentRound = null;
+    }
+
+    /// <summary>
+    /// Calculate how much was won in each currency
+    /// Finds the highest question value reached in each currency (not cumulative)
+    /// </summary>
+    private void CalculateCurrencyBreakdown(RoundTelemetry round, int finalQuestion)
+    {
+        if (_moneyTreeSettings == null) return;
+
+        int currency1HighestLevel = 0;
+        int currency2HighestLevel = 0;
+
+        // Find the highest question reached in each currency
+        for (int level = 1; level <= finalQuestion; level++)
+        {
+            int currencyIndex = _moneyTreeSettings.LevelCurrencies[level - 1];
+
+            if (currencyIndex == 1)
+            {
+                currency1HighestLevel = level;
+            }
+            else if (currencyIndex == 2)
+            {
+                currency2HighestLevel = level;
+            }
+        }
+
+        // Get the value of the highest question in each currency
+        if (currency1HighestLevel > 0)
+        {
+            round.Currency1Winnings = _moneyTreeSettings.GetLevelValue(currency1HighestLevel);
+        }
+
+        if (currency2HighestLevel > 0)
+        {
+            round.Currency2Winnings = _moneyTreeSettings.GetLevelValue(currency2HighestLevel);
+        }
     }
 
     /// <summary>
@@ -125,17 +182,27 @@ public class TelemetryService
         _currentGame.TotalLifelinesUsed = _currentGame.Rounds.Sum(r => r.LifelinesUsed.Count);
         _currentGame.TotalQuestionsAnswered = _currentGame.Rounds.Sum(r => r.FinalQuestionReached);
         
-        // Calculate total winnings
+        // Calculate total winnings (legacy combined format)
         decimal totalWinnings = 0;
         foreach (var round in _currentGame.Rounds)
         {
-            var winningsStr = round.FinalWinnings.Replace("$", "").Replace(",", "");
-            if (decimal.TryParse(winningsStr, out var amount))
+            // Try parsing without currency symbols
+            var winningsStr = round.FinalWinnings;
+            // Remove common currency symbols and separators
+            foreach (var symbol in new[] { "$", "€", "£", "¥", "," })
+            {
+                winningsStr = winningsStr.Replace(symbol, "");
+            }
+            if (decimal.TryParse(winningsStr.Trim(), out var amount))
             {
                 totalWinnings += amount;
             }
         }
         _currentGame.TotalWinningsAwarded = $"${totalWinnings:N0}";
+        
+        // Calculate per-currency totals
+        _currentGame.Currency1TotalWinnings = _currentGame.Rounds.Sum(r => r.Currency1Winnings);
+        _currentGame.Currency2TotalWinnings = _currentGame.Rounds.Sum(r => r.Currency2Winnings);
     }
 
     /// <summary>

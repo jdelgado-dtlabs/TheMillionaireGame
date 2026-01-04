@@ -110,7 +110,7 @@ public partial class ControlPanelForm : Form
     
     // Telemetry services for game statistics
     private readonly TelemetryService _telemetryService = TelemetryService.Instance;
-    private readonly CsvExportService _csvExportService = new CsvExportService();
+    private readonly TelemetryExportService _telemetryExportService = new TelemetryExportService();
     
     // Closing sequence state tracking
     private System.Windows.Forms.Timer? _closingTimer;
@@ -2536,6 +2536,7 @@ public partial class ControlPanelForm : Form
         if (_roundNumber == 0)
         {
             _telemetryService.StartNewGame();
+            _telemetryService.SetMoneyTreeSettings(_gameService.MoneyTree.Settings);
             GameConsole.Debug("[Telemetry] Started new game session");
         }
         
@@ -2601,7 +2602,26 @@ public partial class ControlPanelForm : Form
         }
         
         // Show full-screen game winner display (Thanks for Playing portion)
-        _screenService.ShowGameWinner(winnings, questionNumber);
+        // Calculate the actual winning level based on outcome
+        int actualWinningLevel = _gameOutcome switch
+        {
+            GameOutcome.Win => 15,  // Won Q15
+            GameOutcome.Drop => questionNumber - 1,  // Walked away - get last correct answer (haven't answered current question)
+            GameOutcome.Wrong => GetDroppedLevel(questionNumber),  // Safety net level (based on which safety nets were passed)
+            _ => questionNumber
+        };
+        
+        // Calculate currency breakdown for dual currency support
+        // Pass both the question reached (to know which currencies were played) 
+        // and the actual winning level (to know what they won)
+        GameConsole.Info($"[EndRound] Calling GetCurrencyBreakdown - QuestionNumber: {questionNumber}, ActualWinningLevel: {actualWinningLevel}");
+        var (currency1Display, currency2Display, hasCurrency1, hasCurrency2) = 
+            _gameService.MoneyTree.GetCurrencyBreakdown(questionNumber, actualWinningLevel);
+        
+        GameConsole.Info($"[EndRound] Currency breakdown result - C1: '{currency1Display}' ({hasCurrency1}), C2: '{currency2Display}' ({hasCurrency2})");
+        
+        _screenService.ShowGameWinner(winnings, currency1Display, currency2Display, 
+            hasCurrency1, hasCurrency2, questionNumber);
         
         // Wait for walk away sound to finish
         await _soundService.WaitForSoundAsync(walkAwaySoundId);
@@ -2620,7 +2640,7 @@ public partial class ControlPanelForm : Form
             GameOutcome.Wrong => "Incorrect Answer",
             _ => "Unknown"
         };
-        _telemetryService.CompleteRound(outcomeText, winnings, questionNumber);
+        _telemetryService.CompleteRound(outcomeText, winnings, actualWinningLevel);
         GameConsole.Debug($"[Telemetry] Completed Round {_roundNumber} - {outcomeText}, Winnings: {winnings}");
         
         // Don't automatically reset - let user manually reset with Reset Round button
@@ -2871,12 +2891,12 @@ public partial class ControlPanelForm : Form
             try
             {
                 _telemetryService.CompleteGame();
-                var csvPath = _csvExportService.ExportWithDefaults(_telemetryService.GetCurrentGameData());
-                GameConsole.Info($"[Telemetry] Game statistics exported to: {csvPath}");
+                var excelPath = _telemetryExportService.ExportWithDefaults(_telemetryService.GetCurrentGameData());
+                GameConsole.Info($"[Telemetry] Game statistics exported to: {excelPath}");
             }
             catch (Exception ex)
             {
-                GameConsole.Error($"[Telemetry] Failed to export CSV: {ex.Message}");
+                GameConsole.Error($"[Telemetry] Failed to export telemetry: {ex.Message}");
             }
         }
         
@@ -3162,34 +3182,40 @@ public partial class ControlPanelForm : Form
 
     private int GetDroppedLevel(int currentQuestionNumber)
     {
-        // Determine which safety net level the player drops to based on game mode
-        var isRiskMode = _gameService.State.Mode == GameMode.Risk;
-        var wrongValue = _gameService.State.WrongValue;
+        // Determine which safety net level the player drops to based on question number
+        // Safety nets are at Q5 and Q10 by game design
+        // If you're past Q10, drop to Q10; if past Q5, drop to Q5; otherwise drop to 0
         
-        // Parse the wrong value to determine the dropped level
-        // WrongValue is a formatted string like "$0", "$1,000", or "$32,000"
-        var wrongValueNumeric = ParseMoneyValue(wrongValue);
-        
-        if (wrongValueNumeric == 0)
+        if (currentQuestionNumber > 10)
         {
-            return 0; // Player drops to $0 (no safety net reached)
+            GameConsole.Debug($"[GetDroppedLevel] Q{currentQuestionNumber} -> Dropping to Q10 safety net");
+            return 10;
         }
-        else if (wrongValueNumeric == _gameService.MoneyTree.Settings.Level05Value)
+        else if (currentQuestionNumber > 5)
         {
-            return 5; // Player drops to Q5 safety net ($1,000)
+            GameConsole.Debug($"[GetDroppedLevel] Q{currentQuestionNumber} -> Dropping to Q5 safety net");
+            return 5;
         }
-        else if (wrongValueNumeric == _gameService.MoneyTree.Settings.Level10Value)
+        else
         {
-            return 10; // Player drops to Q10 safety net ($32,000)
+            GameConsole.Debug($"[GetDroppedLevel] Q{currentQuestionNumber} -> Dropping to Q0 (no safety net reached)");
+            return 0;
         }
-        
-        return 0; // Default to 0 if no match
     }
     
     private int ParseMoneyValue(string moneyString)
     {
-        // Remove currency symbols, commas, and spaces
-        var cleaned = moneyString.Replace("$", "").Replace(",", "").Replace(" ", "").Trim();
+        // Remove currency symbols (including international ones), commas, and spaces
+        var cleaned = moneyString;
+        
+        // Remove common currency symbols
+        foreach (var symbol in new[] { "$", "€", "£", "¥", "₹", "₽", "¢" })
+        {
+            cleaned = cleaned.Replace(symbol, "");
+        }
+        
+        // Remove formatting characters
+        cleaned = cleaned.Replace(",", "").Replace(" ", "").Replace(".", "").Trim();
         
         if (int.TryParse(cleaned, out int value))
         {

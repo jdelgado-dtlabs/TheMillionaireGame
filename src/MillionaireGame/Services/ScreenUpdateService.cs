@@ -434,6 +434,18 @@ public class ScreenUpdateService
             screen.ShowGameWinner(amount, questionLevel);
         }
     }
+
+    /// <summary>
+    /// Show game winner display with currency breakdown
+    /// </summary>
+    public void ShowGameWinner(string combinedAmount, string? currency1Amount, string? currency2Amount, 
+        bool hasCurrency1, bool hasCurrency2, int questionLevel)
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            screen.ShowGameWinner(combinedAmount, currency1Amount, currency2Amount, hasCurrency1, hasCurrency2, questionLevel);
+        }
+    }
     
     /// <summary>
     /// Clear game winner display
@@ -491,6 +503,8 @@ public interface IGameScreen
     
     // Game winner display methods
     void ShowGameWinner(string amount, int questionLevel);
+    void ShowGameWinner(string combinedAmount, string? currency1Amount, string? currency2Amount, 
+        bool hasCurrency1, bool hasCurrency2, int questionLevel);
     void ClearGameWinnerDisplay();
 }
 

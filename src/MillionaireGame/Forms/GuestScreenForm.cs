@@ -859,5 +859,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     public void ShowFFFWinner(string name, double? time = null) { }
     public void ClearFFFDisplay() { }
     public void ShowGameWinner(string amount, int questionLevel) { }
+    public void ShowGameWinner(string combinedAmount, string? currency1Amount, string? currency2Amount, 
+        bool hasCurrency1, bool hasCurrency2, int questionLevel) { }
     public void ClearGameWinnerDisplay() { }
 }

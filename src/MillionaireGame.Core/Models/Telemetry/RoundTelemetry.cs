@@ -28,4 +28,8 @@ public class RoundTelemetry
     public string Outcome { get; set; } = string.Empty; // "Win", "Walk Away", "Loss"
     public string FinalWinnings { get; set; } = "$0";
     public List<LifelineUsage> LifelinesUsed { get; set; } = new();
+    
+    // Currency Breakdown
+    public int Currency1Winnings { get; set; } = 0;
+    public int Currency2Winnings { get; set; } = 0;
 }

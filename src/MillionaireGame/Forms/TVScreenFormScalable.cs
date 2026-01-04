@@ -62,6 +62,10 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     // Game winner display (Thanks for Playing)
     private bool _showGameWinner = false;
     private string? _gameWinnerAmount = null;
+    private string? _gameWinnerCurrency1 = null;
+    private string? _gameWinnerCurrency2 = null;
+    private bool _gameWinnerHasCurrency1 = false;
+    private bool _gameWinnerHasCurrency2 = false;
     private List<ConfettiParticle> _confettiParticles = new();
     private System.Threading.Timer? _confettiTimer;
     
@@ -126,12 +130,10 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         // Use broadcast background renderer if available, otherwise fall back to black
         if (_backgroundRenderer != null)
         {
-            GameConsole.Debug($"[TVScreen] Rendering background via BackgroundRenderer");
             _backgroundRenderer.RenderBackground(e.Graphics, ClientSize.Width, ClientSize.Height);
         }
         else
         {
-            GameConsole.Debug($"[TVScreen] BackgroundRenderer is NULL - using black fallback");
             // Fallback: Fill with black background
             e.Graphics.Clear(Color.Black);
         }
@@ -626,14 +628,7 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         if (string.IsNullOrEmpty(_gameWinnerAmount))
             return;
         
-        // Draw winning amount centered on screen
-        var designBounds = new RectangleF(200, 400, 1520, 280);
-        using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
-        using var brush = new SolidBrush(Color.Gold);
         using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-        
-        DrawScaledText(g, _gameWinnerAmount, font, brush,
-            designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
         
         // Draw "You Won" above
         using var titleFont = new Font("Copperplate Gothic Bold", 80, FontStyle.Bold);
@@ -641,6 +636,42 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
         var titleBounds = new RectangleF(200, 280, 1520, 100);
         DrawScaledText(g, "You Won", titleFont, titleBrush,
             titleBounds.X, titleBounds.Y, titleBounds.Width, titleBounds.Height, format);
+        
+        // Determine what to display based on currency breakdown
+        if (_gameWinnerHasCurrency1 && _gameWinnerHasCurrency2)
+        {
+            // Show both currencies - Currency 1 first (larger), then Currency 2 below
+            var currency1Bounds = new RectangleF(200, 400, 1520, 200);
+            using var font1 = new Font("Copperplate Gothic Bold", 100, FontStyle.Bold);
+            using var brush1 = new SolidBrush(Color.Gold);
+            DrawScaledText(g, _gameWinnerCurrency1 ?? "", font1, brush1,
+                currency1Bounds.X, currency1Bounds.Y, currency1Bounds.Width, currency1Bounds.Height, format);
+            
+            var currency2Bounds = new RectangleF(200, 600, 1520, 150);
+            using var font2 = new Font("Copperplate Gothic Bold", 70, FontStyle.Bold);
+            using var brush2 = new SolidBrush(Color.LightGoldenrodYellow);
+            DrawScaledText(g, _gameWinnerCurrency2 ?? "", font2, brush2,
+                currency2Bounds.X, currency2Bounds.Y, currency2Bounds.Width, currency2Bounds.Height, format);
+        }
+        else if (_gameWinnerHasCurrency2 && !_gameWinnerHasCurrency1)
+        {
+            // Only Currency 2 (no Currency 1)
+            var designBounds = new RectangleF(200, 400, 1520, 280);
+            using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
+            using var brush = new SolidBrush(Color.Gold);
+            DrawScaledText(g, _gameWinnerCurrency2 ?? "", font, brush,
+                designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
+        }
+        else
+        {
+            // Only Currency 1 or legacy combined amount
+            var displayAmount = _gameWinnerCurrency1 ?? _gameWinnerAmount;
+            var designBounds = new RectangleF(200, 400, 1520, 280);
+            using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
+            using var brush = new SolidBrush(Color.Gold);
+            DrawScaledText(g, displayAmount ?? "", font, brush,
+                designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
+        }
     }
     
     private void DrawFFFDisplay(System.Drawing.Graphics g)
@@ -1298,14 +1329,29 @@ public class TVScreenFormScalable : ScalableScreenBase, IGameScreen
     /// </summary>
     public void ShowGameWinner(string amount, int questionLevel)
     {
+        ShowGameWinner(amount, null, null, false, false, questionLevel);
+    }
+
+    /// <summary>
+    /// Show full-screen game winner display with currency breakdown
+    /// </summary>
+    public void ShowGameWinner(string combinedAmount, string? currency1Amount, string? currency2Amount, 
+        bool hasCurrency1, bool hasCurrency2, int questionLevel)
+    {
         if (InvokeRequired)
         {
-            BeginInvoke(new Action(() => ShowGameWinner(amount, questionLevel)));
+            BeginInvoke(new Action(() => ShowGameWinner(combinedAmount, currency1Amount, currency2Amount, hasCurrency1, hasCurrency2, questionLevel)));
             return;
         }
         
+        GameConsole.Info($"[TVScreen] ShowGameWinner - Combined: {combinedAmount}, C1: {currency1Amount} ({hasCurrency1}), C2: {currency2Amount} ({hasCurrency2})");
+        
         _showGameWinner = true;
-        _gameWinnerAmount = amount;
+        _gameWinnerAmount = combinedAmount;
+        _gameWinnerCurrency1 = currency1Amount;
+        _gameWinnerCurrency2 = currency2Amount;
+        _gameWinnerHasCurrency1 = hasCurrency1;
+        _gameWinnerHasCurrency2 = hasCurrency2;
         
         // Skip confetti for preview screens to avoid performance issues
         if (IsPreview)

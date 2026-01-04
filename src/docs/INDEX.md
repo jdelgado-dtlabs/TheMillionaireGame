@@ -1,6 +1,8 @@
 # Documentation Index
 **The Millionaire Game - C# Edition**  
-**Last Updated**: January 3, 2026
+**Version**: v0.9.9  
+**Last Updated**: January 3, 2026  
+**Status**: ✅ Ready for v1.0 Release
 
 This index helps you find the right documentation for your needs.
 
@@ -15,7 +17,10 @@ This index helps you find the right documentation for your needs.
 - See [`PRE_V1.0_TESTING_CHECKLIST.md`](PRE_V1.0_TESTING_CHECKLIST.md) - Comprehensive testing procedures
 
 **Want release status?**
-- Read [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Complete v1.0 readiness assessment
+- Read [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Complete v1.0 readiness (97% complete)
+
+**Need crash reports?**
+- Check [`CRASH_HANDLER_DOCUMENTATION.md`](CRASH_HANDLER_DOCUMENTATION.md) - Watchdog system and crash reporting
 
 ---
 
@@ -24,16 +29,17 @@ This index helps you find the right documentation for your needs.
 ### `/active/` - Current Work
 Documents for active development and near-term planning:
 
-- **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - Consolidated v1.0 release readiness status
+- **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - ✅ v1.0 release readiness (97% complete - only user docs remaining)
 - **[`PRE_1.0_FINAL_CHECKLIST.md`](active/PRE_1.0_FINAL_CHECKLIST.md)** - Streamlined v1.0 testing checklist
-- **[`CRASH_HANDLER_IMPLEMENTATION_PLAN.md`](active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md)** - Future watchdog implementation (post-1.0)
 
 ### `/sessions/` - Development History
 Chronological session summaries and checkpoints:
 
 **Recent Sessions (Jan 2026)**:
-- **[`SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md`](sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md)** - Closing sequence & debug mode complete
-- **[`SESSION_2026-01-03_CLEANUP.md`](sessions/SESSION_2026-01-03_CLEANUP.md)** - Unicode emoji fix & Stream Deck cleanup
+- **[`SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md`](sessions/SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md)** - ✅ Dual currency & telemetry XLSX complete
+- **[`SESSION_2026-01-15_CRASH_HANDLER.md`](sessions/SESSION_2026-01-15_CRASH_HANDLER.md)** - ✅ Watchdog system implementation
+- **[`SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md`](sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md)** - ✅ Closing sequence & debug mode complete
+- **[`SESSION_2026-01-03_CLEANUP.md`](sessions/SESSION_2026-01-03_CLEANUP.md)** - ✅ Unicode emoji fix & Stream Deck cleanup
 
 **Recent Sessions (Dec 2025)**:
 - **[`SESSION_2025-12-31_RELEASE_BUILD_PREP.md`](sessions/SESSION_2025-12-31_RELEASE_BUILD_PREP.md)** - Code quality & build optimization
@@ -76,6 +82,8 @@ Completed phases and legacy documentation:
 
 **Completed Tasks**:
 - **[`PRE_1.0_COMPLETED_TASKS.md`](archive/PRE_1.0_COMPLETED_TASKS.md)** - Complete archive of 14 major features (v0.9.8)
+- **[`GAME_TELEMETRY_AUDIT_PLAN.md`](archive/GAME_TELEMETRY_AUDIT_PLAN.md)** - ✅ Telemetry system implementation (COMPLETED)
+- **[`CRASH_HANDLER_IMPLEMENTATION_PLAN.md`](archive/CRASH_HANDLER_IMPLEMENTATION_PLAN.md)** - ✅ Watchdog system implementation (COMPLETED)
 - **[`LIFELINE_HOTKEY_MAPPING_PLAN.md`](archive/LIFELINE_HOTKEY_MAPPING_PLAN.md)** - Completed keyboard shortcut implementation
 
 **Completed Phases**:

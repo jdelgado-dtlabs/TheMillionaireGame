@@ -244,6 +244,71 @@ public class MoneyTreeService
     }
 
     /// <summary>
+    /// Calculate winnings breakdown by currency
+    /// </summary>
+    /// <param name="highestQuestionReached">The highest question the player reached (determines which currencies were played)</param>
+    /// <param name="actualWinningLevel">The level they actually won (considering safety nets)</param>
+    public (string currency1Display, string currency2Display, bool hasCurrency1, bool hasCurrency2) GetCurrencyBreakdown(int highestQuestionReached, int actualWinningLevel)
+    {
+        int currency1Value = 0;
+        int currency2Value = 0;
+        bool hasCurrency1 = false;
+        bool hasCurrency2 = false;
+
+        // Loop from the actual winning level down to 1 to find the highest value in each currency
+        for (int level = actualWinningLevel; level >= 1; level--)
+        {
+            int currencyIndex = _settings.LevelCurrencies[level - 1];
+
+            // Only set if we haven't found a value for this currency yet (we want the highest)
+            if (currencyIndex == 1 && !hasCurrency1)
+            {
+                currency1Value = _settings.GetLevelValue(level);
+                hasCurrency1 = true;
+            }
+            else if (currencyIndex == 2 && _settings.Currency2Enabled && !hasCurrency2)
+            {
+                currency2Value = _settings.GetLevelValue(level);
+                hasCurrency2 = true;
+            }
+
+            // If we've found both currencies, we can stop
+            if (hasCurrency1 && hasCurrency2)
+                break;
+        }
+
+        // Format the amounts with their respective currencies
+        string currency1Display = "";
+        string currency2Display = "";
+
+        if (hasCurrency1)
+        {
+            var formatted = currency1Value.ToString("N0");
+            currency1Display = _settings.CurrencyAtSuffix
+                ? $"{formatted}{_settings.Currency}"
+                : $"{_settings.Currency}{formatted}";
+        }
+
+        if (hasCurrency2)
+        {
+            var formatted = currency2Value.ToString("N0");
+            currency2Display = _settings.Currency2AtSuffix
+                ? $"{formatted}{_settings.Currency2}"
+                : $"{_settings.Currency2}{formatted}";
+        }
+
+        return (currency1Display, currency2Display, hasCurrency1, hasCurrency2);
+    }
+
+    /// <summary>
+    /// Calculate winnings breakdown by currency (legacy single-parameter version)
+    /// </summary>
+    public (string currency1Display, string currency2Display, bool hasCurrency1, bool hasCurrency2) GetCurrencyBreakdown(int finalQuestionReached)
+    {
+        return GetCurrencyBreakdown(finalQuestionReached, finalQuestionReached);
+    }
+
+    /// <summary>
     /// Updates safety net configuration
     /// </summary>
     public void UpdateSafetyNets(int safetyNet1, int safetyNet2, int riskModeSafetyNet, bool freeMode)

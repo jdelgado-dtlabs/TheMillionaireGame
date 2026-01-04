@@ -20,4 +20,11 @@ public class GameTelemetry
     public int TotalQuestionsAnswered { get; set; }
     public int TotalLifelinesUsed { get; set; }
     public string TotalWinningsAwarded { get; set; } = "$0";
+    
+    // Currency Tracking
+    public string Currency1Name { get; set; } = "$";
+    public int Currency1TotalWinnings { get; set; } = 0;
+    public string Currency2Name { get; set; } = "€";
+    public int Currency2TotalWinnings { get; set; } = 0;
+    public bool Currency2Enabled { get; set; } = false;
 }

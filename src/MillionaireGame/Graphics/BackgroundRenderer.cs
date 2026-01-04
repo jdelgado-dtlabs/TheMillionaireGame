@@ -40,12 +40,9 @@ public class BackgroundRenderer
     {
         var backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
         
-        GameConsole.Debug($"[BackgroundRenderer] Rendering prerendered background. Path: {backgroundPath ?? "(null)"}");
-        
         // If no background selected or empty path, fall back to black
         if (string.IsNullOrWhiteSpace(backgroundPath))
         {
-            GameConsole.Debug("[BackgroundRenderer] No background path - using black");
             g.Clear(Color.Black);
             return;
         }
