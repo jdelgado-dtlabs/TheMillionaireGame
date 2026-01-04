@@ -609,10 +609,6 @@ Before diving into specific issues, try these general fixes:
    - Check "Total number of lifelines" setting
    - If set to less than 4, some lifelines will be unavailable
 
-4. **Game State Issue**
-   - Try restarting question (F5 key)
-   - If persists, restart game (Delete key)
-
 ### Money Tree Not Updating
 
 **Symptom**: Prize level doesn't advance after correct answer
