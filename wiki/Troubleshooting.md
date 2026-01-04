@@ -166,13 +166,14 @@ Before diving into specific issues, try these general fixes:
    - Ensure "Extend displays" selected
    - TV Screen may be on disconnected monitor
 
-3. **Restore Window Position**
-   - Settings → Display → "Reset Window Positions"
-   - Restart application
+3. **Check Full Screen Settings**
+   - Settings → General tab → Multiple Monitor Control
+   - Verify correct monitor selected for TV Screen
+   - Enable/disable "Auto Full Screen TV Screen" as needed
 
-4. **Force TV Screen Visible**
-   - Control Panel → View → "Show TV Screen"
-   - Or press `F11` (toggles full screen)
+4. **Restart Application**
+   - Close and reopen to reset window positions
+   - Windows will appear on primary monitor by default
 
 ### TV Screen Too Small / Wrong Size
 
@@ -180,23 +181,26 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Enter Full Screen Mode**
-   - Press `F11` in TV Screen window
-   - Or: Control Panel → "Full Screen" button
-
-2. **Check Display Scaling**
-   - Windows Settings → Display
-   - Set scaling to 100% for best results
-   - Or adjust application to match scaling
-
-3. **Verify Resolution**
-   - Right-click desktop → Display Settings
-   - Set to native resolution (usually 1920x1080)
+1. **Enable Full Screen**
+   - Settings → General tab → Multiple Monitor Control
+   - Check "Auto Full Screen TV Screen"
+   - Select correct monitor from dropdown
    - Restart application
 
-4. **Graphics Rendering Issue**
-   - Update graphics drivers
-   - Settings → Display → Use "Software Rendering" (slower but compatible)
+2. **Maximize Window Manually**
+   - Click maximize button on TV Screen window
+   - This enters borderless fullscreen mode
+   - Press ESC to exit fullscreen
+
+3. **Check Display Scaling**
+   - Windows Settings → Display
+   - Set scaling to 100% for best results
+   - Higher scaling (125%, 150%) may affect layout
+
+4. **Verify Resolution**
+   - Right-click desktop → Display Settings
+   - Set to native resolution (usually 1920x1080)
+   - Update graphics drivers if resolution issues persist
 
 ### Display Flickering / Tearing
 
@@ -204,20 +208,22 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Enable VSync**
-   - Settings → Display → "Enable VSync"
-   - Reduces tearing but may add input lag
+1. **Update Graphics Drivers**
+   - Download latest from manufacturer (NVIDIA, AMD, Intel)
+   - Outdated drivers are common cause of rendering issues
 
-2. **Update Graphics Drivers**
-   - Download latest from manufacturer
+2. **Check Windows Display Settings**
+   - Right-click desktop → Display Settings → Advanced Display
+   - Verify monitor refresh rate is set correctly (usually 60Hz)
 
-3. **Reduce Animation Effects**
-   - Settings → Display → "Reduce Animations"
-   - Disables confetti and some transitions
+3. **Disable Desktop Composition**
+   - Right-click application EXE → Properties → Compatibility
+   - Check "Disable fullscreen optimizations"
+   - May help with tearing issues
 
-4. **Check Monitor Refresh Rate**
-   - Display Settings → Advanced Display
-   - Set to monitor's native refresh rate (60Hz, 144Hz, etc.)
+4. **Restart Application**
+   - Graphics state may be corrupted
+   - Close and reopen application
 
 ---
 
@@ -262,11 +268,10 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Individual Volumes**
-   - Music Volume slider
-   - Effects Volume slider
-   - Voice Volume slider
-   - Ensure all > 0%
+1. **Check Channel Gains**
+   - Settings → Audio Settings → Audio Processing
+   - Verify Effects Gain and Music Gain are not set to minimum (-20dB)
+   - Default is 0dB for both channels
 
 2. **Verify Sound Files**
    - Navigate to: `lib/sounds/[CurrentProfile]/`
@@ -287,33 +292,39 @@ Before diving into specific issues, try these general fixes:
    - Device Manager → Sound, video and game controllers
    - Update audio device drivers
 
-2. **Adjust Buffer Size**
-   - Settings → Audio → Advanced
-   - Increase "Audio Buffer Size"
-   - Larger = less crackling but more latency
+2. **Select Different Audio Device**
+   - Settings → Mixer tab
+   - Try selecting a different audio output device
+   - Some devices handle audio processing better than others
 
 3. **Close Other Audio Applications**
    - Other apps can interfere with audio
    - Close unnecessary programs
 
-4. **Check Audio Enhancement**
-   - Windows Sound Settings → Device Properties
-   - Disable "Audio Enhancements"
+4. **Check Limiter Settings**
+   - Settings → Audio Settings → Audio Processing
+   - Try toggling "Enable Limiter" checkbox
+   - Limiter prevents audio clipping but may affect quality
 
-### Audio Out of Sync
+### Audio Playback Issues
 
-**Symptom**: Sound plays late or early
+**Symptom**: Sounds cut off early or don't play completely
 
 **Solutions:**
 
-1. **Adjust Audio Delay**
-   - Settings → Audio → "Audio Delay"
-   - Add positive delay (ms) if sound too early
-   - Add negative delay if sound too late
+1. **Adjust Silence Detection**
+   - Settings → Audio Settings → Silence Detection
+   - Increase "Silence Duration (ms)" if sounds cutting off too early
+   - Increase "Threshold (dB)" if sounds stopping prematurely
+   - Disable "Enable Silence Detection" to play sounds fully
 
-2. **Reduce System Load**
+2. **Check Crossfade Settings**
+   - Settings → Audio Settings → Crossfade
+   - Disable "Enable Crossfade" if sounds overlapping incorrectly
+
+3. **Reduce System Load**
    - Close background applications
-   - Audio sync issues often from high CPU usage
+   - Audio issues often from high CPU usage
 
 ---
 
@@ -533,9 +544,11 @@ Before diving into specific issues, try these general fixes:
    - Windows Update running in background
    - Pause updates during event
 
-3. **Audio Processing**
-   - Settings → Audio → Reduce "Audio Quality"
-   - Lower sample rate uses less CPU
+3. **Disable Audio Processing**
+   - Settings → Audio Settings
+   - Disable "Enable Limiter" to reduce CPU usage
+   - Disable "Enable Silence Detection" if not needed
+   - Disable "Enable Crossfade" if not needed
 
 ### Memory Leak
 
@@ -578,15 +591,20 @@ Before diving into specific issues, try these general fixes:
 
 1. **Lifeline Already Used**
    - Check lifeline status indicator
-   - Each lifeline can only be used once
+   - Each lifeline can only be used once per game
 
-2. **No Lifelines Configured**
-   - Game Profile may have lifelines disabled
-   - Edit profile → Enable lifelines
+2. **Lifeline Not Available Yet**
+   - Lifelines only become active after all 4 answers are revealed
+   - Check lifeline button color: Grey = used/unavailable, Green = active
 
-3. **Game State Issue**
-   - Try restarting question
-   - If persists, restart game
+3. **Total Lifelines Setting**
+   - Settings → Lifelines tab
+   - Check "Total number of lifelines" setting
+   - If set to less than 4, some lifelines will be unavailable
+
+4. **Game State Issue**
+   - Try restarting question (F5 key)
+   - If persists, restart game (Delete key)
 
 ### Money Tree Not Updating
 
@@ -668,22 +686,6 @@ For detailed logging:
 3. Reproduce issue
 
 4. Check `%LocalAppData%\TheMillionaireGame\Logs\` for detailed log files
-
-### Safe Mode Launch
-
-Launch with minimal features:
-
-```powershell
-cd "C:\Program Files\The Millionaire Game"
-.\MillionaireGame.exe --safe-mode
-```
-
-This disables:
-- Web server
-- Sound system
-- Advanced graphics
-
-Useful for isolating issues.
 
 ### Database Repair
 
