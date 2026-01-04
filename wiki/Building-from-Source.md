@@ -41,7 +41,7 @@ This guide explains how to compile The Millionaire Game from source code for dev
 
 ```powershell
 # Clone the repository
-git clone https://github.com/Macronair/TheMillionaireGame.git
+git clone https://github.com/jdelgado-dtlabs/TheMillionaireGame.git
 
 # Navigate to the project
 cd TheMillionaireGame
@@ -56,7 +56,7 @@ git branch
 
 ### Using GitHub Desktop
 1. File → Clone Repository
-2. URL: `https://github.com/Macronair/TheMillionaireGame`
+2. URL: `https://github.com/jdelgado-dtlabs/TheMillionaireGame`
 3. Choose local path
 4. Click "Clone"
 5. Current Branch → Switch to `master-csharp`
@@ -494,8 +494,8 @@ See [Contributing Guide](Contributing) for:
 - **Build Issues**: Check [Troubleshooting](Troubleshooting)
 - **Git Help**: [Git Documentation](https://git-scm.com/doc)
 - **.NET Issues**: [.NET Documentation](https://docs.microsoft.com/dotnet/)
-- **Report Bugs**: [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues)
+- **Report Bugs**: [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
 
 ---
 
-**Ready to contribute?** Check out [open issues](https://github.com/Macronair/TheMillionaireGame/issues) or propose new features!
+**Ready to contribute?** Check out [open issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) or propose new features!

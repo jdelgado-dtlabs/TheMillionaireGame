@@ -283,7 +283,7 @@ Now that you've completed your first game:
 
 - **Full Documentation**: [User Guide](User-Guide)
 - **Common Issues**: [Troubleshooting](Troubleshooting)
-- **Report Bugs**: [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues)
+- **Report Bugs**: [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
 
 ---
 

@@ -221,4 +221,4 @@ Once your system meets the requirements:
 
 ---
 
-**Questions?** Check the [Troubleshooting](Troubleshooting) page or [report an issue](https://github.com/Macronair/TheMillionaireGame/issues).
+**Questions?** Check the [Troubleshooting](Troubleshooting) page or [report an issue](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues).

@@ -20,7 +20,7 @@ These files are ready to be published to the GitHub Wiki:
 
 ### Method 1: Manual Upload (Recommended for First Time)
 
-1. Go to repository: https://github.com/Macronair/TheMillionaireGame
+1. Go to repository: https://github.com/jdelgado-dtlabs/TheMillionaireGame
 2. Click "Wiki" tab
 3. Create each page:
    - Click "New Page"
@@ -31,7 +31,7 @@ These files are ready to be published to the GitHub Wiki:
 
 ```powershell
 # Clone the wiki repository
-git clone https://github.com/Macronair/TheMillionaireGame.wiki.git
+git clone https://github.com/jdelgado-dtlabs/TheMillionaireGame.wiki.git
 
 # Copy files
 Copy-Item wiki\*.md TheMillionaireGame.wiki\ -Force

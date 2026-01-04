@@ -9,7 +9,7 @@ Solutions to common issues and problems with The Millionaire Game.
 Before diving into specific issues, try these general fixes:
 
 1. **Restart the Application**
-2. **Update to Latest Version** - Check [Releases](https://github.com/Macronair/TheMillionaireGame/releases)
+2. **Update to Latest Version** - Check [Releases](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 3. **Check .NET Runtime** - Ensure .NET 8 Desktop Runtime installed
 4. **Review Logs** - Check `Logs/` folder for error details
 5. **Run as Administrator** - Right-click → Run as administrator
@@ -696,14 +696,14 @@ Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse -Force
 ### Before Asking for Help
 
 1. ✅ Check this troubleshooting guide
-2. ✅ Search [existing issues](https://github.com/Macronair/TheMillionaireGame/issues)
+2. ✅ Search [existing issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
 3. ✅ Review application logs
 4. ✅ Try on another computer (if possible)
 
 ### Reporting Issues
 
 **Create Issue on GitHub:**
-1. Go to [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues)
+1. Go to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
 2. Click "New Issue"
 3. Choose appropriate template
 4. Provide:
@@ -722,7 +722,7 @@ Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse -Force
 
 ### Community Support
 
-- **Discussions**: [GitHub Discussions](https://github.com/Macronair/TheMillionaireGame/discussions)
+- **Discussions**: [GitHub Discussions](https://github.com/jdelgado-dtlabs/TheMillionaireGame/discussions)
 - **Email**: [Contact maintainer]
 
 ---
@@ -731,7 +731,7 @@ Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse -Force
 
 ### Current Known Issues
 
-Check [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues?q=is%3Aissue+is%3Aopen+label%3Abug) for current list.
+Check [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues?q=is%3Aissue+is%3Aopen+label%3Abug) for current list.
 
 ### Workarounds
 
@@ -745,4 +745,4 @@ See [FAQ Section](User-Guide#faq) in User Guide.
 
 ---
 
-**Issue not listed?** [Create a new issue](https://github.com/Macronair/TheMillionaireGame/issues/new) on GitHub.
+**Issue not listed?** [Create a new issue](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues/new) on GitHub.

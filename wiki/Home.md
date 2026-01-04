@@ -74,7 +74,7 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 
 **Version**: 1.0.0 (Pre-release)  
 **Status**: Release Candidate  
-**Download**: [Releases Page](https://github.com/Macronair/TheMillionaireGame/releases)
+**Download**: [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 
 ### What's New
 - Complete C# rewrite from VB.NET
@@ -172,7 +172,7 @@ We welcome contributions! See our [Contributing Guide](Contributing) for details
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/Macronair/TheMillionaireGame/blob/master-csharp/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/jdelgado-dtlabs/TheMillionaireGame/blob/master-csharp/LICENSE) file for details.
 
 ---
 
@@ -189,8 +189,8 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Macronair/TheMillionaireGame/discussions)
+- **Issues**: [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jdelgado-dtlabs/TheMillionaireGame/discussions)
 - **Wiki**: You're reading it!
 
 ---

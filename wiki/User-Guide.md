@@ -900,7 +900,7 @@ Located in `Logs/CrashReports/`
 - System information
 
 **Reporting Crashes:**
-Submit crash reports to [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues) with:
+Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) with:
 - Crash report file
 - Steps to reproduce
 - Expected vs actual behavior
@@ -967,9 +967,9 @@ Submit crash reports to [GitHub Issues](https://github.com/Macronair/TheMilliona
 - [Stream Deck Integration](Stream-Deck-Integration) - Physical controls *(Coming Soon)*
 
 **Get Help:**
-- [GitHub Issues](https://github.com/Macronair/TheMillionaireGame/issues) - Report bugs
-- [Discussions](https://github.com/Macronair/TheMillionaireGame/discussions) - Ask questions
+- [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) - Report bugs
+- [Discussions](https://github.com/jdelgado-dtlabs/TheMillionaireGame/discussions) - Ask questions
 
 ---
 
-**Questions not covered here?** Check [Troubleshooting](Troubleshooting) or open a [discussion](https://github.com/Macronair/TheMillionaireGame/discussions)!
+**Questions not covered here?** Check [Troubleshooting](Troubleshooting) or open a [discussion](https://github.com/jdelgado-dtlabs/TheMillionaireGame/discussions)!

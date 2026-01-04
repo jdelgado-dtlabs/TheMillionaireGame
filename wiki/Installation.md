@@ -22,7 +22,7 @@ Before installing, ensure your system meets the [System Requirements](System-Req
 This method uses the Windows installer for easy setup and updates.
 
 #### Step 1: Download the Installer
-1. Visit the [Releases Page](https://github.com/Macronair/TheMillionaireGame/releases)
+1. Visit the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 2. Find the latest release (e.g., `v1.0.0`)
 3. Download `MillionaireGameSetup.exe`
 
@@ -61,7 +61,7 @@ This method uses the Windows installer for easy setup and updates.
 For users who prefer portable/USB installations without system modifications.
 
 #### Step 1: Download Portable Package
-1. Visit the [Releases Page](https://github.com/Macronair/TheMillionaireGame/releases)
+1. Visit the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 2. Download `MillionaireGame-Portable-v1.0.0.zip`
 
 #### Step 2: Extract Files
@@ -303,4 +303,4 @@ Installation complete! Continue to:
 
 ---
 
-**Need help?** [Report an issue](https://github.com/Macronair/TheMillionaireGame/issues) or check [Troubleshooting](Troubleshooting).
+**Need help?** [Report an issue](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) or check [Troubleshooting](Troubleshooting).
