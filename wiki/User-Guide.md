@@ -71,7 +71,7 @@ The Control Panel is your command center for running the game.
      - Show Current Winnings
      - Show Correct Answer to Host
 
-**Note:** Money Tree and Game Console are separate windows (accessible via Screens menu and Game menu respectively), not embedded in the Control Panel.
+**Note:** Money Tree and Game Console are separate windows (accessible via Screens menu and Game menu respectively), not embedded in the Control Panel. The Money Tree button (Item 6) affects visibility on the TV Screen. Game Console and Web Server Console are shown when the associated button in Settings → Screens is clicked. They show by default when in debug mode.
 
 ### TV Screen (Player/Audience Display)
 
