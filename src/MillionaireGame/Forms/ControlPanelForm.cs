@@ -66,6 +66,8 @@ public partial class ControlPanelForm : Form
     private readonly HotkeyHandler _hotkeyHandler;
     private readonly ScreenUpdateService _screenService;
     private readonly SoundService _soundService;
+    private readonly StreamDeckService _streamDeckService;
+    private StreamDeckIntegration? _streamDeckIntegration;
     private string _currentAnswer = string.Empty;
     private LifelineMode _lifelineMode = LifelineMode.Inactive;
     private string? _currentFinalAnswerKey = null; // Track the final answer sound key for stopping
@@ -169,6 +171,9 @@ public partial class ControlPanelForm : Form
         _screenService = screenService;
         _soundService = soundService;
         
+        // Initialize Stream Deck service (always created, but only enabled if setting is on)
+        _streamDeckService = new StreamDeckService();
+        
         // Initialize lifeline manager with WebServerHost accessor
         _lifelineManager = new LifelineManager(
             gameService, 
@@ -207,6 +212,9 @@ public partial class ControlPanelForm : Form
         IconHelper.ApplyToForm(this);
         KeyPreview = true; // Enable key event capture
         SetupEventHandlers();
+        
+        // Initialize Stream Deck integration if enabled
+        InitializeStreamDeck();
         
         // Handle form closing to ensure proper cleanup
         FormClosing += ControlPanelForm_FormClosing;
@@ -346,7 +354,28 @@ public partial class ControlPanelForm : Form
                 GameConsole.Error($"[Shutdown] Error closing child windows: {ex.Message}");
             }
 
-            // Step 5: Stop timers
+            // Step 5: Shutdown Stream Deck integration
+            stepStopwatch.Restart();
+            try
+            {
+                progressDialog.UpdateStatus("Shutting down Stream Deck...");
+                if (_streamDeckIntegration != null)
+                {
+                    _streamDeckIntegration.Shutdown();
+                    _streamDeckIntegration.Dispose();
+                }
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Shutdown Stream Deck", true, stepStopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                stepStopwatch.Stop();
+                progressDialog.AddStep("Shutdown Stream Deck", false, stepStopwatch.ElapsedMilliseconds);
+                progressDialog.AddMessage($"  Error: {ex.Message}");
+                GameConsole.Error($"[Shutdown] Error shutting down Stream Deck: {ex.Message}");
+            }
+
+            // Step 6: Stop timers
             stepStopwatch.Restart();
             try
             {
@@ -365,7 +394,7 @@ public partial class ControlPanelForm : Form
                 GameConsole.Error($"[Shutdown] Error stopping timers: {ex.Message}");
             }
 
-            // Step 6: Dispose lifeline manager
+            // Step 7: Dispose lifeline manager
             stepStopwatch.Restart();
             try
             {
@@ -462,6 +491,92 @@ public partial class ControlPanelForm : Form
         _gameService.ModeChanged += OnModeChanged;
         _gameService.LifelineUsed += OnLifelineUsed;
     }
+    
+    /// <summary>
+    /// Initialize Stream Deck integration if enabled in settings
+    /// </summary>
+    private void InitializeStreamDeck()
+    {
+        try
+        {
+            // Check if Stream Deck is enabled in settings
+            if (!_appSettings.Settings.StreamDeckEnabled)
+            {
+                GameConsole.Info("[ControlPanel] Stream Deck integration disabled in settings");
+                return;
+            }
+            
+            // Create integration bridge
+            _streamDeckIntegration = new StreamDeckIntegration(
+                _streamDeckService,
+                _gameService,
+                _screenService);
+            
+            // Wire up events
+            _streamDeckIntegration.AnswerLockedByHost += OnStreamDeckAnswerLocked;
+            _streamDeckIntegration.RevealTriggeredByHost += OnStreamDeckRevealTriggered;
+            _streamDeckIntegration.DeviceStatusChanged += OnStreamDeckDeviceStatusChanged;
+            
+            // Attempt initialization
+            if (_streamDeckIntegration.Initialize())
+            {
+                GameConsole.Info("[ControlPanel] Stream Deck integration initialized successfully");
+            }
+            else
+            {
+                GameConsole.Warn("[ControlPanel] Stream Deck device not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ControlPanel] Stream Deck initialization error: {ex.Message}");
+        }
+    }
+    
+    #region Stream Deck Event Handlers
+    
+    /// <summary>
+    /// Called when host locks in an answer via Stream Deck
+    /// </summary>
+    private void OnStreamDeckAnswerLocked(object? sender, AnswerLockedEventArgs e)
+    {
+        GameConsole.Info($"[ControlPanel] Stream Deck answer locked: {e.Answer} ({(e.IsCorrect ? "CORRECT" : "INCORRECT")})");
+        
+        // The Stream Deck already shows correct/incorrect feedback to the host
+        // We just need to track that an answer has been locked in
+        _currentAnswer = e.Answer.ToString();
+    }
+    
+    /// <summary>
+    /// Called when host presses Reveal button on Stream Deck
+    /// </summary>
+    private void OnStreamDeckRevealTriggered(object? sender, EventArgs e)
+    {
+        GameConsole.Info("[ControlPanel] Stream Deck reveal triggered");
+        
+        // Simulate clicking the Reveal button
+        if (btnReveal.Enabled && btnReveal.Visible)
+        {
+            Invoke(new Action(() => btnReveal.PerformClick()));
+        }
+    }
+    
+    /// <summary>
+    /// Called when Stream Deck device connection status changes
+    /// </summary>
+    private void OnStreamDeckDeviceStatusChanged(object? sender, DeviceStatusEventArgs e)
+    {
+        if (e.IsConnected)
+        {
+            GameConsole.Info("[ControlPanel] Stream Deck device connected");
+        }
+        else
+        {
+            GameConsole.Warn("[ControlPanel] Stream Deck device disconnected");
+        }
+    }
+    
+    #endregion
     
     #region Lifeline Manager Event Handlers
     
@@ -1211,6 +1326,9 @@ public partial class ControlPanelForm : Form
                 // Disable Question button after all answers shown
                 btnNewQuestion.Enabled = false;
                 btnNewQuestion.BackColor = Color.Gray;
+                
+                // Notify Stream Deck that question is fully displayed (all answers revealed)
+                _streamDeckIntegration?.OnQuestionDisplayed();
                 break;
         }
     }
@@ -1714,6 +1832,9 @@ public partial class ControlPanelForm : Form
 
     private void btnWalk_Click(object? sender, EventArgs e)
     {
+        // Notify Stream Deck that question has ended (walk away)
+        _streamDeckIntegration?.OnQuestionEnd();
+        
         // Capture winnings BEFORE modifying game state
         // If final winnings already set (after wrong answer), use that; otherwise use current value
         var winnings = _finalWinningsAmount ?? _gameService.State.CurrentValue;
@@ -3581,6 +3702,9 @@ public partial class ControlPanelForm : Form
     private async void ProcessNormalReveal(bool isCorrect)
     {
         GameConsole.Debug($"[ProcessNormalReveal] Starting, isCorrect: {isCorrect}");
+        
+        // Notify Stream Deck that question has ended
+        _streamDeckIntegration?.OnQuestionEnd();
         
         if (isCorrect)
         {
