@@ -374,3 +374,6 @@ FodyWeavers.xsd
 .github/copilot-instructions.md
 # Custom library source (managed separately)
 StreamDeckSharp/
+
+# Installer output directory (compiled installers tracked as release artifacts)
+installer/output/
