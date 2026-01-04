@@ -107,17 +107,21 @@ Before diving into specific issues, try these general fixes:
    - Check for specific error
 
 2. **Database Issues**
-   - Delete corrupt database:
-     ```powershell
-     Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse
+   - Reset SQL Server Express database:
+     ```sql
+     -- Connect to SQL Server Express and run:
+     DROP DATABASE IF EXISTS TheMillionaireGame;
      ```
-   - Application will recreate on next launch
+   - Or use application's database reset option if available
+   - Application will recreate database on next launch
 
 3. **Reset Configuration**
-   - Settings stored in database, delete ApplicationSettings table:
-     ```powershell
-     # Delete entire database to reset all settings
-     Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse
+   - Settings stored in SQL Server Express database:
+     ```sql
+     -- Connect to SQL Server Express and run:
+     DELETE FROM ApplicationSettings;
+     -- Or drop and recreate entire database:
+     DROP DATABASE IF EXISTS TheMillionaireGame;
      ```
    - Application will recreate with defaults on next launch
 
@@ -324,19 +328,23 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **LocalDB Not Installed**
-   - .NET 8 SDK includes LocalDB
-   - Or install separately: [SQL Server Express LocalDB](https://www.microsoft.com/sql-server/sql-server-downloads)
+1. **SQL Server Express Not Installed**
+   - SQL Server Express is required (installed automatically by installer)
+   - Verify installation:
+     ```powershell
+     Get-Service | Where-Object {$_.Name -like "*SQL*"}
+     # Should show MSSQL$SQLEXPRESS or similar
+     ```
+   - If missing, reinstall application or install SQL Server Express separately
 
-2. **Database File Corrupt**
-   ```powershell
-   # Backup existing database
-   Copy-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" "C:\Backup\" -Recurse
+2. **Database Corrupt**
+   ```sql
+   -- Backup database first (optional)
+   BACKUP DATABASE TheMillionaireGame TO DISK = 'C:\Backup\TheMillionaireGame.bak';
    
-   # Delete corrupt database
-   Remove-Item "$env:LOCALAPPDATA\The Millionaire Game\Database\*" -Recurse
-   
-   # Application will recreate on next launch
+   -- Drop and recreate
+   DROP DATABASE IF EXISTS TheMillionaireGame;
+   -- Application will recreate on next launch
    ```
 
 3. **Connection String Issue**
@@ -344,7 +352,7 @@ Before diving into specific issues, try these general fixes:
    - Verify connection string format:
    ```xml
    <add name="MillionaireDB" 
-        connectionString="Data Source=(localdb)\MSSQLLocalDB;..." />
+        connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=TheMillionaireGame;Integrated Security=True" />
    ```
 
 4. **Permissions Issue**
@@ -367,8 +375,9 @@ Before diving into specific issues, try these general fixes:
 
 3. **Verify Database**
    ```powershell
-   # Check if database exists
-   Test-Path "$env:LOCALAPPDATA\TheMillionaireGame\Database\"
+   # Check if SQL Server Express service is running
+   Get-Service MSSQL$SQLEXPRESS
+   # Should show Status: Running
    ```
 
 4. **Reimport Questions**
@@ -391,9 +400,8 @@ Before diving into specific issues, try these general fixes:
    - Need at least 100 MB free
 
 3. **Database Permissions**
-   - Database file may be read-only
-   - Right-click database file → Properties
-   - Uncheck "Read-only"
+   - Verify SQL Server Express has write permissions
+   - Check Windows user has access to SQL Server Express instance
 
 ---
 
@@ -643,7 +651,7 @@ If issue persists, gather this information for support:
 
 4. **Configuration Files**
    - `App.config`
-   - Database: `%LocalAppData%\TheMillionaireGame\Database\` (contains all settings)
+   - Database: SQL Server Express (TheMillionaireGame database)
 
 5. **Screenshots/Videos**
    - Capture the issue occurring
@@ -684,11 +692,14 @@ Useful for isolating issues.
 
 If database corrupted beyond recovery:
 
-```powershell
-# Full reset (WARNING: Loses all data)
-Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\Database\*" -Recurse -Force
-
-# Application recreates database on next launch
+```sql
+-- Full reset (WARNING: Loses all data)
+-- Connect to SQL Server Express and run:
+USE master;
+GO
+DROP DATABASE IF EXISTS TheMillionaireGame;
+GO
+-- Application recreates database on next launch
 ```
 
 ---
