@@ -110,7 +110,7 @@ Before diving into specific issues, try these general fixes:
    - Reset SQL Server Express database:
      ```sql
      -- Connect to SQL Server Express and run:
-     DROP DATABASE IF EXISTS TheMillionaireGame;
+     DROP DATABASE IF EXISTS dbMillionaire;
      ```
    - Or use application's database reset option if available
    - Application will recreate database on next launch
@@ -119,9 +119,11 @@ Before diving into specific issues, try these general fixes:
    - Settings stored in SQL Server Express database:
      ```sql
      -- Connect to SQL Server Express and run:
+     USE dbMillionaire;
      DELETE FROM ApplicationSettings;
      -- Or drop and recreate entire database:
-     DROP DATABASE IF EXISTS TheMillionaireGame;
+     USE master;
+     DROP DATABASE IF EXISTS dbMillionaire;
      ```
    - Application will recreate with defaults on next launch
 
@@ -340,10 +342,10 @@ Before diving into specific issues, try these general fixes:
 2. **Database Corrupt**
    ```sql
    -- Backup database first (optional)
-   BACKUP DATABASE TheMillionaireGame TO DISK = 'C:\Backup\TheMillionaireGame.bak';
+   BACKUP DATABASE dbMillionaire TO DISK = 'C:\Backup\dbMillionaire.bak';
    
    -- Drop and recreate
-   DROP DATABASE IF EXISTS TheMillionaireGame;
+   DROP DATABASE IF EXISTS dbMillionaire;
    -- Application will recreate on next launch
    ```
 
@@ -352,7 +354,7 @@ Before diving into specific issues, try these general fixes:
    - Verify connection string format:
    ```xml
    <add name="MillionaireDB" 
-        connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=TheMillionaireGame;Integrated Security=True" />
+        connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=dbMillionaire;Integrated Security=True" />
    ```
 
 4. **Permissions Issue**
@@ -651,7 +653,7 @@ If issue persists, gather this information for support:
 
 4. **Configuration Files**
    - `App.config`
-   - Database: SQL Server Express (TheMillionaireGame database)
+   - Database: SQL Server Express (dbMillionaire database)
 
 5. **Screenshots/Videos**
    - Capture the issue occurring
@@ -697,7 +699,7 @@ If database corrupted beyond recovery:
 -- Connect to SQL Server Express and run:
 USE master;
 GO
-DROP DATABASE IF EXISTS TheMillionaireGame;
+DROP DATABASE IF EXISTS dbMillionaire;
 GO
 -- Application recreates database on next launch
 ```
