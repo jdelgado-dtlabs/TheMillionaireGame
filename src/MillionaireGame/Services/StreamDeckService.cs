@@ -68,12 +68,35 @@ namespace MillionaireGame.Services
                     return false;
                 }
 
+                // Validate that this is a 2x3 (6-button) device (Stream Deck Module 6)
+                var keyLayout = _device.Keys;
+                if (keyLayout.Count != 6)
+                {
+                    GameConsole.Warn($"[StreamDeck] Connected device has {keyLayout.Count} buttons, but this integration is designed for 6-button devices (2x3 layout). Device will not be used.");
+                    _device.Dispose();
+                    _device = null;
+                    return false;
+                }
+
+                // Additional layout validation - ensure it's 2 rows x 3 columns
+                if (keyLayout is OpenMacroBoard.SDK.GridKeyLayout gridLayout)
+                {
+                    // GridKeyLayout uses Area property which has Width (columns) and Height (rows)
+                    if (gridLayout.Area.Width != 3 || gridLayout.Area.Height != 2)
+                    {
+                        GameConsole.Warn($"[StreamDeck] Connected device has {gridLayout.Area.Width}x{gridLayout.Area.Height} layout, but this integration requires 3x2 layout (Stream Deck Module 6). Device will not be used.");
+                        _device.Dispose();
+                        _device = null;
+                        return false;
+                    }
+                }
+
                 // Subscribe to events
                 _device.ConnectionStateChanged += OnConnectionStateChanged;
                 _device.KeyStateChanged += OnKeyStateChanged;
 
                 _isConnected = true;
-                GameConsole.Info($"[StreamDeck] Connected to Stream Deck device");
+                GameConsole.Info($"[StreamDeck] Connected to Stream Deck Module 6 (2x3 layout)");
 
                 // Set brightness
                 _device.SetBrightness(80); // 80% brightness
