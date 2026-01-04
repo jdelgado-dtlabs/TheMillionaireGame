@@ -36,9 +36,10 @@ public class FileLogger : IDisposable
         _logPrefix = logPrefix;
         _maxLogFiles = maxLogFiles;
         
-        // Store logs in application directory under "Logs" folder
-        var appPath = AppDomain.CurrentDomain.BaseDirectory;
-        _logDirectory = Path.Combine(appPath, "Logs");
+        // Store logs in AppData\Local\TheMillionaireGame\Logs
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appFolder = Path.Combine(appDataPath, "TheMillionaireGame");
+        _logDirectory = Path.Combine(appFolder, "Logs");
         
         // Ensure logs directory exists
         if (!Directory.Exists(_logDirectory))

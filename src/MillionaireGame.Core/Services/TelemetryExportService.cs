@@ -272,19 +272,20 @@ public class TelemetryExportService
     }
 
     /// <summary>
-    /// Get the default export directory (Logs folder next to executable)
+    /// Get the default export directory (AppData\Local\TheMillionaireGame\Telemetry)
     /// </summary>
     public string GetDefaultExportDirectory()
     {
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        var logsDir = Path.Combine(baseDir, "Logs");
+        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appFolder = Path.Combine(appDataPath, "TheMillionaireGame");
+        var telemetryDir = Path.Combine(appFolder, "Telemetry");
         
-        if (!Directory.Exists(logsDir))
+        if (!Directory.Exists(telemetryDir))
         {
-            Directory.CreateDirectory(logsDir);
+            Directory.CreateDirectory(telemetryDir);
         }
 
-        return logsDir;
+        return telemetryDir;
     }
 
     /// <summary>
