@@ -372,3 +372,5 @@ FodyWeavers.xsd
 
 # GitHub Copilot Instructions
 .github/copilot-instructions.md
+# Custom library source (managed separately)
+StreamDeckSharp/
