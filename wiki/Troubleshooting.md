@@ -235,10 +235,11 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Application Volume**
-   - Control Panel → Audio section
-   - Master Volume slider to 100%
-   - Unmute if muted (`M` key)
+1. **Check Application Audio Gains**
+   - Settings → Audio Settings → Audio Processing
+   - Verify Master Gain is not set to minimum (-20dB)
+   - Verify Effects Gain and Music Gain are not at minimum
+   - Default is 0dB for all gains
 
 2. **Windows Volume Mixer**
    - Right-click speaker icon → Open Volume Mixer
