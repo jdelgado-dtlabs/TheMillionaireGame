@@ -552,7 +552,7 @@ Before diving into specific issues, try these general fixes:
    - Pause updates during event
 
 3. **Disable Audio Processing**
-   - Settings → Audio Settings
+   - Settings → Sounds tab → Audio Settings tab
    - Disable "Enable Limiter" to reduce CPU usage
    - Disable "Enable Silence Detection" if not needed
    - Disable "Enable Crossfade" if not needed
