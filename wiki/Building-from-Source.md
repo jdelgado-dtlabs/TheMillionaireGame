@@ -19,6 +19,9 @@ This guide explains how to compile The Millionaire Game from source code for dev
    - **VS Code** with C# Dev Kit
      - Install: [VS Code](https://code.visualstudio.com/)
      - Extension: [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
+     - Extension: [SQL Server (mssql)](https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql)
+     - Extension: [.NET Install Tool](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.vscode-dotnet-runtime)
+     - Extension: [GitHub Pull Requests and Issues](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github)
 
 3. **.NET 8 SDK**
    - Download: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
@@ -27,6 +30,12 @@ This guide explains how to compile The Millionaire Game from source code for dev
 4. **Git**
    - Download: [Git for Windows](https://git-scm.com/download/win)
    - Verify installation: `git --version`
+
+5. **SQL Server Express**
+   - Download: [SQL Server Express](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+   - Required for database operations (game questions, telemetry, WAPS data)
+   - LocalDB is NOT supported - full SQL Server Express instance required
+   - Verify installation: Check "SQL Server (SQLEXPRESS)" service is running
 
 ### Optional Tools
 - **SQL Server Management Studio (SSMS)** - For database development
@@ -72,22 +81,50 @@ TheMillionaireGame/
 │   ├── MillionaireGame/              # Main Windows Forms application
 │   │   ├── MillionaireGame.csproj    # Project file
 │   │   ├── Program.cs                # Entry point
+│   │   ├── App.config                # Application configuration
+│   │   ├── Controls/                 # Custom UI controls
 │   │   ├── Forms/                    # UI forms (Control Panel, TV Screen)
+│   │   ├── Graphics/                 # Graphics rendering
+│   │   ├── Helpers/                  # Helper utilities
+│   │   ├── Hosting/                  # Web server hosting
 │   │   ├── Services/                 # Business logic services
-│   │   └── bin/Debug/                # Build output
+│   │   ├── Utilities/                # Common utilities
+│   │   └── lib/                      # External libraries (sounds, images)
 │   ├── MillionaireGame.Core/         # Core game logic library
-│   │   ├── Game/                     # Game state management
+│   │   ├── MillionaireGame.Core.csproj
 │   │   ├── Database/                 # Data access layer
-│   │   └── Models/                   # Data models
+│   │   ├── Game/                     # Game state management
+│   │   ├── Graphics/                 # Core graphics logic
+│   │   ├── Helpers/                  # Core helper utilities
+│   │   ├── Models/                   # Data models
+│   │   ├── Services/                 # Core services
+│   │   └── Settings/                 # Settings management
 │   ├── MillionaireGame.Web/          # Web server for audience features
+│   │   ├── MillionaireGame.Web.csproj
 │   │   ├── Controllers/              # API endpoints
+│   │   ├── Data/                     # Data context
+│   │   ├── Database/                 # Database migrations
 │   │   ├── Hubs/                     # SignalR hubs
-│   │   └── wwwroot/                  # Static web files
+│   │   ├── Models/                   # Web models
+│   │   ├── Services/                 # Web services
+│   │   └── wwwroot/                  # Static web files (HTML, CSS, JS)
 │   ├── MillionaireGame.Watchdog/     # Crash monitoring service
-│   └── docs/                         # Documentation
-├── wiki/                             # Wiki documentation (GitHub Wiki)
+│   │   ├── MillionaireGame.Watchdog.csproj
+│   │   ├── Program.cs                # Watchdog entry point
+│   │   ├── CrashReportGenerator.cs   # Crash report generation
+│   │   ├── HeartbeatListener.cs      # Process monitoring
+│   │   ├── ProcessMonitor.cs         # Process management
+│   │   └── Models.cs                 # Watchdog models
+│   └── docs/                         # Development documentation
+│       ├── active/                   # Current documentation
+│       ├── archive/                  # Archived documentation
+│       ├── database/                 # SQL scripts
+│       ├── guides/                   # Development guides
+│       ├── reference/                # Reference documentation
+│       └── sessions/                 # Development session notes
+├── wiki/                             # GitHub Wiki documentation
 ├── publish/                          # Release builds
-└── installer/                        # Installer scripts
+└── installer/                        # Inno Setup installer scripts
 ```
 
 ---
@@ -133,7 +170,10 @@ TheMillionaireGame/
 2. **Install Recommended Extensions**
    - When prompted, install:
      - C# Dev Kit
+     - SQL Server (mssql)
+     - .NET Install Tool
      - .NET Extension Pack
+     - GitHub Pull Requests and Issues
 
 3. **Build Using Task**
    - Terminal → Run Task (`Ctrl+Shift+B`)
@@ -184,29 +224,40 @@ cd MillionaireGame/bin/Debug/net8.0-windows
 
 ## Building Individual Projects
 
-### Main Application Only
-```powershell
-cd src
-dotnet build MillionaireGame/MillionaireGame.csproj
-```
+> **Note**: The projects in this solution are interdependent. Core, Web Server, and Watchdog are referenced by the Main application. Building the entire solution is recommended.
 
-### Core Library Only
+### Project Dependencies
+- **MillionaireGame** (Main) → References Core, Web, and launches Watchdog
+- **MillionaireGame.Core** → Core game logic library (no executable)
+- **MillionaireGame.Web** → Web server library (no executable, hosted by Main)
+- **MillionaireGame.Watchdog** → References Main for crash monitoring
+
+### Executables Produced
+Only two projects produce executables:
+- **MillionaireGame.exe** - Main application
+- **MillionaireGame.Watchdog.exe** - Crash monitoring service
+
+### Build Verification (Individual Projects)
+
+You can build individual projects for compilation verification, but they won't run independently:
+
 ```powershell
 cd src
+
+# Verify Core library builds
 dotnet build MillionaireGame.Core/MillionaireGame.Core.csproj
-```
 
-### Web Server Only
-```powershell
-cd src
+# Verify Web server builds
 dotnet build MillionaireGame.Web/MillionaireGame.Web.csproj
-```
 
-### Watchdog Only
-```powershell
-cd src
+# Build Main application (includes all dependencies)
+dotnet build MillionaireGame/MillionaireGame.csproj
+
+# Build Watchdog
 dotnet build MillionaireGame.Watchdog/MillionaireGame.Watchdog.csproj
 ```
+
+> 💡 **Recommendation**: Always build the entire solution with `dotnet build TheMillionaireGame.sln` to ensure all dependencies are properly resolved.
 
 ---
 
@@ -425,15 +476,9 @@ cd src/MillionaireGame/bin/Debug/net8.0-windows
 
 ## Running Tests
 
-*Note: Unit tests are under development. This section will be updated when test projects are added.*
+Unit tests are planned for future development. This feature is not yet available.
 
-```powershell
-# Future: Run all tests
-dotnet test src/TheMillionaireGame.sln
-
-# Future: Run specific test project
-dotnet test src/MillionaireGame.Tests/MillionaireGame.Tests.csproj
-```
+> 📝 **Future Enhancement**: A comprehensive test suite will be added to ensure code quality and prevent regressions.
 
 ---
 
@@ -483,8 +528,7 @@ See [Contributing Guide](Contributing) for:
 - Community guidelines
 
 ### Resources
-- **Architecture Overview**: [Architecture](Architecture)
-- **Database Schema**: [Database Documentation](Database-Schema)
+- **Development Documentation**: See `src/docs/` folder for architecture notes and reference materials
 - **API Reference**: *Coming soon*
 
 ---
