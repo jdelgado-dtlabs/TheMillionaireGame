@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using OpenMacroBoard.SDK;
 using StreamDeckSharp;
 using MillionaireGame.Utilities;
@@ -59,37 +60,53 @@ namespace MillionaireGame.Services
         {
             try
             {
-                // Open first available Stream Deck device
-                _device = StreamDeck.OpenDevice();
-
-                if (_device == null)
+                // Enumerate all available Stream Deck devices WITHOUT opening them
+                // This prevents grabbing exclusive control of wrong devices
+                var devices = StreamDeck.EnumerateDevices();
+                
+                if (!devices.Any())
                 {
-                    GameConsole.Warn("[StreamDeck] No Stream Deck device found");
+                    GameConsole.Warn("[StreamDeck] No Stream Deck devices found");
                     return false;
                 }
 
-                // Validate that this is a 2x3 (6-button) device (Stream Deck Module 6)
-                var keyLayout = _device.Keys;
-                if (keyLayout.Count != 6)
+                // Find a device with 6 buttons in 3x2 layout (Stream Deck Module 6)
+                StreamDeckSharp.StreamDeckDeviceReference? targetDevice = null;
+                foreach (var deviceRef in devices)
                 {
-                    GameConsole.Warn($"[StreamDeck] Connected device has {keyLayout.Count} buttons, but this integration is designed for 6-button devices (2x3 layout). Device will not be used.");
-                    _device.Dispose();
-                    _device = null;
-                    return false;
-                }
-
-                // Additional layout validation - ensure it's 2 rows x 3 columns
-                if (keyLayout is OpenMacroBoard.SDK.GridKeyLayout gridLayout)
-                {
-                    // GridKeyLayout uses Area property which has Width (columns) and Height (rows)
-                    if (gridLayout.Area.Width != 3 || gridLayout.Area.Height != 2)
+                    var keyLayout = deviceRef.Keys;
+                    
+                    // Check button count first
+                    if (keyLayout.Count != 6)
                     {
-                        GameConsole.Warn($"[StreamDeck] Connected device has {gridLayout.Area.Width}x{gridLayout.Area.Height} layout, but this integration requires 3x2 layout (Stream Deck Module 6). Device will not be used.");
-                        _device.Dispose();
-                        _device = null;
-                        return false;
+                        GameConsole.Info($"[StreamDeck] Skipping {deviceRef.DeviceName} ({keyLayout.Count} buttons) - requires 6-button device");
+                        continue;
+                    }
+
+                    // Check layout dimensions
+                    if (keyLayout is OpenMacroBoard.SDK.GridKeyLayout gridLayout)
+                    {
+                        if (gridLayout.Area.Width != 3 || gridLayout.Area.Height != 2)
+                        {
+                            GameConsole.Info($"[StreamDeck] Skipping {deviceRef.DeviceName} ({gridLayout.Area.Width}x{gridLayout.Area.Height} layout) - requires 3x2 layout");
+                            continue;
+                        }
+
+                        // Found matching device!
+                        targetDevice = deviceRef as StreamDeckSharp.StreamDeckDeviceReference;
+                        GameConsole.Info($"[StreamDeck] Found compatible device: {deviceRef.DeviceName}");
+                        break;
                     }
                 }
+
+                if (targetDevice == null)
+                {
+                    GameConsole.Warn("[StreamDeck] No compatible Stream Deck Module 6 (3x2 layout, 6 buttons) found. Make sure the Stream Deck app is CLOSED as it conflicts with this integration.");
+                    return false;
+                }
+
+                // Now open ONLY the compatible device
+                _device = targetDevice.Open();
 
                 // Subscribe to events
                 _device.ConnectionStateChanged += OnConnectionStateChanged;
