@@ -27,34 +27,49 @@ The application consists of multiple windows, each serving a specific purpose.
 
 The Control Panel is your command center for running the game.
 
-**Main Sections:**
+**Layout:**
 
-1. **Game Controls** (Top)
-   - New Game, Start FFF, Start Main Game
-   - Question navigation
-   - Final Answer, Walk Away, End Game
+1. **Menu Bar** (Top)
+   - Game menu (Settings, Editor, Exit)
+   - Screens menu (Host Screen, Guest Screen, TV Screen, Preview Screen)
+   - Help menu (Usage, About)
 
-2. **Question Display** (Center-Left)
-   - Current question text
-   - Four answer options (A, B, C, D)
-   - Answer selection buttons
+2. **Answer Buttons** (Left Side)
+   - A, B, C, D buttons
+   - Click to select contestant's answer
 
-3. **Money Tree** (Center-Right)
-   - 15 prize levels
-   - Current level highlighted
-   - Safety nets marked
-   - Dual currency display (if enabled)
+3. **Question Display** (Center)
+   - Question text area
+   - Four answer text fields (A, B, C, D)
+   - Explanation text area
 
-4. **Lifelines** (Bottom-Left)
-   - 50:50, Phone a Friend, Ask the Audience, Switch Question
-   - Status indicators (available/used)
-   - Quick-access hotkeys
+4. **Broadcast Flow Buttons** (Right Side - Top)
+   - Host Intro, Pick Player, Lights Down, Explain Game
+   - Question, Reveal, Walk Away, Closing
+   - Fade Out All Sounds, Stop All Audio
 
-5. **Game Console** (Bottom)
-   - Live event log
-   - Debug information
-   - Error messages
-   - Game state updates
+5. **Lifeline Buttons** (Right Side - Middle)
+   - ATA (Ask the Audience)
+   - PAF (Phone a Friend / Plus One)
+   - 50:50
+   - Activate Risk Mode (yellow button)
+
+6. **Game Control Buttons** (Right Side - Bottom)
+   - Round (Reset Round)
+   - Game (Reset Game)
+   - Show Money Tree (toggle display)
+
+7. **Game Status** (Bottom Section)
+   - Question # selector and current level
+   - Money displays (If Correct, If Walk, Current, If Wrong)
+   - Questions left counter
+   - Host Note with Send/Clear buttons
+   - Display options checkboxes:
+     - Show Question on TV
+     - Show Current Winnings
+     - Show Correct Answer to Host
+
+**Note:** Money Tree and Game Console are separate windows (accessible via Screens menu and Game menu respectively), not embedded in the Control Panel.
 
 ### TV Screen (Player/Audience Display)
 
