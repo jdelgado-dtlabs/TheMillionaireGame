@@ -3092,6 +3092,9 @@ public partial class ControlPanelForm : Form
         btnLightsDown.Enabled = false;
         btnLightsDown.BackColor = Color.Gray;
         
+        btnClosing.Enabled = false;
+        btnClosing.BackColor = Color.Gray;
+        
         // Risk Mode should be disabled (grey) - not available until Pick Player
         btnActivateRiskMode.Enabled = false;
         btnActivateRiskMode.BackColor = Color.Gray;
