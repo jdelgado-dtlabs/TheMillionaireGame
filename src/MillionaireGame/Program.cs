@@ -15,6 +15,8 @@ internal static class Program
     public static bool DebugMode { get; private set; }
     
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    
+    private static HeartbeatService? _heartbeatService;
 
     /// <summary>
     ///  The main entry point for the application.
@@ -135,11 +137,23 @@ internal static class Program
         
         // Wire up telemetry bridge callbacks
         SetupTelemetryBridge();
+        
+        // Start heartbeat service for watchdog monitoring
+        _heartbeatService = new HeartbeatService();
+        _heartbeatService.Start();
+        _heartbeatService.SetActivity("Initializing");
+        GameConsole.Debug("[Heartbeat] Service started");
 
         // Create and run main control panel (FIRST window to show)
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
         
+        _heartbeatService.SetActivity("Running");
         Application.Run(controlPanel);
+        
+        // Cleanup heartbeat service on exit
+        _heartbeatService.Stop();
+        _heartbeatService.Dispose();
+        GameConsole.Debug("[Heartbeat] Service stopped");
     }
 
     /// <summary>

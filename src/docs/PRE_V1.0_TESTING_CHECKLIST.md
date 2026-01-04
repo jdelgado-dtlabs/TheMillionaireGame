@@ -252,10 +252,55 @@
 **Next Steps:**
 1. ✅ Publish configuration optimized (--no-self-contained, single-file)
 2. ✅ Documentation updated
-3. Package with .NET 8 Desktop Runtime installer for distribution
-4. Create installation guide for end users
-5. Conduct live audience testing with 10+ participants
+3. ✅ Telemetry system implemented
+4. ✅ Crash handler/watchdog system implemented
+5. Package with .NET 8 Desktop Runtime installer for distribution
+6. Create installation guide for end users
+7. Conduct live audience testing with 10+ participants
 
+
+---
+
+## 🧪 Crash Handler Testing
+
+### Test 1: Clean Exit (No Crash)
+- [ ] Launch with watchdog via `Launch-WithWatchdog.bat`
+- [ ] Exit normally through UI
+- [ ] **Expected**: No crash report generated
+- [ ] **Result**: 
+
+### Test 2: Forced Termination
+- [ ] Launch with watchdog
+- [ ] Kill process via Task Manager
+- [ ] Check `%LOCALAPPDATA%\MillionaireGame\CrashReports\`
+- [ ] **Expected**: Crash report with exit code and "Last Heartbeat" data
+- [ ] **Result**: 
+
+### Test 3: Heartbeat Communication
+- [ ] Launch with watchdog
+- [ ] Verify watchdog console shows "Heartbeat listener started"
+- [ ] Verify main app logs "[Heartbeat] Service started"
+- [ ] Observe heartbeat messages in watchdog console (every 5 seconds)
+- [ ] **Expected**: Regular heartbeat messages with process stats
+- [ ] **Result**: 
+
+### Test 4: Graceful Shutdown Detection
+- [ ] Launch with watchdog
+- [ ] Exit normally
+- [ ] Verify watchdog console shows "Clean shutdown detected"
+- [ ] **Expected**: Watchdog recognizes shutdown, no crash report
+- [ ] **Result**: 
+
+### Test 5: Crash Report Contents
+- [ ] Trigger a crash (Task Manager kill)
+- [ ] Open crash report in `%LOCALAPPDATA%\MillionaireGame\CrashReports\`
+- [ ] Verify report contains:
+  - [ ] Process information (PID, exit code, running time)
+  - [ ] Application state (last activity)
+  - [ ] System information (OS, .NET version)
+  - [ ] Resource usage (memory, threads)
+  - [ ] Recent logs from GameConsole
+- [ ] **Result**: 
 
 ---
 
@@ -272,12 +317,15 @@
 - [x] No game-breaking bugs discovered during development testing
 - [x] Publish configuration optimized (single-file exe, external sound files)
 - [x] Embedded resources working correctly (wwwroot, logo, textures)
+- [x] Telemetry system collecting game statistics
+- [x] Crash handler/watchdog system monitoring for crashes
+- [ ] Crash handler tested and validated
 
-**Status:** Ready for v1.0 release pending live audience testing
+**Status:** Ready for v1.0 release pending live audience testing and crash handler validation
 
 ---
 
-**Last Updated:** January 3, 2026  
-**Status:** End-to-End Testing Complete  
-**Branch:** master-csharp  
+**Last Updated:** January 15, 2026  
+**Status:** Crash Handler Implementation Complete  
+**Branch:** feature/crash-handler-watchdog  
 **Publish Config:** --no-self-contained -p:PublishSingleFile=true (34 MB exe + 176 MB sounds)

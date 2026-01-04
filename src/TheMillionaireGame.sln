@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MillionaireGame", "Milliona
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MillionaireGame.Web", "MillionaireGame.Web\MillionaireGame.Web.csproj", "{8B7BC49B-BE9D-4922-BB1D-0836668138BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MillionaireGame.Watchdog", "MillionaireGame.Watchdog\MillionaireGame.Watchdog.csproj", "{A71E49A6-6D7E-4928-AAB5-08678436D770}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{8B7BC49B-BE9D-4922-BB1D-0836668138BB}.Release|x64.Build.0 = Release|Any CPU
 		{8B7BC49B-BE9D-4922-BB1D-0836668138BB}.Release|x86.ActiveCfg = Release|Any CPU
 		{8B7BC49B-BE9D-4922-BB1D-0836668138BB}.Release|x86.Build.0 = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|x64.Build.0 = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Debug|x86.Build.0 = Debug|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|x64.ActiveCfg = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|x64.Build.0 = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|x86.ActiveCfg = Release|Any CPU
+		{A71E49A6-6D7E-4928-AAB5-08678436D770}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
