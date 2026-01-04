@@ -19,7 +19,7 @@
     <ApplicationIcon>lib\image\logo.ico</ApplicationIcon>
     <EnableDefaultItems>true</EnableDefaultItems>
     <!-- Exclude lib folders from default compilation -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);lib\sounds\**;lib\image\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);lib\**</DefaultItemExcludes>
     <!-- Prevent any content files from being included in single file -->
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
   </PropertyGroup>
@@ -28,24 +28,26 @@
     <RuntimeHostConfigurationOption Include="System.Runtime.Loader.UseRidGraph" Value="true" />
   </ItemGroup>
 
+  <!-- Project References -->
   <ItemGroup>
     <ProjectReference Include="..\MillionaireGame.Core\MillionaireGame.Core.csproj" />
     <ProjectReference Include="..\MillionaireGame.Web\MillionaireGame.Web.csproj" />
   </ItemGroup>
 
+  <!-- NuGet Packages -->
   <ItemGroup>
     <PackageReference Include="CSCore" Version="1.2.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.11" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
-    <!-- StreamDeckSharp NuGet package removed - using custom build with Module 6 support -->
-    <!-- SixLabors.ImageSharp is needed by StreamDeck integration -->
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <!-- Custom StreamDeck DLLs with Module 6 support -->
   <!-- TODO: Remove after upstream PR is merged and NuGet package is updated -->
+  <!-- StreamDeckSharp NuGet package removed - using custom build with Module 6 support -->
+  <!-- SixLabors.ImageSharp is needed by StreamDeck integration -->
   <ItemGroup>
     <Reference Include="StreamDeckSharp">
       <HintPath>lib\StreamDeck\StreamDeckSharp.dll</HintPath>
@@ -61,48 +63,48 @@
     </Reference>
   </ItemGroup>
 
+  <!-- Embedded Resources (logo and textures) -->
   <ItemGroup>
-    <!-- Completely exclude lib folder from all build processes -->
-    <Content Remove="lib\**\*" />
-    <Compile Remove="lib\**\*" />
-    <None Remove="lib\**\*" />
-    <EmbeddedResource Remove="lib\**\*" />
+    <EmbeddedResource Include="lib\image\logo.png" />
+    <EmbeddedResource Include="lib\image\logo.ico" />
+    <EmbeddedResource Include="lib\textures\*.png" />
   </ItemGroup>
 
-  <!-- Copy sounds and images after publish to avoid embedding in single file -->
-  <Target Name="CopyAssets" AfterTargets="Publish">
-    <ItemGroup>
-      <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
-    </ItemGroup>
-    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
-  </Target>
-
-  <!-- Copy sounds and images after build for Debug/Release builds (not just Publish) -->
-  <Target Name="CopyAssetsDebug" AfterTargets="Build">
-    <ItemGroup>
-      <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
-    </ItemGroup>
-    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(OutputPath)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(OutputPath)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
-  </Target>
-
+  <!-- Exclusions -->
   <ItemGroup>
+    <!-- Exclude lib folder from compilation (already excluded via DefaultItemExcludes) -->
+    <Compile Remove="lib\**\*" />
+    <None Remove="lib\**\*" />
     <!-- Web server files - do not copy to output, will be served from embedded resources -->
     <Content Remove="..\MillionaireGame.Web\wwwroot\**\*.*" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <!-- Embed logo image and icon as resources -->
-    <EmbeddedResource Include="lib\image\logo.png" />
-    <EmbeddedResource Include="lib\image\logo.ico" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <!-- Embed texture files as resources -->
-    <EmbeddedResource Include="lib\textures\*.png" />
-  </ItemGroup>
+  <!-- Copy all lib assets after build (Debug/Release) -->
+  <Target Name="CopyLibAssets" AfterTargets="Build">
+    <ItemGroup>
+      <SoundsFiles Include="lib\sounds\**\*.*" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
+      <SqlFiles Include="lib\sql\**\*.*" />
+      <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(OutputPath)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(OutputPath)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(OutputPath)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(OutputPath)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!-- Copy all lib assets after publish -->
+  <Target Name="CopyLibAssetsToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <SoundsFiles Include="lib\sounds\**\*.*" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
+      <SqlFiles Include="lib\sql\**\*.*" />
+      <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(PublishDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(PublishDir)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 
 </Project>
