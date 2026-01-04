@@ -71,7 +71,7 @@ The Control Panel is your command center for running the game.
      - Show Current Winnings
      - Show Correct Answer to Host
 
-**Note:** Money Tree and Game Console are separate windows (accessible via Screens menu and Game menu respectively), not embedded in the Control Panel. The Money Tree button (Item 6) affects visibility on the TV Screen. Game Console and Web Server Console are shown when the associated button in Settings → Screens is clicked. They show by default when in debug mode.
+**Note:** The Money Tree button (Item 6) affects visibility on the TV Screen. Game Console and Web Server Console are shown when the associated button in Settings → Screens is clicked. They show by default when in debug mode.
 
 ### TV Screen (Player/Audience Display)
 
@@ -79,11 +79,12 @@ The TV Screen is the main visual display for contestants and audience.
 
 **Display Modes:**
 
-- **Title Screen**: Shows logo and "Ready to Play"
-- **FFF Mode**: Fastest Finger First question and results
+- **Background Only**: Shows selected background when no content is active
+- **FFF Mode**: Fastest Finger First contestant list and results
 - **Question Mode**: Current question with 4 answers
-- **Lifeline Results**: 50:50 elimination, audience poll chart
-- **Win/Lose Screens**: Final results with animations
+- **Lifeline Results**: 50:50 elimination, Ask the Audience poll chart
+- **Money Tree**: Prize ladder display
+- **Win/Lose Screens**: Final results with animations and confetti
 
 
 **Visual Elements:**
@@ -91,8 +92,11 @@ The TV Screen is the main visual display for contestants and audience.
 - Pre-rendered graphics (auto-scales from 1920x1080 base)
 - Animated transitions
 - Confetti effects (on wins)
-- 6 selectable backgrounds
-- Chroma key support for streaming
+- Customizable background (Settings → Broadcast tab):
+  - 6 pre-rendered backgrounds
+  - Black background option
+  - Custom background file option
+  - Chroma key mode for streaming
 
 ### Host Screen (Optional)
 
@@ -843,19 +847,35 @@ Sheet 4: Dual Currency (if enabled)
 
 ### Background Selection
 
-The TV screen supports background customization:
+The TV screen supports background customization through Settings → Broadcast tab:
 
-**6 Pre-rendered Backgrounds**: Built-in backgrounds optimized for 1920x1080
+**Background Mode Options:**
 
-**Chroma Key Mode**: Solid color backgrounds for streaming/OBS integration
-- Default: Blue (#0000FF) - safe choice
-- Avoid: Colors used in game UI (green, red, yellow, orange)
+1. **Theme Background (Prerendered)**
+   - 6 built-in backgrounds optimized for 1920x1080
+   - Black background option (no image)
+   - Custom: Load your own background image file
+   - High-quality scaling to any resolution
 
-**Change Background:**
-- Settings tab → Broadcast tab
-- Select between Theme Background (prerendered) or Chroma Key (solid color) mode
-- Choose from dropdown or configure chroma key color
-- Changes apply to TV screen only
+2. **Chroma Key (Solid Color)**
+   - Solid color background for OBS/streaming green screen keying
+   - Default: Blue (#0000FF) - safe choice
+   - Avoid: Green, Red, Yellow, Orange (conflicts with game UI)
+   - Recommended: Blue or Magenta for best keying results
+   - Custom color picker available
+
+**To Change Background:**
+1. Control Panel → Game menu → Settings
+2. Navigate to Broadcast tab
+3. Select mode: Theme Background or Chroma Key
+4. For Theme Background: Choose from dropdown (Background 1-6, Black, or Custom)
+5. For Chroma Key: Click color button to select color
+6. Click OK to apply
+
+**Notes:**
+- Changes apply to TV Screen only (Host and Guest screens use black backgrounds)
+- Custom background images should be 1920x1080 for best quality
+- Background displays when no game content is active
 
 > **Note**: Full theme system (including UI color schemes) planned for v1.2
 
