@@ -20,6 +20,8 @@
     <EnableDefaultItems>true</EnableDefaultItems>
     <!-- Exclude lib folders from default compilation -->
     <DefaultItemExcludes>$(DefaultItemExcludes);lib\sounds\**;lib\image\**</DefaultItemExcludes>
+    <!-- Prevent any content files from being included in single file -->
+    <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,19 +42,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Exclude sound and image files from single file bundle - will be copied manually after publish -->
-    <Content Remove="lib\sounds\**\*.*" />
-    <None Include="lib\sounds\**\*.*">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
+    <!-- Completely exclude lib folder from all build processes -->
+    <Content Remove="lib\**\*" />
+    <Compile Remove="lib\**\*" />
+    <None Remove="lib\**\*" />
+    <EmbeddedResource Remove="lib\**\*" />
   </ItemGroup>
 
   <!-- Copy sounds and images after publish to avoid embedding in single file -->
   <Target Name="CopyAssets" AfterTargets="Publish">
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
   <ItemGroup>

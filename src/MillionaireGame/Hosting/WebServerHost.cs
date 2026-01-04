@@ -134,10 +134,10 @@ public class WebServerHost : IDisposable
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseUrls(bindUrl);
-                    // Set the content root and web root to the application's base directory
+                    // Set the content root to the application's base directory
                     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                     webBuilder.UseContentRoot(baseDir);
-                    webBuilder.UseWebRoot(Path.Combine(baseDir, "wwwroot"));
+                    // Note: wwwroot files are embedded as resources, no physical folder needed
                     
                     webBuilder.ConfigureServices((context, services) =>
                     {
