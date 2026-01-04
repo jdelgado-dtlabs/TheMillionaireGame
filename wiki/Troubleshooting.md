@@ -147,11 +147,6 @@ Before diving into specific issues, try these general fixes:
    - Look for `MillionaireGame.exe` or `MillionaireGame.Watchdog.exe`
    - End all processes
 
-3. **Orphaned Lock File**
-   ```powershell
-   Remove-Item "$env:LOCALAPPDATA\TheMillionaireGame\.lock"
-   ```
-
 ---
 
 ## Display Issues
