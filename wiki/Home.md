@@ -2,7 +2,7 @@
 
 Welcome to The Millionaire Game documentation! This is a feature-rich Windows application that recreates the classic game show experience with modern enhancements.
 
-![The Millionaire Game](images/logo.png)
+<img src="images/logo.png" alt="The Millionaire Game" width="400">
 
 ## 🎮 Quick Navigation
 
@@ -22,7 +22,7 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 ### Advanced Topics
 - **[Configuration Files](Configuration-Files)** - Customize settings
 - **[Architecture](Architecture)** - Technical overview
-- **[Stream Deck Integration](Stream-Deck-Integration)** - Control with Stream Deck *(Coming Soon)*
+- **[Stream Deck Integration](Stream-Deck-Integration)** - Host controls with 6 button module
 
 ---
 
@@ -37,7 +37,7 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 
 ### 🎨 Professional Presentation
 - **6 Background Options** - Pre-rendered backgrounds for TV screen
-- **Multi-Monitor Support** - Separate control panel and TV screen
+- **Multi-Monitor Support** - Screen assignments at launch with persistent settings
 - **Smooth Animations** - Confetti effects, transitions, and reveals
 - **Scalable Display** - Auto-scales to any resolution from 1920x1080 base
 
@@ -48,15 +48,14 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 - **Volume Controls** - Independent control for music, effects, and voice
 
 ### 🌐 Audience Participation (Web/Mobile)
-- **Fastest Finger First** - Online FFF mode with real-time ordering
-- **Ask the Audience** - Live audience voting via mobile web interface
+- **Fastest Finger First** - Real-time ordering via web interface
+- **Ask the Audience** - Web-based voting platform
 - **Real-time Updates** - SignalR-based instant communication
 - **Mobile Friendly** - Progressive Web App for cross-platform support
 
 ### 🎹 Advanced Controls
 - **Keyboard Hotkeys** - Full game control from keyboard
-- **Stream Deck Support** - Physical button control *(Coming Soon)*
-- **Flexible Workflow** - Multiple paths to accomplish tasks
+- **Stream Deck Support** - Host controls utilizing 6 button module
 
 ### 📊 Statistics & Analytics
 - **Game Telemetry** - Track every game played
@@ -150,13 +149,13 @@ The application features multiple display interfaces for different roles:
 - ✅ Web integration
 - ✅ Crash monitoring
 - ✅ Telemetry system
-- 🔄 Stream Deck integration (In Progress)
+- ✅ Stream Deck integration
 - 📝 Documentation (In Progress)
 
 ### Roadmap
 - v1.0: Initial public release with complete feature set
 - v1.2: Full theme system implementation
-- Future: Plugin system, mobile app
+- v1.5: Yamaha TF and QLabs Lighting integration
 
 ---
 
