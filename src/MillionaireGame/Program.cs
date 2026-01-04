@@ -7,6 +7,7 @@ using MillionaireGame.Forms;
 using MillionaireGame.Services;
 using MillionaireGame.Utilities;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 namespace MillionaireGame;
 
@@ -24,6 +25,25 @@ internal static class Program
     [STAThread]
     static async Task Main(string[] args)
     {
+        // Check if we're being launched by the watchdog
+        const string WatchdogMarker = "--watchdog-child";
+        bool launchedByWatchdog = args.Contains(WatchdogMarker);
+        
+        if (!launchedByWatchdog)
+        {
+            // We need to launch through the watchdog
+            if (!LaunchThroughWatchdog(args))
+            {
+                // Watchdog not available, continue without it
+                GameConsole.Warn("[Startup] Watchdog not available - running without crash monitoring");
+            }
+            else
+            {
+                // Watchdog will launch us again with the marker argument
+                return;
+            }
+        }
+        
         // Check for debug mode argument or Debug build configuration
         DebugMode = args.Contains("--debug") || args.Contains("-d");
         
@@ -290,4 +310,64 @@ internal static class Program
         
         GameConsole.Debug("[Telemetry Bridge] Callbacks registered successfully");
     }
-}
+    
+    /// <summary>
+    /// Launches the application through the watchdog for crash monitoring
+    /// </summary>
+    /// <param name="originalArgs">Original command-line arguments to pass through</param>
+    /// <returns>True if watchdog was launched successfully, false if not available</returns>
+    private static bool LaunchThroughWatchdog(string[] originalArgs)
+    {
+        try
+        {
+            // Get the path to the current executable
+            var currentExePath = Process.GetCurrentProcess().MainModule?.FileName;
+            if (string.IsNullOrEmpty(currentExePath))
+            {
+                GameConsole.Error("[Startup] Failed to get current executable path");
+                return false;
+            }
+            
+            // Get the directory containing the executable
+            var exeDirectory = Path.GetDirectoryName(currentExePath);
+            if (string.IsNullOrEmpty(exeDirectory))
+            {
+                GameConsole.Error("[Startup] Failed to get executable directory");
+                return false;
+            }
+            
+            // Look for the watchdog executable
+            var watchdogPath = Path.Combine(exeDirectory, "MillionaireGame.Watchdog.exe");
+            if (!File.Exists(watchdogPath))
+            {
+                GameConsole.Debug("[Startup] Watchdog not found at: " + watchdogPath);
+                return false;
+            }
+            
+            // Build arguments: watchdog takes the app path, and we add --watchdog-child plus original args
+            var appArgs = new List<string> { "--watchdog-child" };
+            
+            // Filter out debug arguments and pass them through
+            appArgs.AddRange(originalArgs.Where(arg => arg == "--debug" || arg == "-d"));
+            
+            var watchdogArgs = $"\"{currentExePath}\" {string.Join(" ", appArgs)}";
+            
+            // Launch the watchdog
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = watchdogPath,
+                Arguments = watchdogArgs,
+                UseShellExecute = false,
+                CreateNoWindow = false
+            };
+            
+            Process.Start(startInfo);
+            GameConsole.Info("[Startup] Launched through watchdog for crash monitoring");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[Startup] Failed to launch watchdog: {ex.Message}");
+            return false;
+        }
+    }}

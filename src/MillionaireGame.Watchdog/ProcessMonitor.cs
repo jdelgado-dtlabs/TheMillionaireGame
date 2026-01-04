@@ -8,15 +8,17 @@ namespace MillionaireGame.Watchdog;
 public class ProcessMonitor
 {
     private readonly string _applicationPath;
+    private readonly string[] _applicationArgs;
     private readonly HeartbeatListener _heartbeatListener;
     private readonly CrashReportGenerator _reportGenerator;
     private Process? _process;
     private DateTime _processStartTime;
     private bool _shutdownRequested;
 
-    public ProcessMonitor(string applicationPath)
+    public ProcessMonitor(string applicationPath, string[] applicationArgs)
     {
         _applicationPath = applicationPath;
+        _applicationArgs = applicationArgs;
         _heartbeatListener = new HeartbeatListener();
         _reportGenerator = new CrashReportGenerator();
 
@@ -28,6 +30,10 @@ public class ProcessMonitor
     {
         Console.WriteLine("[Watchdog] Starting process monitor...");
         Console.WriteLine($"[Watchdog] Application path: {_applicationPath}");
+        if (_applicationArgs.Length > 0)
+        {
+            Console.WriteLine($"[Watchdog] Application arguments: {string.Join(" ", _applicationArgs)}");
+        }
 
         // Start heartbeat listener
         _heartbeatListener.Start();
@@ -46,6 +52,7 @@ public class ProcessMonitor
             var startInfo = new ProcessStartInfo
             {
                 FileName = _applicationPath,
+                Arguments = string.Join(" ", _applicationArgs),
                 UseShellExecute = false,
                 RedirectStandardOutput = false,
                 RedirectStandardError = false,

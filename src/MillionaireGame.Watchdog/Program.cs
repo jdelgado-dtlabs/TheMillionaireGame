@@ -17,9 +17,13 @@ class Program
 
         // Get application path
         string appPath;
+        string[] appArgs = Array.Empty<string>();
+        
         if (args.Length > 0)
         {
             appPath = args[0];
+            // Pass through any additional arguments to the application
+            appArgs = args.Skip(1).ToArray();
         }
         else
         {
@@ -32,7 +36,7 @@ class Program
         {
             Console.WriteLine($"ERROR: Application not found at: {appPath}");
             Console.WriteLine();
-            Console.WriteLine("Usage: MillionaireGame.Watchdog.exe [path-to-MillionaireGame.exe]");
+            Console.WriteLine("Usage: MillionaireGame.Watchdog.exe [path-to-MillionaireGame.exe] [app-arguments]");
             Console.WriteLine();
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
@@ -40,7 +44,7 @@ class Program
         }
 
         // Start monitoring
-        var monitor = new ProcessMonitor(appPath);
+        var monitor = new ProcessMonitor(appPath, appArgs);
         
         try
         {

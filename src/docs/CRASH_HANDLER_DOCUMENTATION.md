@@ -1,16 +1,44 @@
 # Crash Handler & Watchdog System Documentation
 
 ## Overview
-The Crash Handler & Watchdog System provides automated crash detection, reporting, and recovery for The Millionaire Game. This system monitors the main application for crashes and freezes, generates comprehensive diagnostic reports, and helps maintain application stability.
+The Crash Handler & Watchdog System provides automated crash detection, reporting, and recovery for The Millionaire Game. This system **automatically** monitors the main application for crashes and freezes, generates comprehensive diagnostic reports, and helps maintain application stability.
+
+**The watchdog is integrated into the normal execution pipeline** - when users run `MillionaireGame.exe`, the watchdog automatically launches first and then starts the main application. No manual intervention required.
 
 ## Architecture
 
+### Automatic Bootstrap Process
+```
+User runs MillionaireGame.exe
+    |
+    v
+[First Instance] Detects no --watchdog-child argument
+    |
+    ├─> Launches MillionaireGame.Watchdog.exe
+    |   with arguments: "MillionaireGame.exe --watchdog-child"
+    |
+    └─> Exits
+    
+Watchdog starts monitoring
+    |
+    v
+[Second Instance] Watchdog launches MillionaireGame.exe
+    with --watchdog-child argument
+    |
+    v
+[Second Instance] Detects --watchdog-child, proceeds normally
+    |
+    ├─> Starts HeartbeatService
+    └─> Runs application
+```
+
 ### Components
-1. **MillionaireGame.Watchdog** - Standalone console application that monitors the main application
-2. **HeartbeatService** - Integrated into main application to send periodic status updates
-3. **HeartbeatListener** - Named pipe server in watchdog to receive heartbeats
-4. **ProcessMonitor** - Manages application process lifecycle and crash detection
-5. **CrashReportGenerator** - Creates detailed diagnostic reports
+1. **MillionaireGame.exe** - Main application with automatic watchdog bootstrap
+2. **MillionaireGame.Watchdog.exe** - Standalone monitoring process (launched automatically)
+3. **HeartbeatService** - Integrated into main application to send periodic status updates
+4. **HeartbeatListener** - Named pipe server in watchdog to receive heartbeats
+5. **ProcessMonitor** - Manages application process lifecycle and crash detection
+6. **CrashReportGenerator** - Creates detailed diagnostic reports
 
 ### Communication Flow
 ```
@@ -139,29 +167,51 @@ END OF CRASH REPORT
 
 ## Usage
 
-### Running with Watchdog
-Use the provided launcher script:
-```batch
-Launch-WithWatchdog.bat
-```
-
-Or manually:
-```batch
-MillionaireGame.Watchdog.exe "path\to\MillionaireGame.exe"
-```
-
-### Running without Watchdog
-The main application can run standalone:
+### Normal Usage (Automatic Watchdog)
+Simply run the main executable:
 ```batch
 MillionaireGame.exe
 ```
 
-**Note**: Without the watchdog, crashes will not be monitored or reported. The HeartbeatService will silently fail to connect (expected behavior).
+**The watchdog launches automatically!** The application will:
+1. Detect it's not running under the watchdog
+2. Launch `MillionaireGame.Watchdog.exe` with appropriate arguments
+3. Exit the initial process
+4. The watchdog starts the application again with monitoring enabled
+
+**Users don't need to do anything special** - crash monitoring is built into the normal execution pipeline.
+
+### Manual Watchdog Launch (Advanced)
+For troubleshooting or special scenarios, you can manually launch the watchdog:
+```batch
+MillionaireGame.Watchdog.exe "path\to\MillionaireGame.exe" --watchdog-child
+```
+
+### Running Without Watchdog (Not Recommended)
+If `MillionaireGame.Watchdog.exe` is not present in the same directory:
+- The application will detect the missing watchdog
+- Log a warning: "Watchdog not available - running without crash monitoring"
+- Continue to run normally without monitoring
+
+**Note**: Crash detection and reporting will not be available in this mode.
 
 ## Integration Points
 
 ### Main Application (Program.cs)
+The bootstrap logic automatically handles watchdog integration:
 ```csharp
+// Check if we're being launched by the watchdog
+const string WatchdogMarker = "--watchdog-child";
+bool launchedByWatchdog = args.Contains(WatchdogMarker);
+
+if (!launchedByWatchdog)
+{
+    // Launch through watchdog and exit
+    LaunchThroughWatchdog(args);
+    return;
+}
+
+// Continue with normal startup
 // Start heartbeat service
 _heartbeatService = new HeartbeatService();
 _heartbeatService.Start();
