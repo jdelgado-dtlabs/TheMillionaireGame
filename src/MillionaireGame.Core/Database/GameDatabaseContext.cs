@@ -96,16 +96,15 @@ public class GameDatabaseContext : IDisposable
             BEGIN
                 CREATE TABLE questions (
                     Id INT PRIMARY KEY IDENTITY(1,1),
-                    Question NVARCHAR(MAX) NOT NULL,
+                    Question NTEXT NOT NULL,
                     A NVARCHAR(500) NOT NULL,
                     B NVARCHAR(500) NOT NULL,
                     C NVARCHAR(500) NOT NULL,
                     D NVARCHAR(500) NOT NULL,
-                    CorrectAnswer NVARCHAR(1) NOT NULL,
-                    Level INT NOT NULL,
-                    Note NVARCHAR(MAX),
-                    Used BIT DEFAULT 0,
-                    Explanation NVARCHAR(MAX),
+                    CorrectAnswer VARCHAR(1) NOT NULL CHECK (CorrectAnswer IN ('A', 'B', 'C', 'D')),
+                    Level INT NOT NULL CHECK (Level BETWEEN 1 AND 4),
+                    Used BIT NOT NULL DEFAULT 0,
+                    Note NTEXT NULL,
                     ATA_A INT,
                     ATA_B INT,
                     ATA_C INT,
@@ -124,15 +123,13 @@ public class GameDatabaseContext : IDisposable
             BEGIN
                 CREATE TABLE fff_questions (
                     Id INT PRIMARY KEY IDENTITY(1,1),
-                    Question NVARCHAR(MAX) NOT NULL,
+                    Question NTEXT NOT NULL,
                     A NVARCHAR(500) NOT NULL,
                     B NVARCHAR(500) NOT NULL,
                     C NVARCHAR(500) NOT NULL,
                     D NVARCHAR(500) NOT NULL,
-                    CorrectAnswer NVARCHAR(10) NOT NULL,
-                    Level INT DEFAULT 0,
-                    Note NVARCHAR(MAX),
-                    Used BIT DEFAULT 0
+                    CorrectAnswer VARCHAR(4) NOT NULL,
+                    Used BIT NOT NULL DEFAULT 0
                 )
             END";
 
