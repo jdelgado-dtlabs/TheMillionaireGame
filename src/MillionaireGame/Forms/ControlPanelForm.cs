@@ -1387,9 +1387,9 @@ public partial class ControlPanelForm : Form
             // Use the question number directly from the control (user may have manually set it)
             var currentQuestion = (int)nmrLevel.Value; // Already 1-indexed (0=not started, 1-15=questions)
             
-            // Map current question number to difficulty level (1-4)
+            // Map current question number to database level (1-4)
             // Q1-5 = Level 1, Q6-10 = Level 2, Q11-14 = Level 3, Q15 = Level 4
-            var difficultyLevel = currentQuestion switch
+            var dbLevel = currentQuestion switch
             {
                 >= 1 and <= 5 => 1,
                 >= 6 and <= 10 => 2,
@@ -1400,29 +1400,24 @@ public partial class ControlPanelForm : Form
             
             if (Program.DebugMode)
             {
-                GameConsole.Debug($"[Question] Requesting question #{currentQuestion} (difficulty level {difficultyLevel})");
+                GameConsole.Debug($"[Question] Requesting question #{currentQuestion} (DB level {dbLevel})");
             }
             
-            // Try Range type first (most common), fall back to Specific if needed
-            // Pass currentQuestion to determine which level range (1-5, 6-10, 11-14, or 15) to query
-            var question = await _questionRepository.GetRandomQuestionAsync(currentQuestion, Core.Models.DifficultyType.Range);
-            if (question == null)
-            {
-                question = await _questionRepository.GetRandomQuestionAsync(currentQuestion, Core.Models.DifficultyType.Specific);
-            }
+            // Get random question for this level
+            var question = await _questionRepository.GetRandomQuestionAsync(currentQuestion);
 
             if (question == null)
             {
                 // Get diagnostic info about questions in database
-                var (total, unused) = await _questionRepository.GetQuestionCountAsync(difficultyLevel);
+                var (total, unused) = await _questionRepository.GetQuestionCountAsync(currentQuestion);
                 
                 if (Program.DebugMode)
                 {
-                    GameConsole.Debug($"[Question] No unused questions found for difficulty level {difficultyLevel}");
-                    GameConsole.Debug($"[Question] Database has {total} total questions at level {difficultyLevel} ({unused} unused)");
+                    GameConsole.Debug($"[Question] No unused questions found for question #{currentQuestion} (DB level {dbLevel})");
+                    GameConsole.Debug($"[Question] Database has {total} total questions at level {dbLevel} ({unused} unused)");
                 }
                 
-                GameConsole.Error($"[Question] No unused questions available for difficulty level {difficultyLevel}! Database has {total} total, {unused} unused. Use Database menu to reset or add questions.");
+                GameConsole.Error($"[Question] No unused questions available for question #{currentQuestion}! Database has {total} total, {unused} unused. Use Database menu to reset or add questions.");
                 return;
             }
 

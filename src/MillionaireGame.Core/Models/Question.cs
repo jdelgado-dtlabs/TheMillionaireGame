@@ -2,6 +2,7 @@ namespace MillionaireGame.Core.Models;
 
 /// <summary>
 /// Represents a single game question
+/// Level: 1=Easy(Q1-5), 2=Medium(Q6-10), 3=Hard(Q11-14), 4=Million(Q15)
 /// </summary>
 public class Question
 {
@@ -12,7 +13,6 @@ public class Question
     public string AnswerC { get; set; } = string.Empty;
     public string AnswerD { get; set; } = string.Empty;
     public string CorrectAnswer { get; set; } = string.Empty;
-    public DifficultyType DifficultyType { get; set; }
     public int Level { get; set; }
     public string Note { get; set; } = string.Empty;
     public bool Used { get; set; } = false;
@@ -89,13 +89,4 @@ public class Question
         
         return percentages;
     }
-}
-
-/// <summary>
-/// Type of difficulty setting for a question
-/// </summary>
-public enum DifficultyType
-{
-    Specific = 0,
-    Range = 1
 }

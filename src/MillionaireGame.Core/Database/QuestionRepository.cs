@@ -17,73 +17,37 @@ public class QuestionRepository
     }
 
     /// <summary>
-    /// Gets a random question for the specified level
+    /// Gets a random question for the specified game question number (1-15)
+    /// Maps to database levels: 1-5 -> Level 1, 6-10 -> Level 2, 11-14 -> Level 3, 15 -> Level 4
     /// </summary>
-    public async Task<Question?> GetRandomQuestionAsync(int level, DifficultyType difficultyType = DifficultyType.Specific)
+    public async Task<Question?> GetRandomQuestionAsync(int questionNumber)
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
 
-        string query;
-        SqlCommand command;
-        
-        if (difficultyType == DifficultyType.Specific)
+        // Map game question number (1-15) to database level (1-4)
+        int dbLevel = questionNumber switch
         {
-            query = @"
-                SELECT TOP 1 * FROM questions 
-                WHERE Level = @Level 
-                AND Difficulty_Type = 'Specific' 
-                AND Used = 0 
-                ORDER BY NEWID()";
-            
-            command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@Level", level);
-        }
-        else
-        {
-            // Determine level range based on level number
-            // Level 1-5: Easy, 6-10: Medium, 11-14: Hard, 15: Million
-            int minLevel, maxLevel;
-            if (level >= 1 && level <= 5)
-            {
-                minLevel = 1;
-                maxLevel = 5;
-            }
-            else if (level >= 6 && level <= 10)
-            {
-                minLevel = 6;
-                maxLevel = 10;
-            }
-            else if (level >= 11 && level <= 14)
-            {
-                minLevel = 11;
-                maxLevel = 14;
-            }
-            else // level == 15
-            {
-                minLevel = 15;
-                maxLevel = 15;
-            }
-            
-            query = @"
-                SELECT TOP 1 * FROM questions 
-                WHERE Level BETWEEN @MinLevel AND @MaxLevel
-                AND Difficulty_Type = 'Range' 
-                AND Used = 0 
-                ORDER BY NEWID()";
-            
-            command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@MinLevel", minLevel);
-            command.Parameters.AddWithValue("@MaxLevel", maxLevel);
-        }
+            >= 1 and <= 5 => 1,
+            >= 6 and <= 10 => 2,
+            >= 11 and <= 14 => 3,
+            15 => 4,
+            _ => 1
+        };
 
-        using (command)
+        var query = @"
+            SELECT TOP 1 * FROM questions 
+            WHERE Level = @Level
+            AND Used = 0 
+            ORDER BY NEWID()";
+        
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Level", dbLevel);
+
+        using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
         {
-            using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return MapQuestion(reader);
-            }
+            return MapQuestion(reader);
         }
 
         return null;
@@ -136,9 +100,9 @@ public class QuestionRepository
 
         var query = @"
             INSERT INTO questions 
-            (Question, A, B, C, D, CorrectAnswer, Difficulty_Type, Level, Note)
+            (Question, A, B, C, D, CorrectAnswer, Level, Note)
             VALUES 
-            (@Question, @A, @B, @C, @D, @CorrectAnswer, @DifficultyType, @Level, @Note);
+            (@Question, @A, @B, @C, @D, @CorrectAnswer, @Level, @Note);
             SELECT CAST(SCOPE_IDENTITY() as int)";
 
         using var command = new SqlCommand(query, connection);
@@ -148,7 +112,6 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@C", question.AnswerC);
         command.Parameters.AddWithValue("@D", question.AnswerD);
         command.Parameters.AddWithValue("@CorrectAnswer", question.CorrectAnswer);
-        command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
         command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
 
@@ -172,7 +135,6 @@ public class QuestionRepository
                 C = @C,
                 D = @D,
                 CorrectAnswer = @CorrectAnswer,
-                Difficulty_Type = @DifficultyType,
                 Level = @Level,
                 Note = @Note
             WHERE Id = @Id";
@@ -185,7 +147,6 @@ public class QuestionRepository
         command.Parameters.AddWithValue("@C", question.AnswerC);
         command.Parameters.AddWithValue("@D", question.AnswerD);
         command.Parameters.AddWithValue("@CorrectAnswer", question.CorrectAnswer);
-        command.Parameters.AddWithValue("@DifficultyType", question.DifficultyType.ToString());
         command.Parameters.AddWithValue("@Level", question.Level);
         command.Parameters.AddWithValue("@Note", question.Explanation ?? (object)DBNull.Value);
 
@@ -224,10 +185,20 @@ public class QuestionRepository
     /// <summary>
     /// Gets count of questions by level and used status for diagnostics
     /// </summary>
-    public async Task<(int total, int unused)> GetQuestionCountAsync(int level)
+    public async Task<(int total, int unused)> GetQuestionCountAsync(int questionNumber)
     {
         using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
+
+        // Map game question number (1-15) to database level (1-4)
+        int dbLevel = questionNumber switch
+        {
+            >= 1 and <= 5 => 1,
+            >= 6 and <= 10 => 2,
+            >= 11 and <= 14 => 3,
+            15 => 4,
+            _ => 1
+        };
 
         var query = @"
             SELECT 
@@ -237,7 +208,7 @@ public class QuestionRepository
             WHERE Level = @Level";
         
         using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@Level", level);
+        command.Parameters.AddWithValue("@Level", dbLevel);
 
         using var reader = await command.ExecuteReaderAsync();
         if (await reader.ReadAsync())
@@ -252,12 +223,6 @@ public class QuestionRepository
 
     private Question MapQuestion(SqlDataReader reader)
     {
-        // Parse difficulty type safely
-        var difficultyTypeStr = reader.GetString(reader.GetOrdinal("Difficulty_Type"));
-        var difficultyType = difficultyTypeStr.Equals("Specific", StringComparison.OrdinalIgnoreCase) 
-            ? DifficultyType.Specific 
-            : DifficultyType.Range;
-
         return new Question
         {
             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -267,7 +232,6 @@ public class QuestionRepository
             AnswerC = reader.GetString(reader.GetOrdinal("C")),
             AnswerD = reader.GetString(reader.GetOrdinal("D")),
             CorrectAnswer = reader.GetString(reader.GetOrdinal("CorrectAnswer")),
-            DifficultyType = difficultyType,
             Level = reader.GetInt32(reader.GetOrdinal("Level")),
             Note = string.Empty,
             Used = reader.GetBoolean(reader.GetOrdinal("Used")),
