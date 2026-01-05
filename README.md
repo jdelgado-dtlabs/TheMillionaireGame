@@ -29,7 +29,8 @@ The wiki contains all information needed to **install, configure, and run the ga
   - `MillionaireGame/` - Main game application (Windows Forms)
   - `MillionaireGame.Core/` - Core business logic and services
   - `MillionaireGame.Web/` - Web API and SignalR backend for WAPS
-- **`archive-vbnet/`** - Original VB.NET implementation (archived, preserved for reference)
+  - `MillionaireGame.Watchdog/` - Crash monitoring and diagnostic reporting
+- **`installer/`** - Inno Setup installer script and assets
 
 ## Documentation
 
@@ -59,6 +60,9 @@ Browse by category:
 - ✅ Progressive answer reveal system with automatic audio transitions
 - ✅ Risk Mode and Free Safety Net options
 - ✅ Dual currency support with per-level customization
+- ✅ **Stream Deck Module 6 integration** for physical button control (answer lock-in and reveal)
+- ✅ Host notes and messaging system with keyboard shortcuts
+- ✅ Winner confetti animation (physics-based particle system)
 
 ### Web-Based Audience Participation (WAPS)
 - ✅ Real-time audience voting via mobile web interface
@@ -70,10 +74,13 @@ Browse by category:
 
 ### Technical Excellence
 - ✅ **CSCore audio engine** with DSP (silence detection, crossfading, audio queue)
-- ✅ **Unified SQL Server database** (questions, FFF, ATA all in one)
+- ✅ **Unified SQL Server database** with simplified 4-level difficulty system (80 main + 44 FFF questions)
+- ✅ **Watchdog crash monitoring** with automatic restart and diagnostic reporting
 - ✅ Question database editor with CSV import/export
 - ✅ Comprehensive settings management
 - ✅ **Zero-warning build** (0 warnings, 0 errors)
+- ✅ File-first logging architecture with async queue processing
+- ✅ Optimized preview screen rendering with caching
 
 ## Technology Stack
 
@@ -82,15 +89,24 @@ Browse by category:
 - **SignalR 8.0.11** - Real-time web communication for WAPS
 - **Microsoft.Data.SqlClient 5.2.2** - Modern SQL Server connectivity
 - **Entity Framework Core 8.0.11** - Database ORM
-- **SQL Server** - Unified database for all game data
+- **SQL Server Express** - Unified database for all game data (questions, FFF, ATA, WAPS)
+- **StreamDeckSharp (Custom)** - Module 6 support with custom HID driver
 
 ## Development Status
 
-✅ **Version 0.9.8** - All core features complete, perfect build quality (0 warnings, 0 errors)
+✅ **Version 1.0.0 - RELEASED** (January 4, 2026)
 
-**Current Focus**: End-to-end testing and v1.0 release preparation
+All core features complete, perfect build quality (0 warnings, 0 errors), production-ready installer available.
 
-See [`src/docs/V1.0_RELEASE_STATUS.md`](src/docs/V1.0_RELEASE_STATUS.md) for detailed release readiness tracking.
+**Key Achievements**:
+- 18 major features implemented and tested
+- Simplified 4-level question difficulty system
+- Stream Deck Module 6 integration with custom HID driver
+- Watchdog crash monitoring and auto-recovery
+- Web-Based Audience Participation System (WAPS)
+- Comprehensive documentation and wiki
+
+See [`src/docs/V1.0_RELEASE_STATUS.md`](src/docs/V1.0_RELEASE_STATUS.md) for complete feature list and [`src/CHANGELOG.md`](src/CHANGELOG.md) for detailed release notes.
 
 ## Contributing
 

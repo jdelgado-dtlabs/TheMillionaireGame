@@ -9,6 +9,7 @@ using MillionaireGame.Utilities;
 using MillionaireGame.Web.Models;
 using MillionaireGame.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 namespace MillionaireGame.Forms;
 
@@ -4683,14 +4684,30 @@ public partial class ControlPanelForm : Form
     
     private void UsageToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // Future feature: Show usage documentation
-        GameConsole.Info("[Help] Usage documentation will be available in a future update. Please refer to the README.md file in the project repository.");
+        try
+        {
+            const string readmeUrl = "https://github.com/jdelgado-dtlabs/TheMillionaireGame/blob/master/README.md";
+            Process.Start(new ProcessStartInfo(readmeUrl) { UseShellExecute = true });
+            GameConsole.Info($"[Help] Opening documentation: {readmeUrl}");
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[Help] Failed to open documentation: {ex.Message}");
+        }
     }
     
     private void CheckUpdatesToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        // Future feature: Check for updates
-        GameConsole.Info("[Updates] Update checking will be available in a future update.");
+        try
+        {
+            const string releasesUrl = "https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases/latest";
+            Process.Start(new ProcessStartInfo(releasesUrl) { UseShellExecute = true });
+            GameConsole.Info($"[Updates] Opening latest release: {releasesUrl}");
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[Updates] Failed to open releases page: {ex.Message}");
+        }
     }
 
     private void AboutToolStripMenuItem_Click(object? sender, EventArgs e)
