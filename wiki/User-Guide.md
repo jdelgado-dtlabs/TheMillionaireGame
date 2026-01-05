@@ -1296,19 +1296,7 @@ The TV screen supports background customization through Settings → Broadcast t
 
 > **Note**: Full theme system (including UI color schemes) planned for v1.2
 
-### Hotkey Customization
-
-**Viewing Hotkeys:**
-- Settings → Hotkeys tab
-- See all assigned shortcuts
-
-**Customizing Hotkeys:**
-1. Find action to customize
-2. Click "Edit"
-3. Press new key combination
-4. Click "Save"
-
-**Default Hotkeys:** (See [Quick Start Guide - Hotkey Reference](Quick-Start-Guide#hotkey-reference))
+> **Hotkey Customization**: Planned for a future release. Currently, hotkeys are fixed and cannot be customized. See [Quick Start Guide - Hotkey Reference](Quick-Start-Guide#hotkey-reference) for the default hotkey mappings.
 
 ### Crash Recovery
 
