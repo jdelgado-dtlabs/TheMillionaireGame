@@ -917,76 +917,120 @@ lib/sounds/MyCustomSet/
 
 ## Display Configuration
 
-### Monitor Setup
+### Available Screens
 
-#### Single Monitor
+The application provides four separate screen types that can be independently opened:
 
-**Layout Options:**
+1. **TV Screen** - Main audience display for the entire game
+2. **Host Screen** - Private screen for game host (main game only)
+3. **Guest Screen** - Contestant view (main game only)
+4. **Preview Screen** - Operator supervision tool showing all three screens
 
-**Option A: Overlapping Windows**
-- TV Screen maximized
-- Control Panel floats on top (scaled down)
-- Operator moves Control Panel as needed
+**Opening Screens:**
+- Control Panel → **Screens** menu → Select screen type
+- Each screen can be opened independently at any time
+- Screens can be closed and reopened as needed during gameplay
 
-**Option B: Split Screen**
-- TV Screen: Upper half
-- Control Panel: Lower half
-- Use Windows Snap (Win + Arrow keys)
+### Monitor Assignment
 
-**Best For:**
-- Testing
-- Small venues
-- Casual play
+#### Manual Positioning (Single Monitor)
 
-#### Dual Monitor (Recommended)
+When using a single monitor or manual positioning:
 
-**Optimal Configuration:**
+1. Open desired screens from **Screens** menu
+2. Drag windows to desired positions
+3. Resize as needed
+4. Use Preview Screen to monitor all displays without opening individual screens
 
-1. **Primary Monitor** (TV/Projector)
-   - TV Screen full screen (`F11`)
-   - 1920x1080 or higher
-   - Visible to audience and contestant
+**Note:** Manual window positions are NOT saved between sessions.
 
-2. **Secondary Monitor** (Operator Screen)
-   - Control Panel maximized
-   - 1366x768 or higher
-   - Visible only to operator/host
+#### Automatic Assignment (Multi-Monitor)
 
-**Setup Steps:**
+For persistent multi-monitor setups:
 
 1. **Connect Monitors**
-   - Connect second display to computer
-   - Windows should detect automatically
+   - Connect displays to computer
+   - Configure Windows display settings (Extend displays)
+   - Note which monitor is which (usually Monitor 1, 2, 3, etc.)
 
-2. **Configure Windows Display**
-   - Right-click desktop → Display Settings
-   - Select "Extend these displays"
-   - Arrange monitor positions
-   - Set primary display
+2. **Configure Screen Assignments**
+   - Control Panel → **Game** menu → **Settings**
+   - Navigate to **Screens** tab (Multiple Monitor Control section)
+   - For each screen type (TV Screen, Host Screen, Guest Screen):
+     - Check "Full Screen [Screen Name]" checkbox
+     - Select target monitor from dropdown
+   - Click **OK** to save
 
-3. **Launch Application**
-   - Application opens on primary display
-   - Drag Control Panel to secondary display
+3. **Automatic Behavior**
+   - When you open a screen via **Screens** menu, it automatically:
+     - Opens on the assigned monitor
+     - Enters borderless fullscreen mode
+     - Fills the entire display
+   - Screens without assignments open in windowed mode on primary monitor
 
-4. **Maximize TV Screen**
-   - Maximize TV Screen window on primary monitor
-   - Enters borderless fullscreen mode
-   - TV Screen fills entire primary monitor
+**Important Restrictions:**
+- Each monitor can only be assigned to ONE screen
+- The application prevents assigning multiple screens to the same monitor
+- Assignments persist across application restarts
 
-5. **Save Layout**
-   - Settings → Display
-   - Check "Remember window positions"
-   - Layout restored on next launch
+### Monitor Setup Examples
 
-#### Triple Monitor (Advanced)
+#### Single Monitor Setup
+
+**Use Case:** Testing, small venues, casual play
 
 **Configuration:**
+- Control Panel: Manual window
+- Open screens as needed from **Screens** menu
+- Use **Preview Screen** to supervise without opening all screens
+- Manual positioning required each session
 
-1. **Monitor 1** (Primary): TV Screen for audience
-2. **Monitor 2**: Control Panel for operator
-3. **Monitor 3**: Host Screen for moderator
+#### Dual Monitor Setup (Recommended)
 
-Useful for large events with dedicated host and operator roles.
+**Use Case:** Standard game show setup
+
+**Configuration:**
+1. **Monitor 1** (Primary): TV Screen
+   - Settings → Screens tab
+   - Check "Full Screen TV Screen"
+   - Select Monitor 1
+2. **Monitor 2** (Secondary): Control Panel (manual positioning)
+   - Operator view
+   - Host and Guest screens opened as needed
+
+**Workflow:**
+- Open TV Screen from menu → Automatically fullscreens on Monitor 1
+- Open Host/Guest screens when main game starts
+- Position Control Panel manually on Monitor 2
+
+#### Triple Monitor Setup
+
+**Use Case:** Large events with dedicated host
+
+**Configuration:**
+1. **Monitor 1**: TV Screen (assigned, auto-fullscreen)
+2. **Monitor 2**: Host Screen (assigned, auto-fullscreen)
+3. **Monitor 3**: Control Panel + Guest Screen (manual)
+
+**Workflow:**
+- TV Screen and Host Screen auto-fullscreen on startup
+- Guest Screen opened manually when contestant is at podium
+- Preview Screen used for supervision
+
+#### Four Monitor Setup (Advanced)
+
+**Use Case:** Professional events, streaming setups
+
+**Configuration:**
+1. **Monitor 1**: TV Screen (assigned)
+2. **Monitor 2**: Guest Screen (assigned)
+3. **Monitor 3**: Host Screen (assigned)
+4. **Monitor 4**: Control Panel + Preview Screen
+
+**Benefits:**
+- All display screens on dedicated monitors
+- Control Panel isolated from game displays
+- Preview Screen for supervision without interference
 
 ### Display Scaling
 
@@ -1003,6 +1047,26 @@ Graphics are vector-based and scale cleanly at any resolution.
 **Minimum:** 1280x720 (HD)  
 **Recommended:** 1920x1080 (Full HD)  
 **Supported:** Up to 4K (3840x2160)
+
+All screens render at 1920x1080 base resolution and auto-scale to fit display.
+
+### Screen Management Tips
+
+**Opening Screens:**
+- TV Screen: Opens when you select **Screens** → **TV Screen**
+- Host Screen: Opens when you select **Screens** → **Host Screen**
+- Guest Screen: Opens when you select **Screens** → **Guest Screen**
+- Preview Screen: Opens when you select **Screens** → **Preview Screen**
+
+**Closing Screens:**
+- Click X button on any screen to close it
+- Reopen from **Screens** menu at any time
+- Closing does not affect game state
+
+**Screen State:**
+- Newly opened screens automatically sync with current game state
+- Questions, answers, lifeline icons all updated immediately
+- No need to restart game to open/close screens
 
 ---
 
