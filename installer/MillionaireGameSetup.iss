@@ -37,7 +37,7 @@ VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Setup
 VersionInfoCopyright=Copyright © 2025-2026 {#MyAppPublisher}
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 
 [Languages]
@@ -192,7 +192,6 @@ end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
-  ErrorCode: Integer;
   ResultCode: Integer;
 begin
   Result := True;
@@ -297,7 +296,7 @@ begin
   if CurStep = ssPostInstall then
   begin
     // Check if user wants to initialize the database (check the task checkbox)
-    if IsTaskSelected('initializedb') then
+    if WizardIsTaskSelected('initializedb') then
     begin
       // Create PowerShell script to initialize database
       ScriptFile := ExpandConstant('{tmp}\InitializeDatabase.ps1');
