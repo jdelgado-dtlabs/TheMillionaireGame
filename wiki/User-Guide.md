@@ -574,7 +574,8 @@ Reach Level 15 and answer correctly:
 - Confetti animation
 - Victory music
 - Final screen with total winnings
-- Game statistics saved
+- Game statistics saved automatically
+- Telemetry export available after closing sequence completes
 
 ---
 
