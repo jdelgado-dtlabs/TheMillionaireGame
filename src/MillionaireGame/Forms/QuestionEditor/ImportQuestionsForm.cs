@@ -183,7 +183,7 @@ public partial class ImportQuestionsForm : Form
             AnswerD = fields[4].Trim(),
             CorrectAnswer = fields[5].Trim().ToUpper(),
             Level = int.TryParse(fields[6], out var level) ? level : 1,
-            DifficultyType = DifficultyType.Specific,
+
             Explanation = fields.Length > 7 ? fields[7].Trim() : string.Empty
         };
 

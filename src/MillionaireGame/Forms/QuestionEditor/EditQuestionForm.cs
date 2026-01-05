@@ -24,14 +24,11 @@ public partial class EditQuestionForm : Form
 
     private void EditQuestionForm_Load(object sender, EventArgs e)
     {
-        // Populate level dropdown
-        for (int i = 1; i <= 15; i++)
+        // Populate level dropdown (1-4: Easy, Medium, Hard, Million)
+        for (int i = 1; i <= 4; i++)
         {
             cmbLevel.Items.Add(i);
         }
-
-        // Populate difficulty dropdown
-        cmbDifficultyType.Items.AddRange(new object[] { "Easy", "Medium", "Hard" });
 
         // Load question data
         txtQuestion.Text = _question.QuestionText;
@@ -67,7 +64,6 @@ public partial class EditQuestionForm : Form
         }
         
         cmbLevel.SelectedItem = _question.Level;
-        cmbDifficultyType.SelectedItem = _question.DifficultyType.ToString();
         chkUsed.Checked = _question.Used;
     }
 
@@ -88,7 +84,6 @@ public partial class EditQuestionForm : Form
             _question.CorrectAnswer = "C";  // Always C for simplicity
             
             _question.Level = (int)(cmbLevel.SelectedItem ?? 1);
-            _question.DifficultyType = (DifficultyType)Enum.Parse(typeof(DifficultyType), cmbDifficultyType.SelectedItem!.ToString() ?? "Specific");
             _question.Used = chkUsed.Checked;
 
             await _repository.UpdateQuestionAsync(_question);
@@ -150,17 +145,9 @@ public partial class EditQuestionForm : Form
 
         if (cmbLevel.SelectedItem == null)
         {
-            MessageBox.Show("Please select a level.", "Validation Error",
+            MessageBox.Show("Please select a level (1=Easy, 2=Medium, 3=Hard, 4=Million).", "Validation Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             cmbLevel.Focus();
-            return false;
-        }
-
-        if (cmbDifficultyType.SelectedItem == null)
-        {
-            MessageBox.Show("Please select a difficulty type.", "Validation Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            cmbDifficultyType.Focus();
             return false;
         }
 

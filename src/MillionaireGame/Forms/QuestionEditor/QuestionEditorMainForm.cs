@@ -90,11 +90,7 @@ public partial class QuestionEditorMainForm : Form
             if (dgvQuestions.Columns["Level"] != null)
             {
                 dgvQuestions.Columns["Level"].AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
-            }
-            if (dgvQuestions.Columns["DifficultyType"] != null)
-            {
-                dgvQuestions.Columns["DifficultyType"].AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
-                dgvQuestions.Columns["DifficultyType"].HeaderText = "Difficulty";
+                dgvQuestions.Columns["Level"].HeaderText = "Level (1-4)";
             }
             if (dgvQuestions.Columns["CorrectAnswer"] != null)
             {

@@ -22,16 +22,12 @@ public partial class AddQuestionForm : Form
 
     private void AddQuestionForm_Load(object sender, EventArgs e)
     {
-        // Populate level dropdown
-        for (int i = 1; i <= 15; i++)
+        // Populate level dropdown (1=Easy, 2=Medium, 3=Hard, 4=Million)
+        for (int i = 1; i <= 4; i++)
         {
             cmbLevel.Items.Add(i);
         }
         cmbLevel.SelectedIndex = 0;
-
-        // Populate difficulty dropdown
-        cmbDifficultyType.Items.AddRange(new object[] { "Easy", "Medium", "Hard" });
-        cmbDifficultyType.SelectedIndex = 0;
     }
 
     private async void btnSave_Click(object sender, EventArgs e)
@@ -50,7 +46,6 @@ public partial class AddQuestionForm : Form
                 AnswerD = txtWrong3.Text.Trim(),
                 CorrectAnswer = "C",  // Always C for simplicity
                 Level = (int)(cmbLevel.SelectedItem ?? 1),
-                DifficultyType = DifficultyType.Specific,
                 Used = false
             };
 
@@ -113,17 +108,9 @@ public partial class AddQuestionForm : Form
 
         if (cmbLevel.SelectedItem == null)
         {
-            MessageBox.Show("Please select a level.", "Validation Error",
+            MessageBox.Show("Please select a level (1=Easy, 2=Medium, 3=Hard, 4=Million).", "Validation Error",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             cmbLevel.Focus();
-            return false;
-        }
-
-        if (cmbDifficultyType.SelectedItem == null)
-        {
-            MessageBox.Show("Please select a difficulty type.", "Validation Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            cmbDifficultyType.Focus();
             return false;
         }
 

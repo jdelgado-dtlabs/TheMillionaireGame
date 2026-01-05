@@ -29,8 +29,6 @@ partial class EditQuestionForm
         this.txtWrong3 = new TextBox();
         this.lblLevel = new Label();
         this.cmbLevel = new ComboBox();
-        this.lblDifficultyType = new Label();
-        this.cmbDifficultyType = new ComboBox();
         this.chkUsed = new CheckBox();
         this.btnSave = new Button();
         this.btnCancel = new Button();
@@ -111,9 +109,9 @@ partial class EditQuestionForm
         this.lblLevel.AutoSize = true;
         this.lblLevel.Location = new Point(20, 400);
         this.lblLevel.Name = "lblLevel";
-        this.lblLevel.Size = new Size(48, 20);
+        this.lblLevel.Size = new Size(180, 20);
         this.lblLevel.TabIndex = 10;
-        this.lblLevel.Text = "Level:";
+        this.lblLevel.Text = "Level (1=Easy, 2=Med, 3=Hard, 4=Million):";
         
         // cmbLevel
         this.cmbLevel.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -123,28 +121,12 @@ partial class EditQuestionForm
         this.cmbLevel.Size = new Size(150, 28);
         this.cmbLevel.TabIndex = 11;
         
-        // lblDifficultyType
-        this.lblDifficultyType.AutoSize = true;
-        this.lblDifficultyType.Location = new Point(190, 400);
-        this.lblDifficultyType.Name = "lblDifficultyType";
-        this.lblDifficultyType.Size = new Size(103, 20);
-        this.lblDifficultyType.TabIndex = 12;
-        this.lblDifficultyType.Text = "Difficulty Type:";
-        
-        // cmbDifficultyType
-        this.cmbDifficultyType.DropDownStyle = ComboBoxStyle.DropDownList;
-        this.cmbDifficultyType.FormattingEnabled = true;
-        this.cmbDifficultyType.Location = new Point(190, 425);
-        this.cmbDifficultyType.Name = "cmbDifficultyType";
-        this.cmbDifficultyType.Size = new Size(150, 28);
-        this.cmbDifficultyType.TabIndex = 13;
-        
         // chkUsed
         this.chkUsed.AutoSize = true;
-        this.chkUsed.Location = new Point(370, 428);
+        this.chkUsed.Location = new Point(190, 428);
         this.chkUsed.Name = "chkUsed";
         this.chkUsed.Size = new Size(166, 24);
-        this.chkUsed.TabIndex = 14;
+        this.chkUsed.TabIndex = 12;
         this.chkUsed.Text = "Mark as Used";
         this.chkUsed.UseVisualStyleBackColor = true;
         
@@ -152,7 +134,7 @@ partial class EditQuestionForm
         this.btnSave.Location = new Point(380, 480);
         this.btnSave.Name = "btnSave";
         this.btnSave.Size = new Size(100, 35);
-        this.btnSave.TabIndex = 15;
+        this.btnSave.TabIndex = 13;
         this.btnSave.Text = "Save";
         this.btnSave.UseVisualStyleBackColor = true;
         this.btnSave.Click += new EventHandler(this.btnSave_Click);
@@ -161,7 +143,7 @@ partial class EditQuestionForm
         this.btnCancel.Location = new Point(490, 480);
         this.btnCancel.Name = "btnCancel";
         this.btnCancel.Size = new Size(100, 35);
-        this.btnCancel.TabIndex = 16;
+        this.btnCancel.TabIndex = 14;
         this.btnCancel.Text = "Cancel";
         this.btnCancel.UseVisualStyleBackColor = true;
         this.btnCancel.Click += new EventHandler(this.btnCancel_Click);
@@ -173,8 +155,6 @@ partial class EditQuestionForm
         this.Controls.Add(this.btnCancel);
         this.Controls.Add(this.btnSave);
         this.Controls.Add(this.chkUsed);
-        this.Controls.Add(this.cmbDifficultyType);
-        this.Controls.Add(this.lblDifficultyType);
         this.Controls.Add(this.cmbLevel);
         this.Controls.Add(this.lblLevel);
         this.Controls.Add(this.txtWrong3);
@@ -212,8 +192,6 @@ partial class EditQuestionForm
     private TextBox txtWrong3;
     private Label lblLevel;
     private ComboBox cmbLevel;
-    private Label lblDifficultyType;
-    private ComboBox cmbDifficultyType;
     private CheckBox chkUsed;
     private Button btnSave;
     private Button btnCancel;
