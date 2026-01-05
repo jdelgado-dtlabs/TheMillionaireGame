@@ -929,7 +929,9 @@ The application provides four separate screen types that can be independently op
 **Opening Screens:**
 - Control Panel → **Screens** menu → Select screen type
 - Each screen can be opened independently at any time
+- Screens open in windowed mode by default (centered, 50% of screen size)
 - Screens can be closed and reopened as needed during gameplay
+- Manually resize or drag to position as needed
 
 ### Monitor Assignment
 
@@ -961,12 +963,13 @@ For persistent multi-monitor setups:
      - Select target monitor from dropdown
    - Click **OK** to save
 
-3. **Automatic Behavior**
-   - When you open a screen via **Screens** menu, it automatically:
+3. **Automatic Fullscreen Behavior**
+   - When you open a screen via **Screens** menu AND it has an assignment configured:
      - Opens on the assigned monitor
-     - Enters borderless fullscreen mode
+     - Automatically enters borderless fullscreen mode
      - Fills the entire display
-   - Screens without assignments open in windowed mode on primary monitor
+   - Screens WITHOUT assignments open in windowed mode (50% size, centered)
+   - You can manually maximize/resize any screen at any time
 
 **Important Restrictions:**
 - Each monitor can only be assigned to ONE screen
@@ -1140,62 +1143,120 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
 
 ## Telemetry and Statistics
 
-The application tracks comprehensive game statistics.
+The application automatically tracks comprehensive game statistics during gameplay.
+
+### Automatic Export
+
+**When Export Happens:**
+- Telemetry is **automatically exported** when the **Closing** sequence completes
+- Export only occurs if at least one round was played
+- No manual export button or UI exists
+
+**Important Requirements:**
+- **Game Session** = One or multiple rounds (one or more contestants)
+- **Session Ends** = When **Closing** button is pressed and closing sequence completes
+- **Must Complete Sequence** = If application is closed before Closing sequence finishes, telemetry data is **lost**
+- No recovery possible for incomplete sessions
+
+**Export File Location:**
+- Auto-exported to: `%LocalAppData%\TheMillionaireGame\Telemetry\`
+- Full path example: `C:\Users\YourName\AppData\Local\TheMillionaireGame\Telemetry\`
+- Filename format: `MillionaireGame_Telemetry_YYYYMMDD_HHmmss.xlsx`
+- Example: `MillionaireGame_Telemetry_20260104_134530.xlsx`
+
+### Telemetry Data Tracked
+
+**Game Session Summary (Sheet 1):**
+- Session ID (unique identifier)
+- Game start time and end time
+- Total duration
+- Total rounds played
+- Total winnings awarded (combined)
+- Total lifelines used
+- Total questions answered
+- Currency breakdown (both currencies if dual currency enabled)
+
+**Per-Round Details (Sheet 2, 3, 4... for each round):**
+- Round start time, end time, and duration
+- Outcome (Won, Lost, Walk Away)
+- Final winnings
+- Final question reached
+- Winnings by currency
+- Contestant name
+
+**Web Audience Statistics (if web server was used):**
+- Total participants connected
+- Device types (Mobile, Desktop, Tablet)
+- Browser types (Chrome, Firefox, Safari, Edge)
+- Operating systems (Windows, macOS, Android, iOS)
+
+**Fastest Finger First Performance (if FFF was played):**
+- Total submissions
+- Correct submissions
+- Incorrect submissions
+- Winner name
+- Winner time (milliseconds)
+- Average response time
+- Fastest and slowest response times
+
+**Ask the Audience Performance (if ATA was used):**
+- Total votes cast
+- Votes per answer (A, B, C, D)
+- Percentage per answer
+- Voting completion rate (percentage of connected audience who voted)
+- Mode (Web or Manual)
+
+**Lifelines Used:**
+- Lifeline name
+- Question number when used
+- Timestamp
+
+**Questions Asked:**
+- Question number
+- Question text
+- Correct answer
+- Contestant's answer
+- Result (Correct/Wrong)
+- Timestamp
 
 ### Viewing Telemetry
 
-**Note:** Telemetry viewing interface is planned for a future release. Currently, telemetry data is automatically saved to the database but there is no built-in viewer.
+**No Built-In Viewer:**
+- The application does **NOT** have a telemetry viewer interface
+- Telemetry viewing interface is planned for a future release
+- Currently, data is only available in exported Excel files
 
-**Current Telemetry:**
-   - List of all games played
-   - Date, contestant name, final prize
-   - Win/loss status
-   - Questions answered
+**Viewing Exported Data:**
+1. Complete Closing sequence to generate telemetry file
+2. Open Windows File Explorer
+3. Navigate to `%LocalAppData%\TheMillionaireGame\Telemetry\`
+4. Open the XLSX file in Microsoft Excel or compatible spreadsheet application
+5. Review multiple sheets:
+   - **Game Summary** sheet for overall statistics
+   - **Round 1**, **Round 2**, etc. sheets for detailed per-round data
 
-3. **Detailed View**
-   - Click any game to see details:
-     - Complete question list
-     - Answers given (correct/wrong)
-     - Lifelines used
-     - Time per question
-     - Dual currency breakdown
+**Excel File Structure:**
+- **Sheet 1: Game Summary** - High-level session statistics
+- **Sheet 2+: Round [N]** - One sheet per round with complete details
+- All sheets include formatted headers and auto-fitted columns
+- Currency values preserved as text to avoid formatting issues
 
-### Exporting Data
+### Data Privacy Notes
 
-**Excel Export (XLSX):**
+**Audience Participant Data:**
+- Device telemetry (device type, OS, browser) is collected from web audience
+- No personally identifiable information (PII) is stored
+- Connection times and durations tracked for statistics only
+- Contestant names stored only if entered in game profile
 
-1. Telemetry tab → **"Export to Excel"**
-2. Choose date range or select specific games
-3. Select export format:
-   - **Summary**: Game overview, win rates
-   - **Detailed**: Question-by-question breakdown
-   - **Dual Currency**: Currency comparison
-4. Save file
+### Future Enhancements
 
-**Excel File Contents:**
-```
-Sheet 1: Game Summary
-- Date, Contestant, Final Prize, Outcome, Duration
-
-Sheet 2: Question Analysis
-- Question text, Difficulty, Correct answer rate
-
-Sheet 3: Lifeline Usage
-- Which lifelines used most, success rate after use
-
-Sheet 4: Dual Currency (if enabled)
-- Prize comparison between currencies
-```
-
-### Statistics Dashboard
-
-**Key Metrics:**
-- Total games played
-- Win rate (reached top prize)
-- Average prize won
-- Most common exit point
-- Lifeline effectiveness
-- Question difficulty accuracy
+**Planned Features:**
+- Built-in telemetry viewer with dashboard
+- Historical game comparison
+- Aggregate statistics across multiple game sessions
+- Database persistence for incomplete session recovery
+- Custom export date ranges and filtering
 
 ---
 
