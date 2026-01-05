@@ -846,28 +846,47 @@ lib/sounds/Default/
    lib/sounds/MyCustomSet/
    ```
 
-2. **Add Sound Files**
-   Required files (see [Installation Guide - Sound Files](Installation#sound-file-requirements) for complete list):
-   - `intro.mp3`
-   - `thinking_music_1.mp3` (Levels 1-5)
-   - `thinking_music_2.mp3` (Levels 6-10)
-   - `thinking_music_3.mp3` (Levels 11-15)
-   - `final_answer.mp3`
-   - `correct_answer.mp3`
-   - `wrong_answer.mp3`
-   - `walk_away.mp3`
-   - `lifeline_5050.mp3`
-   - `lifeline_phone.mp3`
-   - `lifeline_audience.mp3`
-   - `win_game.mp3`
+2. **Create soundpack.xml**
+   
+   Create a `soundpack.xml` file in your sound pack folder with the following structure:
+   
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <SoundPack>
+     <PackName>MyCustomSet</PackName>
+     <Sounds>
+       <!-- General/Broadcast Sounds -->
+       <Sound Key="ClosingTheme" File="close_theme.mp3" />
+       <Sound Key="HostEntrance" File="host_entrance.mp3" />
+       <Sound Key="ExplainRules" File="explain_rules_v2.mp3" />
+       <!-- ... more sounds ... -->
+     </Sounds>
+   </SoundPack>
+   ```
 
-3. **Select Sound Pack**
+3. **Add Sound Files**
+   
+   The sound pack requires files organized by category. See the Default sound pack's `soundpack.xml` for the complete list of required Sound Keys and corresponding files.
+   
+   **Major Categories:**
+   - **General/Broadcast**: Closing theme, host entrance, explain rules, quit/walk away (small/large), game over, risk mode, safety net
+   - **Fastest Finger First**: Lights down, explain, contestant intros (2-8 players), read question, thinking, reveal order, winner
+   - **Lifelines**: Ping sounds (1-4), 50:50, Phone a Friend (start/countdown/end), Ask the Audience (start/vote/end), Switch Question, Ask the Host (bed/end), Double Dip (start/first)
+   - **Question Lights Down**: Separate sounds for Q1-5, Q6-Q15 (each unique)
+   - **Question Bed Music**: Separate bed music for Q1-5, Q6-Q15 (each unique)
+   - **Final Answer**: Separate sounds for Q6-Q15 (Questions 1-5 have no final answer cue)
+   - **Correct Answer**: Separate sounds for Q1-4, Q5 (with variation), Q6-Q15 (each unique), Q10 has variation
+   - **Wrong Answer**: Separate sounds for Q1-5, Q6-Q15 (each unique)
+
+   **Total Sound Files Required**: ~130 individual sound files
+
+4. **Select Sound Pack**
    - Settings → Sounds tab → Soundpack tab
    - Sound Pack dropdown
    - Select "MyCustomSet"
    - Click **"Apply"**
 
-4. **Test Sounds**
+5. **Test Sounds**
    - Use test buttons to preview
    - Adjust volumes as needed
 
@@ -875,6 +894,24 @@ lib/sounds/Default/
 - MP3 (recommended)
 - WAV
 - OGG
+
+**Important Notes:**
+- Each question level (6-15) has unique sounds for lights down, bed music, final answer, correct, and wrong
+- Questions 1-5 share common sounds (lightning round)
+- Sound Key names in XML must match exactly (case-sensitive)
+- File paths in XML are relative to the sound pack folder
+
+**Example File Structure:**
+```
+lib/sounds/MyCustomSet/
+  soundpack.xml
+  close_theme.mp3
+  host_entrance.mp3
+  fifty_fifty.mp3
+  q6_bed.mp3
+  q6_correct.mp3
+  ... (130+ files)
+```
 
 ---
 
