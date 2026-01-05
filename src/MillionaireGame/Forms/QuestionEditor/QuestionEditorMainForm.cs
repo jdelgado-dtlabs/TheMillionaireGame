@@ -130,10 +130,6 @@ public partial class QuestionEditorMainForm : Form
             }
             
             // Hide unwanted columns
-            if (dgvQuestions.Columns["Answer1"] != null) dgvQuestions.Columns["Answer1"].Visible = false;
-            if (dgvQuestions.Columns["Answer2"] != null) dgvQuestions.Columns["Answer2"].Visible = false;
-            if (dgvQuestions.Columns["Answer3"] != null) dgvQuestions.Columns["Answer3"].Visible = false;
-            if (dgvQuestions.Columns["Answer4"] != null) dgvQuestions.Columns["Answer4"].Visible = false;
             if (dgvQuestions.Columns["Note"] != null) dgvQuestions.Columns["Note"].Visible = false;
             if (dgvQuestions.Columns["Explanation"] != null) dgvQuestions.Columns["Explanation"].Visible = false;
 
@@ -183,11 +179,7 @@ public partial class QuestionEditorMainForm : Form
                 dgvFFFQuestions.Columns["Used"].AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
             }
             
-            // Hide unwanted FFF columns
-            if (dgvFFFQuestions.Columns["Answer1"] != null) dgvFFFQuestions.Columns["Answer1"].Visible = false;
-            if (dgvFFFQuestions.Columns["Answer2"] != null) dgvFFFQuestions.Columns["Answer2"].Visible = false;
-            if (dgvFFFQuestions.Columns["Answer3"] != null) dgvFFFQuestions.Columns["Answer3"].Visible = false;
-            if (dgvFFFQuestions.Columns["Answer4"] != null) dgvFFFQuestions.Columns["Answer4"].Visible = false;
+            // Hide unwanted FFF columns (none needed now)
 
             lblTotalFFFQuestions.Text = $"Total FFF Questions: {fffQuestions.Count}";
         }

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace MillionaireGame.Core.Models;
 
 /// <summary>
@@ -20,32 +22,40 @@ public class Question
 
     // Custom answer labels (for FFF reveal - shows correct order labels)
     // If null, defaults to "A", "B", "C", "D"
+    [Browsable(false)]
     public string? AnswerALabel { get; set; }
+    [Browsable(false)]
     public string? AnswerBLabel { get; set; }
+    [Browsable(false)]
     public string? AnswerCLabel { get; set; }
+    [Browsable(false)]
     public string? AnswerDLabel { get; set; }
 
     // Compatibility properties for numbered answer format (Answer1-4)
     // TODO: Migrate database to use Answer1-4 column names to support random answer ordering
     // This will prevent players from memorizing answer positions
+    [Browsable(false)]
     public string Answer1
     {
         get => AnswerA;
         set => AnswerA = value;
     }
 
+    [Browsable(false)]
     public string Answer2
     {
         get => AnswerB;
         set => AnswerB = value;
     }
 
+    [Browsable(false)]
     public string Answer3
     {
         get => AnswerC;
         set => AnswerC = value;
     }
 
+    [Browsable(false)]
     public string Answer4
     {
         get => AnswerD;
