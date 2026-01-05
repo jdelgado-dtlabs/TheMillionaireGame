@@ -1333,11 +1333,12 @@ Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMi
 - [ ] Check display setup (projector/TV)
 - [ ] Prepare question set (review for errors)
 - [ ] Test web audience voting (if used)
-- [ ] Backup database
 
 **1 Hour Before:**
 - [ ] Launch application
-- [ ] Set up displays (maximize TV Screen window)
+- [ ] Open display screens from **Screens** menu (TV Screen, Host Screen, Guest Screen)
+  - If Settings > Screens tab configured: Screens auto-fullscreen on assigned monitors
+  - If not configured: Manually position and resize windows as needed
 - [ ] Test audio levels with venue speakers
 - [ ] Start web server (if using audience voting)
 - [ ] Have audience join and test
@@ -1367,11 +1368,12 @@ Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMi
 
 ### Post-Event
 
-- Export telemetry for records
-- Backup database
-- Review any issues encountered
-- Update question set if needed
-- Archive game data
+**Important:** Press the **Closing** button and allow the closing sequence to complete fully before closing the application. This automatically exports telemetry data.
+
+**After Closing Sequence:**
+- Telemetry automatically saved to `%LocalAppData%\TheMillionaireGame\Telemetry\`
+- Review any issues encountered during event
+- Note questions that caused confusion for future updates
 
 ---
 
