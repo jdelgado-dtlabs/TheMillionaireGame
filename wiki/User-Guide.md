@@ -218,7 +218,7 @@ Customize your game configuration (money tree, lifelines, currency) through the 
    **Total Lifelines**: Set how many lifelines are available (1-4)
    
    **Configure Each Lifeline:**
-   - **Lifeline Type**: Choose from 50:50, Phone a Friend (Plus One), Ask the Audience, Ask the Host, Switch Question
+   - **Lifeline Type**: Choose from 50:50, Phone a Friend (Plus One), Ask the Audience, Ask the Host, Double Dip, Switch Question
    - **Availability**: Set when lifeline becomes active:
      - Always Available
      - After Question 5
@@ -688,6 +688,81 @@ Enable web server for real-time audience voting:
 - Prevents multiple votes
 - Real-time engagement
 - Professional presentation
+
+### Double Dip
+
+**How It Works:**
+1. Contestant requests "Double Dip"
+2. Operator clicks **"Double Dip"** button (hotkey depends on lifeline slot configuration)
+3. Double Dip music plays
+4. Contestant gets TWO chances to answer the question
+5. If first answer is correct, contestant wins immediately
+6. If first answer is wrong, it's revealed as incorrect and contestant selects second answer
+7. Second answer determines final result (correct = win, wrong = game over/safety net)
+
+**First Attempt:**
+1. Contestant selects first answer (A, B, C, or D)
+2. Operator clicks corresponding answer button
+3. Operator clicks **"Reveal"** button
+4. **If correct**: Normal correct answer sequence, lifeline completes
+5. **If wrong**: 
+   - Wrong answer revealed on screen
+   - First answer music plays
+   - Wrong answer button disabled on Control Panel
+   - Wrong answer removed from screens
+   - Contestant prompted to select second answer
+
+**Second Attempt:**
+1. Contestant selects second answer from remaining options
+2. Operator clicks corresponding answer button
+3. Operator clicks **"Reveal"** button
+4. Normal reveal sequence (correct = win, wrong = lose)
+5. Double Dip lifeline completes
+
+**Strategy Notes:**
+- Best used when contestant can eliminate 1-2 answers
+- Combines well with 50:50 (two attempts on two remaining answers)
+- High-risk/high-reward on difficult questions
+- If first answer wrong, contestant has seen one incorrect option before second attempt
+
+**Limitations:**
+- One-time use only
+- Both attempts must be on the same question
+- Cannot walk away after activating Double Dip
+- If both answers wrong, game ends (or drops to safety net)
+
+### Ask the Host
+
+**How It Works:**
+1. Contestant requests "Ask the Host"
+2. Operator clicks **"Ask the Host"** button (hotkey depends on lifeline slot configuration)
+3. Host music plays (looped)
+4. Host provides their opinion on the correct answer
+5. Contestant considers host's advice
+6. Contestant selects answer
+7. Operator clicks corresponding answer button (A, B, C, or D)
+8. Ask the Host end sound plays automatically
+9. Lifeline completes, normal reveal sequence continues
+
+**Host Notes:**
+- Host can see the correct answer on their screen
+- Host should provide guidance without directly stating the answer
+- Common phrases: "I'd be confident with...", "I think you should consider...", "I would lean towards..."
+- Host can share reasoning, eliminate options, or express certainty level
+
+**Control Panel:**
+- Ask the Host button remains blue while active
+- Host music loops until answer is selected
+- Selecting any answer (A, B, C, D) completes the lifeline
+- End sound plays automatically when answer selected
+
+**Strategy Notes:**
+- Best used when contestant is between 2-3 answers
+- Host expertise and confidence level matter
+- Can combine with other lifelines (50:50, then ATH on remaining 2)
+- Host may not always know the answer
+
+**Important:** When Ask the Host is enabled as a lifeline, the "Show Correct Answer to Host" checkbox in Control Panel is automatically disabled to prevent accidental reveals to the contestant.
 
 ### Switch Question
 
