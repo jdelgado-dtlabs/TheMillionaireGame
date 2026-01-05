@@ -99,7 +99,7 @@ public class MoneyTreeControl : UserControl
     /// </summary>
     public void ReloadSettings()
     {
-        _moneyTreeService.LoadSettings();
+        _moneyTreeService.ReloadSettings();
         foreach (var panel in _levelPanels)
         {
             panel.UpdatePrizeText();

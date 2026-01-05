@@ -4418,7 +4418,7 @@ public partial class ControlPanelForm : Form
 
     private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings);
+        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings, _gameService.MoneyTree);
         
         // Subscribe to settings applied event to update immediately when Apply is clicked
         optionsDialog.SettingsApplied += (s, ev) =>
@@ -4433,7 +4433,7 @@ public partial class ControlPanelForm : Form
             SetLifelineMode(_lifelineMode);
             
             // Reload money tree settings and update risk mode button
-            _gameService.MoneyTree.LoadSettings();
+            _gameService.MoneyTree.ReloadSettings();
             UpdateRiskModeButton();
         };
         

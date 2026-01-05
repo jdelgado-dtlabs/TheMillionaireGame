@@ -16,7 +16,14 @@ public class MoneyTreeService
     public MoneyTreeService(string? connectionString = null)
     {
         _repository = new ApplicationSettingsRepository(connectionString ?? GetDefaultConnectionString());
-        _settings = new MoneyTreeSettings();
+        _settings = new MoneyTreeSettings(); // Initialize with defaults, will be loaded explicitly
+    }
+    
+    /// <summary>
+    /// Initialize and load settings from database. Call this after construction.
+    /// </summary>
+    public void Initialize()
+    {
         LoadSettings();
     }
     
@@ -30,12 +37,12 @@ public class MoneyTreeService
     /// <summary>
     /// Loads money tree settings from database, creates default if not found
     /// </summary>
-    public void LoadSettings()
+    private void LoadSettings()
     {
         try
         {
-            var task = LoadSettingsAsync();
-            task.Wait();
+            // Run on background thread to avoid UI freezes
+            Task.Run(async () => await LoadSettingsAsync()).Wait();
         }
         catch
         {
@@ -43,16 +50,24 @@ public class MoneyTreeService
             SaveDefaultSettings();
         }
     }
+
+    /// <summary>
+    /// Reloads money tree settings from database (call after external changes)
+    /// </summary>
+    public void ReloadSettings()
+    {
+        LoadSettings();
+    }
     
     private async Task LoadSettingsAsync()
     {
         // Ensure table exists
-        if (!await _repository.SettingsTableExistsAsync())
+        if (!await _repository.SettingsTableExistsAsync().ConfigureAwait(false))
         {
-            await _repository.CreateSettingsTableAsync();
+            await _repository.CreateSettingsTableAsync().ConfigureAwait(false);
         }
         
-        var dbSettings = await _repository.GetAllSettingsAsync();
+        var dbSettings = await _repository.GetAllSettingsAsync().ConfigureAwait(false);
         
         // If no MoneyTree settings exist, save defaults
         if (!dbSettings.Any(kvp => kvp.Key.StartsWith("MoneyTree.")))
@@ -106,10 +121,13 @@ public class MoneyTreeService
     /// </summary>
     public void SaveSettings()
     {
+        if (_settings == null)
+            return;
+            
         try
         {
             var task = SaveSettingsAsync();
-            task.Wait();
+            task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
         catch
         {
@@ -120,9 +138,9 @@ public class MoneyTreeService
     private async Task SaveSettingsAsync()
     {
         // Ensure table exists
-        if (!await _repository.SettingsTableExistsAsync())
+        if (!await _repository.SettingsTableExistsAsync().ConfigureAwait(false))
         {
-            await _repository.CreateSettingsTableAsync();
+            await _repository.CreateSettingsTableAsync().ConfigureAwait(false);
         }
         
         // Save each property to database
@@ -144,7 +162,7 @@ public class MoneyTreeService
                 }
             }
             
-            await _repository.SaveSettingAsync(key, stringValue, "MoneyTree", property.Name);
+            await _repository.SaveSettingAsync(key, stringValue, "MoneyTree", property.Name).ConfigureAwait(false);
         }
     }
 

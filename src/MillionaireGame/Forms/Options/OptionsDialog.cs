@@ -23,11 +23,11 @@ public partial class OptionsDialog : Form
     /// </summary>
     public event EventHandler? SettingsApplied;
 
-    public OptionsDialog(ApplicationSettings settings, ApplicationSettingsManager settingsManager)
+    public OptionsDialog(ApplicationSettings settings, ApplicationSettingsManager settingsManager, MoneyTreeService moneyTreeService)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settingsManager = settingsManager ?? throw new ArgumentNullException(nameof(settingsManager));
-        _moneyTreeService = new MoneyTreeService(); // Load money tree settings
+        _moneyTreeService = moneyTreeService ?? throw new ArgumentNullException(nameof(moneyTreeService));
         
         // Initialize DataView before InitializeComponent (which may trigger events)
         _soundPackDataView = new DataView(_soundPackDataTable);

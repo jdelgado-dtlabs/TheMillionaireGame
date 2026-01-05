@@ -117,6 +117,7 @@ internal static class Program
 
         // Initialize services
         var gameService = new GameService();
+        gameService.MoneyTree.Initialize(); // Load settings from database
         var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
         var screenService = new ScreenUpdateService();
         
