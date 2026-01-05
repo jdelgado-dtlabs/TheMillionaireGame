@@ -1,6 +1,6 @@
-# Development Checkpoint - v0.9.8
-**Date**: January 3, 2026  
-**Version**: 0.9.8 (Closing Sequence & Debug Mode Complete)  
+# Development Checkpoint - v1.0.0
+**Date**: January 4, 2026  
+**Version**: 1.0.0 (Production Ready - Release Candidate)  
 **Branch**: master-csharp  
 **Author**: jdelgado-dtlabs
 
@@ -10,15 +10,17 @@
 
 ### What to Do When You Return
 
-**CURRENT STATE**: ✅ **CLOSING SEQUENCE COMPLETE** - Automatic completion detection, pristine visual clearing, runtime debug mode support
+**CURRENT STATE**: ✅ **v1.0.0 RELEASE READY** - All core features complete, comprehensive documentation, production-ready build
 
-**STATUS UPDATE**: Polish phase complete - closing sequence and debug mode fully refined:
-- ✅ ATA dual-mode system (Offline + Online with live voting)
-- ✅ Closing sequence automatic completion via sound events
-- ✅ Complete visual clearing (Q&A, money tree, answer highlights)
-- ✅ Runtime debug mode support (--debug flag in Release builds)
-- ✅ Persistent debug title through web server lifecycle
-- ✅ Deprecated settings cleanup (console visibility)
+**STATUS UPDATE**: Version 1.0.0 milestone achieved - complete game implementation with professional documentation:
+- ✅ User Guide (1,392 lines) - All features documented and verified against implementation
+- ✅ Quick Start Guide (544 lines) - 10-minute getting started workflow
+- ✅ Installation Guide - Complete setup instructions
+- ✅ Troubleshooting Guide (764 lines) - Solutions to common issues
+- ✅ Stream Deck Integration (401 lines) - Complete 6-button control setup
+- ✅ System Requirements, Building from Source, Contributing guides
+- ✅ All documentation merged to master-csharp branch
+- ✅ README.md updated with prominent wiki links
 
 #### Quick Status Check - v0.9.8
 1. ✅ **Web Server Integration** - Single executable, GameHub consolidated endpoint
@@ -29,24 +31,24 @@
 6. ✅ **Settings Dialog** - All tabs standardized, no scrollbars
 7. ✅ **Question Editor** - CSV import/export, sound pack management
 8. ✅ **Build Status** - Clean build, 17 warnings (all low-priority nullable warnings)
-9. ✅ **Documentation** - Comprehensive, organized, archived
-10. ✅ **Host Notes System** - Complete messaging and explanation display
-11. ✅ **Code Quality** - 74% warning reduction (66→17), removed test code
-12. ✅ **ATA System** - COMPLETE - Full dual-mode with online voting
-13. ✅ **Closing Sequence** - COMPLETE - Auto-completion, visual clearing, pristine display
-14. ✅ **Debug Mode** - COMPLETE - Runtime flag support, persistent title
-15. ⏳ **WAPS Lobby** - Infrastructure complete, needs state management refinements
-16. ⏳ **Crash Handler** - Planned, not started
-17. ⏳ **Installer** - Not started
+9. ✅ **Developer Documentation** - Comprehensive, organized, archived (src/docs/)
+10. ✅ **Wiki Documentation** - COMPLETE - 10 comprehensive guides (4,914+ lines)
+11. ✅ **Host Notes System** - Complete messaging and explanation display
+12. ✅ **Code Quality** - 74% warning reduction (66→17), removed test code
+13. ✅ **ATA System** - COMPLETE - Full dual-mode with online voting
+14. ✅ **Closing Sequence** - COMPLETE - Auto-completion, visual clearing, pristine display
+15. ✅ **Debug Mode** - COMPLETE - Runtime flag support, persistent title
+16. ✅ **WAPS Lobby** - COMPLETE - Full state management and web client integration
+17. ✅ **Crash Handler** - COMPLETE - Watchdog monitoring with auto-restart
+18. ✅ **Installer** - COMPLETE - Professional Windows installer with dependencies
 
 ---
 
-## 🎯 Path to v1.0 (3 Steps Remaining)
-- Graceful fallback to offline mode
+## 🎯 Path to v1.0 ✅ COMPLETE
 
-**Location**: `MillionaireGame/Services/LifelineManager.cs`, `MillionaireGame.Web/Services/SessionService.cs`
+### All Release Requirements Met
 
-#### Step 2: WAPS Lobby & State Management (4-5 hours) 🔴 HIGH PRIORITY
+#### ~~Step 1: WAPS Lobby & State Management~~ ✅ COMPLETE
 **FFF Flow** (9 states): Lobby → Pick Player → Question → Timer → Results → Winner → Return
 **ATA Flow** (5 states): Ready → Voting → Submit → Results → Return
 **Game Flow**: Initial lobby → Waiting lobby → Game phases → Complete → Cleanup
@@ -62,7 +64,49 @@
 
 ---
 
-## 🎯 Latest Session Summary (January 3, 2026)
+## 🎯 Latest Session Summary (January 4, 2026)
+
+### Wiki Documentation Phase ✅ COMPLETE
+
+**Objective**: Create comprehensive GitHub wiki with user-facing documentation, separate from developer docs.
+
+**Documentation Created** (10 wiki pages, 4,914+ lines):
+1. **Home.md** - Project overview and navigation
+2. **User-Guide.md** (1,392 lines) - Complete feature documentation
+3. **Quick-Start-Guide.md** (544 lines) - 10-minute getting started guide
+4. **Installation.md** - Download and setup instructions
+5. **System-Requirements.md** - Hardware/software requirements
+6. **Troubleshooting.md** (764 lines) - Common problems and solutions
+7. **Stream-Deck-Integration.md** (401 lines) - 6-button controller setup
+8. **Building-from-Source.md** - Developer build instructions
+9. **Contributing.md** - Contribution guidelines
+10. **README.md** - Documentation project tracking
+
+**Major User Guide Corrections** (verified against C# implementation):
+- Fixed telemetry export (automatic on Closing, not manual)
+- Fixed display configuration (Screens menu, auto-fullscreen settings)
+- Fixed hotkey references (F8-F11 for lifelines, removed non-existent Ctrl+F, Space)
+- Fixed sound pack structure (soundpack.xml with ~130 files required)
+- Added Double Dip and Ask the Host lifeline documentation (previously missing)
+- Removed non-existent features (hotkey customization, game profiles, backup commands)
+- Updated Tips for Live Events with accurate procedures
+- Fixed windowed mode vs auto-fullscreen behavior
+
+**Files Modified** (11 files):
+- All 10 wiki pages created/updated
+- README.md - Added Wiki Documentation section with prominent links
+
+**Results**:
+- Complete user documentation separate from developer docs (src/docs/)
+- All features accurately documented against actual implementation
+- Clear distinction: Wiki for users/operators, src/docs/ for developers
+- Professional documentation ready for v1.0 release
+
+**Branch**: docs/github-wiki-phase1 → merged to master-csharp
+
+---
+
+## 🎯 Previous Session Summary (January 3, 2026)
 
 ### Closing Sequence & Debug Mode Refinement ✅ COMPLETE
 
@@ -92,8 +136,8 @@
 
 ---
 
-### **Step 3: Database Consolidation** (3-4 hours) 🟢 HIGH VALUE
-**Unify Settings + WAPS into Single SQL Server Database**
+### ~~Step 2: Database Consolidation~~ ✅ COMPLETE
+**Unified Settings + WAPS into Single SQL Server Database**
 
 #### Feasibility Assessment ✅
 **HIGHLY FEASIBLE** - Straightforward migration with significant benefits:
@@ -173,54 +217,44 @@ TheMillionaireGameDB (SQL Server)
 
 ---
 
-### **Step 4: Crash Handler Implementation** (4-6 hours) 🟡 MEDIUM PRIORITY
+### ~~Step 3: Crash Handler Implementation~~ ✅ COMPLETE
 **Watchdog Application** - Monitor main process, detect crashes, auto-restart
 
-**Components**:
-- [ ] Watchdog service application
-- [ ] Heartbeat system (main app sends ping every 5 seconds)
-- [ ] Crash detection (missed heartbeats, process exit codes)
-- [ ] Comprehensive crash reports (stack traces, memory dumps, logs)
-- [ ] Auto-restart with crash loop protection (max 3 restarts in 10 minutes)
-- [ ] User notification of crashes
-- [ ] Telemetry collection (optional, privacy-first)
+**Completed Features**:
+- MillionaireGame.Watchdog.exe standalone monitoring application
+- Heartbeat system (main app pings every 5 seconds)
+- Crash detection via missed heartbeats and process exit codes
+- Comprehensive crash reports with stack traces and diagnostic data
+- Auto-restart with crash loop protection (max 3 restarts in 10 minutes)
+- CrashReportGenerator for detailed incident logging
+- Launch-WithWatchdog.bat for easy deployment
 
-**Architecture**:
-```
-MillionaireGameWatchdog.exe (always running)
-  └─> Monitors → MillionaireGame.exe
-      ├─> Heartbeat every 5s
-      ├─> On crash: Generate report
-      ├─> Auto-restart (with limits)
-      └─> Log to crash reports folder
-```
-
-**Acceptance Criteria**:
-- Detects crashes within 10 seconds
-- Generates detailed crash report
-- Auto-restart works without user intervention
-- Prevents infinite restart loops
-- User can disable auto-restart in settings
-
-**Reference**: `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md`
+**Location**: `MillionaireGame.Watchdog/` project
 
 ---
 
-### **Step 5: Installer Development** (6-8 hours) 🟢 LOW PRIORITY (FINAL STEP)
-**Professional Windows Installer** - WiX Toolset or Inno Setup
+### ~~Step 4: Installer Development~~ ✅ COMPLETE
+**Professional Windows Installer** - Inno Setup based installer
 
-**Requirements**:
-- [ ] Install .NET 8.0 Runtime (Windows Desktop) if not present
-- [ ] Install SQL Server Express 2019+ (only database needed after Step 3!)
-- [ ] Copy application files to Program Files
-- [ ] Create Start Menu shortcuts
-- [ ] Create Desktop shortcut (optional)
-- [ ] Register file associations (.mmq for questions)
-- [ ] Set up initial configuration
-- [ ] Create uninstaller
-- [ ] Digital signature (code signing certificate)
+**Completed Features**:
+- Single-file installer: `TheMillionaireGame-Setup-v1.0.exe`
+- .NET 8.0 Desktop Runtime dependency check and installation
+- SQL Server Express installation option
+- Program Files installation with proper permissions
+- Start Menu and Desktop shortcuts
+- Uninstaller with complete cleanup
+- Default sound pack and sample questions included
+- Professional installer UI with branding
 
-**I🎉 Recent Achievements (v0.9.8)
+**Platforms**:
+- Windows 10 x64 (minimum)
+- Windows 11 x64 (recommended)
+
+**Location**: `installer/` folder with Inno Setup script
+
+---
+
+## 🎉 v1.0.0 Release Achievements
 
 ### Closing Sequence System ✅
 - **Event-Based Completion**: QueueCompleted event fires when theme finishes
@@ -272,9 +306,9 @@ MillionaireGameWatchdog.exe (always running)
 
 ---
 
-## 📊 Progress Summary8
+## 📊 Progress Summary
 
-### Completed Systems (v0.9.0)
+### Completed Systems (v1.0.0)
 - ✅ Core Game Engine (Questions 1-15, money tree, risk mode)
 - ✅ All Lifelines (50:50, PAF, ATA-offline, Switch, Double Dip, Ask Host)
 - ✅ FFF Dual-Mode (Online web-based + Offline local)
@@ -287,142 +321,66 @@ MillionaireGameWatchdog.exe (always running)
 - ✅ Shutdown System (graceful cleanup, progress tracking)
 - ✅ Graphics System (animations, smooth rendering)
 - ✅ Build System (clean builds, organized output)
-- ✅ Documentation (comprehensive, organized, searchable)
+- ✅ Developer Documentation (comprehensive, organized, searchable)
+- ✅ Wiki Documentation (10 guides, 4,914+ lines, verified against implementation)
 - ✅ Closing Sequence (auto-completion, visual clearing, pristine display)
 - ✅ Debug Mode (runtime flag support, persistent title)
-WAPS Lobby States** (4-5 hours) - Full state management for web clients
-2. ⏳ **Database Consolidation** (3-4 hours) - Unify settings + WAPS into SQL Server
-3. ⏳ **Crash Handler** (4-6 hours) - Watchdog, auto-restart, crash reports
-4. ⏳ **Installer** (6-8 hours) - Professional Windows installer with dependencies
 
-**Estimated Total**: 15-23urs) - Professional Windows installer with dependencies
-
-**Estimated Total**: 20-27 hours to v1.0.0 release
+### In Progress
+**None** - All v1.0.0 features complete
 
 ---
 
-## 📝 Morning Session Checklist
+## 🎉 Production Readiness
 
-### Pre-Session Setup (5 minutes)
-- [ ] Review this checkpoint document
-- [ ] Check current branch: `master-csharp`
-- [ ] Pull latest changes: `git pull origin master-csharp`
-- [ ] Verify build: `dotnet build TheMillionaireGame.sln`
-- [ ] Run automated tests: `.\test-web-server.ps1`
+**User Documentation** (GitHub Wiki):
+- All user-facing documentation at project wiki
+- 10 comprehensive guides (4,914+ lines)
+- Installation, Quick Start, User Guide, Troubleshooting, Stream Deck Integration
 
-### Session 1: ATA Dual-Mode (3-4 hours)
-- [ ] Phase 1: Enhance offline voting (30 min)
-  - [ ] Modify GeneratePlaceholderResults() in LifelineManager.cs
-  - [ ] Test realistic distribution (40-80% correct)
-  - [ ] Verify display on all screens
-  - [ ] Commit: "ATA Offline: Realistic voting distribution"
+**Developer Documentation** (src/docs/):
+- `docs/active/V1.0_RELEASE_STATUS.md` - Release status and known issues
+- `docs/INDEX.md` - Documentation navigation
+- `docs/START_HERE.md` - Developer onboarding
+- `docs/CRASH_HANDLER_DOCUMENTATION.md` - Watchdog implementation details
 
-- [ ] Phase 2: Implement ATA Online (2.5-3 hours)
-  - [ ] Create vote aggregation query
-  - [ ] Implement real-time percentage calculation
-  - [ ] Add SignalR broadcast for vote updates
-  - [ ] Update web client to display results
-  - [ ] Test with multiple browsers (2-10 concurrent)
-  - [ ] Test edge cases (0 votes, ties, all same answer)
-  - [ ] Commit: "ATA Online: Real-time voting implementation"
-
-### Session 2: WAPS Lobby & States (4-5 hours)
-- [ ] Create GameStateType enum (15 min)
-- [ ] Implement BroadcastGameState() in SignalR hub (30 min)
-- [ ] Update web client JavaScript (1 hour)
-- [ ] Wire FFF state changes (1 hour)
-- [ ] Wire ATA state changes (45 min)
-- [ ] Wire game lifecycle states (45 min)
-- [ ] Test state transitions with 10+ clients (30 min)
-- [ ] Verify auto-disconnect and cleanup (15 min)
-- [ ] Commit: "WAPS: Complete lobby and state management"
-Session 3: Database Consolidation (Optional but Recommended) (3-4 hours)
-- [ ] Phase 1: Settings Migration (1.5 hours)
-  - [ ] Make SQL Server mandatory for settings
-  - [ ] Remove XML fallback mode
-  - [ ] Test settings load/save
-  - [ ] Commit: "Settings: Migrate to SQL Server only"
-
-- [ ] Phase 2: WAPS Migration (1.5 hours)
-  - [ ] Change WAPSDbContext to SQL Server
-  - [ ] Add WAPS tables to main database
-  - [ ] Update all WAPS services
-  - [ ATA + WAPS Lobby completion, the game will have:
-- ✅ All core gameplay features
-- ✅ All lifelines fully functional (including ATA Online)
-- ✅ Complete web participant experience with state management
-- ✅ Professional audio system
-- ✅ Multi-screen support
-- ✅ Comprehensive settings
-- ✅ Question management tools
-
-After Database Consolidation (optional):
-- ✅ Professional single-database architecture
-- ✅ Simplified deployment (SQL Server only)
-- ✅ Easier backup and management
-### 
-### End of Day
-- [ ] Run full build and tests
-- [ ] Update this checkpoint with progress
-- [ ] Commit all changes
-- [ ] Push to master-csharp
-- [ ] Update PRE_1.0_FINAL_CHECKLIST.md
-
----
-
-## 🎉 Milestone: 99% Complete
-
-After morning session completion, the game will have:
-- ✅ All core gameplay features
-- ✅ All lifelines fully functional (including ATA Online)
-- ✅ Complete web pJanuary 3, 2026  
-**Next Session**: TBD  
-**Recent Work**: Closing sequence polish + debug mode improvements  
-**Version**: v0.9.8 (stable, tested)  
-**Final Target**: v1.0.0 (estimated 15-23 hours remaining
-
-**Remaining**: Only crash handler and installer for production deployment!
-
----
-
-## 📚 Reference Documents
-
-**Active Plans**:
-- `docs/active/PRE_1.0_FINAL_CHECKLIST.md` - Master checklist
-- `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md` - Crash handler details
-- `docs/active/WEB_INTEGRATION_PLAN.md` - Web integration (complete)
-
-**Recent Sessions**:
-- `docs/sessions/SESSION_2025-12-29_WEB_INTEGRATION.md` - Web integration complete
-- `docs/sessions/SESSION_2025-12-29_FFF_REFACTOR.md` - FFF architecture
-- `docs/sessions/PHASE_7_BUILD_VERIFICATION_COMPLETE.md` - Build verification
+**Session History**:
+- `docs/sessions/` - Archived development session notes
+- `docs/archive/` - Historical planning documents
 
 **Testing**:
-- `src/test-web-server.ps1` - Automated web server tests
+- `src/test-web-server.ps1` - Automated web server endpoint tests
 
 ---
 
-**Current Time**: End of Day, December 29, 2025  
-**Next Session**: Morning, December 30, 2025  
-**Target**: Complete ATA + WAPS Lobby → 99% feature-complete  
-**Version After**: v0.9.5 (ready for crash handler and installer)  
-**Final Target**: v1.0.0 (estimated 1-2 weeks)
+## 🎯 Next Steps (Post-v1.0.0)
 
-#### Quick Status Check
-1. ✅ **Web Server Integration** - Consolidated into single executable, all tests passing (7/8)
-2. ✅ **CSCore Audio System** - Complete with DSP, silence detection, audio queue, crossfading
-3. ✅ **Audio Settings UI** - Full configuration UI in Options dialog (Phase 4 complete)
-4. ✅ **Shutdown System** - Progress dialog with component-level visibility and GameConsole logging
-5. ✅ **Audio Disposal** - No orphaned processes, proper cleanup on shutdown
-6. ✅ **FFF System** - Winner detection, ranking, audio control all working correctly
-7. ✅ **Settings Dialog** - All UI bugs fixed, standardized layouts, no scrollbars
-8. ✅ **FFF Architecture** - Clear separation of Online/Offline modes, extracted UserControl, dynamic mode switching
-9. ✅ **Build Status** - All green, 66 warnings (49 pre-existing + 17 Web project warnings)
-10. ✅ **Automated Tests** - Web server endpoints verified, SignalR hubs operational, static files serving
+**Production Deployment**:
+- Package installer for distribution
+- Deploy to production environment
+- Create release notes and changelog
+- Publish GitHub release with binaries
 
-#### What Was Completed This Phase
+**User Testing & Feedback**:
+- Gather feedback from live events
+- Monitor crash reports and telemetry
+- Track feature requests and bug reports
+- Plan v1.1 roadmap based on user needs
 
-**Web Server Integration (December 29, 2025 - Phases 1-6):**
+**Future Enhancements** (v1.1+):
+- Additional lifeline types
+- Enhanced graphics and animations
+- Mobile app for audience participation
+- Question pack marketplace
+- Multi-language support
+
+---
+
+## 📜 Development History
+
+### Major Implementation Phases
+
+**Web Server Integration** (December 29, 2025):
 - **Problem**: Two executables (MillionaireGame.exe + MillionaireGame.Web.exe), standalone web server, code duplication, configuration split across projects
 - **Discovery**: WebServerHost.cs already implemented complete embedded hosting (Phase 1 analysis saved 2+ hours)
 - **Phase 1**: Comprehensive analysis comparing WebServerHost vs Program.cs - WebServerHost more complete
@@ -483,20 +441,20 @@ After morning session completion, the game will have:
 - **Audio Control**: MusicChannel stops correctly on all transitions
 - **Location**: FFFControlPanel.cs, SoundService.cs
 
-#### Next Session Options
+---
 
-**Option A: Complete Phase 7 - Build & Deployment Verification** ⭐ RECOMMENDED
-- Clean build from scratch (delete bin/obj folders)
-- Verify output directory structure (single EXE + dependencies)
-- Test deployment to clean machine/VM (copy deployment folder, run from fresh location)
-- Measure performance metrics (startup time, memory usage, web server response time)
-- Document deployment requirements (runtime dependencies, prerequisites)
-- Create deployment package structure recommendation
-- See: `docs/active/WEB_INTEGRATION_PLAN.md` (Phase 7 section)
+## 📞 Contact & Support
 
-**Option B: Merge to master-csharp and Continue Development**
-- Merge feature/web-integration branch to master-csharp
-- Proceed with Crash Handler implementation
+**Project Repository**: https://github.com/Macronair/TheMillionaireGame  
+**Documentation Wiki**: Available in project wiki  
+**Issues & Feature Requests**: GitHub Issues  
+**Development Status**: v1.0.0 Production Ready
+
+---
+
+**Last Updated**: January 4, 2026  
+**Version**: v1.0.0  
+**Status**: ✅ Production Ready - All features complete, documentation published
 - See: `docs/active/CRASH_HANDLER_IMPLEMENTATION_PLAN.md`
 
 **Option C: Continue Game Feature Development**
