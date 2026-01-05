@@ -351,52 +351,75 @@ The qualifying round where contestants compete. FFF automatically switches betwe
 #### Online Mode Setup (Web-Based)
 
 1. **Start FFF**
-   - Click **"Start FFF"** button (`Ctrl+F`)
-   - FFF window opens automatically in Online Mode (if WAPS is running)
+   - Click **"Pick Player"** button in Control Panel (`Ctrl+F`)
+   - FFF Control window opens automatically in Online Mode (if WAPS is running)
 
-2. **FFF Intro**
-   - Click **"FFF Intro"** button
-   - Plays lights down and intro sounds
+2. **Intro + Explain** (Button 1)
+   - Plays FFF lights down sound
+   - Followed by FFF explain sound
+   - Button turns gray when complete
+   - **Show Question** button becomes available (green)
 
-3. **Reveal Answers**
-   - Click **"Reveal Answers"**
-   - Ordering question appears on TV Screen
-   - Question sent to all connected participants' devices
-   - Example: "Order these planets by distance from Sun:"
-     - A: Mars
-     - B: Earth
-     - C: Venus
-     - D: Mercury
-   - 20-second countdown timer starts
+3. **Show Question** (Button 2)
+   - Randomly selects an ordering question from database
+   - Displays question text ONLY on TV Screen (answers hidden)
+   - Question details shown in Control Panel for reference
+   - Plays FFF read question sound
+   - Button turns yellow, **Reveal Answers Start** button becomes available (green)
+
+4. **Reveal Answers Start** (Button 3)
+   - Plays three-note reveal sound
+   - Transmits question and 4 answers to all participants' devices
+   - Displays answers on TV Screen in original order (A, B, C, D)
+   - Starts 20-second countdown timer on TV and participant devices
+   - Plays FFF thinking music (20 seconds)
    - Participants reorder answers on their devices and submit
+   - **Answer Submissions** list shows real-time responses as they arrive
 
-4. **View Submissions**
-   - Monitor real-time submissions in Control Panel
-   - See participant names and answer sequences as they arrive
-   - Timer counts down to zero
+5. **View Submissions**
+   - **Participants** panel: Shows all connected participants
+   - **Answer Submissions** panel: Lists participant name, answer sequence, and time
+   - **Timer Status**: Displays countdown (00:20 to 00:00)
+   - When timer expires:
+     - FFF read correct order sound plays (background bed)
+     - **Reveal Correct** button becomes available (green)
 
-5. **Reveal Correct Order**
-   - Click **"Reveal Correct Answers"** multiple times (once per answer)
-   - Correct order revealed one answer at a time on TV Screen
-   - Example: 1st correct = D (Mercury), 2nd = C (Venus), 3rd = B (Earth), 4th = A (Mars)
-   - Each click plays reveal sound
+6. **Reveal Correct** (Button 4 - Multi-Click)
+   - Click 4 times to reveal correct order one answer at a time
+   - Each click:
+     - Plays corresponding reveal sound (Order 1, 2, 3, 4)
+     - Shows next answer in correct position on TV Screen
+     - Button shows progress: "4. Reveal Correct (1/4)", "(2/4)", "(3/4)"
+   - Example: If correct order is DCBA (Mercury → Venus → Earth → Mars):
+     - Click 1: Shows D in position A
+     - Click 2: Shows C in position B
+     - Click 3: Shows B in position C
+     - Click 4: Shows A in position D
+   - After 4th click:
+     - If 2+ contestants correct: **Show Winners** button becomes available (green)
+     - If 0-1 contestant correct: Skips to **Confirm Winner** button (green)
 
-6. **Show Rankings**
-   - Click **"Show Rankings"**
-   - Displays top contestants with correct answers
-   - Shows names and response times
-   - If 2-8 correct: Shows all correct contestants ranked by speed
-   - If only 1 correct: Skips directly to winner
+7. **Show Winners** (Button 5 - Conditional)
+   - Only appears if 2 or more contestants answered correctly
+   - Plays "Who Was Correct" sound
+   - Displays top 8 correct contestants on TV Screen with times
+   - Names sorted alphabetically
+   - Times shown in seconds (e.g., "5.32s")
+   - **Confirm Winner** button becomes available (green)
 
-7. **Reveal Winner**
-   - Click **"Reveal Winner"**
-   - Announces fastest contestant with correct answer
-   - Winner's name displayed on TV Screen
-
-8. **Proceed to Main Game**
-   - Winner becomes main game contestant
-   - Close FFF window (clears TV display)
+8. **✗ Confirm Winner** (Button 6)
+   - Announces the fastest correct contestant as winner
+   - Plays FFF winner sound
+   - Displays winner name on TV Screen with highlighted strap
+   - Winner info shown in **Rankings Winner** panel
    - Winner automatically selected for main game
+   - **Important**: Keep FFF window open until host acknowledges winner
+   - Closing window clears TV display
+
+9. **Proceed to Main Game**
+   - Close FFF Control window after winner is announced
+   - Winner becomes main game contestant automatically
+   - TV Screen clears to background
 
 #### Offline Mode Setup (Local Selection)
 
