@@ -351,7 +351,7 @@ The qualifying round where contestants compete. FFF automatically switches betwe
 #### Online Mode Setup (Web-Based)
 
 1. **Start FFF**
-   - Click **"Pick Player"** button in Control Panel (`Ctrl+F`)
+   - Click **"Pick Player"** button in Control Panel
    - FFF Control window opens automatically in Online Mode (if WAPS is running)
 
 2. **Intro + Explain** (Button 1)
@@ -460,56 +460,91 @@ The qualifying round where contestants compete. FFF automatically switches betwe
 
 ### Main Game Flow
 
+After selecting a contestant through FFF (or starting directly), the main game proceeds through the following stages.
+
 #### Starting Main Game
 
-**Option 1: After FFF**
-- Winner automatically transferred
-- Click **"Start Main Game"**
+1. **After FFF Winner Selected:**
+   - Close FFF Control window
+   - Winner automatically transferred to main game
+   - Control Panel ready for main game
+   - **Explain Game** button enabled (green)
+   - **Lights Down** button enabled (green)
 
-**Option 2: Direct Start**
-- Click **"New Game"** → **"Main Game"**
-- Enter contestant name
-- Click **"Begin"**
+2. **Optional: Explain Game** (Before First Question)
+   - Click **"Explain Game"** button
+   - Plays explanation music on loop
+   - Demonstrates lifelines (yellow demo mode)
+   - Shows money tree and game rules to contestant
+   - When ready to start, proceed to Lights Down
+
+3. **Begin Questions:**
+   - **Questions 1-5 (Lightning Round):**
+     - Click **"Lights Down"** ONCE at start of Q1
+     - Question 1 loads automatically after lights down cue
+     - After Q1 answered correctly, click **"Question"** to load Q2-Q5
+     - No additional Lights Down needed between Q1-Q5
+   
+   - **Questions 6-15 (Dramatic Play):**
+     - Click **"Lights Down"** before EACH question
+     - Lights down cue plays, then question loads automatically
+     - More dramatic pacing with individual lights down per question
 
 #### Playing Questions
 
 **Question Sequence:**
 
 1. **Question Appears**
-   - TV Screen displays question and 4 answers
-   - Thinking music starts automatically
-   - Control Panel shows question to operator
+   - After Lights Down cue finishes, question text displays on TV Screen
+   - Question shown in Control Panel for operator reference
+   - Thinking music (bed music) starts automatically
+   - Question checkbox auto-checked
 
-2. **Host Reads Question**
-   - Optional: Click **"Read Question"** (`Space`)
-   - Plays audio narration (if available)
-   - Or host reads question aloud
+2. **Reveal Answers** (Operator Action)
+   - Click **"Question"** button to reveal answers one at a time
+   - **First click**: Shows Answer A
+   - **Second click**: Shows Answer B
+   - **Third click**: Shows Answer C
+   - **Fourth click**: Shows Answer D
+   - All four answers now visible to contestant
 
-3. **Contestant Considers**
+3. **Host Reads Question** (Optional)
+   - Host reads question aloud to contestant
+   - Contestant sees question and all 4 answers on Guest Screen
+   - Host sees question, answers, and correct answer highlighted on Host Screen
+
+4. **Contestant Considers**
    - Contestant thinks aloud
    - Can use lifelines (see [Lifelines](#lifelines))
    - Can walk away (keeps current winnings)
+   - Operator activates lifelines via buttons
 
-4. **Contestant Gives Answer**
+5. **Contestant Gives Answer**
    - Contestant verbally states answer (A, B, C, or D)
-   - Operator clicks corresponding button in Control Panel
+   - Operator clicks corresponding button in Control Panel (A, B, C, or D)
 
-5. **Lock in Answer**
+6. **Lock in Answer**
    - Host confirms: "Is that your final answer?"
-   - Operator clicks **"Final Answer"** (`Enter`)
+   - Operator clicks **"Reveal"** button
+   - Final answer sound plays (Questions 5+)
    - Dramatic pause...
 
-6. **Answer Revealed**
+7. **Answer Revealed**
    - **Correct**: 
      - TV Screen shows correct answer highlighted
      - Prize won sound plays
      - Confetti animation (higher levels)
+     - Money displays update (If Correct, Current, etc.)
      - Proceed to next level
    - **Wrong**:
      - Wrong answer sound
      - Correct answer revealed
      - Drop to safety net (if applicable)
-     - Game ends
+     - Game ends, walk away sequence begins
+
+8. **Next Question:**
+   - **Questions 1-5**: Click **"Question"** button to load next question immediately
+   - **Questions 6-15**: Click **"Lights Down"** button, then repeat from step 1
 
 #### Walking Away
 
