@@ -424,7 +424,7 @@ The qualifying round where contestants compete. FFF automatically switches betwe
 #### Offline Mode Setup (Local Selection)
 
 1. **Start FFF**
-   - Click **"Start FFF"** button (`Ctrl+F`)
+   - Click **"Pick Player"** button
    - FFF window opens automatically in Offline Mode (if WAPS is not running)
 
 2. **Select Player Count**
@@ -587,7 +587,7 @@ Each lifeline can be used once per game (unless profile specifies otherwise).
 
 **How It Works:**
 1. Contestant requests "50:50"
-2. Operator clicks **"50:50"** button (`F1`)
+2. Operator clicks **"50:50"** button (or `F8` if first lifeline slot)
 3. Two incorrect answers are eliminated
 4. TV Screen updates showing only 2 answers
 5. Contestant now chooses between 2 options
@@ -616,7 +616,7 @@ D: ———
 
 **How It Works:**
 1. Contestant requests "Phone a Friend"
-2. Operator clicks **"Phone a Friend"** button (`F2`)
+2. Operator clicks **"Phone a Friend"** button (or `F9` if second lifeline slot)
 3. 30-second countdown starts
 4. Contestant calls predetermined helper
 5. Reads question and answers
@@ -632,14 +632,13 @@ D: ———
 
 **Control Panel:**
 - Timer shows countdown
-- Pause with `Space` bar
 - Stop early with `Stop Timer` button
 
 ### Ask the Audience
 
 **How It Works:**
 1. Contestant requests "Ask the Audience"
-2. Operator clicks **"Ask the Audience"** button (`F3`)
+2. Operator clicks **"Ask the Audience"** button (or `F10` if third lifeline slot)
 3. Audience votes (multiple methods available)
 
 #### Manual Vote Entry
@@ -671,7 +670,7 @@ Enable web server for real-time audience voting:
    - Wait for voting to open
 
 3. **Activate Lifeline**
-   - Click **"Ask the Audience"** (`F3`)
+   - Click **"Ask the Audience"** button
    - Voting automatically opens on all connected devices
 
 4. **Audience Votes**
@@ -694,7 +693,7 @@ Enable web server for real-time audience voting:
 
 **How It Works:**
 1. Contestant requests "Switch Question"
-2. Operator clicks **"Switch Question"** button (`F4`)
+2. Operator clicks **"Switch Question"** button (or `F11` if fourth lifeline slot)
 3. Current question disappears
 4. New question of same difficulty level appears
 5. Original question cannot be returned to
@@ -934,7 +933,7 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
 ### Voting Process
 
 1. **Lifeline Activated**
-   - Operator clicks "Ask the Audience" (`F3`)
+   - Operator clicks "Ask the Audience" button
    - Question appears on all connected devices
 
 2. **Audience Votes**
