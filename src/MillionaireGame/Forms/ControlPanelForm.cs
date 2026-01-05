@@ -2564,7 +2564,7 @@ public partial class ControlPanelForm : Form
             try
             {
                 await _questionRepository.ResetAllQuestionsAsync();
-                GameConsole.Info("[HostIntro] [DEBUG] Reset all questions to unused");
+                GameConsole.Debug("[HostIntro] [DEBUG] Reset all questions to unused");
             }
             catch (Exception ex)
             {
