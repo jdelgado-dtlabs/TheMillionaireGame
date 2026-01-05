@@ -327,6 +327,12 @@ begin
         '        $cmd.CommandText = "CREATE DATABASE dbMillionaire"' + #13#10 +
         '        $cmd.ExecuteNonQuery() | Out-Null' + #13#10 +
         '        Write-Host "Database created successfully!" -ForegroundColor Green' + #13#10 +
+        '        ' + #13#10 +
+        '        Write-Host "Granting permissions to current user..." -ForegroundColor Yellow' + #13#10 +
+        '        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name' + #13#10 +
+        '        $cmd.CommandText = "USE dbMillionaire; IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = ' + #39 + '$currentUser' + #39 + ') CREATE USER [$currentUser] FOR LOGIN [$currentUser]; ALTER ROLE db_owner ADD MEMBER [$currentUser];"' + #13#10 +
+        '        $cmd.ExecuteNonQuery() | Out-Null' + #13#10 +
+        '        Write-Host "Permissions granted successfully!" -ForegroundColor Green' + #13#10 +
         '    } else {' + #13#10 +
         '        Write-Host "Database already exists." -ForegroundColor Green' + #13#10 +
         '    }' + #13#10 +
