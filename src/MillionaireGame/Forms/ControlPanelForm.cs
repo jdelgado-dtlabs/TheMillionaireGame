@@ -2556,18 +2556,24 @@ public partial class ControlPanelForm : Form
             }
         });
         
-        // Reset all questions to unused for new game - run in background
+#if DEBUG
+        // Reset all questions to unused for new game - DEBUG ONLY
+        // In release builds, the database is used as-is, respecting the Used flags
         _ = Task.Run(async () =>
         {
             try
             {
                 await _questionRepository.ResetAllQuestionsAsync();
+                GameConsole.Info("[HostIntro] [DEBUG] Reset all questions to unused");
             }
             catch (Exception ex)
             {
                 GameConsole.Error($"[HostIntro] Error resetting questions: {ex.Message}");
             }
         });
+#else
+        GameConsole.Info("[HostIntro] Using database as-is (Used flags respected in Release mode)");
+#endif
     }
     
     /// <summary>
