@@ -581,7 +581,7 @@ Reach Level 15 and answer correctly:
 
 ## Lifelines
 
-Each lifeline can be used once per game (unless profile specifies otherwise).
+Each lifeline can be used once per game.
 
 ### 50:50 Lifeline
 
@@ -1247,7 +1247,7 @@ The application automatically tracks comprehensive game statistics during gamepl
 - Device telemetry (device type, OS, browser) is collected from web audience
 - No personally identifiable information (PII) is stored
 - Connection times and durations tracked for statistics only
-- Contestant names stored only if entered in game profile
+- Contestant names tracked during gameplay for telemetry purposes only
 
 ### Future Enhancements
 
@@ -1345,8 +1345,7 @@ Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMi
 - [ ] Run sample FFF round
 
 **Just Before:**
-- [ ] Create game profile for event
-- [ ] Have contestant names ready
+- [ ] Have contestant names ready (for manual entry during game)
 - [ ] Verify Control Panel accessible but hidden from audience
 - [ ] Double-check sound levels
 - [ ] Ready to start!
