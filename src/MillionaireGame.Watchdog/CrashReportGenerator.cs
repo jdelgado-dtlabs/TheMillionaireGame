@@ -13,7 +13,7 @@ public class CrashReportGenerator
     public CrashReportGenerator()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        _reportDirectory = Path.Combine(localAppData, "MillionaireGame", "CrashReports");
+        _reportDirectory = Path.Combine(localAppData, "TheMillionaireGame", "CrashReports");
         Directory.CreateDirectory(_reportDirectory);
     }
 
