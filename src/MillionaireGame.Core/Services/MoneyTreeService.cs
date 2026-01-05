@@ -1,5 +1,5 @@
-using System.Xml.Serialization;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Database;
 
 namespace MillionaireGame.Core.Services;
 
@@ -8,44 +8,34 @@ namespace MillionaireGame.Core.Services;
 /// </summary>
 public class MoneyTreeService
 {
-    private readonly string _settingsFilePath;
+    private readonly ApplicationSettingsRepository _repository;
     private MoneyTreeSettings _settings;
 
     public MoneyTreeSettings Settings => _settings;
 
-    public MoneyTreeService(string? settingsFilePath = null)
+    public MoneyTreeService(string? connectionString = null)
     {
-        _settingsFilePath = settingsFilePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "MillionaireGame",
-            "tree.xml"
-        );
-        
+        _repository = new ApplicationSettingsRepository(connectionString ?? GetDefaultConnectionString());
         _settings = new MoneyTreeSettings();
         LoadSettings();
     }
+    
+    private static string GetDefaultConnectionString()
+    {
+        var sqlSettings = new SqlSettings();
+        sqlSettings.LoadSettings();
+        return sqlSettings.GetConnectionString();
+    }
 
     /// <summary>
-    /// Loads money tree settings from XML file, creates default if not found
+    /// Loads money tree settings from database, creates default if not found
     /// </summary>
     public void LoadSettings()
     {
         try
         {
-            if (!File.Exists(_settingsFilePath))
-            {
-                SaveDefaultSettings();
-                return;
-            }
-
-            using var reader = new StreamReader(_settingsFilePath);
-            var serializer = new XmlSerializer(typeof(MoneyTreeSettings));
-            var loadedSettings = serializer.Deserialize(reader) as MoneyTreeSettings;
-
-            if (loadedSettings != null)
-            {
-                _settings = loadedSettings;
-            }
+            var task = LoadSettingsAsync();
+            task.Wait();
         }
         catch
         {
@@ -53,28 +43,108 @@ public class MoneyTreeService
             SaveDefaultSettings();
         }
     }
+    
+    private async Task LoadSettingsAsync()
+    {
+        // Ensure table exists
+        if (!await _repository.SettingsTableExistsAsync())
+        {
+            await _repository.CreateSettingsTableAsync();
+        }
+        
+        var dbSettings = await _repository.GetAllSettingsAsync();
+        
+        // If no MoneyTree settings exist, save defaults
+        if (!dbSettings.Any(kvp => kvp.Key.StartsWith("MoneyTree.")))
+        {
+            SaveDefaultSettings();
+            return;
+        }
+        
+        // Load from database
+        LoadFromDictionary(dbSettings);
+    }
+    
+    private void LoadFromDictionary(Dictionary<string, string> dbSettings)
+    {
+        // Load each property from database
+        foreach (var property in typeof(MoneyTreeSettings).GetProperties())
+        {
+            var key = $"MoneyTree.{property.Name}";
+            if (dbSettings.TryGetValue(key, out var value))
+            {
+                try
+                {
+                    if (property.PropertyType == typeof(int))
+                    {
+                        property.SetValue(_settings, int.Parse(value));
+                    }
+                    else if (property.PropertyType == typeof(bool))
+                    {
+                        property.SetValue(_settings, bool.Parse(value));
+                    }
+                    else if (property.PropertyType == typeof(string))
+                    {
+                        property.SetValue(_settings, value);
+                    }
+                    else if (property.PropertyType == typeof(int[]))
+                    {
+                        var values = value.Split(',').Select(int.Parse).ToArray();
+                        property.SetValue(_settings, values);
+                    }
+                }
+                catch
+                {
+                    // Skip invalid values
+                }
+            }
+        }
+    }
 
     /// <summary>
-    /// Saves current money tree settings to XML file
+    /// Saves current money tree settings to database
     /// </summary>
     public void SaveSettings()
     {
         try
         {
-            // Ensure directory exists
-            var directory = Path.GetDirectoryName(_settingsFilePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            using var writer = new StreamWriter(_settingsFilePath);
-            var serializer = new XmlSerializer(typeof(MoneyTreeSettings));
-            serializer.Serialize(writer, _settings);
+            var task = SaveSettingsAsync();
+            task.Wait();
         }
         catch
         {
             // Silently ignore save errors
+        }
+    }
+    
+    private async Task SaveSettingsAsync()
+    {
+        // Ensure table exists
+        if (!await _repository.SettingsTableExistsAsync())
+        {
+            await _repository.CreateSettingsTableAsync();
+        }
+        
+        // Save each property to database
+        foreach (var property in typeof(MoneyTreeSettings).GetProperties())
+        {
+            var key = $"MoneyTree.{property.Name}";
+            var value = property.GetValue(_settings);
+            string? stringValue = null;
+            
+            if (value != null)
+            {
+                if (property.PropertyType == typeof(int[]))
+                {
+                    stringValue = string.Join(",", (int[])value);
+                }
+                else
+                {
+                    stringValue = value.ToString();
+                }
+            }
+            
+            await _repository.SaveSettingAsync(key, stringValue, "MoneyTree", property.Name);
         }
     }
 
