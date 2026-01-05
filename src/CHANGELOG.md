@@ -29,10 +29,58 @@ The Millionaire Game C# Edition reaches version 1.0! This release represents a c
   * Consistent branding across all application windows
 
 ### Changed
+- **Database Schema Simplification** ✅ COMPLETE
+  * Simplified difficulty system from 15 levels to 4 levels
+  * Level 1: Easy (Q1-5, $100-$1K) - 20 questions
+  * Level 2: Medium (Q6-10, $2K-$32K) - 20 questions
+  * Level 3: Hard (Q11-14, $64K-$500K) - 20 questions
+  * Level 4: Million (Q15, $1M) - 20 questions
+  * Removed Difficulty_Type column (no longer needed)
+  * Total: 80 main questions + 44 FFF questions
+  * All database scripts and models updated
+
+- **Question Editor Alignment** ✅ COMPLETE
+  * Updated all Question Editor forms to match new 4-level system
+  * Removed DifficultyType dropdown controls from all forms
+  * Level range changed from 1-15 to 1-4 throughout UI
+  * Updated labels with helpful descriptions: "(1=Easy, 2=Med, 3=Hard, 4=Million)"
+  * Removed DifficultyType validation and assignment logic
+  * Cleaned up DataGridView column configuration
+
+- **Question Model Refinement** ✅ COMPLETE
+  * Added [Browsable(false)] attribute to non-database properties
+  * Hides AnswerALabel, AnswerBLabel, AnswerCLabel, AnswerDLabel from data binding
+  * Hides Answer1-4 compatibility properties from data binding
+  * Prevents unwanted columns in DataGridView displays
+  * Cleaner Question Editor interface
+
+- **Development vs Production Behavior** ✅ COMPLETE
+  * DEBUG builds: Auto-reset all questions to unused on game start (for testing)
+  * RELEASE builds: Respect Used flags in database (production behavior)
+  * Implemented with #if DEBUG conditional compilation
+  * Console logging indicates active mode
+  * Manual "Reset Used" button preserved in Question Editor for both modes
+  * Appropriate log levels: Debug() in DEBUG mode, Info() in RELEASE mode
+
+- **Database Initialization Script** ✅ COMPLETE
+  * Regenerated init_database.sql with correct schema
+  * Now embedded in published application
+  * Contains all 80 questions + 44 FFF questions
+  * Level 1-4 system with proper CHECK constraints
+  * No Difficulty_Type column
+  * VARCHAR(4) for FFF CorrectAnswer field
+
 - **Version Numbering** ✅ COMPLETE
   * All projects updated to v1.0.0
   * AssemblyVersion and FileVersion set to 1.0.0.0
   * Documentation updated throughout
+
+### Fixed
+- **Database Schema Consistency** ✅ COMPLETE
+  * init_database.sql now matches application code
+  * Installer will deploy correct database structure
+  * Question Editor forms now match database schema
+  * No more schema mismatch issues
 
 ### Release Notes
 - **16 Major Features** completed over ~46 hours of development
@@ -41,9 +89,13 @@ The Millionaire Game C# Edition reaches version 1.0! This release represents a c
 - **Documentation**: Complete user and developer documentation
 - **Production Ready**: All critical features implemented and stable
 
-**Breaking Changes**: None
+**Breaking Changes**: Database schema changed - use new init_database.sql to reinitialize
 
-**Upgrade Notes**: First official release
+**Upgrade Notes**: 
+- First official release
+- If upgrading from pre-1.0 version, run new init_database.sql to update database schema
+- Question Editor will not work correctly with old database schema
+- Back up your existing questions database before updating
 
 ---
 

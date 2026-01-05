@@ -69,16 +69,23 @@ The application requires **SQL Server Express** (installed automatically by the 
 
 During installation, you can optionally check **"Initialize SQL Server database"** to automatically:
 - Create the `dbMillionaire` database
-- Import 80 generic trivia questions for the main game
-- Import 41 ordering questions for Fastest Finger First
+- Import **80 trivia questions** for the main game (4-level difficulty system)
+  - Level 1 (Easy): Questions 1-5 - 20 questions
+  - Level 2 (Medium): Questions 6-10 - 20 questions
+  - Level 3 (Hard): Questions 11-14 - 20 questions
+  - Level 4 (Million): Question 15 - 20 questions
+- Import **44 ordering questions** for Fastest Finger First
 
 **If you skipped database initialization during install:**
 1. Locate `init_database.sql` in the installation folder
 2. Run the script manually against your SQL Server Express instance
 3. This will create the database and populate the question tables
 
+**Database Schema (v1.0):**
+The database uses a simplified 4-level difficulty system that aligns with the natural progression of the game. Each question is assigned to one of four levels based on difficulty and prize tier.
+
 **Included Questions:**
-These generic trivia questions are free to use and serve as templates for creating your own question sets.
+These generic trivia questions are free to use and serve as templates for creating your own question sets. You can manage questions using the built-in Question Editor (**Tools** → **Question Editor**).
 
 **Note:** The application automatically creates settings and WAPS (Web Audience Participation System) tables on first launch. Only the question tables require manual initialization if not done during installation.
 
