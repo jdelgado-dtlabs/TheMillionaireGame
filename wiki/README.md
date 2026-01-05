@@ -68,7 +68,7 @@ wiki/
 - [ ] Announce wiki availability
 
 ### Phase 2 (Post-v1.0)
-- [ ] Stream Deck Integration guide
+- [x] Stream Deck Integration guide
 - [ ] Architecture documentation
 - [ ] Configuration reference
 - [ ] Advanced features guide
