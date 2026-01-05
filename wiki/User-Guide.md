@@ -548,16 +548,24 @@ After selecting a contestant through FFF (or starting directly), the main game p
 
 #### Walking Away
 
-Contestant can walk away at any time:
+Contestant can walk away after the question and all 4 answers have been revealed:
+
+**Requirements:**
+- Question text must be displayed
+- All 4 answers (A, B, C, D) must be revealed
+- Available before selecting an answer
+- Can be used instead of using a lifeline
+
+**Walk Away Process:**
 
 1. Contestant says "I'd like to walk away"
-2. Operator clicks **"Walk Away"** button (`W` key)
-3. Walk away music plays
+2. Operator clicks **"Walk Away"** button
+3. Walk away music plays (small or large based on question level)
 4. Contestant keeps current prize
-5. Correct answer revealed
-6. Game ends
+5. Correct answer revealed on TV Screen
+6. Game ends, walk away sequence completes
 
-**Strategy Note:** Walking away is often wise on difficult questions when substantial money is at risk.
+**Strategy Note:** Walking away is often wise on difficult questions when substantial money is at risk. Contestants should consider walking away when they're unsure and have significant winnings to protect.
 
 #### Winning the Game
 
