@@ -66,7 +66,6 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 var
   DotNetDownloadPage: TDownloadWizardPage;
   SqlExpressDownloadPage: TDownloadWizardPage;
-  InitializeDatabasePage: TInputOptionWizardPage;
 
 const
   // .NET 8.0 Desktop Runtime x64 (evergreen link - always latest)
@@ -189,15 +188,6 @@ begin
   begin
     SqlExpressDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
-  
-  // Create database initialization page
-  InitializeDatabasePage := CreateInputOptionPage(wpFinished,
-    'Database Initialization', 'Initialize SQL Server database for The Millionaire Game',
-    'The application requires a SQL Server database with questions. You can initialize it now or manually later.',
-    False, False);
-  
-  InitializeDatabasePage.Add('Initialize database (creates dbMillionaire and imports questions)');
-  InitializeDatabasePage.Values[0] := False; // Unchecked by default
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -306,8 +296,8 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    // Check if user wants to initialize the database
-    if InitializeDatabasePage.Values[0] then
+    // Check if user wants to initialize the database (check the task checkbox)
+    if IsTaskSelected('initializedb') then
     begin
       // Create PowerShell script to initialize database
       ScriptFile := ExpandConstant('{tmp}\InitializeDatabase.ps1');
@@ -358,8 +348,8 @@ begin
         '    $dbConn.Close()' + #13#10 +
         '    Write-Host "Database initialized successfully!"' + #13#10 +
         '    Write-Host "Database: dbMillionaire"' + #13#10 +
-        '    Write-Host "Tables: questions (80 records), fff_questions (41 records)"' + #13#10 +
-        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nTables created: questions (80 records), fff_questions (41 records)", "Database Initialization", 0, 64)' + #13#10 +
+        '    Write-Host "Tables: questions (80 records), fff_questions (44 records)"' + #13#10 +
+        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nTables created: questions (80 records), fff_questions (44 records)", "Database Initialization", 0, 64)' + #13#10 +
         '    exit 0' + #13#10 +
         '} catch {' + #13#10 +
         '    Write-Host "Error: $_"' + #13#10 +
@@ -374,24 +364,5 @@ begin
            '-ExecutionPolicy Bypass -WindowStyle Hidden -File "' + ScriptFile + '"',
            '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     end;
-  end;
-end;
-
-function ShouldSkipPage(PageID: Integer): Boolean;
-begin
-  Result := False;
-  
-  // Skip the database initialization page if it's shown during install
-  // We'll show it on the finish page instead
-  if PageID = InitializeDatabasePage.ID then
-    Result := True;
-end;
-
-procedure CurPageChanged(CurPageID: Integer);
-begin
-  // On the finish page, show database initialization option
-  if CurPageID = wpFinished then
-  begin
-    // Option is already available via the Tasks checkbox
   end;
 end;
