@@ -303,6 +303,7 @@ begin
       ScriptFile := ExpandConstant('{tmp}\InitializeDatabase.ps1');
       PowerShellScript := 
         '$ErrorActionPreference = "Stop"' + #13#10 +
+        'Add-Type -AssemblyName System.Windows.Forms' + #13#10 +
         'try {' + #13#10 +
         '    Write-Host "Connecting to SQL Server..."' + #13#10 +
         '    $connString = "Server=localhost\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=True;"' + #13#10 +
@@ -312,7 +313,7 @@ begin
         '    ' + #13#10 +
         '    # Check if database exists' + #13#10 +
         '    $cmd = $conn.CreateCommand()' + #13#10 +
-        '    $cmd.CommandText = "SELECT DB_ID(''dbMillionaire'')"' + #13#10 +
+        '    $cmd.CommandText = "SELECT DB_ID(' + #39 + 'dbMillionaire' + #39 + ')"' + #13#10 +
         '    $result = $cmd.ExecuteScalar()' + #13#10 +
         '    ' + #13#10 +
         '    if ($null -eq $result) {' + #13#10 +
@@ -335,10 +336,13 @@ begin
         '    $dbConn.Open()' + #13#10 +
         '    ' + #13#10 +
         '    # Split script by GO statements and execute each batch' + #13#10 +
-        '    $batches = $sqlScript -split ''\r?\nGO\r?\n''' + #13#10 +
+        '    $batches = $sqlScript -split "(?m)^GO\s*$"' + #13#10 +
+        '    $batchCount = 0' + #13#10 +
         '    foreach ($batch in $batches) {' + #13#10 +
         '        $batch = $batch.Trim()' + #13#10 +
         '        if ($batch.Length -gt 0) {' + #13#10 +
+        '            $batchCount++' + #13#10 +
+        '            Write-Host "Executing batch $batchCount..."' + #13#10 +
         '            $dbCmd = $dbConn.CreateCommand()' + #13#10 +
         '            $dbCmd.CommandText = $batch' + #13#10 +
         '            $dbCmd.ExecuteNonQuery() | Out-Null' + #13#10 +
@@ -348,21 +352,30 @@ begin
         '    $dbConn.Close()' + #13#10 +
         '    Write-Host "Database initialized successfully!"' + #13#10 +
         '    Write-Host "Database: dbMillionaire"' + #13#10 +
+        '    Write-Host "Batches executed: $batchCount"' + #13#10 +
         '    Write-Host "Tables: questions (80 records), fff_questions (44 records)"' + #13#10 +
-        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nTables created: questions (80 records), fff_questions (44 records)", "Database Initialization", 0, 64)' + #13#10 +
+        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nBatches executed: $batchCount`nTables created: questions (80 records), fff_questions (44 records)", "Database Initialization", 0, 64)' + #13#10 +
         '    exit 0' + #13#10 +
         '} catch {' + #13#10 +
         '    Write-Host "Error: $_"' + #13#10 +
+        '    Write-Host "Stack Trace: $($_.ScriptStackTrace)"' + #13#10 +
         '    [System.Windows.Forms.MessageBox]::Show("Failed to initialize database:`n`n$_`n`nYou can manually run init_database.sql from the installation folder.", "Database Initialization Error", 0, 16)' + #13#10 +
         '    exit 1' + #13#10 +
         '}';
       
       SaveStringToFile(ScriptFile, PowerShellScript, False);
       
-      // Execute PowerShell script
+      // Execute PowerShell script with visible window for debugging
       Exec('powershell.exe', 
-           '-ExecutionPolicy Bypass -WindowStyle Hidden -File "' + ScriptFile + '"',
-           '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+           '-ExecutionPolicy Bypass -NoExit -File "' + ScriptFile + '"',
+           '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+           
+      // Check if script failed
+      if ResultCode <> 0 then
+      begin
+        MsgBox('Database initialization failed with exit code: ' + IntToStr(ResultCode) + #13#10#13#10 +
+               'Please check the PowerShell window for details, then close it to continue.', mbError, MB_OK);
+      end;
     end;
   end;
 end;
