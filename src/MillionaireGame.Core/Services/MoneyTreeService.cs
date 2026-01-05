@@ -126,8 +126,8 @@ public class MoneyTreeService
             
         try
         {
-            var task = SaveSettingsAsync();
-            task.ConfigureAwait(false).GetAwaiter().GetResult();
+            // Run on background thread to avoid UI freezes
+            Task.Run(async () => await SaveSettingsAsync()).Wait();
         }
         catch
         {
