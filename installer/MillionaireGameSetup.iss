@@ -325,16 +325,18 @@ begin
         '    if ($null -eq $result) {' + #13#10 +
         '        Write-Host "Database does not exist. Creating..." -ForegroundColor Yellow' + #13#10 +
         '        $cmd.CommandText = "CREATE DATABASE dbMillionaire"' + #13#10 +
-        '        $cmd.ExecuteNonQuery() | Out-Null' + #13#10 +
-        '        Write-Host "Database created successfully!" -ForegroundColor Green' + #13#10 +
+        '        $rowsAffected = $cmd.ExecuteNonQuery()' + #13#10 +
+        '        Write-Host "Database created successfully! (Rows affected: $rowsAffected)" -ForegroundColor Green' + #13#10 +
         '        ' + #13#10 +
-        '        Write-Host "Granting permissions to current user..." -ForegroundColor Yellow' + #13#10 +
-        '        $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name' + #13#10 +
-        '        $cmd.CommandText = "USE dbMillionaire; IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = ' + #39 + '$currentUser' + #39 + ') CREATE USER [$currentUser] FOR LOGIN [$currentUser]; ALTER ROLE db_owner ADD MEMBER [$currentUser];"' + #13#10 +
-        '        $cmd.ExecuteNonQuery() | Out-Null' + #13#10 +
-        '        Write-Host "Permissions granted successfully!" -ForegroundColor Green' + #13#10 +
+        '        # Verify database was created' + #13#10 +
+        '        $cmd.CommandText = "SELECT DB_ID(' + #39 + 'dbMillionaire' + #39 + ')"' + #13#10 +
+        '        $verifyResult = $cmd.ExecuteScalar()' + #13#10 +
+        '        if ($null -eq $verifyResult) {' + #13#10 +
+        '            throw "Database creation appeared to succeed but database still does not exist!"' + #13#10 +
+        '        }' + #13#10 +
+        '        Write-Host "Database existence verified (DB_ID: $verifyResult)" -ForegroundColor Green' + #13#10 +
         '    } else {' + #13#10 +
-        '        Write-Host "Database already exists." -ForegroundColor Green' + #13#10 +
+        '        Write-Host "Database already exists (DB_ID: $result)" -ForegroundColor Green' + #13#10 +
         '    }' + #13#10 +
         '    $conn.Close()' + #13#10 +
         '    Write-Host ""' + #13#10 +
