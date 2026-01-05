@@ -303,78 +303,112 @@ begin
       ScriptFile := ExpandConstant('{tmp}\InitializeDatabase.ps1');
       PowerShellScript := 
         '$ErrorActionPreference = "Stop"' + #13#10 +
+        '$logFile = "' + ExpandConstant('{tmp}\database-init.log') + '"' + #13#10 +
+        'Start-Transcript -Path $logFile -Append' + #13#10 +
         'Add-Type -AssemblyName System.Windows.Forms' + #13#10 +
         'try {' + #13#10 +
-        '    Write-Host "Connecting to SQL Server..."' + #13#10 +
-        '    $connString = "Server=localhost\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=True;"' + #13#10 +
+        '    Write-Host "=== Database Initialization Started ===" -ForegroundColor Cyan' + #13#10 +
+        '    Write-Host "Script location: ' + ExpandConstant('{app}\init_database.sql') + '"' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    ' + #13#10 +
+        '    Write-Host "Step 1: Connecting to SQL Server..." -ForegroundColor Yellow' + #13#10 +
+        '    $connString = "Server=localhost\SQLEXPRESS;Integrated Security=True;TrustServerCertificate=True;Connection Timeout=30;"' + #13#10 +
         '    $conn = New-Object System.Data.SqlClient.SqlConnection($connString)' + #13#10 +
         '    $conn.Open()' + #13#10 +
-        '    Write-Host "Connected successfully"' + #13#10 +
+        '    Write-Host "Connected successfully!" -ForegroundColor Green' + #13#10 +
+        '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
-        '    # Check if database exists' + #13#10 +
+        '    Write-Host "Step 2: Checking if database exists..." -ForegroundColor Yellow' + #13#10 +
         '    $cmd = $conn.CreateCommand()' + #13#10 +
         '    $cmd.CommandText = "SELECT DB_ID(' + #39 + 'dbMillionaire' + #39 + ')"' + #13#10 +
         '    $result = $cmd.ExecuteScalar()' + #13#10 +
         '    ' + #13#10 +
         '    if ($null -eq $result) {' + #13#10 +
-        '        Write-Host "Creating database dbMillionaire..."' + #13#10 +
+        '        Write-Host "Database does not exist. Creating..." -ForegroundColor Yellow' + #13#10 +
         '        $cmd.CommandText = "CREATE DATABASE dbMillionaire"' + #13#10 +
         '        $cmd.ExecuteNonQuery() | Out-Null' + #13#10 +
-        '        Write-Host "Database created successfully"' + #13#10 +
+        '        Write-Host "Database created successfully!" -ForegroundColor Green' + #13#10 +
         '    } else {' + #13#10 +
-        '        Write-Host "Database dbMillionaire already exists"' + #13#10 +
+        '        Write-Host "Database already exists." -ForegroundColor Green' + #13#10 +
         '    }' + #13#10 +
-        '    ' + #13#10 +
         '    $conn.Close()' + #13#10 +
+        '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
-        '    # Run initialization script' + #13#10 +
-        '    Write-Host "Running database initialization script..."' + #13#10 +
-        '    $dbConnString = "Server=localhost\SQLEXPRESS;Database=dbMillionaire;Integrated Security=True;TrustServerCertificate=True;"' + #13#10 +
-        '    $sqlScript = Get-Content "' + ExpandConstant('{app}\init_database.sql') + '" -Raw' + #13#10 +
+        '    Write-Host "Step 3: Reading SQL script..." -ForegroundColor Yellow' + #13#10 +
+        '    $sqlFile = "' + ExpandConstant('{app}\init_database.sql') + '"' + #13#10 +
+        '    if (-not (Test-Path $sqlFile)) {' + #13#10 +
+        '        throw "SQL script not found at: $sqlFile"' + #13#10 +
+        '    }' + #13#10 +
+        '    $sqlScript = Get-Content $sqlFile -Raw -Encoding UTF8' + #13#10 +
+        '    Write-Host "Script loaded. Size: $($sqlScript.Length) characters" -ForegroundColor Green' + #13#10 +
+        '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
+        '    Write-Host "Step 4: Connecting to dbMillionaire database..." -ForegroundColor Yellow' + #13#10 +
+        '    $dbConnString = "Server=localhost\SQLEXPRESS;Database=dbMillionaire;Integrated Security=True;TrustServerCertificate=True;Connection Timeout=30;"' + #13#10 +
         '    $dbConn = New-Object System.Data.SqlClient.SqlConnection($dbConnString)' + #13#10 +
         '    $dbConn.Open()' + #13#10 +
+        '    Write-Host "Connected to database successfully!" -ForegroundColor Green' + #13#10 +
+        '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
-        '    # Split script by GO statements and execute each batch' + #13#10 +
-        '    $batches = $sqlScript -split "(?m)^GO\s*$"' + #13#10 +
+        '    Write-Host "Step 5: Executing SQL batches..." -ForegroundColor Yellow' + #13#10 +
+        '    $batches = $sqlScript -split "(?m)^\s*GO\s*$"' + #13#10 +
         '    $batchCount = 0' + #13#10 +
+        '    $totalBatches = ($batches | Where-Object { $_.Trim().Length -gt 0 }).Count' + #13#10 +
+        '    Write-Host "Total batches to execute: $totalBatches"' + #13#10 +
+        '    ' + #13#10 +
         '    foreach ($batch in $batches) {' + #13#10 +
         '        $batch = $batch.Trim()' + #13#10 +
         '        if ($batch.Length -gt 0) {' + #13#10 +
         '            $batchCount++' + #13#10 +
-        '            Write-Host "Executing batch $batchCount..."' + #13#10 +
+        '            Write-Host "Executing batch $batchCount/$totalBatches..." -NoNewline' + #13#10 +
         '            $dbCmd = $dbConn.CreateCommand()' + #13#10 +
         '            $dbCmd.CommandText = $batch' + #13#10 +
-        '            $dbCmd.ExecuteNonQuery() | Out-Null' + #13#10 +
+        '            $dbCmd.CommandTimeout = 120' + #13#10 +
+        '            $rowsAffected = $dbCmd.ExecuteNonQuery()' + #13#10 +
+        '            Write-Host " OK ($rowsAffected rows)" -ForegroundColor Green' + #13#10 +
         '        }' + #13#10 +
         '    }' + #13#10 +
-        '    ' + #13#10 +
         '    $dbConn.Close()' + #13#10 +
-        '    Write-Host "Database initialized successfully!"' + #13#10 +
-        '    Write-Host "Database: dbMillionaire"' + #13#10 +
-        '    Write-Host "Batches executed: $batchCount"' + #13#10 +
-        '    Write-Host "Tables: questions (80 records), fff_questions (44 records)"' + #13#10 +
-        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nBatches executed: $batchCount`nTables created: questions (80 records), fff_questions (44 records)", "Database Initialization", 0, 64)' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    Write-Host "=== Database Initialized Successfully! ===" -ForegroundColor Green' + #13#10 +
+        '    Write-Host "Database: dbMillionaire" -ForegroundColor Cyan' + #13#10 +
+        '    Write-Host "Batches executed: $batchCount" -ForegroundColor Cyan' + #13#10 +
+        '    Write-Host "Tables: questions (80 records), fff_questions (44 records)" -ForegroundColor Cyan' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    Write-Host "Press any key to continue..." -ForegroundColor Yellow' + #13#10 +
+        '    Stop-Transcript' + #13#10 +
+        '    $null = $host.UI.RawUI.ReadKey(' + #39 + 'NoEcho,IncludeKeyDown' + #39 + ')' + #13#10 +
+        '    [System.Windows.Forms.MessageBox]::Show("Database initialized successfully!`n`nDatabase: dbMillionaire`nBatches executed: $batchCount`nTables created: questions (80 records), fff_questions (44 records)", "Database Initialization Complete", 0, 64)' + #13#10 +
         '    exit 0' + #13#10 +
         '} catch {' + #13#10 +
-        '    Write-Host "Error: $_"' + #13#10 +
-        '    Write-Host "Stack Trace: $($_.ScriptStackTrace)"' + #13#10 +
-        '    [System.Windows.Forms.MessageBox]::Show("Failed to initialize database:`n`n$_`n`nYou can manually run init_database.sql from the installation folder.", "Database Initialization Error", 0, 16)' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    Write-Host "=== ERROR OCCURRED ===" -ForegroundColor Red' + #13#10 +
+        '    Write-Host "Error: $_" -ForegroundColor Red' + #13#10 +
+        '    Write-Host "Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor Red' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    Write-Host "Log file saved to: $logFile" -ForegroundColor Yellow' + #13#10 +
+        '    Write-Host "You can manually run: ' + ExpandConstant('{app}\init_database.sql') + '" -ForegroundColor Yellow' + #13#10 +
+        '    Write-Host ""' + #13#10 +
+        '    Write-Host "Press any key to continue..." -ForegroundColor Yellow' + #13#10 +
+        '    Stop-Transcript' + #13#10 +
+        '    $null = $host.UI.RawUI.ReadKey(' + #39 + 'NoEcho,IncludeKeyDown' + #39 + ')' + #13#10 +
+        '    [System.Windows.Forms.MessageBox]::Show("Failed to initialize database:`n`n$_`n`nLog file: $logFile`n`nYou can manually run init_database.sql from the installation folder.", "Database Initialization Error", 0, 16)' + #13#10 +
         '    exit 1' + #13#10 +
         '}';
       
       SaveStringToFile(ScriptFile, PowerShellScript, False);
       
-      // Execute PowerShell script with visible window for debugging
+      // Execute PowerShell script with visible window
       Exec('powershell.exe', 
-           '-ExecutionPolicy Bypass -NoExit -File "' + ScriptFile + '"',
+           '-ExecutionPolicy Bypass -File "' + ScriptFile + '"',
            '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
            
       // Check if script failed
       if ResultCode <> 0 then
       begin
         MsgBox('Database initialization failed with exit code: ' + IntToStr(ResultCode) + #13#10#13#10 +
-               'Please check the PowerShell window for details, then close it to continue.', mbError, MB_OK);
+               'Log file saved to: ' + ExpandConstant('{tmp}\database-init.log') + #13#10#13#10 +
+               'You can manually run init_database.sql from the installation folder.', mbError, MB_OK);
       end;
     end;
   end;
