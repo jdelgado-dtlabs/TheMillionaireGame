@@ -22,7 +22,7 @@ CREATE TABLE fff_questions (
     B NVARCHAR(500) NOT NULL,
     C NVARCHAR(500) NOT NULL,
     D NVARCHAR(500) NOT NULL,
-    CorrectAnswer VARCHAR(5) NOT NULL, -- e.g., "ABCD", "BADC", etc.
+    CorrectAnswer VARCHAR(4) NOT NULL, -- e.g., "ABCD", "BADC", etc.
     Used BIT NOT NULL DEFAULT 0
 );
 GO
@@ -37,29 +37,29 @@ INSERT INTO fff_questions (Question, A, B, C, D, CorrectAnswer, Used) VALUES
 -- Geography & Size Ordering
 ('Put these planets in order from closest to farthest from the Sun', 'Mars', 'Venus', 'Earth', 'Mercury', 'DBCA', 0),
 ('Put these oceans by area (largest to smallest)', 'Indian', 'Pacific', 'Atlantic', 'Arctic', 'BCAD', 0),
-('Put these continents by population (most to least)', 'Africa', 'Asia', 'Europe', 'North America', 'BCAD', 0),
+('Put these continents by population (most to least)', 'Africa', 'Asia', 'Europe', 'North America', 'BACD', 0),
 ('Put these mountains by height (shortest to tallest)', 'K2', 'Mount Everest', 'Kilimanjaro', 'Denali', 'CDAB', 0),
 ('Put these cities by population (largest to smallest)', 'Paris', 'Tokyo', 'London', 'New York', 'BDCA', 0),
 
 -- Historical Chronology
-('Put these US Presidents in chronological order', 'Lincoln', 'Washington', 'Roosevelt', 'Kennedy', 'BACD', 0),
-('Put these events in chronological order', 'Moon Landing', 'World War I', 'Fall of Berlin Wall', 'American Revolution', 'DBAC', 0),
-('Put these inventions by year (oldest first)', 'Telephone', 'Light Bulb', 'Automobile', 'Airplane', 'CBAD', 0),
-('Put these Olympiads in chronological order', 'Beijing 2008', 'Athens 2004', 'London 2012', 'Rio 2016', 'BACD', 0),
+('Put these US Presidents in chronological order (oldest to newest)', 'Lincoln', 'Washington', 'Roosevelt', 'Kennedy', 'BACD', 0),
+('Put these events in chronological order (oldest to newest)', 'Moon Landing', 'World War I', 'Fall of Berlin Wall', 'American Revolution', 'DBAC', 0),
+('Put these inventions by year (oldest first)', 'Airplane', 'Telephone', 'Automobile', 'Light Bulb', 'BDCA', 0),
+('Put these Olympiads in chronological order (oldest to newest)', 'Beijing 2008', 'Athens 2004', 'London 2012', 'Rio 2016', 'BACD', 0),
 ('Put these movies in order of release date (oldest first)', 'The Matrix', 'Star Wars', 'Avatar', 'Titanic', 'BDAC', 0),
 
 -- Numerical & Alphabetical Ordering
 ('Put these numbers in ascending order', '50', '10', '25', '100', 'BCAD', 0),
 ('Put these letters in alphabetical order', 'Z', 'M', 'A', 'Q', 'CBDA', 0),
-('Put these Roman numerals in ascending order', 'L', 'X', 'C', 'V', 'BDAC', 0),
+('Put these Roman numerals in ascending order', 'L', 'X', 'C', 'V', 'DBAC', 0),
 ('Put these fractions in ascending order', '3/4', '1/2', '1/4', '2/3', 'CBDA', 0),
-('Put these negative numbers from smallest to largest', '-5', '-20', '-1', '-10', 'BDCA', 0),
+('Put these negative numbers from smallest to largest', '-5', '-20', '-1', '-10', 'BDAC', 0),
 
 -- Time & Calendar Ordering
 ('Put these seasons in order starting with Spring', 'Winter', 'Fall', 'Spring', 'Summer', 'CDBA', 0),
 ('Put these months in calendar order', 'October', 'January', 'July', 'April', 'BDCA', 0),
-('Put these times of day in chronological order', 'Midnight', 'Noon', 'Dawn', 'Dusk', 'ACBD', 0),
-('Put these life stages in order', 'Adolescence', 'Infancy', 'Adulthood', 'Childhood', 'BDAC', 0),
+('Put these times of day in chronological order (earliest to latest)', 'Midnight', 'Noon', 'Dawn', 'Dusk', 'ACBD', 0),
+('Put these life stages in order (youngest to oldest)', 'Adolescence', 'Infancy', 'Adulthood', 'Childhood', 'BDAC', 0),
 ('Put these time periods from shortest to longest', 'Year', 'Month', 'Decade', 'Week', 'DBAC', 0),
 
 -- Scientific & Natural World
@@ -71,27 +71,31 @@ INSERT INTO fff_questions (Question, A, B, C, D, CorrectAnswer, Used) VALUES
 
 -- Books & Literature
 ('Put these books by publication date (oldest first)', '1984', 'Moby Dick', 'Harry Potter', 'The Great Gatsby', 'BDAC', 0),
-('Put these Harry Potter books in order', 'Prisoner of Azkaban', 'Philosopher''s Stone', 'Goblet of Fire', 'Chamber of Secrets', 'BDCA', 0),
+('Put these Harry Potter books in order (first to last)', 'Prisoner of Azkaban', 'Philosopher''s Stone', 'Goblet of Fire', 'Chamber of Secrets', 'BDCA', 0),
 ('Put these Shakespeare plays in alphabetical order', 'Othello', 'Hamlet', 'Macbeth', 'Romeo and Juliet', 'BCAD', 0),
 ('Put these classic authors by birth year (oldest first)', 'Charles Dickens', 'William Shakespeare', 'Jane Austen', 'Mark Twain', 'BCAD', 0),
+('Put these book series by first publication (oldest to newest)', 'The Hunger Games', 'Lord of the Rings', 'Twilight', 'Chronicles of Narnia', 'DBAC', 0),
 
 -- Technology & Innovation
 ('Put these tech companies by founding year (oldest first)', 'Google', 'Microsoft', 'Apple', 'Facebook', 'BCAD', 0),
-('Put these gaming consoles in order of release', 'PlayStation', 'Atari 2600', 'Xbox', 'Nintendo Switch', 'BACD', 0),
+('Put these gaming consoles in order of release (oldest to newest)', 'PlayStation', 'Atari 2600', 'Xbox', 'Nintendo Switch', 'BACD', 0),
 ('Put these Apple products in order of release (oldest first)', 'iPad', 'iPhone', 'Apple Watch', 'iPod', 'DBAC', 0),
 ('Put these social media platforms by launch year (oldest first)', 'Instagram', 'Facebook', 'TikTok', 'Twitter', 'BDAC', 0),
+('Put these programming languages by creation year (oldest to newest)', 'Python', 'C', 'JavaScript', 'Java', 'BCDA', 0),
 
 -- Music & Entertainment
 ('Put these musical notes in ascending pitch', 'E', 'C', 'G', 'A', 'BDCA', 0),
-('Put these Beatles albums in order of release', 'Abbey Road', 'Help!', 'Let It Be', 'A Hard Day''s Night', 'DBAC', 0),
+('Put these Beatles albums in order of release (oldest to newest)', 'Abbey Road', 'Help!', 'Let It Be', 'A Hard Day''s Night', 'DBAC', 0),
 ('Put these musical genres by approximate era of origin (oldest first)', 'Hip Hop', 'Jazz', 'Rock and Roll', 'Classical', 'DBCA', 0),
 ('Put these Disney movies in order of release (oldest first)', 'Frozen', 'The Lion King', 'Beauty and the Beast', 'Aladdin', 'CBDA', 0),
+('Put these TV shows by premiere date (oldest to newest)', 'Breaking Bad', 'Friends', 'Game of Thrones', 'The Office (US)', 'BDCA', 0),
 
 -- Sports & Games
 ('Put these Olympic sports by when they were added (oldest first)', 'Basketball', 'Swimming', 'Skateboarding', 'Tennis', 'BDAC', 0),
 ('Put these chess pieces by point value (lowest to highest)', 'Knight', 'Pawn', 'Rook', 'Queen', 'BACD', 0),
-('Put these FIFA World Cups in chronological order', 'Brazil 2014', 'Germany 2006', 'South Africa 2010', 'Russia 2018', 'BCAD', 0),
-('Put these Super Bowl winning teams in chronological order of first win', 'New England Patriots', 'Green Bay Packers', 'Dallas Cowboys', 'Pittsburgh Steelers', 'BCDAD', 0);
+('Put these FIFA World Cups in chronological order (oldest to newest)', 'Brazil 2014', 'Germany 2006', 'South Africa 2010', 'Russia 2018', 'BCAD', 0),
+('Put these Super Bowl winning teams in chronological order of first win', 'New England Patriots', 'Green Bay Packers', 'Dallas Cowboys', 'Pittsburgh Steelers', 'BCDA', 0),
+('Put these track and field events by distance (shortest to longest)', '100m', 'Marathon', '400m', '5000m', 'ACDB', 0);
 
 GO
 
