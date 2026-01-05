@@ -22,9 +22,9 @@ public class MoneyTreeService
     
     private static string GetDefaultConnectionString()
     {
-        var sqlSettings = new SqlSettings();
+        var sqlSettings = new SqlSettingsManager();
         sqlSettings.LoadSettings();
-        return sqlSettings.GetConnectionString();
+        return sqlSettings.Settings.GetConnectionString("dbMillionaire");
     }
 
     /// <summary>
