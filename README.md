@@ -10,6 +10,19 @@ A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game 
 
 See [`src/docs/START_HERE.md`](src/docs/START_HERE.md) for complete setup and build instructions.
 
+## Wiki Documentation
+
+**Looking for game usage documentation?** Visit the **[Wiki](../../wiki)** for comprehensive guides:
+
+- **[Home](../../wiki/Home)** - Overview and getting started
+- **[Installation](../../wiki/Installation)** - Download and install the game
+- **[Quick Start Guide](../../wiki/Quick-Start-Guide)** - Run your first game in 10 minutes
+- **[User Guide](../../wiki/User-Guide)** - Complete feature documentation
+- **[Troubleshooting](../../wiki/Troubleshooting)** - Solutions to common problems
+- **[Stream Deck Integration](../../wiki/Stream-Deck-Integration)** - Control the game with Stream Deck
+
+The wiki contains all information needed to **install, configure, and run the game**. The `src/docs/` folder is for **development** documentation only.
+
 ## Project Structure
 
 - **`src/`** - Main C# solution and projects (v1.0.0)
@@ -20,7 +33,11 @@ See [`src/docs/START_HERE.md`](src/docs/START_HERE.md) for complete setup and bu
 
 ## Documentation
 
-Comprehensive documentation is available in the [`src/docs/`](src/docs/) folder:
+### For Users & Operators
+**[📖 Visit the Wiki](../../wiki)** for complete game usage documentation, installation guides, troubleshooting, and feature tutorials.
+
+### For Developers
+Development documentation is available in the [`src/docs/`](src/docs/) folder:
 
 - **[START_HERE.md](src/docs/START_HERE.md)** - Development quick start guide
 - **[INDEX.md](src/docs/INDEX.md)** - Complete documentation navigation
