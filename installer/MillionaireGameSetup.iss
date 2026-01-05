@@ -322,7 +322,7 @@ begin
         '    $cmd.CommandText = "SELECT DB_ID(' + #39 + 'dbMillionaire' + #39 + ')"' + #13#10 +
         '    $result = $cmd.ExecuteScalar()' + #13#10 +
         '    ' + #13#10 +
-        '    if ($null -eq $result) {' + #13#10 +
+        '    if ([string]::IsNullOrEmpty($result)) {' + #13#10 +
         '        Write-Host "Database does not exist. Creating..." -ForegroundColor Yellow' + #13#10 +
         '        $cmd.CommandText = "CREATE DATABASE dbMillionaire"' + #13#10 +
         '        $rowsAffected = $cmd.ExecuteNonQuery()' + #13#10 +
@@ -331,7 +331,7 @@ begin
         '        # Verify database was created' + #13#10 +
         '        $cmd.CommandText = "SELECT DB_ID(' + #39 + 'dbMillionaire' + #39 + ')"' + #13#10 +
         '        $verifyResult = $cmd.ExecuteScalar()' + #13#10 +
-        '        if ($null -eq $verifyResult) {' + #13#10 +
+        '        if ([string]::IsNullOrEmpty($verifyResult)) {' + #13#10 +
         '            throw "Database creation appeared to succeed but database still does not exist!"' + #13#10 +
         '        }' + #13#10 +
         '        Write-Host "Database existence verified (DB_ID: $verifyResult)" -ForegroundColor Green' + #13#10 +
