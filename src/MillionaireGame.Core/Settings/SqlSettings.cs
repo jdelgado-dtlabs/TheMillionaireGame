@@ -70,12 +70,12 @@ public class SqlSettingsManager
 
     public SqlSettingsManager(string? basePath = null)
     {
-        // Use AppData folder to avoid permission issues
+        // Use LocalAppData folder to avoid permission issues (consistent with logs/telemetry)
         if (basePath == null)
         {
             var appDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "MillionaireGame");
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "TheMillionaireGame");
             Directory.CreateDirectory(appDataFolder); // Ensure directory exists
             basePath = appDataFolder;
         }
