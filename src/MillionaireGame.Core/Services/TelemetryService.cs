@@ -1,5 +1,6 @@
 using MillionaireGame.Core.Models.Telemetry;
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Database;
 
 namespace MillionaireGame.Core.Services;
 
@@ -14,10 +15,21 @@ public class TelemetryService
     private GameTelemetry _currentGame;
     private RoundTelemetry? _currentRound;
     private MoneyTreeSettings? _moneyTreeSettings;
+    private TelemetryRepository? _repository;
+    private string? _connectionString;
 
     private TelemetryService()
     {
         _currentGame = new GameTelemetry();
+    }
+
+    /// <summary>
+    /// Initialize the telemetry service with database connection
+    /// </summary>
+    public void Initialize(string connectionString)
+    {
+        _connectionString = connectionString;
+        _repository = new TelemetryRepository(connectionString);
     }
 
     /// <summary>
@@ -38,9 +50,25 @@ public class TelemetryService
     {
         _currentGame = new GameTelemetry
         {
-            GameStartTime = DateTime.Now
+            GameStartTime = DateTime.Now,
+            Currency1Name = _moneyTreeSettings?.Currency ?? "$",
+            Currency2Name = _moneyTreeSettings?.Currency2
         };
         _currentRound = null;
+
+        // Save to database
+        if (_repository != null)
+        {
+            try
+            {
+                _repository.SaveGameSessionAsync(_currentGame).Wait();
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail - telemetry is not critical
+                Console.WriteLine($"Failed to save game session: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -69,7 +97,17 @@ public class TelemetryService
         if (_currentRound == null) return;
 
         _currentRound.EndTime = DateTime.Now;
-        _currentRound.Outcome = outcome;
+        
+        // Map string outcome to enum
+        _currentRound.Outcome = outcome.ToLower() switch
+        {
+            "win" => RoundOutcome.Won,
+            "loss" => RoundOutcome.Lost,
+            "walk away" => RoundOutcome.WalkedAway,
+            "interrupted" => RoundOutcome.Interrupted,
+            _ => null
+        };
+        
         _currentRound.FinalWinnings = finalWinnings;
         _currentRound.FinalQuestionReached = questionReached;
 
@@ -80,6 +118,20 @@ public class TelemetryService
         }
 
         _currentGame.Rounds.Add(_currentRound);
+
+        // Save to database
+        if (_repository != null)
+        {
+            try
+            {
+                _repository.SaveGameRoundAsync(_currentGame.SessionId, _currentRound).Wait();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save game round: {ex.Message}");
+            }
+        }
+
         _currentRound = null;
     }
 
@@ -135,6 +187,35 @@ public class TelemetryService
             Timestamp = DateTime.Now,
             Metadata = metadata
         });
+
+        // Save to database
+        if (_repository != null && _currentRound.RoundId > 0)
+        {
+            try
+            {
+                // Map lifeline name to type enum
+                int lifelineType = lifelineName.ToLower() switch
+                {
+                    "fifty fifty" or "50:50" or "5050" => 1,
+                    "plus one" or "phone a friend" => 2,
+                    "ask the audience" => 3,
+                    "switch question" => 4,
+                    "double dip" => 5,
+                    "ask the host" => 6,
+                    _ => 0
+                };
+
+                if (lifelineType > 0)
+                {
+                    _repository.SaveLifelineUsageAsync(_currentGame.SessionId, _currentRound.RoundId, 
+                        lifelineType, questionNumber, metadata).Wait();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save lifeline usage: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>
@@ -203,6 +284,19 @@ public class TelemetryService
         // Calculate per-currency totals
         _currentGame.Currency1TotalWinnings = _currentGame.Rounds.Sum(r => r.Currency1Winnings);
         _currentGame.Currency2TotalWinnings = _currentGame.Rounds.Sum(r => r.Currency2Winnings);
+
+        // Update database with end time
+        if (_repository != null)
+        {
+            try
+            {
+                _repository.UpdateGameSessionEndTimeAsync(_currentGame.SessionId, _currentGame.GameEndTime).Wait();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to update game session end time: {ex.Message}");
+            }
+        }
     }
 
     /// <summary>

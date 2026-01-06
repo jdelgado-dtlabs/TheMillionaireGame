@@ -156,6 +156,9 @@ internal static class Program
         
         ServiceProvider = services.BuildServiceProvider();
         
+        // Initialize telemetry service with database connection
+        TelemetryService.Instance.Initialize(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+        
         // Wire up telemetry bridge callbacks
         SetupTelemetryBridge();
         
@@ -167,6 +170,19 @@ internal static class Program
 
         // Create and run main control panel (FIRST window to show)
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
+        
+        // Register application exit handler for telemetry completion
+        Application.ApplicationExit += (s, e) =>
+        {
+            var telemetryService = TelemetryService.Instance;
+            var currentGame = telemetryService.GetCurrentGameData();
+            
+            // If game started but not completed, mark end time
+            if (currentGame.GameStartTime != default && currentGame.GameEndTime == default)
+            {
+                telemetryService.CompleteGame();
+            }
+        };
         
         _heartbeatService.SetActivity("Running");
         Application.Run(controlPanel);

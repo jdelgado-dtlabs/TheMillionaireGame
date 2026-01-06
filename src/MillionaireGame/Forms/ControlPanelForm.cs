@@ -2508,6 +2508,10 @@ public partial class ControlPanelForm : Form
 
     private void btnHostIntro_Click(object? sender, EventArgs e)
     {
+        // Start telemetry session
+        var telemetryService = TelemetryService.Instance;
+        telemetryService.StartNewGame();
+        
         // Disable Host Intro until closing
         btnHostIntro.Enabled = false;
         btnHostIntro.BackColor = Color.Gray;
@@ -3023,6 +3027,11 @@ public partial class ControlPanelForm : Form
     private void CompleteClosing()
     {
         _closingStage = ClosingStage.Complete;
+        
+        // Complete telemetry session
+        var telemetryService = TelemetryService.Instance;
+        telemetryService.CompleteGame();
+        
         btnClosing.BackColor = Color.Gray;
         btnClosing.Enabled = false;
         
@@ -3045,20 +3054,8 @@ public partial class ControlPanelForm : Form
         // Clear game winner display from screens
         _screenService.ClearGameWinnerDisplay();
         
-        // Export telemetry data to CSV if any rounds were played
-        if (_roundNumber > 0)
-        {
-            try
-            {
-                _telemetryService.CompleteGame();
-                var excelPath = _telemetryExportService.ExportWithDefaults(_telemetryService.GetCurrentGameData());
-                GameConsole.Info($"[Telemetry] Game statistics exported to: {excelPath}");
-            }
-            catch (Exception ex)
-            {
-                GameConsole.Error($"[Telemetry] Failed to export telemetry: {ex.Message}");
-            }
-        }
+        // Telemetry data is now saved to database automatically
+        // Export is user-initiated via Telemetry Viewer (Game > Telemetry Viewer)
         
         // Clear all visual elements on screens to create pristine "blank slate" appearance
         // This gives the impression of a reset without actually resetting game data
@@ -4438,6 +4435,12 @@ public partial class ControlPanelForm : Form
         };
         
         optionsDialog.ShowDialog(this);
+    }
+
+    private void TelemetryViewerToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        using var telemetryViewer = new TelemetryViewerForm(_sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+        telemetryViewer.ShowDialog(this);
     }
 
     private void HostScreenToolStripMenuItem_Click(object? sender, EventArgs e)

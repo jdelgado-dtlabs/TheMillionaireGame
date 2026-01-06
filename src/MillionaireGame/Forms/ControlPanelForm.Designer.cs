@@ -146,6 +146,7 @@ namespace MillionaireGame.Forms
                 new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
                 new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
                 new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
+                new ToolStripMenuItem("Telemetry Viewer", null, TelemetryViewerToolStripMenuItem_Click) { ShortcutKeys = Keys.Control | Keys.T },
                 new ToolStripSeparator(),
                 new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
@@ -154,6 +155,7 @@ namespace MillionaireGame.Forms
                 new ToolStripMenuItem("Database", null, DatabaseToolStripMenuItem_Click),
                 new ToolStripMenuItem("Editor", null, QuestionsEditorToolStripMenuItem_Click),
                 new ToolStripMenuItem("Settings", null, OptionsToolStripMenuItem_Click),
+                new ToolStripMenuItem("Telemetry Viewer", null, TelemetryViewerToolStripMenuItem_Click) { ShortcutKeys = Keys.Control | Keys.T },
                 new ToolStripSeparator(),
                 new ToolStripMenuItem("Exit", null, CloseToolStripMenuItem_Click)
             });
