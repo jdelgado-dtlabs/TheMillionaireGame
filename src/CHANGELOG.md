@@ -2,6 +2,29 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v1.0.1] - 2026-01-05
+
+### Fixed
+- **SQL.xml Write Permissions** ✅
+  * Changed storage location from program directory to LocalAppData
+  * Prevents admin permission requirement on fresh installations
+  * Path: `%LocalAppData%\TheMillionaireGame\sql.xml`
+  * Consistent with logs, crash reports, and telemetry storage
+
+- **Web Server Static Files** ✅
+  * Implemented ManifestEmbeddedFileProvider for wwwroot resources
+  * Web server now correctly serves static files from embedded resources
+  * No longer requires physical wwwroot folder on disk
+  * Added proper MIME type mappings for all web assets
+
+- **Multi-Monitor Assignment** ✅
+  * Fixed monitor index parsing from dropdown display text
+  * Properly track actual Screen.AllScreens indices vs dropdown indices
+  * Fixed dropdown refresh logic to exclude already-assigned monitors
+  * Added event handlers to update dropdowns when selection changes
+  * Monitors now correctly assigned and screens open on correct displays
+  * Fixed issue where laptop onboard monitor wasn't listed
+
 ## [v1.0.0] - 2026-01-04
 
 ### 🎉 Official Release
