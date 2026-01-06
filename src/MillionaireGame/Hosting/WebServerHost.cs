@@ -213,7 +213,16 @@ public class WebServerHost : IDisposable
                     // Step 2: Clear ALL participants (live state resets on app restart)
                     var deletedAllParticipants = await context.Participants.ExecuteDeleteAsync();
                     
-                    // Step 3: Find incomplete sessions (PreGame or legacy Waiting with no game progress)
+                    // Step 3: Reset LIVE session to Active status (or delete it to start fresh)
+                    var liveSession = await context.Sessions.FindAsync("LIVE");
+                    if (liveSession != null)
+                    {
+                        liveSession.Status = SessionStatus.Active;
+                        await context.SaveChangesAsync();
+                        WebServerConsole.Info("[WebServer] Reset LIVE session to Active status");
+                    }
+                    
+                    // Step 4: Find incomplete sessions (PreGame or legacy Waiting with no game progress)
                     var incompleteSessions = await context.Sessions
                         .Where(s => s.Status == SessionStatus.PreGame || s.Status == SessionStatus.Waiting)
                         .Select(s => s.Id)
@@ -301,15 +310,43 @@ public class WebServerHost : IDisposable
                 WebServerConsole.Warn($"  Failed to notify clients: {ex.Message}");
             }
 
-            // Step 2: Stop the ASP.NET Core host
+            // Step 2: Delete LIVE session from database
             stopwatch.Restart();
-            WebServerConsole.Info("Step 2: Stopping ASP.NET Core host...");
+            WebServerConsole.Info("Step 2: Cleaning up LIVE session...");
+            try
+            {
+                var serviceScopeFactory = _host.Services.GetService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+                if (serviceScopeFactory != null)
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    var context = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
+                    if (context != null)
+                    {
+                        var liveSession = await context.Sessions.FindAsync("LIVE");
+                        if (liveSession != null)
+                        {
+                            context.Sessions.Remove(liveSession);
+                            await context.SaveChangesAsync();
+                            WebServerConsole.Info("  - Deleted LIVE session");
+                        }
+                    }
+                }
+                WebServerConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
+            }
+            catch (Exception ex)
+            {
+                WebServerConsole.Warn($"  Failed to clean up LIVE session: {ex.Message}");
+            }
+
+            // Step 3: Stop the ASP.NET Core host
+            stopwatch.Restart();
+            WebServerConsole.Info("Step 3: Stopping ASP.NET Core host...");
             await _host.StopAsync(TimeSpan.FromSeconds(5));
             WebServerConsole.Info($"  Completed in {stopwatch.ElapsedMilliseconds}ms");
 
-            // Step 3: Dispose resources
+            // Step 4: Dispose resources
             stopwatch.Restart();
-            WebServerConsole.Info("Step 3: Disposing host resources...");
+            WebServerConsole.Info("Step 4: Disposing host resources...");
             _host.Dispose();
             _host = null;
             _baseUrl = null;

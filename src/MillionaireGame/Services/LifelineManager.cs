@@ -556,24 +556,20 @@ public class LifelineManager
                 {
                     using var scope = serviceScopeFactory.CreateScope();
                     var hubContext = webServerHost.GetService<Microsoft.AspNetCore.SignalR.IHubContext<MillionaireGame.Web.Hubs.GameHub>>();
-                    var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
                     
-                    if (hubContext != null && dbContext != null)
+                    if (hubContext != null)
                     {
-                        var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                            dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
+                        // Use the LIVE session (web clients always connect to "LIVE")
+                        const string sessionId = "LIVE";
                         
-                        if (activeSession != null)
-                        {
-                            // Broadcast state change back to Waiting Lobby
-                            await webServerHost.BroadcastGameStateAsync(
-                                activeSession.Id,
-                                Web.Models.GameStateType.WaitingLobby,
-                                "Waiting for next activity...");
-                            
-                            await hubContext.Clients.Group(activeSession.Id).SendAsync("ATACleared");
-                            LogMessage?.Invoke("[ATA] Cleared from web clients");
-                        }
+                        // Broadcast state change back to Waiting Lobby
+                        await webServerHost.BroadcastGameStateAsync(
+                            sessionId,
+                            Web.Models.GameStateType.WaitingLobby,
+                            "Waiting for next activity...");
+                        
+                        await hubContext.Clients.Group(sessionId).SendAsync("ATACleared");
+                        LogMessage?.Invoke($"[ATA] Cleared from web clients (session {sessionId})");
                     }
                 }
             }
@@ -616,28 +612,15 @@ public class LifelineManager
                 return;
             }
             
-            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
-            
-            if (dbContext == null)
-            {
-                return;
-            }
-            
-            // Get active session
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-            
-            if (activeSession == null)
-            {
-                return;
-            }
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
             
             // Get active participant count
-            var activeParticipants = await sessionService.GetActiveParticipantsAsync(activeSession.Id);
+            var activeParticipants = await sessionService.GetActiveParticipantsAsync(sessionId);
             var participantCount = activeParticipants.Count();
             
             // Get vote count
-            var voteCount = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            var voteCount = await sessionService.GetATAVoteCountAsync(sessionId);
             
             // If all participants have voted, complete ATA early
             if (participantCount > 0 && voteCount >= participantCount)
@@ -762,28 +745,12 @@ public class LifelineManager
                 return GeneratePlaceholderResults();
             }
             
-            // Get WAPSDbContext from scope
-            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
-            
-            if (dbContext == null)
-            {
-                LogMessage?.Invoke("[ATA] WAPSDbContext not available - falling back to offline mode");
-                return GeneratePlaceholderResults();
-            }
-            
-            // Query for active session
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-            
-            if (activeSession == null)
-            {
-                LogMessage?.Invoke("[ATA] No active session found - falling back to offline mode");
-                return GeneratePlaceholderResults();
-            }
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
             
             // Get real voting percentages from database
-            var percentages = await sessionService.CalculateATAPercentagesAsync(activeSession.Id);
-            var totalVotes = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            var percentages = await sessionService.CalculateATAPercentagesAsync(sessionId);
+            var totalVotes = await sessionService.GetATAVoteCountAsync(sessionId);
             
             if (totalVotes == 0)
             {
@@ -847,31 +814,20 @@ public class LifelineManager
             }
 
             using var scope = serviceScopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
-            if (dbContext == null)
-            {
-                return;
-            }
+            
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
 
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-
-            if (activeSession == null)
-            {
-                LogMessage?.Invoke("[ATA] No active session found for web notification");
-                return;
-            }
-
-            LogMessage?.Invoke($"[ATA] Broadcasting ATAIntroStarted to session group: {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Broadcasting ATAIntroStarted to session group: {sessionId}");
 
             // Broadcast game state change to ATAReady
             await webServerHost.BroadcastGameStateAsync(
-                activeSession.Id,
+                sessionId,
                 Web.Models.GameStateType.ATAReady,
                 "Get ready to vote!");
 
             // Broadcast intro message to web clients (showing question but voting disabled)
-            await hubContext.Clients.Group(activeSession.Id).SendAsync("ATAIntroStarted", new
+            await hubContext.Clients.Group(sessionId).SendAsync("ATAIntroStarted", new
             {
                 QuestionText = question.QuestionText,
                 OptionA = question.AnswerA,
@@ -882,7 +838,7 @@ public class LifelineManager
                 StartTime = DateTime.UtcNow
             });
 
-            LogMessage?.Invoke($"[ATA] Intro notification sent to web clients in session {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Intro notification sent to web clients in session {sessionId}");
         }
         catch (Exception ex)
         {
@@ -917,26 +873,15 @@ public class LifelineManager
             }
 
             using var scope = serviceScopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
-            if (dbContext == null)
-            {
-                return;
-            }
+            
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
 
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-
-            if (activeSession == null)
-            {
-                LogMessage?.Invoke("[ATA] No active session found for voting notification");
-                return;
-            }
-
-            LogMessage?.Invoke($"[ATA] Broadcasting VotingStarted to session group: {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Broadcasting VotingStarted to session group: {sessionId}");
 
             // Broadcast game state change to ATAVoting
             await webServerHost.BroadcastGameStateAsync(
-                activeSession.Id,
+                sessionId,
                 Web.Models.GameStateType.ATAVoting,
                 "Vote now!");
 
@@ -947,7 +892,7 @@ public class LifelineManager
                 return;
             }
 
-            await hubContext.Clients.Group(activeSession.Id).SendAsync("VotingStarted", new
+            await hubContext.Clients.Group(sessionId).SendAsync("VotingStarted", new
             {
                 QuestionText = question.QuestionText,
                 OptionA = question.AnswerA,
@@ -958,7 +903,7 @@ public class LifelineManager
                 StartTime = DateTime.UtcNow
             });
 
-            LogMessage?.Invoke($"[ATA] Voting notification sent to web clients in session {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Voting notification sent to web clients in session {sessionId}");
         }
         catch (Exception ex)
         {
@@ -987,22 +932,11 @@ public class LifelineManager
             }
 
             using var scope = serviceScopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetService<MillionaireGame.Web.Data.WAPSDbContext>();
-            if (dbContext == null)
-            {
-                return;
-            }
+            
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
 
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-
-            if (activeSession == null)
-            {
-                LogMessage?.Invoke("[ATA] No active session found for completion notification");
-                return;
-            }
-
-            LogMessage?.Invoke($"[ATA] Broadcasting VotingEnded to session group: {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Broadcasting VotingEnded to session group: {sessionId}");
 
             // Get SessionService from scope
             var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
@@ -1012,15 +946,15 @@ public class LifelineManager
             }
 
             // Calculate final percentages
-            var percentages = await sessionService.CalculateATAPercentagesAsync(activeSession.Id);
-            var totalVotes = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            var percentages = await sessionService.CalculateATAPercentagesAsync(sessionId);
+            var totalVotes = await sessionService.GetATAVoteCountAsync(sessionId);
 
             // Mark all voters as having used ATA
-            await sessionService.MarkATAUsedForVotersAsync(activeSession.Id);
+            await sessionService.MarkATAUsedForVotersAsync(sessionId);
 
             // Broadcast game state change to ATAResults
             await webServerHost.BroadcastGameStateAsync(
-                activeSession.Id,
+                sessionId,
                 Web.Models.GameStateType.ATAResults,
                 "Here are the results!");
 
@@ -1031,14 +965,14 @@ public class LifelineManager
                 return;
             }
 
-            await hubContext.Clients.Group(activeSession.Id).SendAsync("VotingEnded", new
+            await hubContext.Clients.Group(sessionId).SendAsync("VotingEnded", new
             {
                 EndTime = DateTime.UtcNow,
                 FinalResults = percentages,
                 TotalVotes = totalVotes
             });
 
-            LogMessage?.Invoke($"[ATA] Completion notification sent to web clients in session {activeSession.Id}");
+            LogMessage?.Invoke($"[ATA] Completion notification sent to web clients in session {sessionId}");
         }
         catch (Exception ex)
         {
@@ -1414,25 +1348,18 @@ public class LifelineManager
                 return;
             }
             
-            // Get active session
-            var activeSession = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                dbContext.Sessions.Where(s => s.Status == MillionaireGame.Web.Models.SessionStatus.Active));
-            
-            if (activeSession == null)
-            {
-                LogMessage?.Invoke("[Telemetry] No active session found");
-                return;
-            }
+            // Use the LIVE session (web clients always connect to "LIVE")
+            const string sessionId = "LIVE";
             
             // Collect participant telemetry
-            var (totalCount, deviceTypes, browserTypes, osTypes) = await sessionService.GetParticipantTelemetryAsync(activeSession.Id);
+            var (totalCount, deviceTypes, browserTypes, osTypes) = await sessionService.GetParticipantTelemetryAsync(sessionId);
             _telemetryService.UpdateParticipantStats(totalCount, deviceTypes, browserTypes, osTypes);
             LogMessage?.Invoke($"[Telemetry] Participant stats: {totalCount} total, {deviceTypes.Count} device types, {browserTypes.Count} browsers");
             
             // Finalize ATA telemetry (determine if it was online or offline mode)
-            var voteCount = await sessionService.GetATAVoteCountAsync(activeSession.Id);
+            var voteCount = await sessionService.GetATAVoteCountAsync(sessionId);
             var mode = voteCount > 0 ? "Online" : "Offline";
-            await sessionService.FinalizeATATelemetryAsync(activeSession.Id, mode);
+            await sessionService.FinalizeATATelemetryAsync(sessionId, mode);
             LogMessage?.Invoke($"[Telemetry] ATA stats finalized - Mode: {mode}");
         }
         catch (Exception ex)
