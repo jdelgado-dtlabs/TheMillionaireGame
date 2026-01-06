@@ -18,7 +18,7 @@ namespace MillionaireGame.Forms.Options
         private void InitializeComponent()
         {
             tabControl = new TabControl();
-            tabGeneral = new TabPage();
+            tabScreens = new TabPage();
             grpPreviews = new GroupBox();
             chkEnablePreviewAutomatically = new CheckBox();
             cmbPreviewOrientation = new ComboBox();
@@ -177,7 +177,7 @@ namespace MillionaireGame.Forms.Options
             btnOK = new Button();
             btnCancel = new Button();
             tabControl.SuspendLayout();
-            tabGeneral.SuspendLayout();
+            tabScreens.SuspendLayout();
             grpPreviews.SuspendLayout();
             grpMultipleMonitorControl.SuspendLayout();
             grpConsole.SuspendLayout();
@@ -215,7 +215,7 @@ namespace MillionaireGame.Forms.Options
             // tabControl
             // 
             tabControl.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tabControl.Controls.Add(tabGeneral);
+            tabControl.Controls.Add(tabScreens);
             tabControl.Controls.Add(tabBroadcast);
             tabControl.Controls.Add(tabLifelines);
             tabControl.Controls.Add(tabMoneyTree);
@@ -225,21 +225,21 @@ namespace MillionaireGame.Forms.Options
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
             tabControl.SelectedIndex = 0;
-            tabControl.Size = new Size(660, 466);
+            tabControl.Size = new Size(660, 546);
             tabControl.TabIndex = 0;
             // 
-            // tabGeneral
+            // tabScreens
             // 
-            tabGeneral.Controls.Add(grpConsole);
-            tabGeneral.Controls.Add(grpMultipleMonitorControl);
-            tabGeneral.Controls.Add(grpPreviews);
-            tabGeneral.Location = new Point(4, 24);
-            tabGeneral.Name = "tabGeneral";
-            tabGeneral.Padding = new Padding(3);
-            tabGeneral.Size = new Size(652, 438);
-            tabGeneral.TabIndex = 0;
-            tabGeneral.Text = "Screens";
-            tabGeneral.UseVisualStyleBackColor = true;
+            tabScreens.Controls.Add(grpConsole);
+            tabScreens.Controls.Add(grpMultipleMonitorControl);
+            tabScreens.Controls.Add(grpPreviews);
+            tabScreens.Location = new Point(4, 24);
+            tabScreens.Name = "tabScreens";
+            tabScreens.Padding = new Padding(3);
+            tabScreens.Size = new Size(652, 438);
+            tabScreens.TabIndex = 0;
+            tabScreens.Text = "Screens";
+            tabScreens.UseVisualStyleBackColor = true;
             // 
             // grpPreviews
             // 
@@ -743,10 +743,13 @@ namespace MillionaireGame.Forms.Options
             // 
             // tabMoneyTree
             // 
+            // tabMoneyTree
+            // 
+            tabMoneyTree.AutoScroll = true;
             tabMoneyTree.Location = new Point(4, 24);
             tabMoneyTree.Name = "tabMoneyTree";
             tabMoneyTree.Padding = new Padding(3);
-            tabMoneyTree.Size = new Size(652, 438);
+            tabMoneyTree.Size = new Size(652, 520);
             tabMoneyTree.TabIndex = 3;
             tabMoneyTree.Text = "Money Tree";
             tabMoneyTree.UseVisualStyleBackColor = true;
@@ -1265,7 +1268,7 @@ namespace MillionaireGame.Forms.Options
             dgvSoundPackInfo.ReadOnly = true;
             dgvSoundPackInfo.RowHeadersVisible = false;
             dgvSoundPackInfo.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSoundPackInfo.Size = new Size(588, 310);
+            dgvSoundPackInfo.Size = new Size(588, 390);
             dgvSoundPackInfo.TabIndex = 8;
             // 
             // tabStreamDeck
@@ -1332,7 +1335,7 @@ namespace MillionaireGame.Forms.Options
             pnlStreamDeckLayout.Controls.Add(picAnswerD);
             pnlStreamDeckLayout.Location = new Point(15, 115);
             pnlStreamDeckLayout.Name = "pnlStreamDeckLayout";
-            pnlStreamDeckLayout.Size = new Size(280, 200);
+            pnlStreamDeckLayout.Size = new Size(280, 240);
             pnlStreamDeckLayout.TabIndex = 2;
             // 
             // Row 1: Dynamic, A, B
@@ -1593,7 +1596,7 @@ namespace MillionaireGame.Forms.Options
             // // btnOK
             // 
             btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnOK.Location = new Point(416, 490);
+            btnOK.Location = new Point(416, 570);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(80, 30);
             btnOK.TabIndex = 1;
@@ -1604,7 +1607,7 @@ namespace MillionaireGame.Forms.Options
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.Location = new Point(502, 490);
+            btnCancel.Location = new Point(502, 570);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(80, 30);
             btnCancel.TabIndex = 2;
@@ -1618,7 +1621,7 @@ namespace MillionaireGame.Forms.Options
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(684, 540);
+            ClientSize = new Size(684, 620);
             Controls.Add(btnCancel);
             Controls.Add(btnOK);
             Controls.Add(tabControl);
@@ -1630,7 +1633,7 @@ namespace MillionaireGame.Forms.Options
             StartPosition = FormStartPosition.CenterParent;
             Text = "Settings";
             tabControl.ResumeLayout(false);
-            tabGeneral.ResumeLayout(false);
+            tabScreens.ResumeLayout(false);
             grpPreviews.ResumeLayout(false);
             grpPreviews.PerformLayout();
             grpMultipleMonitorControl.ResumeLayout(false);
@@ -1684,7 +1687,7 @@ namespace MillionaireGame.Forms.Options
         #endregion
 
         private TabControl tabControl;
-        private TabPage tabGeneral;
+        private TabPage tabScreens;
         private TabPage tabBroadcast;
         private TabPage tabLifelines;
         private TabPage tabMoneyTree;

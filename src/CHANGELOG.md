@@ -4,6 +4,15 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [v1.0.1] - 2026-01-06
 
+### Added
+- **Configurable Number Formatting** ✅ NEW
+  * Added thousands separator customization for money tree displays
+  * Options: Comma (1,000,000), Period (1.000.000), Space (1 000 000), None (1000000)
+  * New Number Format section in Money Tree options tab
+  * Works with both Currency 1 and Currency 2
+  * Default: Comma (backward compatible)
+  * Applies to all money displays: Money Tree, TV Screen, Host Screen, Guest Screen
+
 ### Fixed
 - **SQL.xml Write Permissions** ✅
   * Changed storage location from program directory to LocalAppData
@@ -50,6 +59,15 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Reset LIVE session to Active status on web server startup
   * System properly detects offline mode when web server not running
   * Methods updated: NotifyWebClientsATAIntro, NotifyWebClientsATAVoting, NotifyWebClientsATAComplete, GetATAResultsAsync, CheckForVoteCompletion, CollectWebTelemetryAsync, ClearATAFromScreens
+
+### Changed
+- **Options Dialog UI Improvements** ✅
+  * Increased dialog window height from 540px to 620px (+80px)
+  * Increased tab control height to 546px for better content visibility
+  * Increased soundpack DataGridView height to 390px
+  * Increased Stream Deck layout panel height to 240px for full label visibility
+  * Renamed tabGeneral to tabScreens for code clarity
+  * Enabled AutoScroll on Money Tree tab
 
 ## [v1.0.0] - 2026-01-04
 
