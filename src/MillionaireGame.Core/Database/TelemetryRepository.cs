@@ -224,7 +224,7 @@ public class TelemetryRepository
                 GameStartTime = reader.GetDateTime(1),
                 GameEndTime = reader.IsDBNull(2) ? default : reader.GetDateTime(2),
                 Currency1Name = reader.IsDBNull(3) ? "$" : reader.GetString(3),
-                Currency2Name = reader.IsDBNull(4) ? null : reader.GetString(4)
+                Currency2Name = reader.IsDBNull(4) ? string.Empty : reader.GetString(4)
             };
         }
 
@@ -342,7 +342,8 @@ public class TelemetryRepository
         command.Parameters.AddWithValue("@Currency1Winnings", roundTelemetry.Currency1Winnings);
         command.Parameters.AddWithValue("@Currency2Winnings", roundTelemetry.Currency2Winnings);
 
-        var roundId = (int)await command.ExecuteScalarAsync();
+        var result = await command.ExecuteScalarAsync();
+        var roundId = result != null ? (int)result : 0;
         roundTelemetry.RoundId = roundId;
     }
 

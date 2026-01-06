@@ -82,7 +82,7 @@ public class TelemetryExportService
         AddTextRow(ws, ref row, "Start Time", round.StartTime.ToString("yyyy-MM-dd HH:mm:ss"));
         AddTextRow(ws, ref row, "End Time", round.EndTime.ToString("yyyy-MM-dd HH:mm:ss"));
         AddTextRow(ws, ref row, "Duration", round.Duration.ToString());
-        AddTextRow(ws, ref row, "Outcome", round.Outcome);
+        AddTextRow(ws, ref row, "Outcome", round.Outcome?.ToString() ?? "N/A");
         AddNumberRow(ws, ref row, "Final Question Reached", round.FinalQuestionReached);
         row++;
         

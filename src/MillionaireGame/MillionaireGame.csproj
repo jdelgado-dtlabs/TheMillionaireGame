@@ -104,7 +104,7 @@
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(PublishDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(PublishDir)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
     <!-- Copy StreamDeck DLLs to root for single-file publish -->
     <Copy SourceFiles="@(StreamDeckDlls)" DestinationFolder="$(PublishDir)" />
     <!-- Also copy to lib folder for reference -->

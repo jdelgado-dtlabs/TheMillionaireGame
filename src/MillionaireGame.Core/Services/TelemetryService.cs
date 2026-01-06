@@ -59,7 +59,7 @@ public class TelemetryService
         {
             GameStartTime = DateTime.Now,
             Currency1Name = _moneyTreeSettings?.Currency ?? "$",
-            Currency2Name = _moneyTreeSettings?.Currency2
+            Currency2Name = _moneyTreeSettings?.Currency2 ?? string.Empty
         };
         _currentRound = null;
         _sessionSaved = false;
