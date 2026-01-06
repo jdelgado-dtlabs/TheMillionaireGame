@@ -17,6 +17,13 @@ public class TelemetryService
     private MoneyTreeSettings? _moneyTreeSettings;
     private TelemetryRepository? _repository;
     private string? _connectionString;
+    private bool _sessionSaved = false;
+    
+    /// <summary>
+    /// Gets the current game session ID for linking WAPS participants
+    /// Returns null if no game session has been started/saved yet
+    /// </summary>
+    public string? CurrentSessionId => _sessionSaved ? _currentGame?.SessionId : null;
 
     private TelemetryService()
     {
@@ -55,6 +62,7 @@ public class TelemetryService
             Currency2Name = _moneyTreeSettings?.Currency2
         };
         _currentRound = null;
+        _sessionSaved = false;
 
         // Save to database on background thread - don't block UI
         if (_repository != null)
@@ -64,6 +72,7 @@ public class TelemetryService
                 try
                 {
                     await _repository.SaveGameSessionAsync(_currentGame);
+                    _sessionSaved = true; // Mark as saved so participants can be linked
                 }
                 catch (Exception ex)
                 {
@@ -89,6 +98,31 @@ public class TelemetryService
         if (_currentGame.GameStartTime == default)
         {
             _currentGame.GameStartTime = DateTime.Now;
+        }
+
+        // Save round to database immediately to get RoundId (needed for lifeline recording)
+        // Fire-and-forget is safe because lifelines can only be used after question/answers are revealed
+        if (_repository != null)
+        {
+            var roundToSave = _currentRound;
+            var sessionId = _currentGame.SessionId;
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Only save if this round hasn't been saved yet
+                    if (roundToSave.RoundId == 0)
+                    {
+                        await _repository.SaveGameRoundAsync(sessionId, roundToSave);
+                        Console.WriteLine($"Round {roundNumber} started with RoundId: {roundToSave.RoundId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to save new game round: {ex.Message}");
+                }
+            });
         }
     }
 
@@ -118,20 +152,20 @@ public class TelemetryService
 
         _currentGame.Rounds.Add(_currentRound);
 
-        // Save to database on background thread - don't block UI
-        if (_repository != null)
+        // Update round in database (it was already created in StartNewRound)
+        if (_repository != null && _currentRound.RoundId > 0)
         {
-            var roundToSave = _currentRound;
+            var roundToUpdate = _currentRound;
             var sessionId = _currentGame.SessionId;
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await _repository.SaveGameRoundAsync(sessionId, roundToSave);
+                    await _repository.UpdateGameRoundAsync(sessionId, roundToUpdate);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to save game round: {ex.Message}");
+                    Console.WriteLine($"Failed to update game round: {ex.Message}");
                 }
             });
         }

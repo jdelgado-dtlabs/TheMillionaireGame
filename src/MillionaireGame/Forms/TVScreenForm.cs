@@ -684,12 +684,28 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
         {
             // Draw winner text centered on screen
             var designBounds = new RectangleF(200, 400, 1520, 280);
-            using var font = new Font("Copperplate Gothic Bold", 120, FontStyle.Bold);
             using var brush = new SolidBrush(Color.Gold);
             using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
             
-            DrawScaledText(g, _fffWinnerName, font, brush,
-                designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height, format);
+            // Dynamically scale font size to fit long names
+            float baseFontSize = 120;
+            float scaledFontSize = baseFontSize * Math.Min(ScaleX, ScaleY);
+            var destRect = ScaleRect(designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height);
+            
+            // Measure text WITHOUT width constraint to get true width
+            using var testFont = new Font("Copperplate Gothic Bold", scaledFontSize, FontStyle.Bold);
+            var textSize = g.MeasureString(_fffWinnerName, testFont);
+            
+            // If text is wider than available space, scale down proportionally
+            float maxWidth = destRect.Width * 0.90f; // Leave 10% margin for safety
+            if (textSize.Width > maxWidth)
+            {
+                scaledFontSize *= maxWidth / textSize.Width;
+            }
+            
+            using var font = new Font("Copperplate Gothic Bold", scaledFontSize, FontStyle.Bold);
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            g.DrawString(_fffWinnerName, font, brush, destRect, format);
             
             // Draw "WINNER!" above
             using var titleFont = new Font("Copperplate Gothic Bold", 80, FontStyle.Bold);

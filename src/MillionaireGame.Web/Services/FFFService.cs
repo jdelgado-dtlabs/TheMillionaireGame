@@ -78,8 +78,9 @@ public class FFFService
             var normalizedCorrect = NormalizeAnswer(correctAnswer);
             submission.IsCorrect = normalizedSubmission == normalizedCorrect;
             
-            _logger.LogDebug("Participant {ParticipantId} answer: {Answer} (normalized: {Normalized}), correct: {IsCorrect}",
-                submission.ParticipantId, submission.AnswerSequence, normalizedSubmission, submission.IsCorrect);
+            _logger.LogInformation("Participant {ParticipantId}: Answer='{Answer}' Normalized='{NormAnswer}' | Correct='{CorrectRaw}' Normalized='{NormCorrect}' | Match={IsCorrect}",
+                submission.ParticipantId, submission.AnswerSequence, normalizedSubmission, 
+                correctAnswer, normalizedCorrect, submission.IsCorrect);
         }
 
         // Rank correct answers by time
@@ -141,7 +142,7 @@ public class FFFService
         return new FFFResults
         {
             Winner = correctSubmissions.FirstOrDefault(),
-            Rankings = correctSubmissions.Take(10).ToList(),
+            Rankings = correctSubmissions.Take(8).ToList(),
             TotalSubmissions = submissions.Count,
             CorrectSubmissions = correctSubmissions.Count
         };

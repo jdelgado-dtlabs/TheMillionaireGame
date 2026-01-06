@@ -15,6 +15,9 @@ public class FFFAnswer
     public bool IsCorrect { get; set; }
     public int? Rank { get; set; } // NULL until evaluated
     
+    // Link to game telemetry session
+    public string? GameSessionId { get; set; }
+    
     // Navigation properties
     public virtual Session? Session { get; set; }
     public virtual Participant? Participant { get; set; }

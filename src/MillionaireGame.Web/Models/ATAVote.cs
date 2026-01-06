@@ -12,6 +12,9 @@ public class ATAVote
     public string SelectedOption { get; set; } = string.Empty; // 'A', 'B', 'C', 'D'
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
     
+    // Link to game telemetry session
+    public string? GameSessionId { get; set; }
+    
     // Navigation properties
     public virtual Session? Session { get; set; }
     public virtual Participant? Participant { get; set; }

@@ -243,8 +243,9 @@ public class TelemetryRepository
 
             while (await reader.ReadAsync())
             {
-                gameTelemetry.Rounds.Add(new RoundTelemetry
+                var round = new RoundTelemetry
                 {
+                    RoundId = reader.GetInt32(0),
                     RoundNumber = reader.GetInt32(1),
                     StartTime = reader.GetDateTime(2),
                     EndTime = reader.IsDBNull(3) ? default : reader.GetDateTime(3),
@@ -252,10 +253,56 @@ public class TelemetryRepository
                     FinalQuestionReached = reader.GetInt32(5),
                     Currency1Winnings = reader.GetInt32(6),
                     Currency2Winnings = reader.GetInt32(7)
-                });
+                };
+                gameTelemetry.Rounds.Add(round);
             }
         }
 
+        // Get lifelines for all rounds and populate LifelinesUsed lists
+        const string lifelinesSql = @"
+            SELECT RoundId, LifelineType, QuestionNumber, Metadata
+            FROM LifelineUsages
+            WHERE GameSessionId = @SessionId
+            ORDER BY RoundId, QuestionNumber";
+
+        using (var command = new SqlCommand(lifelinesSql, connection))
+        {
+            command.Parameters.AddWithValue("@SessionId", sessionId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var roundId = reader.GetInt32(0);
+                var lifelineType = reader.GetInt32(1);
+                var questionNumber = reader.GetInt32(2);
+                var metadata = reader.IsDBNull(3) ? null : reader.GetString(3);
+
+                // Find the round this lifeline belongs to
+                var round = gameTelemetry.Rounds.FirstOrDefault(r => r.RoundId == roundId);
+                if (round != null)
+                {
+                    var lifelineName = lifelineType switch
+                    {
+                        1 => "50:50",
+                        2 => "Phone a Friend",
+                        3 => "Ask the Audience",
+                        4 => "Switch the Question",
+                        5 => "Double Dip",
+                        6 => "Ask the Host",
+                        _ => "Unknown"
+                    };
+
+                    round.LifelinesUsed.Add(new LifelineUsage
+                    {
+                        LifelineName = lifelineName,
+                        QuestionNumber = questionNumber,
+                        Timestamp = round.StartTime, // We don't store individual timestamps, use round start
+                        Metadata = metadata
+                    });
+                }
+            }
+        }
+        
         // Get aggregated stats
         gameTelemetry.TotalUniqueParticipants = await GetParticipantCountForSessionAsync(connection, sessionId);
         
@@ -297,6 +344,35 @@ public class TelemetryRepository
 
         var roundId = (int)await command.ExecuteScalarAsync();
         roundTelemetry.RoundId = roundId;
+    }
+
+    /// <summary>
+    /// Update an existing game round with completion data
+    /// </summary>
+    public async Task UpdateGameRoundAsync(string sessionId, RoundTelemetry roundTelemetry)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        const string sql = @"
+            UPDATE GameRounds 
+            SET EndTime = @EndTime,
+                Outcome = @Outcome,
+                FinalQuestionReached = @FinalQuestionReached,
+                Currency1Winnings = @Currency1Winnings,
+                Currency2Winnings = @Currency2Winnings
+            WHERE RoundId = @RoundId AND SessionId = @SessionId";
+
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@RoundId", roundTelemetry.RoundId);
+        command.Parameters.AddWithValue("@SessionId", sessionId);
+        command.Parameters.AddWithValue("@EndTime", roundTelemetry.EndTime == default ? DBNull.Value : roundTelemetry.EndTime);
+        command.Parameters.AddWithValue("@Outcome", roundTelemetry.Outcome.HasValue ? (int)roundTelemetry.Outcome.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@FinalQuestionReached", roundTelemetry.FinalQuestionReached);
+        command.Parameters.AddWithValue("@Currency1Winnings", roundTelemetry.Currency1Winnings);
+        command.Parameters.AddWithValue("@Currency2Winnings", roundTelemetry.Currency2Winnings);
+
+        await command.ExecuteNonQueryAsync();
     }
 
     #endregion

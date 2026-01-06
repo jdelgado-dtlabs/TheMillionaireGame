@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MillionaireGame.Web.Data;
 using MillionaireGame.Web.Models;
+using MillionaireGame.Core.Services;
 
 namespace MillionaireGame.Web.Services;
 
@@ -146,7 +147,8 @@ public class SessionService
             OSVersion = telemetry?.OSVersion,
             BrowserType = telemetry?.BrowserType,
             BrowserVersion = telemetry?.BrowserVersion,
-            HasAgreedToPrivacy = telemetry?.HasAgreedToPrivacy ?? false
+            HasAgreedToPrivacy = telemetry?.HasAgreedToPrivacy ?? false,
+            GameSessionId = TelemetryService.Instance.CurrentSessionId
         };
 
         _context.Participants.Add(participant);
@@ -213,9 +215,9 @@ public class SessionService
             throw new InvalidOperationException($"Session {sessionId} not found");
         }
 
-        // Calculate time elapsed from question start
-        var timeElapsed = session.StartedAt.HasValue 
-            ? (submittedAt - session.StartedAt.Value).TotalMilliseconds 
+        // Calculate time elapsed from question start time
+        var timeElapsed = session.QuestionStartTime.HasValue 
+            ? (submittedAt - session.QuestionStartTime.Value).TotalMilliseconds 
             : 0;
 
         var answer = new FFFAnswer
@@ -226,14 +228,15 @@ public class SessionService
             AnswerSequence = answerSequence,
             SubmittedAt = submittedAt,
             TimeElapsed = timeElapsed,
-            IsCorrect = false // Will be validated later
+            IsCorrect = false, // Will be validated later
+            GameSessionId = TelemetryService.Instance.CurrentSessionId
         };
 
         _context.FFFAnswers.Add(answer);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("FFF answer saved - Session: {SessionId}, Participant: {ParticipantId}, Question: {QuestionId}",
-            sessionId, participantId, questionId);
+        _logger.LogInformation("FFF answer saved - Session: {SessionId}, Participant: {ParticipantId}, Question: {QuestionId}, TimeElapsed: {TimeElapsed}ms",
+            sessionId, participantId, questionId, timeElapsed);
     }
 
     /// <summary>
@@ -259,7 +262,8 @@ public class SessionService
             ParticipantId = participantId,
             QuestionText = questionText,
             SelectedOption = selectedOption,
-            SubmittedAt = submittedAt
+            SubmittedAt = submittedAt,
+            GameSessionId = TelemetryService.Instance.CurrentSessionId
         };
 
         _context.ATAVotes.Add(vote);
@@ -447,11 +451,33 @@ public class SessionService
         {
             session.CurrentMode = mode;
             session.CurrentQuestionId = questionId;
+            
+            // Set question start time when FFF or ATA question starts
+            if ((mode == SessionMode.FFF || mode == SessionMode.ATA) && questionId.HasValue)
+            {
+                session.QuestionStartTime = DateTime.UtcNow;
+                _logger.LogInformation("Question {QuestionId} started at {StartTime}", 
+                    questionId, session.QuestionStartTime);
+            }
+            else if (mode == SessionMode.Idle)
+            {
+                session.QuestionStartTime = null;
+            }
+            
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Updated session {SessionId} mode to {Mode}, question {QuestionId}", 
                 sessionId, mode, questionId);
         }
+    }
+
+    /// <summary>
+    /// Get a single participant by ID
+    /// </summary>
+    public async Task<Participant?> GetParticipantAsync(string participantId)
+    {
+        return await _context.Participants
+            .FirstOrDefaultAsync(p => p.Id == participantId);
     }
 
     // ===== HOST CONTROL METHODS (Phase 2.5) =====

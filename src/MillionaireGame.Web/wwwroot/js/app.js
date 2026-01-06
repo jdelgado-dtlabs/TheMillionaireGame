@@ -250,7 +250,7 @@ async function joinSession(sessionId, displayName, participantId = null) {
             try {
                 const result = await connection.invoke("JoinSession", currentSessionId, currentDisplayName, currentParticipantId, telemetry);
                 if (result.success) {
-                    console.log('Γ£à Silently rejoined session after reconnection');
+                    console.log('&#x2713; Silently rejoined session after reconnection');
                     
                     // Update with potentially new IDs (if server restarted and reassigned)
                     currentSessionId = result.sessionId;
@@ -893,11 +893,11 @@ async function submitFFFAnswer() {
         // Submit to server
         await connection.invoke("SubmitAnswer", currentSessionId, currentParticipantId, fffCurrentQuestionId, answerSequence);
         
-        showFFFMessage(`Γ£ô Answer submitted in ${(timeElapsed / 1000).toFixed(1)}s!`, false);
+        showFFFMessage(`&#x2713; Answer submitted in ${(timeElapsed / 1000).toFixed(1)}s!`, false);
         
     } catch (err) {
         console.error("Submit FFF answer failed:", err);
-        showFFFMessage("Γ¥î Failed to submit answer: " + err.toString(), true);
+        showFFFMessage("&#x274C; Failed to submit answer: " + err.toString(), true);
         fffHasSubmitted = false;
         document.getElementById('btnSubmitFFF').disabled = false;
     }

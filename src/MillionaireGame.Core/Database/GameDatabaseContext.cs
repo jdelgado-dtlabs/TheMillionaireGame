@@ -151,9 +151,18 @@ public class GameDatabaseContext : IDisposable
                     EndedAt DATETIME2 NULL,
                     Status NVARCHAR(50) NOT NULL,
                     CurrentMode NVARCHAR(50) NULL,
-                    CurrentQuestionId INT NULL
+                    CurrentQuestionId INT NULL,
+                    QuestionStartTime DATETIME2 NULL
                 );
                 CREATE INDEX IX_Sessions_CreatedAt ON Sessions(CreatedAt);
+            END
+            
+            -- Add QuestionStartTime column if it doesn't exist (migration for existing databases)
+            IF NOT EXISTS (SELECT * FROM sys.columns 
+                           WHERE object_id = OBJECT_ID(N'[dbo].[Sessions]') 
+                           AND name = 'QuestionStartTime')
+            BEGIN
+                ALTER TABLE Sessions ADD QuestionStartTime DATETIME2 NULL;
             END
 
             -- Participants table
@@ -218,6 +227,36 @@ public class GameDatabaseContext : IDisposable
                 );
                 CREATE INDEX IX_ATAVotes_SessionId ON ATAVotes(SessionId);
                 CREATE INDEX IX_ATAVotes_SubmittedAt ON ATAVotes(SubmittedAt);
+            END
+
+            -- ParticipantHistory table (for archiving participants while preserving telemetry)
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ParticipantHistory')
+            BEGIN
+                CREATE TABLE ParticipantHistory (
+                    HistoryId INT PRIMARY KEY IDENTITY(1,1),
+                    ParticipantId NVARCHAR(450) NOT NULL,
+                    SessionId NVARCHAR(450) NOT NULL,
+                    DisplayName NVARCHAR(50) NOT NULL,
+                    JoinedAt DATETIME2 NOT NULL,
+                    LastSeenAt DATETIME2 NULL,
+                    DisconnectedAt DATETIME2 NULL,
+                    State NVARCHAR(50) NOT NULL,
+                    HasPlayedFFF BIT NOT NULL DEFAULT 0,
+                    HasUsedATA BIT NOT NULL DEFAULT 0,
+                    SelectedForFFFAt DATETIME2 NULL,
+                    BecameWinnerAt DATETIME2 NULL,
+                    DeviceType NVARCHAR(50) NULL,
+                    OSType NVARCHAR(50) NULL,
+                    OSVersion NVARCHAR(50) NULL,
+                    BrowserType NVARCHAR(100) NULL,
+                    BrowserVersion NVARCHAR(50) NULL,
+                    HasAgreedToPrivacy BIT NOT NULL DEFAULT 0,
+                    GameSessionId NVARCHAR(50) NULL,
+                    ArchivedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+                );
+                CREATE INDEX IX_ParticipantHistory_SessionId ON ParticipantHistory(SessionId);
+                CREATE INDEX IX_ParticipantHistory_ParticipantId ON ParticipantHistory(ParticipantId);
+                CREATE INDEX IX_ParticipantHistory_ArchivedAt ON ParticipantHistory(ArchivedAt);
             END";
 
         using (var command = new SqlCommand(createWAPSTables, useDbConnection))

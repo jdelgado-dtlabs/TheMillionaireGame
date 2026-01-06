@@ -177,6 +177,11 @@ public class LifelineManager
     {
         LogMessage?.Invoke("[Lifeline] 50:50 activated");
         
+        // Record lifeline usage in telemetry BEFORE marking as used
+        var questionNumber = _gameService.State.CurrentLevel;
+        _telemetryService.RecordLifelineUsage("Fifty Fifty", questionNumber);
+        LogMessage?.Invoke($"[Telemetry] Recorded 50:50 lifeline usage at Q{questionNumber}");
+        
         _gameService.UseLifeline(lifeline.Type);
         ButtonStateChanged?.Invoke(buttonNumber, Color.Gray, false);
         
@@ -511,6 +516,11 @@ public class LifelineManager
         
         // Step 3: Results will persist on screen until answer is selected
         // (No auto-hide - ClearATAFromScreens() will be called when answer is selected)
+        
+        // Record lifeline usage in telemetry BEFORE marking as used
+        var questionNumber = _gameService.State.CurrentLevel;
+        _telemetryService.RecordLifelineUsage("Ask The Audience", questionNumber);
+        LogMessage?.Invoke($"[Telemetry] Recorded ATA lifeline usage at Q{questionNumber}");
         
         _gameService.UseLifeline(LifelineType.AskTheAudience);
         ButtonStateChanged?.Invoke(_ataLifelineButtonNumber, Color.Gray, false);

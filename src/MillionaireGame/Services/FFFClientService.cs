@@ -195,18 +195,25 @@ public class FFFClientService : IAsyncDisposable
         
         try
         {
-            GameConsole.Debug($"[FFFClient] Calling CalculateRankings for question {questionId}");
-            var result = await _connection.InvokeAsync<object>("CalculateRankings", _sessionId, questionId);
+            GameConsole.Debug($"[FFFClient] Calling GetFFFResults for question {questionId}");
+            var result = await _connection.InvokeAsync<object>("GetFFFResults", _sessionId, questionId);
             GameConsole.Debug($"[FFFClient] Received rankings result type: {result?.GetType().Name ?? "null"}");
             
-            // Server returns: { Success, QuestionId, Winner, Rankings[], TotalSubmissions, CorrectSubmissions }
+            if (result == null)
+            {
+                GameConsole.Warn("[FFFClient] GetFFFResults returned null");
+                return new List<RankingResult>();
+            }
+            
+            // Server returns: { Winner, Rankings[], TotalSubmissions, CorrectSubmissions }
             // Extract the Rankings array
             if (result is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Object)
             {
+                GameConsole.Debug($"[FFFClient] Result is JsonElement Object, looking for Rankings property...");
                 if (jsonElement.TryGetProperty("Rankings", out JsonElement rankingsArray) ||
                     jsonElement.TryGetProperty("rankings", out rankingsArray))
                 {
-                    GameConsole.Debug($"[FFFClient] Extracted Rankings property");
+                    GameConsole.Debug($"[FFFClient] Extracted Rankings property, ValueKind={rankingsArray.ValueKind}");
                     var rankings = ParseRankings(rankingsArray);
                     GameConsole.Debug($"[FFFClient] Parsed {rankings.Count} rankings");
                     foreach (var r in rankings)
@@ -215,15 +222,27 @@ public class FFFClientService : IAsyncDisposable
                     }
                     return rankings;
                 }
+                else
+                {
+                    GameConsole.Warn("[FFFClient] No Rankings property found in result");
+                    // Log all properties to debug
+                    foreach (var prop in jsonElement.EnumerateObject())
+                    {
+                        GameConsole.Debug($"[FFFClient]   Available property: {prop.Name}");
+                    }
+                }
             }
             
             // Fallback to parsing entire result
+            GameConsole.Debug($"[FFFClient] Trying fallback parse of entire result");
             var allRankings = ParseRankings(result!);
             GameConsole.Debug($"[FFFClient] Parsed {allRankings.Count} rankings (fallback)");
             return allRankings;
         }
-        catch
+        catch (Exception ex)
         {
+            GameConsole.Error($"[FFFClient] ERROR in CalculateRankingsAsync: {ex.Message}");
+            GameConsole.Error($"[FFFClient] Stack trace: {ex.StackTrace}");
             return new List<RankingResult>();
         }
     }

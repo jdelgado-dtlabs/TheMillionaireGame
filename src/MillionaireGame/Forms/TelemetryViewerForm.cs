@@ -154,15 +154,25 @@ public partial class TelemetryViewerForm : Form
         // Rounds grid
         dgvRounds.DataSource = gameData.Rounds.Select(r => new
         {
+            RoundId = r.RoundId,  // Hidden column for lookups
             Round = r.RoundNumber,
-            Start = r.StartTime.ToString("HH:mm:ss"),
-            End = r.EndTime == default ? "" : r.EndTime.ToString("HH:mm:ss"),
+            Start = ((int)(r.StartTime - gameData.GameStartTime).TotalMinutes).ToString("D2") + ":" + 
+                    ((r.StartTime - gameData.GameStartTime).Seconds).ToString("D2"),
+            End = r.EndTime == default ? "" : 
+                    ((int)(r.EndTime - gameData.GameStartTime).TotalMinutes).ToString("D2") + ":" + 
+                    ((r.EndTime - gameData.GameStartTime).Seconds).ToString("D2"),
             Outcome = r.Outcome?.ToString() ?? "",
             Currency1 = $"{gameData.Currency1Name}{r.Currency1Winnings:N0}",
             Currency2 = !string.IsNullOrEmpty(gameData.Currency2Name) 
                 ? $"{gameData.Currency2Name}{r.Currency2Winnings:N0}" : "",
             Questions = r.FinalQuestionReached
         }).ToList();
+        
+        // Hide RoundId column
+        if (dgvRounds.Columns["RoundId"] != null)
+        {
+            dgvRounds.Columns["RoundId"].Visible = false;
+        }
     }
 
     #endregion
@@ -202,7 +212,7 @@ public partial class TelemetryViewerForm : Form
     {
         if (dgvRounds.SelectedRows.Count > 0 && cmbGameSessions.SelectedValue is string sessionId)
         {
-            var roundNumber = (int)dgvRounds.SelectedRows[0].Cells["Round"].Value;
+            var roundId = (int)dgvRounds.SelectedRows[0].Cells["RoundId"].Value;
             
             try
             {
@@ -218,7 +228,7 @@ public partial class TelemetryViewerForm : Form
                     var detailsText = $"Questions Reached: {dgvRounds.SelectedRows[0].Cells["Questions"].Value}\n";
                     
                     // Lifelines
-                    var roundLifelines = lifelines.Where(l => l.RoundId == roundNumber).ToList();
+                    var roundLifelines = lifelines.Where(l => l.RoundId == roundId).ToList();
                     if (roundLifelines.Any())
                     {
                         var lifelineNames = roundLifelines.Select(l => 
@@ -248,13 +258,18 @@ public partial class TelemetryViewerForm : Form
                     // FFF Stats
                     if (fffStats.TotalSubmissions > 0)
                     {
-                        detailsText += $"FFF Stats: {fffStats.TotalSubmissions} submitted, {fffStats.CorrectSubmissions} correct, Avg time: {fffStats.AverageTime:F2}s\n";
+                        detailsText += $"FFF Stats: {fffStats.TotalSubmissions} submitted, {fffStats.CorrectSubmissions} correct, Avg time: {(fffStats.AverageTime / 1000):F2}s\n";
                     }
                     
                     // ATA Stats
                     if (ataStats.Any())
                     {
-                        var statsStr = string.Join(", ", ataStats.Select(kvp => $"{kvp.Key}:{kvp.Value}%"));
+                        var totalVotes = ataStats.Values.Sum();
+                        var statsStr = string.Join(", ", ataStats.Select(kvp => 
+                        {
+                            var percentage = totalVotes > 0 ? (kvp.Value * 100.0 / totalVotes) : 0;
+                            return $"{kvp.Key}:{percentage:F0}%";
+                        }));
                         detailsText += $"ATA Stats: {statsStr}\n";
                     }
                     

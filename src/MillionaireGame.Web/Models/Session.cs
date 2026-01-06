@@ -13,6 +13,7 @@ public class Session
     public SessionStatus Status { get; set; } = SessionStatus.Waiting;
     public SessionMode? CurrentMode { get; set; }
     public int? CurrentQuestionId { get; set; }
+    public DateTime? QuestionStartTime { get; set; } // Timestamp when current question started
     
     // Navigation properties
     public virtual ICollection<Participant> Participants { get; set; } = new List<Participant>();

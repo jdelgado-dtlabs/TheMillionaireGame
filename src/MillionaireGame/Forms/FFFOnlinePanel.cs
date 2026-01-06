@@ -42,6 +42,7 @@ public partial class FFFOnlinePanel : UserControl
     private FFFClientService? _fffClient;
     private readonly MillionaireGame.Web.Database.FFFQuestionRepository? _fffRepository;
     private const string _sessionId = "LIVE"; // Fixed session ID for live game
+    private string _serverUrl = string.Empty; // Store server URL for API calls
     
     // Phase 3: Game Flow State Management
     private FFFFlowState _currentState = FFFFlowState.NotStarted;
@@ -149,6 +150,9 @@ public partial class FFFOnlinePanel : UserControl
         try
         {
             GameConsole.Log($"[FFFControlPanel] InitializeClientAsync called with serverUrl: {serverUrl}");
+            
+            // Store server URL for API calls
+            _serverUrl = serverUrl.TrimEnd('/');
             
             _fffClient = new FFFClientService(serverUrl, _sessionId);
             GameConsole.Log($"[FFFControlPanel] FFFClientService created");
@@ -740,6 +744,14 @@ public partial class FFFOnlinePanel : UserControl
         
         GameConsole.Log("[FFF] Step 1: Intro/Explain started");
         
+        // STEP 0: Select 8 players for FFF via API (sets SelectedForFFFAt timestamp)
+        Task.Run(async () =>
+        {
+            // All participants can play - no need to pre-select players
+            // Rankings will be calculated after answers are submitted
+            GameConsole.Info($"[FFF] Round started - all participants can answer");
+        });
+        
         // Queue FFFLightsDown and FFFExplain for seamless playback
         // TODO [PRE-1.0]: FFF Online TV screen animations
         // Status: Remaining work (2-3 hours) - Task #1 in PRE_1.0_FINAL_CHECKLIST.md
@@ -1017,13 +1029,14 @@ public partial class FFFOnlinePanel : UserControl
         });
     }
     
-    private void btnRevealCorrect_Click(object? sender, EventArgs e)
+    private async void btnRevealCorrect_Click(object? sender, EventArgs e)
     {
         _revealCorrectClickCount++;
         
         _currentState = FFFFlowState.RevealingCorrect;
         
         GameConsole.Log($"[FFF] Step 4: Reveal Correct ({_revealCorrectClickCount}/4)");
+        GameConsole.Log($"[FFF] Current state before processing: _rankings.Count={_rankings.Count}, _submissions.Count={_submissions.Count}, _currentQuestion={(object?)_currentQuestion != null}");
         
         // Update button text immediately (before sound plays)
         if (_revealCorrectClickCount < 4)
@@ -1147,10 +1160,33 @@ public partial class FFFOnlinePanel : UserControl
                 }
                 
                 // After final sound, move to next state
-                // Calculate rankings if not already done
-                if (_rankings.Count == 0 && _submissions.Count > 0)
+                // Calculate rankings if not already done - CALL SERVER to persist IsCorrect/Rank to database
+                GameConsole.Log($"[FFF] Checking if rankings needed: _rankings.Count={_rankings.Count}, _submissions.Count={_submissions.Count}, _currentQuestion={(object?)_currentQuestion != null}");
+                
+                if (_rankings.Count == 0 && _submissions.Count > 0 && _currentQuestion != null)
                 {
-                    CalculateRankings();
+                    GameConsole.Log("[FFF] Calculating rankings via server to persist IsCorrect/Rank...");
+                    var currentQuestionId = _currentQuestion.Id;
+                    
+                    try
+                    {
+                        if (_fffClient != null && _fffClient.IsConnected)
+                        {
+                            var rankings = await _fffClient.CalculateRankingsAsync(currentQuestionId);
+                            UpdateRankings(rankings);
+                            GameConsole.Log($"[FFF] Server calculated {rankings.Count} rankings and saved to database");
+                        }
+                        else
+                        {
+                            GameConsole.Warn("[FFF] Client not connected, using local ranking (not persisted)");
+                            CalculateRankings();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        GameConsole.Error($"[FFF] Error calling server CalculateRankings: {ex.Message}, using local fallback");
+                        CalculateRankings();
+                    }
                 }
                 
                 // Check how many correct answers there are
@@ -1417,6 +1453,38 @@ public partial class FFFOnlinePanel : UserControl
         
         // Get the winner (fastest correct answer)
         var winner = correctAnswers[0]; // Rankings are sorted: fastest correct answer is first
+        
+        // IMPORTANT: Save winner to database via API
+        Task.Run(async () =>
+        {
+            if (_fffClient != null && _fffClient.IsConnected)
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var response = await httpClient.PostAsync(
+                        $"{_serverUrl}/api/host/session/{_sessionId}/setWinner/{winner.ParticipantId}",
+                        null);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        GameConsole.Log($"[FFF] Winner {winner.ParticipantId} saved to database successfully");
+                    }
+                    else
+                    {
+                        GameConsole.Error($"[FFF] Failed to save winner to database: {response.StatusCode}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Error($"[FFF] Error saving winner to database: {ex.Message}");
+                }
+            }
+            else
+            {
+                GameConsole.Warn("[FFF] Cannot save winner - client not connected");
+            }
+        });
         
         // Display winner information
         if (correctAnswers.Count == 1)

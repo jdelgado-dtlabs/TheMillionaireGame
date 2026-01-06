@@ -122,6 +122,9 @@ public partial class ControlPanelForm : Form
     // Track round number (0 = no rounds, 1+ = round count)
     private int _roundNumber = 0;
     
+    // Track if a round is currently active (prevents duplicate round creation)
+    private bool _isRoundActive = false;
+    
     // Track if bed music should be restarted after lifeline use (for Q1-5)
     private bool _shouldRestartBedMusic = false;
 
@@ -1571,6 +1574,15 @@ public partial class ControlPanelForm : Form
             nmrLevel.Value++;
         }
         
+        // Start new round telemetry tracking on FIRST Lights Down press (at any question level)
+        if (!_isRoundActive)
+        {
+            _isRoundActive = true;
+            _roundNumber++;
+            _telemetryService.StartNewRound(_roundNumber);
+            GameConsole.Debug($"[Telemetry] Started Round {_roundNumber} at Q{(int)nmrLevel.Value}");
+        }
+        
         // Cancel any previous lights down operation
         _lightsDownCts?.Cancel();
         _lightsDownCts?.Dispose();
@@ -1642,10 +1654,8 @@ public partial class ControlPanelForm : Form
             }
             GameConsole.Debug("[LightsDown] Lights down sound finished");
             
-            // Start new round telemetry tracking
-            _roundNumber++;
-            _telemetryService.StartNewRound(_roundNumber);
-            GameConsole.Debug($"[Telemetry] Started Round {_roundNumber}");
+            // Note: Round tracking is handled by btnNewQuestion_Click, not here
+            // Lights down is just for revealing questions within the same round
             
             // Load question - this updates all screens
             await LoadNewQuestion();
@@ -2540,20 +2550,13 @@ public partial class ControlPanelForm : Form
             {
                 try
                 {
-                    var sessionId = await GetActiveSessionIdAsync();
-                    if (!string.IsNullOrEmpty(sessionId))
-                    {
-                        await _webServerHost.BroadcastGameStateAsync(
-                            sessionId, 
-                            Web.Models.GameStateType.WaitingLobby,
-                            "Game has started! Waiting for next activity...");
-                        
-                        GameConsole.Info($"[HostIntro] Broadcasted WaitingLobby state to session {sessionId}");
-                    }
-                    else
-                    {
-                        GameConsole.Warn("[HostIntro] No active session found - skipping state broadcast");
-                    }
+                    // Broadcast to all clients (no session ID required for initial game start)
+                    await _webServerHost.BroadcastGameStateAsync(
+                        null,  // sessionId: null means broadcast to all clients
+                        Web.Models.GameStateType.WaitingLobby,
+                        "Game has started! Waiting for next activity...");
+                    
+                    GameConsole.Info("[HostIntro] Broadcasted WaitingLobby state to all connected clients");
                 }
                 catch (Exception ex)
                 {
@@ -2824,6 +2827,9 @@ public partial class ControlPanelForm : Form
         
         _telemetryService.CompleteRound(outcomeText, winnings, actualWinningLevel, currency1Value, currency2Value);
         GameConsole.Debug($"[Telemetry] Completed Round {_roundNumber} - {outcomeText}, Winnings: {winnings}");
+        
+        // Mark round as no longer active
+        _isRoundActive = false;
         
         // Don't automatically reset - let user manually reset with Reset Round button
         // All buttons should already be disabled at this point except Closing
@@ -3297,6 +3303,7 @@ public partial class ControlPanelForm : Form
         _roundCompleted = false;
         _gameOutcome = GameOutcome.InProgress;
         _finalWinningsAmount = null; // Clear stored winnings amount
+        _isRoundActive = false; // Allow new round to be started
         
         // Reset game service
         _gameService.ResetGame();
@@ -3749,7 +3756,7 @@ public partial class ControlPanelForm : Form
         }
         
         // Queue with custom threshold (-35dB instead of default -40dB, +5dB tolerance) to prevent premature silence detection on quiet tails
-        _soundService.QueueSoundByKey(soundKey, AudioPriority.Normal, customThresholdDb: -35.0);
+        _soundService.QueueSoundByKey(soundKey, AudioPriority.Immediate, customThresholdDb: -35.0);
         // Note: Can't track individual queued sounds, so identifier not set
     }
     

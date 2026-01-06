@@ -16,6 +16,7 @@ public class WAPSDbContext : DbContext
     // WAPS tables
     public DbSet<Session> Sessions { get; set; }
     public DbSet<Participant> Participants { get; set; }
+    public DbSet<ParticipantHistory> ParticipantHistory { get; set; }
     public DbSet<FFFAnswer> FFFAnswers { get; set; }
     public DbSet<ATAVote> ATAVotes { get; set; }
 
@@ -80,6 +81,19 @@ public class WAPSDbContext : DbContext
                 .WithMany(s => s.ATAVotes)
                 .HasForeignKey(e => e.SessionId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ParticipantHistory configuration
+        modelBuilder.Entity<ParticipantHistory>(entity =>
+        {
+            entity.HasKey(e => e.HistoryId);
+            entity.Property(e => e.ParticipantId).IsRequired();
+            entity.Property(e => e.SessionId).IsRequired();
+            entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.State).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.SessionId);
+            entity.HasIndex(e => e.ParticipantId);
+            entity.HasIndex(e => e.ArchivedAt);
         });
     }
 }

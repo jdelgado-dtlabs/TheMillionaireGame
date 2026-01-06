@@ -169,26 +169,80 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
-            // Clear WAPS tables for clean session state on startup
-            // Tables are created by GameDatabaseContext.CreateDatabaseAsync()
+            // Clean up WAPS data on startup
+            // Strategy: Archive ALL participants to history table for telemetry preservation,
+            // then clear live Participants table to prevent stale "live" status
             using (var scope = _host.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
                 
                 try
                 {
-                    // Delete in correct order to respect foreign key constraints
-                    var deletedVotes = await context.ATAVotes.ExecuteDeleteAsync();
-                    var deletedAnswers = await context.FFFAnswers.ExecuteDeleteAsync();
-                    var deletedParticipants = await context.Participants.ExecuteDeleteAsync();
-                    var deletedSessions = await context.Sessions.ExecuteDeleteAsync();
+                    // Step 1: Archive ALL existing participants to ParticipantHistory for telemetry
+                    var existingParticipants = await context.Participants.ToListAsync();
+                    if (existingParticipants.Any())
+                    {
+                        var now = DateTime.UtcNow;
+                        var historyRecords = existingParticipants.Select(p => new ParticipantHistory
+                        {
+                            ParticipantId = p.Id,
+                            SessionId = p.SessionId,
+                            DisplayName = p.DisplayName,
+                            JoinedAt = p.JoinedAt,
+                            LastSeenAt = p.LastSeenAt,
+                            DisconnectedAt = p.DisconnectedAt,
+                            State = p.State.ToString(),
+                            HasPlayedFFF = p.HasPlayedFFF,
+                            HasUsedATA = p.HasUsedATA,
+                            SelectedForFFFAt = p.SelectedForFFFAt,
+                            BecameWinnerAt = p.BecameWinnerAt,
+                            DeviceType = p.DeviceType,
+                            OSType = p.OSType,
+                            OSVersion = p.OSVersion,
+                            BrowserType = p.BrowserType,
+                            BrowserVersion = p.BrowserVersion,
+                            HasAgreedToPrivacy = p.HasAgreedToPrivacy,
+                            GameSessionId = p.GameSessionId,
+                            ArchivedAt = now
+                        }).ToList();
+                        
+                        await context.ParticipantHistory.AddRangeAsync(historyRecords);
+                        await context.SaveChangesAsync();
+                    }
                     
-                    WebServerConsole.Info($"[WebServer] WAPS data cleared: {deletedSessions} sessions, {deletedParticipants} participants, {deletedAnswers} FFF answers, {deletedVotes} ATA votes");
+                    // Step 2: Clear ALL participants (live state resets on app restart)
+                    var deletedAllParticipants = await context.Participants.ExecuteDeleteAsync();
+                    
+                    // Step 3: Find incomplete sessions (PreGame or legacy Waiting with no game progress)
+                    var incompleteSessions = await context.Sessions
+                        .Where(s => s.Status == SessionStatus.PreGame || s.Status == SessionStatus.Waiting)
+                        .Select(s => s.Id)
+                        .ToListAsync();
+                    
+                    if (incompleteSessions.Any())
+                    {
+                        // Delete related data for incomplete sessions only
+                        var deletedVotes = await context.ATAVotes
+                            .Where(v => incompleteSessions.Contains(v.SessionId))
+                            .ExecuteDeleteAsync();
+                        var deletedAnswers = await context.FFFAnswers
+                            .Where(a => incompleteSessions.Contains(a.SessionId))
+                            .ExecuteDeleteAsync();
+                        var deletedSessions = await context.Sessions
+                            .Where(s => incompleteSessions.Contains(s.Id))
+                            .ExecuteDeleteAsync();
+                        
+                        WebServerConsole.Info($"[WebServer] Startup cleanup: {existingParticipants.Count} participants archived, {deletedAllParticipants} live records cleared, {deletedSessions} incomplete sessions removed ({deletedAnswers} FFF answers, {deletedVotes} ATA votes)");
+                    }
+                    else
+                    {
+                        WebServerConsole.Info($"[WebServer] Startup cleanup: {existingParticipants.Count} participants archived, {deletedAllParticipants} live records cleared, no incomplete sessions found");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    WebServerConsole.Error($"[WebServer] Failed to clear WAPS data: {ex.Message}");
-                    throw; // Don't start web server if we can't clear old session data
+                    WebServerConsole.Error($"[WebServer] Failed to clean up incomplete sessions: {ex.Message}");
+                    // Don't throw - allow server to start even if cleanup fails
                 }
             }
 
@@ -278,7 +332,7 @@ public class WebServerHost : IDisposable
     /// <summary>
     /// Broadcast game state change to all connected web clients
     /// </summary>
-    public async Task BroadcastGameStateAsync(string sessionId, GameStateType state, string? message = null, object? data = null)
+    public async Task BroadcastGameStateAsync(string? sessionId, GameStateType state, string? message = null, object? data = null)
     {
         if (_host == null)
         {
@@ -303,8 +357,18 @@ public class WebServerHost : IDisposable
                 Timestamp = DateTime.UtcNow
             };
 
-            await hubContext.Clients.Group(sessionId).SendAsync("GameStateChanged", stateData);
-            WebServerConsole.Debug($"[WebServer] Broadcasted state {state} to session {sessionId}");
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                // Broadcast to all connected clients when no session ID specified
+                await hubContext.Clients.All.SendAsync("GameStateChanged", stateData);
+                WebServerConsole.Debug($"[WebServer] Broadcasted state {state} to all clients");
+            }
+            else
+            {
+                // Broadcast to specific session group
+                await hubContext.Clients.Group(sessionId).SendAsync("GameStateChanged", stateData);
+                WebServerConsole.Debug($"[WebServer] Broadcasted state {state} to session {sessionId}");
+            }
         }
         catch (Exception ex)
         {
@@ -325,8 +389,9 @@ public class WebServerHost : IDisposable
             options.KnownProxies.Clear();
         });
 
-        // Add services
-        services.AddControllers();
+        // Add services - include MillionaireGame.Web assembly for controllers
+        services.AddControllers()
+            .AddApplicationPart(typeof(MillionaireGame.Web.Controllers.HostController).Assembly);
         services.AddEndpointsApiExplorer();
         // Note: Swagger removed - not needed in embedded hosting (dev tool only)
 

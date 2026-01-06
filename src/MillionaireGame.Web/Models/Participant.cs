@@ -27,6 +27,9 @@ public class Participant
     public DateTime? DisconnectedAt { get; set; } // For calculating play duration
     public bool HasAgreedToPrivacy { get; set; } = false;
     
+    // Link to game telemetry session
+    public string? GameSessionId { get; set; }
+    
     // Navigation property
     public virtual Session? Session { get; set; }
 }

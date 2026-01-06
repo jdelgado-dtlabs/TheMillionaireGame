@@ -2509,13 +2509,13 @@ public partial class OptionsDialog : Form
             }
         }
         
-        // Select first item by default if available
+        // Select first item by default if available for each dropdown
         if (cmbMonitorHost.Items.Count > 0)
-        {
             cmbMonitorHost.SelectedIndex = 0;
+        if (cmbMonitorGuest.Items.Count > 0)
             cmbMonitorGuest.SelectedIndex = 0;
+        if (cmbMonitorTV.Items.Count > 0)
             cmbMonitorTV.SelectedIndex = 0;
-        }
     }
     
     private void RefreshMonitorDropdowns()

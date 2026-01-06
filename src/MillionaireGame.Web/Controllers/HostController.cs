@@ -65,10 +65,19 @@ public class HostController : ControllerBase
     {
         try
         {
+            // Check if session exists
+            var session = await _sessionService.GetSessionAsync(sessionId);
+            if (session == null)
+            {
+                _logger.LogWarning("SelectFFFPlayers: Session {SessionId} not found", sessionId);
+                return NotFound(new { error = "Session not found" });
+            }
+            
             var selected = await _sessionService.SelectFFFPlayersAsync(sessionId, count);
             
             if (!selected.Any())
             {
+                _logger.LogWarning("SelectFFFPlayers: No eligible participants for session {SessionId}", sessionId);
                 return BadRequest(new { error = "No eligible participants available" });
             }
 
@@ -185,6 +194,72 @@ public class HostController : ControllerBase
         {
             _logger.LogError(ex, "Error returning players to lobby for session {SessionId}", sessionId);
             return StatusCode(500, new { error = "Failed to return players to lobby" });
+        }
+    }
+
+    /// <summary>
+    /// Set FFF winner after fastest finger first round
+    /// </summary>
+    [HttpPost("session/{sessionId}/setWinner/{participantId}")]
+    public async Task<IActionResult> SetFFFWinner(string sessionId, string participantId)
+    {
+        try
+        {
+            var success = await _sessionService.SetWinnerAsync(sessionId, participantId);
+            
+            if (!success)
+            {
+                return BadRequest(new { error = "Failed to set winner - participant not found or invalid state" });
+            }
+
+            // Get the updated participant
+            var winner = await _sessionService.GetParticipantAsync(participantId);
+            
+            if (winner == null)
+            {
+                return StatusCode(500, new { error = "Winner set but could not retrieve updated data" });
+            }
+
+            // Notify the winner
+            if (!string.IsNullOrEmpty(winner.ConnectionId))
+            {
+                await _hubContext.Clients.Client(winner.ConnectionId)
+                    .SendAsync("ConfirmedAsWinner", new 
+                    { 
+                        participantId = winner.Id,
+                        message = "You are the winner and will play the main game!" 
+                    });
+            }
+
+            // Notify all in session
+            await _hubContext.Clients.Group(sessionId)
+                .SendAsync("WinnerSet", new 
+                { 
+                    participantId = winner.Id,
+                    displayName = winner.DisplayName,
+                    becameWinnerAt = winner.BecameWinnerAt,
+                    message = $"{winner.DisplayName} has won FFF and will play the main game!"
+                });
+
+            _logger.LogInformation("Set participant {ParticipantId} as FFF winner in session {SessionId}", 
+                participantId, sessionId);
+
+            return Ok(new 
+            { 
+                message = "Winner set successfully",
+                participant = new 
+                { 
+                    winner.Id, 
+                    winner.DisplayName, 
+                    winner.BecameWinnerAt,
+                    winner.SelectedForFFFAt
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting FFF winner for session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to set FFF winner" });
         }
     }
 
