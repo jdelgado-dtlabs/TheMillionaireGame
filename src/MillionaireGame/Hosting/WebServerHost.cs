@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MillionaireGame.Web.Data;
@@ -378,9 +380,30 @@ public class WebServerHost : IDisposable
             await next();
         });
 
-        // Serve static files (wwwroot)
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
+        // Serve static files from embedded resources
+        var webAssembly = typeof(MillionaireGame.Web.Hubs.GameHub).Assembly;
+        var embeddedProvider = new ManifestEmbeddedFileProvider(webAssembly, "wwwroot");
+        
+        var fileServerOptions = new FileServerOptions
+        {
+            FileProvider = embeddedProvider,
+            RequestPath = "",
+            EnableDefaultFiles = true,
+            EnableDirectoryBrowsing = false
+        };
+        
+        // Ensure MIME types for all needed file types
+        var contentTypeProvider = new FileExtensionContentTypeProvider();
+        contentTypeProvider.Mappings[".js"] = "application/javascript";
+        contentTypeProvider.Mappings[".css"] = "text/css";
+        contentTypeProvider.Mappings[".html"] = "text/html";
+        contentTypeProvider.Mappings[".json"] = "application/json";
+        contentTypeProvider.Mappings[".png"] = "image/png";
+        contentTypeProvider.Mappings[".jpg"] = "image/jpeg";
+        contentTypeProvider.Mappings[".svg"] = "image/svg+xml";
+        fileServerOptions.StaticFileOptions.ContentTypeProvider = contentTypeProvider;
+        
+        app.UseFileServer(fileServerOptions);
 
         // Use routing
         app.UseRouting();

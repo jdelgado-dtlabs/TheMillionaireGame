@@ -379,7 +379,7 @@ namespace MillionaireGame.Forms.Options
             cmbMonitorHost.Name = "cmbMonitorHost";
             cmbMonitorHost.Size = new Size(340, 23);
             cmbMonitorHost.TabIndex = 4;
-            cmbMonitorHost.SelectedIndexChanged += Control_Changed;
+            cmbMonitorHost.SelectedIndexChanged += cmbMonitorHost_SelectedIndexChanged;
             // 
             // cmbMonitorGuest
             // 
@@ -389,7 +389,7 @@ namespace MillionaireGame.Forms.Options
             cmbMonitorGuest.Name = "cmbMonitorGuest";
             cmbMonitorGuest.Size = new Size(340, 23);
             cmbMonitorGuest.TabIndex = 5;
-            cmbMonitorGuest.SelectedIndexChanged += Control_Changed;
+            cmbMonitorGuest.SelectedIndexChanged += cmbMonitorGuest_SelectedIndexChanged;
             // 
             // cmbMonitorTV
             // 
@@ -399,7 +399,7 @@ namespace MillionaireGame.Forms.Options
             cmbMonitorTV.Name = "cmbMonitorTV";
             cmbMonitorTV.Size = new Size(340, 23);
             cmbMonitorTV.TabIndex = 6;
-            cmbMonitorTV.SelectedIndexChanged += Control_Changed;
+            cmbMonitorTV.SelectedIndexChanged += cmbMonitorTV_SelectedIndexChanged;
             // 
             // btnIdentifyMonitors
             // 

@@ -70,7 +70,16 @@ public class SqlSettingsManager
 
     public SqlSettingsManager(string? basePath = null)
     {
-        _filePath = Path.Combine(basePath ?? AppDomain.CurrentDomain.BaseDirectory, FileName);
+        // Use AppData folder to avoid permission issues
+        if (basePath == null)
+        {
+            var appDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MillionaireGame");
+            Directory.CreateDirectory(appDataFolder); // Ensure directory exists
+            basePath = appDataFolder;
+        }
+        _filePath = Path.Combine(basePath, FileName);
         Settings = new SqlConnectionSettings();
     }
 

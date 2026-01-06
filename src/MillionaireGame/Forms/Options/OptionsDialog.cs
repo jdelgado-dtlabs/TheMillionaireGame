@@ -236,6 +236,27 @@ public partial class OptionsDialog : Form
         ApplyFullScreenToOpenScreen("TV");
     }
     
+    private void cmbMonitorHost_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        MarkChanged();
+        RefreshMonitorDropdowns();
+        ApplyFullScreenToOpenScreen("Host");
+    }
+    
+    private void cmbMonitorGuest_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        MarkChanged();
+        RefreshMonitorDropdowns();
+        ApplyFullScreenToOpenScreen("Guest");
+    }
+    
+    private void cmbMonitorTV_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        MarkChanged();
+        RefreshMonitorDropdowns();
+        ApplyFullScreenToOpenScreen("TV");
+    }
+    
     private void ApplyFullScreenToOpenScreen(string screenType)
     {
         // Get the main control panel form
@@ -2686,11 +2707,23 @@ public partial class OptionsDialog : Form
 
     private void SelectMonitorIndex(ComboBox comboBox, int monitorIndex)
     {
-        if (monitorIndex >= 0 && monitorIndex < comboBox.Items.Count)
+        if (comboBox.Items.Count == 0)
+            return;
+            
+        // Find item that starts with the monitor number
+        string searchPrefix = $"{monitorIndex + 1}:";
+        for (int i = 0; i < comboBox.Items.Count; i++)
         {
-            comboBox.SelectedIndex = monitorIndex;
+            string item = comboBox.Items[i]?.ToString() ?? "";
+            if (item.StartsWith(searchPrefix))
+            {
+                comboBox.SelectedIndex = i;
+                return;
+            }
         }
-        else if (comboBox.Items.Count > 0)
+        
+        // If not found, select first item
+        if (comboBox.SelectedIndex == -1 && comboBox.Items.Count > 0)
         {
             comboBox.SelectedIndex = 0;
         }
@@ -2698,7 +2731,23 @@ public partial class OptionsDialog : Form
 
     private int GetSelectedMonitorIndex(ComboBox comboBox)
     {
-        return comboBox.SelectedIndex >= 0 ? comboBox.SelectedIndex : 0;
+        if (comboBox.SelectedIndex < 0 || comboBox.SelectedItem == null)
+            return 0;
+            
+        // Parse monitor index from display text (format: "N:manufacturer:model (resolution)")
+        string displayText = comboBox.SelectedItem.ToString() ?? "";
+        int colonIndex = displayText.IndexOf(':');
+        if (colonIndex > 0)
+        {
+            string numberPart = displayText.Substring(0, colonIndex);
+            if (int.TryParse(numberPart, out int monitorNumber))
+            {
+                // Convert from 1-based display number to 0-based array index
+                return monitorNumber - 1;
+            }
+        }
+        
+        return 0;
     }
 
     private void btnIdentifyMonitors_Click(object? sender, EventArgs e)
