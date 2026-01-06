@@ -2702,12 +2702,13 @@ public partial class OptionsDialog : Form
 #endif
         
         // Enable/disable controls based on monitor count
+        // Always enable dropdowns so user can select monitor BEFORE checking the checkbox
         chkFullScreenHostScreen.Enabled = hasEnoughMonitors;
         chkFullScreenGuestScreen.Enabled = hasEnoughMonitors;
         chkFullScreenTVScreen.Enabled = hasEnoughMonitors;
-        cmbMonitorHost.Enabled = hasEnoughMonitors && chkFullScreenHostScreen.Checked;
-        cmbMonitorGuest.Enabled = hasEnoughMonitors && chkFullScreenGuestScreen.Checked;
-        cmbMonitorTV.Enabled = hasEnoughMonitors && chkFullScreenTVScreen.Checked;
+        cmbMonitorHost.Enabled = hasEnoughMonitors;
+        cmbMonitorGuest.Enabled = hasEnoughMonitors;
+        cmbMonitorTV.Enabled = hasEnoughMonitors;
         btnIdentifyMonitors.Enabled = hasEnoughMonitors;
         
         if (!hasEnoughMonitors)

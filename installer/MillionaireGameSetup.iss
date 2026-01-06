@@ -54,7 +54,7 @@ Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs cr
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\Database Initialization Script"; Filename: "{app}\init_database.sql"
+Name: "{group}\Database Initialization Script"; Filename: "{app}\lib\sql\init_database.sql"
 Name: "{group}\SQL Setup Instructions"; Filename: "{app}\README.md"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
@@ -307,7 +307,7 @@ begin
         'Add-Type -AssemblyName System.Windows.Forms' + #13#10 +
         'try {' + #13#10 +
         '    Write-Host "=== Database Initialization Started ===" -ForegroundColor Cyan' + #13#10 +
-        '    Write-Host "Script location: ' + ExpandConstant('{app}\init_database.sql') + '"' + #13#10 +
+        '    Write-Host "Script location: ' + ExpandConstant('{app}\lib\sql\init_database.sql') + '"' + #13#10 +
         '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
         '    Write-Host "Step 1: Connecting to SQL Server..." -ForegroundColor Yellow' + #13#10 +
@@ -342,7 +342,7 @@ begin
         '    Write-Host ""' + #13#10 +
         '    ' + #13#10 +
         '    Write-Host "Step 3: Reading SQL script..." -ForegroundColor Yellow' + #13#10 +
-        '    $sqlFile = "' + ExpandConstant('{app}\init_database.sql') + '"' + #13#10 +
+        '    $sqlFile = "' + ExpandConstant('{app}\lib\sql\init_database.sql') + '"' + #13#10 +
         '    if (-not (Test-Path $sqlFile)) {' + #13#10 +
         '        throw "SQL script not found at: $sqlFile"' + #13#10 +
         '    }' + #13#10 +
@@ -394,12 +394,12 @@ begin
         '    Write-Host "Stack Trace: $($_.ScriptStackTrace)" -ForegroundColor Red' + #13#10 +
         '    Write-Host ""' + #13#10 +
         '    Write-Host "Log file saved to: $logFile" -ForegroundColor Yellow' + #13#10 +
-        '    Write-Host "You can manually run: ' + ExpandConstant('{app}\init_database.sql') + '" -ForegroundColor Yellow' + #13#10 +
+        '    Write-Host "You can manually run: ' + ExpandConstant('{app}\lib\sql\init_database.sql') + '" -ForegroundColor Yellow' + #13#10 +
         '    Write-Host ""' + #13#10 +
         '    Write-Host "Press any key to continue..." -ForegroundColor Yellow' + #13#10 +
         '    Stop-Transcript' + #13#10 +
         '    $null = $host.UI.RawUI.ReadKey(' + #39 + 'NoEcho,IncludeKeyDown' + #39 + ')' + #13#10 +
-        '    [System.Windows.Forms.MessageBox]::Show("Failed to initialize database:`n`n$_`n`nLog file: $logFile`n`nYou can manually run init_database.sql from the installation folder.", "Database Initialization Error", 0, 16)' + #13#10 +
+        '    [System.Windows.Forms.MessageBox]::Show("Failed to initialize database:`n`n$_`n`nLog file: $logFile`n`nYou can manually run lib\sql\init_database.sql from the installation folder.", "Database Initialization Error", 0, 16)' + #13#10 +
         '    exit 1' + #13#10 +
         '}';
       
@@ -415,7 +415,7 @@ begin
       begin
         MsgBox('Database initialization failed with exit code: ' + IntToStr(ResultCode) + #13#10#13#10 +
                'Log file saved to: ' + ExpandConstant('{tmp}\database-init.log') + #13#10#13#10 +
-               'You can manually run init_database.sql from the installation folder.', mbError, MB_OK);
+               'You can manually run lib\sql\init_database.sql from the installation folder.', mbError, MB_OK);
       end;
     end;
   end;
