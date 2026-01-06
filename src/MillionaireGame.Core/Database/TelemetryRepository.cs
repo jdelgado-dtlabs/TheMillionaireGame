@@ -258,6 +258,10 @@ public class TelemetryRepository
 
         // Get aggregated stats
         gameTelemetry.TotalUniqueParticipants = await GetParticipantCountForSessionAsync(connection, sessionId);
+        
+        // Calculate currency totals from rounds
+        gameTelemetry.Currency1TotalWinnings = gameTelemetry.Rounds.Sum(r => r.Currency1Winnings);
+        gameTelemetry.Currency2TotalWinnings = gameTelemetry.Rounds.Sum(r => r.Currency2Winnings);
 
         return gameTelemetry;
     }

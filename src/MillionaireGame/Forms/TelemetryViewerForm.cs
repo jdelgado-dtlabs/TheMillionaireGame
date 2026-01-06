@@ -158,8 +158,8 @@ public partial class TelemetryViewerForm : Form
             Start = r.StartTime.ToString("HH:mm:ss"),
             End = r.EndTime == default ? "" : r.EndTime.ToString("HH:mm:ss"),
             Outcome = r.Outcome?.ToString() ?? "",
-            Currency1 = r.Currency1Winnings > 0 ? $"{gameData.Currency1Name}{r.Currency1Winnings:N0}" : "",
-            Currency2 = r.Currency2Winnings > 0 && !string.IsNullOrEmpty(gameData.Currency2Name) 
+            Currency1 = $"{gameData.Currency1Name}{r.Currency1Winnings:N0}",
+            Currency2 = !string.IsNullOrEmpty(gameData.Currency2Name) 
                 ? $"{gameData.Currency2Name}{r.Currency2Winnings:N0}" : "",
             Questions = r.FinalQuestionReached
         }).ToList();
@@ -272,17 +272,21 @@ public partial class TelemetryViewerForm : Form
         }
     }
 
-    private void btnExport_Click(object sender, EventArgs e)
+    private async void btnExport_Click(object sender, EventArgs e)
     {
         if (cmbGameSessions.SelectedValue == null) return;
 
         string sessionId = cmbGameSessions.SelectedValue.ToString()!;
+        
+        // Get session data to get accurate start time
+        var gameData = await _repository.GetGameSessionWithRoundsAsync(sessionId);
+        var startTime = gameData.GameStartTime;
 
         using var saveFileDialog = new SaveFileDialog
         {
             Filter = "Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*",
             Title = "Export Telemetry Data",
-            FileName = $"Telemetry_{sessionId.Substring(sessionId.Length - 6)}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
+            FileName = $"Telemetry_{sessionId.Substring(sessionId.Length - 6)}_{startTime:yyyyMMdd_HHmmss}.xlsx",
             DefaultExt = "xlsx",
             RestoreDirectory = true
         };
@@ -309,8 +313,11 @@ public partial class TelemetryViewerForm : Form
             {
                 btnExport.Enabled = false;
                 
-                var gameData = _repository.GetGameSessionWithRoundsAsync(sessionId).Result;
-                _exportService.ExportToExcel(saveFileDialog.FileName, gameData);
+                // Run export on background thread to avoid blocking UI
+                await Task.Run(() =>
+                {
+                    _exportService.ExportToExcel(saveFileDialog.FileName, gameData);
+                });
 
                 MessageBox.Show($"Telemetry exported successfully!\n{saveFileDialog.FileName}",
                     "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -327,11 +334,11 @@ public partial class TelemetryViewerForm : Form
         }
     }
 
-    private void btnBatchExport_Click(object sender, EventArgs e)
+    private async void btnBatchExport_Click(object sender, EventArgs e)
     {
         var sessions = _currentFilterDate.HasValue
-            ? _repository.GetSessionsByDateAsync(_currentFilterDate.Value).Result
-            : _repository.GetAllGameSessionsAsync().Result;
+            ? await _repository.GetSessionsByDateAsync(_currentFilterDate.Value)
+            : await _repository.GetAllGameSessionsAsync();
 
         if (sessions.Count == 0)
         {
@@ -340,19 +347,53 @@ public partial class TelemetryViewerForm : Form
             return;
         }
 
-        using var folderDialog = new FolderBrowserDialog
-        {
-            Description = "Select folder for batch export"
-        };
+        // Show confirmation with what will be exported
+        var filterInfo = _currentFilterDate.HasValue 
+            ? $"filtered by date ({_currentFilterDate.Value:yyyy-MM-dd})" 
+            : "all sessions in database";
+        var confirmResult = MessageBox.Show(
+            $"This will export {sessions.Count} session(s) ({filterInfo}).\n\n" +
+            "Use 'Select Date' to filter by specific date before batch export.\n\n" +
+            "Continue with batch export?",
+            "Confirm Batch Export",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
 
-        if (folderDialog.ShowDialog() == DialogResult.OK)
+        if (confirmResult != DialogResult.Yes)
+            return;
+
+        // Run folder dialog on STA thread to avoid blocking
+        DialogResult folderResult = DialogResult.Cancel;
+        string selectedPath = string.Empty;
+        
+        var thread = new Thread(() =>
         {
+            using var folderDialog = new FolderBrowserDialog
+            {
+                Description = "Select folder for batch export"
+            };
+            folderResult = folderDialog.ShowDialog();
+            selectedPath = folderDialog.SelectedPath;
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+
+        // Keep UI responsive
+        while (thread.IsAlive)
+        {
+            Application.DoEvents();
+            Thread.Sleep(10);
+        }
+
+        if (folderResult == DialogResult.OK && !string.IsNullOrEmpty(selectedPath))
+        {
+            Form? progressForm = null;
             try
             {
                 btnBatchExport.Enabled = false;
 
-                // Show progress
-                var progressForm = new Form
+                // Show progress form (non-modal)
+                progressForm = new Form
                 {
                     Text = "Exporting...",
                     StartPosition = FormStartPosition.CenterParent,
@@ -362,49 +403,95 @@ public partial class TelemetryViewerForm : Form
                 };
                 var progressLabel = new Label
                 {
-                    Text = "Exporting sessions...",
+                    Text = "Preparing export...",
                     AutoSize = true,
                     Location = new Point(20, 30)
                 };
                 progressForm.Controls.Add(progressLabel);
+                progressForm.Show(this);
 
                 // Run export async
-                var exportTask = Task.Run(() =>
+                await Task.Run(async () =>
                 {
-                    var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-                    Directory.CreateDirectory(tempFolder);
-
-                    int count = 0;
-                    foreach (var session in sessions)
+                    try
                     {
-                        count++;
-                        Invoke(() => progressLabel.Text = $"Exporting session {count} of {sessions.Count}...");
+                        var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+                        Directory.CreateDirectory(tempFolder);
 
-                        var fileName = $"Telemetry_{session.SessionIdShort}_{session.GameStartTime:yyyyMMdd}.xlsx";
-                        var filePath = Path.Combine(tempFolder, fileName);
+                        int count = 0;
+                        foreach (var session in sessions)
+                        {
+                            count++;
+                            var currentCount = count; // Capture for closure
+                            BeginInvoke(() => progressLabel.Text = $"Exporting session {currentCount} of {sessions.Count}...");
 
-                        var gameData = _repository.GetGameSessionWithRoundsAsync(session.SessionId).Result;
-                        _exportService.ExportToExcel(filePath, gameData);
+                            var fileName = $"Telemetry_{session.SessionIdShort}_{session.GameStartTime:yyyyMMdd_HHmmss}.xlsx";
+                            var filePath = Path.Combine(tempFolder, fileName);
+
+                            var gameData = await _repository.GetGameSessionWithRoundsAsync(session.SessionId);
+                            _exportService.ExportToExcel(filePath, gameData);
+                        }
+
+                        BeginInvoke(() => progressLabel.Text = "Creating ZIP archive...");
+
+                        // Create ZIP - use date range from sessions
+                        var firstSessionDate = sessions.Min(s => s.GameStartTime);
+                        var lastSessionDate = sessions.Max(s => s.GameStartTime);
+                        var dateRange = firstSessionDate.Date == lastSessionDate.Date 
+                            ? $"{firstSessionDate:yyyyMMdd}"
+                            : $"{firstSessionDate:yyyyMMdd}_to_{lastSessionDate:yyyyMMdd}";
+                        
+                        var zipPath = Path.Combine(selectedPath,
+                            $"TelemetryBatch_{dateRange}_{sessions.Count}Sessions.zip");
+                        
+                        // Check if file exists and prompt to overwrite
+                        if (File.Exists(zipPath))
+                        {
+                            DialogResult overwriteResult = DialogResult.No;
+                            Invoke(() =>
+                            {
+                                overwriteResult = MessageBox.Show(
+                                    $"The file already exists:\n{Path.GetFileName(zipPath)}\n\nDo you want to replace it?",
+                                    "File Exists",
+                                    MessageBoxButtons.YesNo,
+                                    MessageBoxIcon.Warning);
+                            });
+
+                            if (overwriteResult != DialogResult.Yes)
+                            {
+                                BeginInvoke(() =>
+                                {
+                                    MessageBox.Show("Batch export cancelled.",
+                                        "Export Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                });
+                                return;
+                            }
+
+                            // Delete existing file
+                            File.Delete(zipPath);
+                        }
+                        
+                        ZipFile.CreateFromDirectory(tempFolder, zipPath);
+
+                        // Cleanup
+                        Directory.Delete(tempFolder, true);
+
+                        // Show success on UI thread
+                        BeginInvoke(() =>
+                        {
+                            MessageBox.Show($"Batch export complete!\n{sessions.Count} sessions exported to:\n{zipPath}",
+                                "Batch Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        });
                     }
-
-                    // Create ZIP
-                    var zipPath = Path.Combine(folderDialog.SelectedPath,
-                        $"TelemetryBatch_{DateTime.Now:yyyyMMdd_HHmmss}_{sessions.Count}Sessions.zip");
-                    ZipFile.CreateFromDirectory(tempFolder, zipPath);
-
-                    // Cleanup
-                    Directory.Delete(tempFolder, true);
-
-                    // Close progress and show success
-                    Invoke(() =>
+                    catch (Exception ex)
                     {
-                        progressForm.Close();
-                        MessageBox.Show($"Batch export complete!\n{sessions.Count} sessions exported to:\n{zipPath}",
-                            "Batch Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    });
+                        BeginInvoke(() =>
+                        {
+                            MessageBox.Show($"Batch export failed: {ex.Message}",
+                                "Batch Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        });
+                    }
                 });
-
-                progressForm.ShowDialog(this);
             }
             catch (Exception ex)
             {
@@ -413,6 +500,8 @@ public partial class TelemetryViewerForm : Form
             }
             finally
             {
+                progressForm?.Close();
+                progressForm?.Dispose();
                 btnBatchExport.Enabled = true;
             }
         }

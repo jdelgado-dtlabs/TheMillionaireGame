@@ -41,14 +41,13 @@ public class TelemetryExportService
         row += 2;
 
         // Session Information
-        AddDataRow(ws, ref row, "Session ID", gameData.SessionId);
-        AddDataRow(ws, ref row, "Game Start Time", gameData.GameStartTime.ToString("yyyy-MM-dd HH:mm:ss"));
-        AddDataRow(ws, ref row, "Game End Time", gameData.GameEndTime.ToString("yyyy-MM-dd HH:mm:ss"));
-        AddDataRow(ws, ref row, "Total Duration", gameData.TotalDuration.ToString());
-        AddDataRow(ws, ref row, "Total Rounds", gameData.TotalRounds);
-        AddDataRow(ws, ref row, "Total Winnings Awarded", gameData.TotalWinningsAwarded);
-        AddDataRow(ws, ref row, "Total Lifelines Used", gameData.TotalLifelinesUsed);
-        AddDataRow(ws, ref row, "Total Questions Answered", gameData.TotalQuestionsAnswered);
+        AddTextRow(ws, ref row, "Session ID", gameData.SessionId);
+        AddTextRow(ws, ref row, "Game Start Time", gameData.GameStartTime.ToString("yyyy-MM-dd HH:mm:ss"));
+        AddTextRow(ws, ref row, "Game End Time", gameData.GameEndTime.ToString("yyyy-MM-dd HH:mm:ss"));
+        AddTextRow(ws, ref row, "Total Duration", gameData.TotalDuration.ToString());
+        AddNumberRow(ws, ref row, "Total Rounds", gameData.TotalRounds);
+        AddNumberRow(ws, ref row, "Total Lifelines Used", gameData.TotalLifelinesUsed);
+        AddNumberRow(ws, ref row, "Total Questions Answered", gameData.Rounds.Sum(r => r.FinalQuestionReached));
         row++;
 
         // Currency Breakdown
@@ -57,11 +56,11 @@ public class TelemetryExportService
         ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGray;
         row++;
         
-        AddDataRow(ws, ref row, $"Currency ({gameData.Currency1Name})", gameData.Currency1TotalWinnings);
+        AddNumberRow(ws, ref row, $"Currency 1 Total ({gameData.Currency1Name})", gameData.Currency1TotalWinnings);
         
-        if (gameData.Currency2Enabled)
+        if (!string.IsNullOrEmpty(gameData.Currency2Name))
         {
-            AddDataRow(ws, ref row, $"Currency ({gameData.Currency2Name})", gameData.Currency2TotalWinnings);
+            AddNumberRow(ws, ref row, $"Currency 2 Total ({gameData.Currency2Name})", gameData.Currency2TotalWinnings);
         }
 
         // Auto-fit columns
@@ -80,40 +79,33 @@ public class TelemetryExportService
         row += 2;
 
         // Round Summary
-        AddDataRow(ws, ref row, "Start Time", round.StartTime.ToString("yyyy-MM-dd HH:mm:ss"));
-        AddDataRow(ws, ref row, "End Time", round.EndTime.ToString("yyyy-MM-dd HH:mm:ss"));
-        AddDataRow(ws, ref row, "Duration", round.Duration.ToString());
-        AddDataRow(ws, ref row, "Outcome", round.Outcome);
-        AddDataRow(ws, ref row, "Final Winnings", round.FinalWinnings);
-        AddDataRow(ws, ref row, "Final Question Reached", round.FinalQuestionReached);
+        AddTextRow(ws, ref row, "Start Time", round.StartTime.ToString("yyyy-MM-dd HH:mm:ss"));
+        AddTextRow(ws, ref row, "End Time", round.EndTime.ToString("yyyy-MM-dd HH:mm:ss"));
+        AddTextRow(ws, ref row, "Duration", round.Duration.ToString());
+        AddTextRow(ws, ref row, "Outcome", round.Outcome);
+        AddNumberRow(ws, ref row, "Final Question Reached", round.FinalQuestionReached);
         row++;
         
         // Currency Breakdown for this round
-        if (round.Currency1Winnings > 0 || (gameData.Currency2Enabled && round.Currency2Winnings > 0))
+        ws.Cell(row, 1).Value = "WINNINGS BY CURRENCY";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+        row++;
+        
+        AddNumberRow(ws, ref row, $"Currency 1 ({gameData.Currency1Name})", round.Currency1Winnings);
+        
+        if (!string.IsNullOrEmpty(gameData.Currency2Name))
         {
-            ws.Cell(row, 1).Value = "WINNINGS BY CURRENCY";
-            ws.Cell(row, 1).Style.Font.Bold = true;
-            ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGray;
-            row++;
-            
-            if (round.Currency1Winnings > 0)
-            {
-                AddDataRow(ws, ref row, $"Currency ({gameData.Currency1Name})", round.Currency1Winnings);
-            }
-            
-            if (gameData.Currency2Enabled && round.Currency2Winnings > 0)
-            {
-                AddDataRow(ws, ref row, $"Currency ({gameData.Currency2Name})", round.Currency2Winnings);
-            }
-            row++;
+            AddNumberRow(ws, ref row, $"Currency 2 ({gameData.Currency2Name})", round.Currency2Winnings);
         }
+        row++;
 
         // Web Participants Section
         ws.Cell(row, 1).Value = "WEB PARTICIPANTS";
         ws.Cell(row, 1).Style.Font.Bold = true;
         ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGray;
         row++;
-        AddDataRow(ws, ref row, "Total Participants", round.TotalParticipants);
+        AddNumberRow(ws, ref row, "Total Participants", round.TotalParticipants);
         row++;
 
         // Device Types
@@ -174,14 +166,14 @@ public class TelemetryExportService
             ws.Cell(row, 1).Style.Font.Bold = true;
             ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightBlue;
             row++;
-            AddDataRow(ws, ref row, "Total Submissions", round.FFFPerformance.TotalSubmissions);
-            AddDataRow(ws, ref row, "Correct Submissions", round.FFFPerformance.CorrectSubmissions);
-            AddDataRow(ws, ref row, "Incorrect Submissions", round.FFFPerformance.IncorrectSubmissions);
-            AddDataRow(ws, ref row, "Winner Name", round.FFFPerformance.WinnerName);
-            AddDataRow(ws, ref row, "Winner Time (ms)", round.FFFPerformance.WinnerTimeMs);
-            AddDataRow(ws, ref row, "Average Response Time (ms)", Math.Round(round.FFFPerformance.AverageResponseTimeMs, 2));
-            AddDataRow(ws, ref row, "Fastest Response Time (ms)", round.FFFPerformance.FastestResponseTimeMs);
-            AddDataRow(ws, ref row, "Slowest Response Time (ms)", round.FFFPerformance.SlowestResponseTimeMs);
+            AddNumberRow(ws, ref row, "Total Submissions", round.FFFPerformance.TotalSubmissions);
+            AddNumberRow(ws, ref row, "Correct Submissions", round.FFFPerformance.CorrectSubmissions);
+            AddNumberRow(ws, ref row, "Incorrect Submissions", round.FFFPerformance.IncorrectSubmissions);
+            AddTextRow(ws, ref row, "Winner Name", round.FFFPerformance.WinnerName);
+            AddNumberRow(ws, ref row, "Winner Time (ms)", round.FFFPerformance.WinnerTimeMs);
+            AddNumberRow(ws, ref row, "Average Response Time (ms)", Math.Round(round.FFFPerformance.AverageResponseTimeMs, 2));
+            AddNumberRow(ws, ref row, "Fastest Response Time (ms)", round.FFFPerformance.FastestResponseTimeMs);
+            AddNumberRow(ws, ref row, "Slowest Response Time (ms)", round.FFFPerformance.SlowestResponseTimeMs);
             row++;
         }
 
@@ -192,8 +184,8 @@ public class TelemetryExportService
             ws.Cell(row, 1).Style.Font.Bold = true;
             ws.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGreen;
             row++;
-            AddDataRow(ws, ref row, "Total Votes Cast", round.ATAPerformance.TotalVotesCast);
-            AddDataRow(ws, ref row, "Mode", round.ATAPerformance.Mode);
+            AddNumberRow(ws, ref row, "Total Votes Cast", round.ATAPerformance.TotalVotesCast);
+            AddTextRow(ws, ref row, "Mode", round.ATAPerformance.Mode);
             row++;
 
             // Votes table
@@ -211,7 +203,7 @@ public class TelemetryExportService
             AddVoteRow(ws, ref row, "D", round.ATAPerformance.VotesForD, round.ATAPerformance.PercentageD);
             row++;
 
-            AddDataRow(ws, ref row, "Voting Completion Rate", $"{Math.Round(round.ATAPerformance.VotingCompletionRate, 1)}%");
+            AddNumberRow(ws, ref row, "Voting Completion Rate (%)", Math.Round(round.ATAPerformance.VotingCompletionRate, 1));
             row++;
         }
 
@@ -247,11 +239,32 @@ public class TelemetryExportService
         ws.Columns().AdjustToContents();
     }
 
-    private void AddDataRow(IXLWorksheet ws, ref int row, string label, object value)
+    private void AddTextRow(IXLWorksheet ws, ref int row, string label, object value)
     {
         ws.Cell(row, 1).Value = label;
         ws.Cell(row, 1).Style.Font.Bold = true;
         ws.Cell(row, 2).Value = value?.ToString() ?? "";
+        row++;
+    }
+
+    private void AddNumberRow(IXLWorksheet ws, ref int row, string label, object value)
+    {
+        ws.Cell(row, 1).Value = label;
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        
+        // Try to parse as number
+        if (value != null)
+        {
+            if (double.TryParse(value.ToString(), out double numValue))
+            {
+                ws.Cell(row, 2).Value = numValue;
+                ws.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
+            }
+            else
+            {
+                ws.Cell(row, 2).Value = value.ToString();
+            }
+        }
         row++;
     }
 

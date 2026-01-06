@@ -2510,6 +2510,7 @@ public partial class ControlPanelForm : Form
     {
         // Start telemetry session
         var telemetryService = TelemetryService.Instance;
+        telemetryService.SetMoneyTreeSettings(_gameService.MoneyTree.Settings);
         telemetryService.StartNewGame();
         
         // Disable Host Intro until closing
@@ -2699,8 +2700,8 @@ public partial class ControlPanelForm : Form
         // Start new game telemetry session (game start time)
         if (_roundNumber == 0)
         {
-            _telemetryService.StartNewGame();
             _telemetryService.SetMoneyTreeSettings(_gameService.MoneyTree.Settings);
+            _telemetryService.StartNewGame();
             GameConsole.Debug("[Telemetry] Started new game session");
         }
         
@@ -2804,7 +2805,24 @@ public partial class ControlPanelForm : Form
             GameOutcome.Wrong => "Incorrect Answer",
             _ => "Unknown"
         };
-        _telemetryService.CompleteRound(outcomeText, winnings, actualWinningLevel);
+        
+        // Extract numeric values from currency displays for telemetry
+        int currency1Value = 0;
+        int currency2Value = 0;
+        if (hasCurrency1 && !string.IsNullOrEmpty(currency1Display))
+        {
+            // Remove currency symbol and parse
+            var c1NumStr = new string(currency1Display.Where(c => char.IsDigit(c)).ToArray());
+            int.TryParse(c1NumStr, out currency1Value);
+        }
+        if (hasCurrency2 && !string.IsNullOrEmpty(currency2Display))
+        {
+            // Remove currency symbol and parse
+            var c2NumStr = new string(currency2Display.Where(c => char.IsDigit(c)).ToArray());
+            int.TryParse(c2NumStr, out currency2Value);
+        }
+        
+        _telemetryService.CompleteRound(outcomeText, winnings, actualWinningLevel, currency1Value, currency2Value);
         GameConsole.Debug($"[Telemetry] Completed Round {_roundNumber} - {outcomeText}, Winnings: {winnings}");
         
         // Don't automatically reset - let user manually reset with Reset Round button
