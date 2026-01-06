@@ -1,6 +1,17 @@
 namespace MillionaireGame.Core.Settings;
 
 /// <summary>
+/// Thousands separator style for number formatting
+/// </summary>
+public enum NumberSeparatorStyle
+{
+    None,      // 1000000
+    Comma,     // 1,000,000
+    Period,    // 1.000.000
+    Space      // 1 000 000
+}
+
+/// <summary>
 /// Represents the money tree configuration including prize values, safety nets, and currency settings
 /// </summary>
 public class MoneyTreeSettings
@@ -54,6 +65,11 @@ public class MoneyTreeSettings
     /// Stores which currency each level uses (1 or 2). Array indexed 0-14 for levels 1-15.
     /// </summary>
     public int[] LevelCurrencies { get; set; } = new int[15] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+    /// <summary>
+    /// Thousands separator style (default: Comma)
+    /// </summary>
+    public NumberSeparatorStyle ThousandsSeparator { get; set; } = NumberSeparatorStyle.Comma;
 
     // Prize values for each level (stored as integers, formatted with currency when displayed)
     public int Level01Value { get; set; } = 100;
@@ -125,10 +141,63 @@ public class MoneyTreeSettings
     /// </summary>
     public string FormatMoney(int value)
     {
-        var formattedValue = value.ToString("N0"); // Format with thousands separator
+        // Format number based on separator preference
+        string formattedValue = FormatNumberWithSeparator(value, ThousandsSeparator);
+        
+        // Apply currency symbol and position
         return CurrencyAtSuffix 
             ? $"{formattedValue}{Currency}" 
             : $"{Currency}{formattedValue}";
+    }
+
+    /// <summary>
+    /// Formats value with second currency (respects same separator setting)
+    /// </summary>
+    public string FormatMoneyWithCurrency2(int value)
+    {
+        string formattedValue = FormatNumberWithSeparator(value, ThousandsSeparator);
+        
+        return Currency2AtSuffix 
+            ? $"{formattedValue}{Currency2}" 
+            : $"{Currency2}{formattedValue}";
+    }
+
+    /// <summary>
+    /// Format number with specified thousands separator
+    /// </summary>
+    private string FormatNumberWithSeparator(int value, NumberSeparatorStyle separator)
+    {
+        string valueStr = value.ToString();
+        
+        if (separator == NumberSeparatorStyle.None)
+        {
+            return valueStr;
+        }
+        
+        // Get separator character
+        char sepChar = separator switch
+        {
+            NumberSeparatorStyle.Comma => ',',
+            NumberSeparatorStyle.Period => '.',
+            NumberSeparatorStyle.Space => ' ',
+            _ => ','
+        };
+        
+        // Add thousands separator every 3 digits from right
+        var result = new System.Text.StringBuilder();
+        int digitCount = 0;
+        
+        for (int i = valueStr.Length - 1; i >= 0; i--)
+        {
+            if (digitCount > 0 && digitCount % 3 == 0)
+            {
+                result.Insert(0, sepChar);
+            }
+            result.Insert(0, valueStr[i]);
+            digitCount++;
+        }
+        
+        return result.ToString();
     }
 
     /// <summary>

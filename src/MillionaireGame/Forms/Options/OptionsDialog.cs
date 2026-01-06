@@ -1984,6 +1984,14 @@ public partial class OptionsDialog : Form
             Size = new Size(280, 200)
         };
         
+        // Create number format group
+        var grpNumberFormat = new GroupBox
+        {
+            Text = "Number Format",
+            Location = new Point(10, 431),
+            Size = new Size(626, 70)
+        };
+        
         // Add header row labels directly to tab (not in group)
         var lblPrizeHeader = new Label
         {
@@ -2229,8 +2237,55 @@ public partial class OptionsDialog : Form
         
         grpCurrency2.Controls.AddRange(new Control[] { chkEnableCurrency2, radDollar2, radEuro2, radPound2, radYen2, radOther2, txtCustomCurrency2, chkSuffix2 });
         
+        // Number Format controls
+        var lblThousandsSeparator = new Label
+        {
+            Text = "Thousands Separator:",
+            Location = new Point(15, 25),
+            Size = new Size(130, 15)
+        };
+        
+        var radSeparatorComma = new RadioButton
+        {
+            Name = "radSeparatorComma",
+            Text = "Comma (1,000,000)",
+            Location = new Point(155, 22),
+            Size = new Size(150, 20),
+            Checked = true
+        };
+        radSeparatorComma.CheckedChanged += Control_Changed;
+        
+        var radSeparatorPeriod = new RadioButton
+        {
+            Name = "radSeparatorPeriod",
+            Text = "Period (1.000.000)",
+            Location = new Point(310, 22),
+            Size = new Size(150, 20)
+        };
+        radSeparatorPeriod.CheckedChanged += Control_Changed;
+        
+        var radSeparatorSpace = new RadioButton
+        {
+            Name = "radSeparatorSpace",
+            Text = "Space (1 000 000)",
+            Location = new Point(155, 45),
+            Size = new Size(150, 20)
+        };
+        radSeparatorSpace.CheckedChanged += Control_Changed;
+        
+        var radSeparatorNone = new RadioButton
+        {
+            Name = "radSeparatorNone",
+            Text = "None (1000000)",
+            Location = new Point(310, 45),
+            Size = new Size(150, 20)
+        };
+        radSeparatorNone.CheckedChanged += Control_Changed;
+        
+        grpNumberFormat.Controls.AddRange(new Control[] { lblThousandsSeparator, radSeparatorComma, radSeparatorPeriod, radSeparatorSpace, radSeparatorNone });
+        
         // Add header labels and currency groups to tab (note: prize controls already added individually in loop above)
-        tabMoneyTree.Controls.AddRange(new Control[] { lblPrizeHeader, lblCurrencyHeader, grpCurrency1, grpCurrency2 });
+        tabMoneyTree.Controls.AddRange(new Control[] { lblPrizeHeader, lblCurrencyHeader, grpCurrency1, grpCurrency2, grpNumberFormat });
     }
     
     private void EnableCurrency2_CheckedChanged(object? sender, EventArgs e)
@@ -2371,6 +2426,31 @@ public partial class OptionsDialog : Form
                 cmbCurrency.Enabled = isCurrency2Enabled; // Disable if Currency 2 not enabled
             }
         }
+        
+        // Load thousands separator preference
+        var radSeparatorComma = tabMoneyTree.Controls.Find("radSeparatorComma", true).FirstOrDefault() as RadioButton;
+        var radSeparatorPeriod = tabMoneyTree.Controls.Find("radSeparatorPeriod", true).FirstOrDefault() as RadioButton;
+        var radSeparatorSpace = tabMoneyTree.Controls.Find("radSeparatorSpace", true).FirstOrDefault() as RadioButton;
+        var radSeparatorNone = tabMoneyTree.Controls.Find("radSeparatorNone", true).FirstOrDefault() as RadioButton;
+        
+        if (radSeparatorComma != null && radSeparatorPeriod != null && radSeparatorSpace != null && radSeparatorNone != null)
+        {
+            switch (settings.ThousandsSeparator)
+            {
+                case MillionaireGame.Core.Settings.NumberSeparatorStyle.Comma:
+                    radSeparatorComma.Checked = true;
+                    break;
+                case MillionaireGame.Core.Settings.NumberSeparatorStyle.Period:
+                    radSeparatorPeriod.Checked = true;
+                    break;
+                case MillionaireGame.Core.Settings.NumberSeparatorStyle.Space:
+                    radSeparatorSpace.Checked = true;
+                    break;
+                case MillionaireGame.Core.Settings.NumberSeparatorStyle.None:
+                    radSeparatorNone.Checked = true;
+                    break;
+            }
+        }
     }
     
     private void SaveMoneyTreeSettings()
@@ -2471,6 +2551,21 @@ public partial class OptionsDialog : Form
                 settings.LevelCurrencies[i - 1] = cmbCurrency.SelectedIndex + 1; // Store 1 or 2
             }
         }
+        
+        // Save thousands separator preference
+        var radSeparatorComma = tabMoneyTree.Controls.Find("radSeparatorComma", true).FirstOrDefault() as RadioButton;
+        var radSeparatorPeriod = tabMoneyTree.Controls.Find("radSeparatorPeriod", true).FirstOrDefault() as RadioButton;
+        var radSeparatorSpace = tabMoneyTree.Controls.Find("radSeparatorSpace", true).FirstOrDefault() as RadioButton;
+        var radSeparatorNone = tabMoneyTree.Controls.Find("radSeparatorNone", true).FirstOrDefault() as RadioButton;
+        
+        if (radSeparatorComma?.Checked == true)
+            settings.ThousandsSeparator = MillionaireGame.Core.Settings.NumberSeparatorStyle.Comma;
+        else if (radSeparatorPeriod?.Checked == true)
+            settings.ThousandsSeparator = MillionaireGame.Core.Settings.NumberSeparatorStyle.Period;
+        else if (radSeparatorSpace?.Checked == true)
+            settings.ThousandsSeparator = MillionaireGame.Core.Settings.NumberSeparatorStyle.Space;
+        else if (radSeparatorNone?.Checked == true)
+            settings.ThousandsSeparator = MillionaireGame.Core.Settings.NumberSeparatorStyle.None;
         
         // Save to file
         _moneyTreeService.SaveSettings();

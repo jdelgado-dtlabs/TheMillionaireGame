@@ -87,6 +87,12 @@ namespace MillionaireGame.Forms.Options
             radCurrencyEuro = new RadioButton();
             radCurrencyDollar = new RadioButton();
             chkCurrencyAtSuffix = new CheckBox();
+            grpNumberFormat = new GroupBox();
+            lblThousandsSeparator = new Label();
+            radSeparatorComma = new RadioButton();
+            radSeparatorPeriod = new RadioButton();
+            radSeparatorSpace = new RadioButton();
+            radSeparatorNone = new RadioButton();
             grpSafetyNets = new GroupBox();
             numSafetyNet2 = new NumericUpDown();
             numSafetyNet1 = new NumericUpDown();
@@ -1830,6 +1836,12 @@ namespace MillionaireGame.Forms.Options
         private Label lblReveal;
         private Label lblAnswerC;
         private Label lblAnswerD;
+        private GroupBox grpNumberFormat;
+        private Label lblThousandsSeparator;
+        private RadioButton radSeparatorComma;
+        private RadioButton radSeparatorPeriod;
+        private RadioButton radSeparatorSpace;
+        private RadioButton radSeparatorNone;
     }
 }
 

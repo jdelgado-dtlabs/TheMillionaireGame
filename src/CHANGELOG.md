@@ -2,7 +2,7 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
-## [v1.0.1] - 2026-01-05
+## [v1.0.1] - 2026-01-06
 
 ### Fixed
 - **SQL.xml Write Permissions** ✅
@@ -24,6 +24,32 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Added event handlers to update dropdowns when selection changes
   * Monitors now correctly assigned and screens open on correct displays
   * Fixed issue where laptop onboard monitor wasn't listed
+
+- **FFF Rankings Display** ✅
+  * Fixed desktop client calling non-existent "CalculateRankings" hub method
+  * Changed to correct "GetFFFResults" hub method
+  * FFF rankings now display properly for single and multiple players
+
+- **FFF Player Pre-Selection** ✅
+  * Removed SelectFFFPlayers endpoint that randomly selected 8 players
+  * All participants can now answer FFF question
+  * Top 8 fastest correct answers displayed in rankings
+  * Eliminated confusion about pre-selected vs actual participants
+
+- **Host Intro Broadcast** ✅
+  * Fixed WaitingLobby not broadcasting when no session exists
+  * BroadcastGameStateAsync now accepts nullable sessionId
+  * Passes null to broadcast Host Intro screen to all connected clients
+
+- **ATA Online Detection** ✅ CRITICAL
+  * Complete LIVE session refactor for Ask The Audience online mode
+  * Refactored all 7 ATA methods to use "LIVE" session directly without status checking
+  * Removed Active session queries that failed during MainGame/FFFSelection states
+  * ATA online now works regardless of game phase (Active/FFFSelection/MainGame)
+  * Added LIVE session cleanup on web server shutdown for proper offline fallback
+  * Reset LIVE session to Active status on web server startup
+  * System properly detects offline mode when web server not running
+  * Methods updated: NotifyWebClientsATAIntro, NotifyWebClientsATAVoting, NotifyWebClientsATAComplete, GetATAResultsAsync, CheckForVoteCompletion, CollectWebTelemetryAsync, ClearATAFromScreens
 
 ## [v1.0.0] - 2026-01-04
 
