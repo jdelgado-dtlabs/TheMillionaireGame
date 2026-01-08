@@ -111,6 +111,9 @@ public class GameHub : Hub
             Timestamp = DateTime.UtcNow
         });
         
+        // Sync current game state to reconnecting/joining client
+        await SyncClientStateAsync(sessionId, participant.Id);
+        
         // Return participant info
         return new
         {
@@ -152,6 +155,40 @@ public class GameHub : Hub
     public async Task<object> SubmitAnswer(string sessionId, string participantId, int questionId, string answerSequence)
     {
         var submittedAt = DateTime.UtcNow;
+        
+        // Get session for timer validation
+        var session = await _sessionService.GetSessionAsync(sessionId);
+        if (session == null)
+        {
+            return new { Success = false, Error = "Session not found" };
+        }
+        
+        // Validate timer expiry (20 second limit + 500ms grace period for network latency)
+        if (session.QuestionStartTime.HasValue)
+        {
+            var elapsed = (submittedAt - session.QuestionStartTime.Value).TotalMilliseconds;
+            if (elapsed > 20500) // 20s + 500ms grace
+            {
+                _logger.LogWarning("Late FFF answer rejected - Participant: {ParticipantId}, Question: {QuestionId}, Elapsed: {Elapsed}ms",
+                    participantId, questionId, elapsed);
+                return new { Success = false, Error = "Cannot submit - time expired" };
+            }
+        }
+        
+        // Get participant for eligibility validation
+        var participant = await _sessionService.GetParticipantAsync(participantId);
+        if (participant == null)
+        {
+            return new { Success = false, Error = "Participant not found" };
+        }
+        
+        // Validate participant joined before question started (anti-cheat)
+        if (session.QuestionStartTime.HasValue && participant.LastSeenAt > session.QuestionStartTime.Value)
+        {
+            _logger.LogWarning("Late joiner FFF answer rejected - Participant: {ParticipantId}, Question: {QuestionId}",
+                participantId, questionId);
+            return new { Success = false, Error = "Cannot submit - joined after question started" };
+        }
         
         // Check for duplicate submission
         if (await _sessionService.HasParticipantAnsweredAsync(sessionId, participantId, questionId))
@@ -203,8 +240,8 @@ public class GameHub : Hub
             _fffTimers.Remove(timerKey);
         }
         
-        // Update session mode
-        await _sessionService.UpdateSessionModeAsync(sessionId, SessionMode.FFF, questionId);
+        // Update session mode WITH question details for state sync
+        await _sessionService.UpdateSessionModeAsync(sessionId, SessionMode.FFF, questionId, questionText, options);
         
         // Broadcast question
         await Clients.Group(sessionId).SendAsync("QuestionStarted", new
@@ -315,13 +352,39 @@ public class GameHub : Hub
         {
             var submittedAt = DateTime.UtcNow;
             
+            // Get session for timer validation
+            var session = await _sessionService.GetSessionAsync(sessionId);
+            if (session == null)
+            {
+                return new { Success = false, Error = "Session not found" };
+            }
+            
+            // Validate timer expiry (60 second limit + 500ms grace period for network latency)
+            if (session.QuestionStartTime.HasValue)
+            {
+                var elapsed = (submittedAt - session.QuestionStartTime.Value).TotalMilliseconds;
+                if (elapsed > 60500) // 60s + 500ms grace
+                {
+                    _logger.LogWarning("Late ATA vote rejected - Participant: {ParticipantId}, Elapsed: {Elapsed}ms",
+                        participantId, elapsed);
+                    return new { Success = false, Error = "Cannot vote - time expired" };
+                }
+            }
+            
             // Get participant
-            var participants = await _sessionService.GetActiveParticipantsAsync(sessionId);
-            var participant = participants.FirstOrDefault(p => p.Id == participantId);
+            var participant = await _sessionService.GetParticipantAsync(participantId);
             
             if (participant == null)
             {
                 return new { Success = false, Error = "Participant not found" };
+            }
+            
+            // Validate participant joined before voting started (anti-cheat)
+            if (session.QuestionStartTime.HasValue && participant.LastSeenAt > session.QuestionStartTime.Value)
+            {
+                _logger.LogWarning("Late joiner ATA vote rejected - Participant: {ParticipantId}",
+                    participantId);
+                return new { Success = false, Error = "Cannot vote - joined after voting started" };
             }
 
             // Check if already used ATA this round
@@ -412,6 +475,116 @@ public class GameHub : Hub
     public GameStateType GetCurrentGameState()
     {
         return _sessionService.GetCurrentState();
+    }
+
+    /// <summary>
+    /// Sync current game state to a specific client (typically after reconnect)
+    /// </summary>
+    private async Task SyncClientStateAsync(string sessionId, string participantId)
+    {
+        var session = await _sessionService.GetSessionAsync(sessionId);
+        if (session?.CurrentMode == null || session.CurrentMode == SessionMode.Idle)
+            return;
+        
+        var participant = await _sessionService.GetParticipantAsync(participantId);
+        if (participant == null)
+            return;
+        
+        if (session.CurrentMode == SessionMode.FFF)
+        {
+            var fffState = await _sessionService.GetCurrentFFFStateAsync(sessionId);
+            if (fffState != null)
+            {
+                // Calculate remaining time
+                var elapsed = (DateTime.UtcNow - fffState.StartTime).TotalMilliseconds;
+                var remaining = Math.Max(0, fffState.TimeLimit - elapsed);
+                var isStillActive = remaining > 0;
+                
+                // Determine if participant can submit answer
+                // Only if they were connected BEFORE question started OR question already ended
+                var canSubmit = participant.LastSeenAt <= fffState.StartTime || !isStillActive;
+                
+                // Check if already answered
+                if (await _sessionService.HasParticipantAnsweredAsync(sessionId, participantId, fffState.QuestionId))
+                {
+                    canSubmit = false;
+                }
+                
+                await Clients.Caller.SendAsync("QuestionStarted", new
+                {
+                    QuestionId = fffState.QuestionId,
+                    Question = fffState.QuestionText,
+                    Options = fffState.Options,
+                    TimeLimit = (int)remaining, // Send remaining time, not full time
+                    StartTime = fffState.StartTime,
+                    IsResync = true, // Flag to indicate this is a state sync
+                    CanSubmit = canSubmit, // Can this participant submit?
+                    SpectatorMode = !canSubmit && isStillActive, // Viewing only
+                    SpectatorReason = !canSubmit && isStillActive ? "You joined after the question started" : null
+                });
+                
+                _logger.LogInformation("Synced FFF state to reconnected client for question {QuestionId} (CanSubmit: {CanSubmit})", 
+                    fffState.QuestionId, canSubmit);
+            }
+        }
+        else if (session.CurrentMode == SessionMode.ATA)
+        {
+            var ataState = await _sessionService.GetCurrentATAStateAsync(sessionId);
+            if (ataState != null)
+            {
+                // Calculate if voting is still active (60 second window)
+                var elapsed = (DateTime.UtcNow - ataState.StartTime).TotalSeconds;
+                var isStillActive = elapsed < 60 && ataState.IsActive;
+                
+                // Determine if participant can vote
+                // Only if they were connected BEFORE voting started OR voting already ended
+                var canVote = participant.LastSeenAt <= ataState.StartTime || !isStillActive;
+                
+                // Check if already voted
+                if (await _sessionService.HasParticipantVotedAsync(sessionId, participantId))
+                {
+                    canVote = false;
+                }
+                
+                // Check if used ATA lifeline
+                if (participant.HasUsedATA)
+                {
+                    canVote = false;
+                }
+                
+                // Send both the start event and current results
+                await Clients.Caller.SendAsync("ATAStarted", new
+                {
+                    QuestionId = ataState.QuestionId,
+                    QuestionText = ataState.QuestionText,
+                    StartTime = ataState.StartTime,
+                    IsResync = true,
+                    CanVote = canVote, // Can this participant vote?
+                    SpectatorMode = !canVote && isStillActive, // Viewing only
+                    SpectatorReason = !canVote && isStillActive ? "You joined after voting started" : null
+                });
+                
+                await Clients.Caller.SendAsync("VotesUpdated", new
+                {
+                    Results = ataState.CurrentResults,
+                    TotalVotes = ataState.TotalVotes,
+                    Timestamp = DateTime.UtcNow
+                });
+                
+                _logger.LogInformation("Synced ATA state to reconnected client for question {QuestionId} (CanVote: {CanVote})", 
+                    ataState.QuestionId, canVote);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request explicit state sync (called by client after reconnection)
+    /// </summary>
+    public async Task RequestStateSync(string sessionId, string participantId)
+    {
+        _logger.LogInformation("Client {ConnectionId} requested state sync for session {SessionId}", 
+            Context.ConnectionId, sessionId);
+        await SyncClientStateAsync(sessionId, participantId);
     }
 
     #endregion
