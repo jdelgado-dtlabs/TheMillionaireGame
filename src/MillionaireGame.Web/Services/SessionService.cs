@@ -446,11 +446,27 @@ public class SessionService
     /// </summary>
     public async Task UpdateSessionModeAsync(string sessionId, SessionMode mode, int? questionId)
     {
+        await UpdateSessionModeAsync(sessionId, mode, questionId, null, null);
+    }
+
+    /// <summary>
+    /// Update session mode, current question, and question details (for state sync)
+    /// </summary>
+    public async Task UpdateSessionModeAsync(string sessionId, SessionMode mode, int? questionId, 
+        string? questionText = null, string[]? options = null)
+    {
         var session = await _context.Sessions.FindAsync(sessionId);
         if (session != null)
         {
             session.CurrentMode = mode;
             session.CurrentQuestionId = questionId;
+            session.CurrentQuestionText = questionText;
+            
+            // Store options as JSON if provided
+            if (options != null && options.Length > 0)
+            {
+                session.CurrentQuestionOptionsJson = System.Text.Json.JsonSerializer.Serialize(options);
+            }
             
             // Set question start time when FFF or ATA question starts
             if ((mode == SessionMode.FFF || mode == SessionMode.ATA) && questionId.HasValue)
@@ -462,6 +478,8 @@ public class SessionService
             else if (mode == SessionMode.Idle)
             {
                 session.QuestionStartTime = null;
+                session.CurrentQuestionText = null;
+                session.CurrentQuestionOptionsJson = null;
             }
             
             await _context.SaveChangesAsync();
@@ -860,5 +878,87 @@ public class SessionService
         TelemetryBridge.OnATAStats?.Invoke(ataData);
         _logger.LogInformation("[Telemetry] ATA stats recorded: {Total} votes, Completion: {Completion:F1}%, Mode: {Mode}",
             totalVotes, completionRate, mode);
+    }
+
+    // ===== STATE SYNCHRONIZATION METHODS (Phase: Web State Sync) =====
+
+    /// <summary>
+    /// Get current active FFF question state for a session (for reconnection sync)
+    /// </summary>
+    public async Task<FFFQuestionState?> GetCurrentFFFStateAsync(string sessionId)
+    {
+        var session = await _context.Sessions.FindAsync(sessionId);
+        if (session?.CurrentMode != SessionMode.FFF || !session.CurrentQuestionId.HasValue)
+            return null;
+        
+        if (string.IsNullOrEmpty(session.CurrentQuestionText))
+        {
+            _logger.LogWarning("FFF question {QuestionId} active but no question text stored", 
+                session.CurrentQuestionId);
+            return null;
+        }
+        
+        // Parse options from JSON
+        string[] options = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(session.CurrentQuestionOptionsJson))
+        {
+            try
+            {
+                options = System.Text.Json.JsonSerializer.Deserialize<string[]>(
+                    session.CurrentQuestionOptionsJson) ?? Array.Empty<string>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to parse question options JSON");
+            }
+        }
+        
+        // Calculate if question is still active (20 second limit)
+        var elapsed = session.QuestionStartTime.HasValue
+            ? (DateTime.UtcNow - session.QuestionStartTime.Value).TotalMilliseconds
+            : 0;
+        var isActive = elapsed < 20000;
+        
+        return new FFFQuestionState
+        {
+            QuestionId = session.CurrentQuestionId.Value,
+            QuestionText = session.CurrentQuestionText,
+            Options = options,
+            StartTime = session.QuestionStartTime ?? DateTime.UtcNow,
+            TimeLimit = 20000,
+            IsActive = isActive
+        };
+    }
+
+    /// <summary>
+    /// Get current active ATA state for a session (for reconnection sync)
+    /// </summary>
+    public async Task<ATAQuestionState?> GetCurrentATAStateAsync(string sessionId)
+    {
+        var session = await _context.Sessions.FindAsync(sessionId);
+        if (session?.CurrentMode != SessionMode.ATA || !session.CurrentQuestionId.HasValue)
+            return null;
+        
+        // Calculate if voting is still active (60 second window)
+        var elapsed = session.QuestionStartTime.HasValue
+            ? (DateTime.UtcNow - session.QuestionStartTime.Value).TotalSeconds
+            : 0;
+        var isActive = elapsed < 60;
+        
+        // Get current voting percentages
+        var percentages = await CalculateATAPercentagesAsync(sessionId);
+        var totalVotes = await GetATAVoteCountAsync(sessionId);
+        
+        var questionText = session.CurrentQuestionText ?? "Ask The Audience Question";
+        
+        return new ATAQuestionState
+        {
+            QuestionId = session.CurrentQuestionId.Value,
+            QuestionText = questionText,
+            StartTime = session.QuestionStartTime ?? DateTime.UtcNow,
+            CurrentResults = percentages,
+            TotalVotes = totalVotes,
+            IsActive = isActive
+        };
     }
 }
