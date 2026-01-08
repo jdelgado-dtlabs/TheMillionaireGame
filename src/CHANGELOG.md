@@ -2,6 +2,33 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [v1.0.5] - 2026-01-08
+
+### Added
+- **Multi-Monitor Support Restored** ✅ NEW
+  * Screens tab re-enabled with safe async monitor detection
+  * MonitorInfoService with 2-second timeout protection and comprehensive error handling
+  * UID-based monitor ordering to match Windows display numbers
+  * Lazy initialization - monitors load only when Screens tab selected
+  * Monitor assignments persist across sessions
+  * Screens auto-open at startup when full screen enabled
+  * Single WMI query optimization (consolidated from 3× parallel queries)
+  * Proper dropdown enable/disable based on checkbox state
+  * Event suspension patterns to prevent infinite recursion
+
+### Fixed
+- **Monitor Detection Safety** ✅
+  * All WMI queries now async with timeout protection
+  * No more UI thread blocking during monitor detection
+  * Graceful degradation on WMI failure
+  * Comprehensive error handling throughout
+
+### Changed
+- **Settings Persistence** ✅
+  * Monitor assignments save/load correctly
+  * Settings use database-compatible property names
+  * Screens maintain position when opening Settings dialog
+
 ## [v1.0.1] - 2026-01-06
 
 ### Added
