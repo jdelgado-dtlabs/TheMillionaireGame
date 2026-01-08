@@ -115,9 +115,25 @@ public partial class OptionsDialog : Form
         
         // v1.0.5: Monitor selections loaded via lazy initialization when Screens tab is selected
         // Legacy checkbox states still loaded for backward compatibility
+        // Suspend events to prevent CheckedChanged from firing and re-enabling dropdowns
+        chkFullScreenHostScreen.CheckedChanged -= chkFullScreenHost_CheckedChanged;
+        chkFullScreenGuestScreen.CheckedChanged -= chkFullScreenGuest_CheckedChanged;
+        chkFullScreenTVScreen.CheckedChanged -= chkFullScreenTV_CheckedChanged;
+        
         chkFullScreenHostScreen.Checked = _settings.FullScreenHostScreenEnable;
         chkFullScreenGuestScreen.Checked = _settings.FullScreenGuestScreenEnable;
         chkFullScreenTVScreen.Checked = _settings.FullScreenTVScreenEnable;
+        
+        // Set dropdown enabled states based on checkbox states
+        // Checked = disabled dropdown (monitor assigned), Unchecked = enabled dropdown (user can select)
+        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+        
+        // Resume events after setting states
+        chkFullScreenHostScreen.CheckedChanged += chkFullScreenHost_CheckedChanged;
+        chkFullScreenGuestScreen.CheckedChanged += chkFullScreenGuest_CheckedChanged;
+        chkFullScreenTVScreen.CheckedChanged += chkFullScreenTV_CheckedChanged;
 
         // Lifeline settings
         numTotalLifelines.Value = _settings.TotalLifelines;
@@ -186,7 +202,7 @@ public partial class OptionsDialog : Form
     
     #region Full Screen Checkbox Event Handlers
     
-    private void chkFullScreenHost_CheckedChanged(object sender, EventArgs e)
+    private void chkFullScreenHost_CheckedChanged(object? sender, EventArgs e)
     {
         // Mark settings as changed
         MarkChanged();
@@ -194,14 +210,15 @@ public partial class OptionsDialog : Form
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
         
-        // Refresh monitor dropdowns to exclude selected monitors
-        RefreshMonitorDropdowns();
+        // Disable dropdown when checkbox is checked (full screen enabled)
+        // Enable dropdown when checkbox is unchecked (allow user to select monitor)
+        cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
         
-        // Apply full-screen immediately if checked and host screen is open
-        ApplyFullScreenToOpenScreen("Host");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("Host") - don't move screens during settings changes
     }
     
-    private void chkFullScreenGuest_CheckedChanged(object sender, EventArgs e)
+    private void chkFullScreenGuest_CheckedChanged(object? sender, EventArgs e)
     {
         // Mark settings as changed
         MarkChanged();
@@ -209,14 +226,15 @@ public partial class OptionsDialog : Form
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
         
-        // Refresh monitor dropdowns to exclude selected monitors
-        RefreshMonitorDropdowns();
+        // Disable dropdown when checkbox is checked (full screen enabled)
+        // Enable dropdown when checkbox is unchecked (allow user to select monitor)
+        cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
         
-        // Apply full-screen immediately if checked and guest screen is open
-        ApplyFullScreenToOpenScreen("Guest");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("Guest") - don't move screens during settings changes
     }
     
-    private void chkFullScreenTV_CheckedChanged(object sender, EventArgs e)
+    private void chkFullScreenTV_CheckedChanged(object? sender, EventArgs e)
     {
         // Mark settings as changed
         MarkChanged();
@@ -224,32 +242,33 @@ public partial class OptionsDialog : Form
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
         
-        // Refresh monitor dropdowns to exclude selected monitors
-        RefreshMonitorDropdowns();
+        // Disable dropdown when checkbox is checked (full screen enabled)
+        // Enable dropdown when checkbox is unchecked (allow user to select monitor)
+        cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
         
-        // Apply full-screen immediately if checked and TV screen is open
-        ApplyFullScreenToOpenScreen("TV");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("TV") - don't move screens during settings changes
     }
     
     private void cmbMonitorHost_SelectedIndexChanged(object? sender, EventArgs e)
     {
         MarkChanged();
-        RefreshMonitorDropdowns();
-        ApplyFullScreenToOpenScreen("Host");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("Host") - don't move screens during settings changes
     }
     
     private void cmbMonitorGuest_SelectedIndexChanged(object? sender, EventArgs e)
     {
         MarkChanged();
-        RefreshMonitorDropdowns();
-        ApplyFullScreenToOpenScreen("Guest");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("Guest") - don't move screens during settings changes
     }
     
     private void cmbMonitorTV_SelectedIndexChanged(object? sender, EventArgs e)
     {
         MarkChanged();
-        RefreshMonitorDropdowns();
-        ApplyFullScreenToOpenScreen("TV");
+        // REMOVED: RefreshMonitorDropdowns() - dropdowns populate once, no dynamic filtering
+        // REMOVED: ApplyFullScreenToOpenScreen("TV") - don't move screens during settings changes
     }
     
     private void ApplyFullScreenToOpenScreen(string screenType)
@@ -2601,6 +2620,9 @@ public partial class OptionsDialog : Form
     {
         GameConsole.Debug($"[OptionsDialog] Tab changed to: {tabControl.SelectedTab?.Name ?? "null"}, Screens tab: {tabScreens.Name}, Initialized: {_screensTabInitialized}");
         
+        // Force TabControl to refresh display (fixes rendering bug where wrong tab content shows)
+        tabControl.Refresh();
+        
         // Check if Screens tab is now selected and not yet initialized
         if (tabControl.SelectedTab == tabScreens && !_screensTabInitialized)
         {
@@ -2619,37 +2641,64 @@ public partial class OptionsDialog : Form
         {
             GameConsole.Info("[OptionsDialog] Initializing Screens tab...");
             
-            // Show loading state
-            SetLoadingState(true);
+            // Wait briefly for cached monitors to load if refresh is in progress
+            int retries = 0;
+            while ((_cachedMonitors == null || _cachedMonitors.Count == 0) && retries < 50)
+            {
+                await Task.Delay(100).ConfigureAwait(true); // Stay on UI thread
+                retries++;
+            }
             
-            // Use cached monitors if available, otherwise load fresh
             if (_cachedMonitors == null || _cachedMonitors.Count == 0)
             {
-                GameConsole.Info("[OptionsDialog] No cached monitors, loading fresh...");
-                _cachedMonitors = await _monitorInfoService.GetAllMonitorsAsync();
+                GameConsole.Info("[OptionsDialog] Cached monitors still null, loading fresh...");
+                _cachedMonitors = await _monitorInfoService.GetAllMonitorsAsync().ConfigureAwait(true);
+                GameConsole.Info($"[OptionsDialog] Loaded {_cachedMonitors?.Count ?? 0} monitors fresh");
             }
             else
             {
                 GameConsole.Info($"[OptionsDialog] Using cached monitors: {_cachedMonitors.Count}");
             }
             
-            // Populate dropdowns on UI thread
-            PopulateMonitorDropdownsFromCache();
+            GameConsole.Debug("[OptionsDialog] About to populate dropdowns...");
             
-            // Restore saved selections
-            RestoreMonitorSelections();
+            // FIRST: Restore checkbox states (without events firing)
+            SuspendScreensTabEvents();
+            try
+            {
+                chkFullScreenHostScreen.Checked = _settings.FullScreenHostScreenEnable;
+                chkFullScreenGuestScreen.Checked = _settings.FullScreenGuestScreenEnable;
+                chkFullScreenTVScreen.Checked = _settings.FullScreenTVScreenEnable;
+            }
+            finally
+            {
+                ResumeScreensTabEvents();
+            }
+            
+            // SECOND: Populate dropdowns conditionally based on checkbox states
+            PopulateMonitorDropdownsConditionally();
+            
+            GameConsole.Debug("[OptionsDialog] Dropdowns populated conditionally");
+            
+            // THIRD: Restore saved monitor selections (for checked checkboxes)
+            RestoreMonitorSelectionsOnly();
+            
+            // FOURTH: Force dropdown enabled states AFTER all operations (ensures they stay disabled)
+            // This prevents any automatic re-enabling from control updates
+            cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+            cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+            cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+            GameConsole.Debug($"[OptionsDialog] Final dropdown states enforced: Host={cmbMonitorHost.Enabled}, Guest={cmbMonitorGuest.Enabled}, TV={cmbMonitorTV.Enabled}");
             
             // Update status labels
             UpdateMonitorStatus();
             
-            // Re-enable controls
-            SetLoadingState(false);
-            
-            GameConsole.Info($"[OptionsDialog] Screens tab initialized with {_cachedMonitors.Count} monitors");
+            GameConsole.Info($"[OptionsDialog] Screens tab initialized with {_cachedMonitors?.Count ?? 0} monitors");
         }
         catch (Exception ex)
         {
             GameConsole.Error($"[OptionsDialog] Failed to initialize Screens tab: {ex.Message}");
+            GameConsole.Error($"[OptionsDialog] Stack trace: {ex.StackTrace}");
             ShowErrorState();
         }
     }
@@ -2731,33 +2780,76 @@ public partial class OptionsDialog : Form
         {
             GameConsole.Debug($"[OptionsDialog]   Monitor {mon.MonitorIndex}: {mon.DisplayText}");
         }
-            
-        // Clear existing items
-        cmbMonitorHost.Items.Clear();
-        cmbMonitorGuest.Items.Clear();
-        cmbMonitorTV.Items.Clear();
         
-        // ALWAYS exclude primary monitor (Display 1) - that's where the control panel is
-        var availableMonitors = _cachedMonitors.Where(m => m.MonitorIndex > 0).ToList();
+        // CRITICAL: Remove event handlers before populating to prevent infinite recursion
+        // The SelectedIndexChanged events call RefreshMonitorDropdowns() which causes a loop
+        cmbMonitorHost.SelectedIndexChanged -= cmbMonitorHost_SelectedIndexChanged;
+        cmbMonitorGuest.SelectedIndexChanged -= cmbMonitorGuest_SelectedIndexChanged;
+        cmbMonitorTV.SelectedIndexChanged -= cmbMonitorTV_SelectedIndexChanged;
         
-        GameConsole.Debug($"[OptionsDialog] After filtering (index > 0): {availableMonitors.Count} monitors");
+        // Suspend drawing to avoid flicker and improve performance
+        cmbMonitorHost.BeginUpdate();
+        cmbMonitorGuest.BeginUpdate();
+        cmbMonitorTV.BeginUpdate();
         
-        // Add each monitor to all dropdowns
-        foreach (var monitor in availableMonitors)
+        try
         {
-            GameConsole.Debug($"[OptionsDialog] Adding to dropdowns: {monitor.DisplayText}");
-            cmbMonitorHost.Items.Add(monitor.DisplayText);
-            cmbMonitorGuest.Items.Add(monitor.DisplayText);
-            cmbMonitorTV.Items.Add(monitor.DisplayText);
+            // Clear existing items
+            GameConsole.Debug("[OptionsDialog] Clearing dropdown items...");
+            cmbMonitorHost.Items.Clear();
+            cmbMonitorGuest.Items.Clear();
+            cmbMonitorTV.Items.Clear();
+            
+            // ALWAYS exclude primary monitor (Display 1) - that's where the control panel is
+            var availableMonitors = _cachedMonitors.Where(m => !m.Screen.Primary).ToList();
+            
+            GameConsole.Debug($"[OptionsDialog] After filtering (exclude primary): {availableMonitors.Count} monitors");
+            
+            // Add MonitorInfo objects (not strings) to enable proper object comparison
+            foreach (var monitor in availableMonitors)
+            {
+                GameConsole.Debug($"[OptionsDialog] Adding monitor object to dropdowns: {monitor.DisplayText} (Index={monitor.MonitorIndex})");
+                cmbMonitorHost.Items.Add(monitor);
+                cmbMonitorGuest.Items.Add(monitor);
+                cmbMonitorTV.Items.Add(monitor);
+            }
+            
+            // Set DisplayMember to show the DisplayText property
+            cmbMonitorHost.DisplayMember = nameof(MonitorInfo.DisplayText);
+            cmbMonitorGuest.DisplayMember = nameof(MonitorInfo.DisplayText);
+            cmbMonitorTV.DisplayMember = nameof(MonitorInfo.DisplayText);
+            
+            GameConsole.Debug($"[OptionsDialog] Final counts - Host: {cmbMonitorHost.Items.Count}, Guest: {cmbMonitorGuest.Items.Count}, TV: {cmbMonitorTV.Items.Count}");
+            
+            // Select first item by default if available (without triggering events)
+            if (cmbMonitorHost.Items.Count > 0)
+                cmbMonitorHost.SelectedIndex = 0;
+            if (cmbMonitorGuest.Items.Count > 0)
+                cmbMonitorGuest.SelectedIndex = 0;
+            if (cmbMonitorTV.Items.Count > 0)
+                cmbMonitorTV.SelectedIndex = 0;
+                
+            GameConsole.Debug("[OptionsDialog] Dropdown population complete");
         }
-        
-        // Select first item by default if available
-        if (cmbMonitorHost.Items.Count > 0)
-            cmbMonitorHost.SelectedIndex = 0;
-        if (cmbMonitorGuest.Items.Count > 0)
-            cmbMonitorGuest.SelectedIndex = 0;
-        if (cmbMonitorTV.Items.Count > 0)
-            cmbMonitorTV.SelectedIndex = 0;
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[OptionsDialog] Error populating dropdowns: {ex.Message}");
+            GameConsole.Error($"[OptionsDialog] Stack trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            // Resume drawing
+            cmbMonitorHost.EndUpdate();
+            cmbMonitorGuest.EndUpdate();
+            cmbMonitorTV.EndUpdate();
+            
+            // Re-attach event handlers AFTER population is complete
+            cmbMonitorHost.SelectedIndexChanged += cmbMonitorHost_SelectedIndexChanged;
+            cmbMonitorGuest.SelectedIndexChanged += cmbMonitorGuest_SelectedIndexChanged;
+            cmbMonitorTV.SelectedIndexChanged += cmbMonitorTV_SelectedIndexChanged;
+            
+            GameConsole.Debug("[OptionsDialog] Event handlers re-attached");
+        }
     }
 
     /// <summary>
@@ -2765,18 +2857,128 @@ public partial class OptionsDialog : Form
     /// </summary>
     private void RestoreMonitorSelections()
     {
-        // Restore checkbox states
-        chkFullScreenHostScreen.Checked = _settings.EnableHostFullscreen;
-        chkFullScreenGuestScreen.Checked = _settings.EnableGuestFullscreen;
-        chkFullScreenTVScreen.Checked = _settings.EnableTvFullscreen;
+        try
+        {
+            // Suspend all events during restoration to prevent ApplyFullScreenToOpenScreen from firing
+            SuspendScreensTabEvents();
+            
+            // Restore checkbox states
+            chkFullScreenHostScreen.Checked = _settings.EnableHostFullscreen;
+            chkFullScreenGuestScreen.Checked = _settings.EnableGuestFullscreen;
+            chkFullScreenTVScreen.Checked = _settings.EnableTvFullscreen;
+            
+            // Restore dropdown selections if indices are valid
+            if (_settings.HostMonitorIndex.HasValue)
+                SelectMonitorIndex(cmbMonitorHost, _settings.HostMonitorIndex.Value);
+            if (_settings.GuestMonitorIndex.HasValue)
+                SelectMonitorIndex(cmbMonitorGuest, _settings.GuestMonitorIndex.Value);
+            if (_settings.TvMonitorIndex.HasValue)
+                SelectMonitorIndex(cmbMonitorTV, _settings.TvMonitorIndex.Value);
+        }
+        finally
+        {
+            // Resume events after restoration
+            ResumeScreensTabEvents();
+        }
+    }
+
+    /// <summary>
+    /// Restore ONLY monitor selections (not checkbox states) - used after conditional population
+    /// </summary>
+    private void RestoreMonitorSelectionsOnly()
+    {
+        try
+        {
+            SuspendScreensTabEvents();
+            
+            // Only restore dropdown selections for CHECKED checkboxes (full screen enabled)
+            // Use old property names (FullScreenHostScreenMonitor) which are in the database
+            if (chkFullScreenHostScreen.Checked)
+            {
+                GameConsole.Debug($"[OptionsDialog] RestoreMonitorSelectionsOnly: Host monitor index = {_settings.FullScreenHostScreenMonitor}");
+                SelectMonitorIndex(cmbMonitorHost, _settings.FullScreenHostScreenMonitor);
+            }
+            if (chkFullScreenGuestScreen.Checked)
+            {
+                GameConsole.Debug($"[OptionsDialog] RestoreMonitorSelectionsOnly: Guest monitor index = {_settings.FullScreenGuestScreenMonitor}");
+                SelectMonitorIndex(cmbMonitorGuest, _settings.FullScreenGuestScreenMonitor);
+            }
+            if (chkFullScreenTVScreen.Checked)
+            {
+                GameConsole.Debug($"[OptionsDialog] RestoreMonitorSelectionsOnly: TV monitor index = {_settings.FullScreenTVScreenMonitor}");
+                SelectMonitorIndex(cmbMonitorTV, _settings.FullScreenTVScreenMonitor);
+            }
+        }
+        finally
+        {
+            ResumeScreensTabEvents();
+        }
+    }
+
+    /// <summary>
+    /// Populate dropdowns ONLY for unchecked checkboxes
+    /// Checked checkboxes will have their saved selections restored separately
+    /// </summary>
+    private void PopulateMonitorDropdownsConditionally()
+    {
+        GameConsole.Debug($"[OptionsDialog] PopulateMonitorDropdownsConditionally called");
         
-        // Restore dropdown selections if indices are valid
-        if (_settings.HostMonitorIndex.HasValue)
-            SelectMonitorIndex(cmbMonitorHost, _settings.HostMonitorIndex.Value);
-        if (_settings.GuestMonitorIndex.HasValue)
-            SelectMonitorIndex(cmbMonitorGuest, _settings.GuestMonitorIndex.Value);
-        if (_settings.TvMonitorIndex.HasValue)
-            SelectMonitorIndex(cmbMonitorTV, _settings.TvMonitorIndex.Value);
+        if (_cachedMonitors == null)
+        {
+            GameConsole.Warn("[OptionsDialog] _cachedMonitors is NULL");
+            return;
+        }
+        
+        // Get available monitors (exclude primary display)
+        var availableMonitors = _cachedMonitors.Where(m => !m.Screen.Primary).ToList();
+        GameConsole.Debug($"[OptionsDialog] Available monitors (excluding primary): {availableMonitors.Count}");
+        
+        try
+        {
+            SuspendScreensTabEvents();
+            
+            // Populate all dropdowns (need all monitors populated so saved selection can be found)
+            PopulateSingleDropdown(cmbMonitorHost, availableMonitors);
+            PopulateSingleDropdown(cmbMonitorGuest, availableMonitors);
+            PopulateSingleDropdown(cmbMonitorTV, availableMonitors);
+            
+            // Set dropdown enabled states based on checkbox states (while events still suspended)
+            // Checked checkbox = disabled dropdown (monitor assigned), Unchecked = enabled dropdown
+            cmbMonitorHost.Enabled = !chkFullScreenHostScreen.Checked;
+            cmbMonitorGuest.Enabled = !chkFullScreenGuestScreen.Checked;
+            cmbMonitorTV.Enabled = !chkFullScreenTVScreen.Checked;
+            
+            GameConsole.Debug($"[OptionsDialog] Dropdown enabled states: Host={cmbMonitorHost.Enabled}, Guest={cmbMonitorGuest.Enabled}, TV={cmbMonitorTV.Enabled}");
+        }
+        finally
+        {
+            ResumeScreensTabEvents();
+        }
+    }
+
+    /// <summary>
+    /// Populate a single dropdown with MonitorInfo objects
+    /// </summary>
+    private void PopulateSingleDropdown(ComboBox comboBox, List<MonitorInfo> monitors)
+    {
+        comboBox.BeginUpdate();
+        try
+        {
+            comboBox.Items.Clear();
+            foreach (var monitor in monitors)
+            {
+                comboBox.Items.Add(monitor);
+            }
+            comboBox.DisplayMember = nameof(MonitorInfo.DisplayText);
+            
+            // Select first item by default if available and nothing selected
+            if (comboBox.Items.Count > 0 && comboBox.SelectedIndex < 0)
+                comboBox.SelectedIndex = 0;
+        }
+        finally
+        {
+            comboBox.EndUpdate();
+        }
     }
 
     private void PopulateMonitorDropdowns()
@@ -2824,20 +3026,35 @@ public partial class OptionsDialog : Form
         if (_cachedMonitors == null || _cachedMonitors.Count == 0)
             return;
         
-        // Get currently selected monitor indices before refresh
-        int hostSelectedIndex = GetSelectedMonitorIndex(cmbMonitorHost);
-        int guestSelectedIndex = GetSelectedMonitorIndex(cmbMonitorGuest);
-        int tvSelectedIndex = GetSelectedMonitorIndex(cmbMonitorTV);
+        // CRITICAL: Remove event handlers to prevent infinite recursion during refresh
+        cmbMonitorHost.SelectedIndexChanged -= cmbMonitorHost_SelectedIndexChanged;
+        cmbMonitorGuest.SelectedIndexChanged -= cmbMonitorGuest_SelectedIndexChanged;
+        cmbMonitorTV.SelectedIndexChanged -= cmbMonitorTV_SelectedIndexChanged;
         
-        // Clear and repopulate each dropdown with exclusions
-        RefreshSingleDropdownFromCache(cmbMonitorHost, guestSelectedIndex, tvSelectedIndex, chkFullScreenHostScreen.Checked);
-        RefreshSingleDropdownFromCache(cmbMonitorGuest, hostSelectedIndex, tvSelectedIndex, chkFullScreenGuestScreen.Checked);
-        RefreshSingleDropdownFromCache(cmbMonitorTV, hostSelectedIndex, guestSelectedIndex, chkFullScreenTVScreen.Checked);
-        
-        // Restore selections if still available
-        SelectMonitorIndex(cmbMonitorHost, hostSelectedIndex);
-        SelectMonitorIndex(cmbMonitorGuest, guestSelectedIndex);
-        SelectMonitorIndex(cmbMonitorTV, tvSelectedIndex);
+        try
+        {
+            // Get currently selected monitor indices before refresh
+            int hostSelectedIndex = GetSelectedMonitorIndex(cmbMonitorHost);
+            int guestSelectedIndex = GetSelectedMonitorIndex(cmbMonitorGuest);
+            int tvSelectedIndex = GetSelectedMonitorIndex(cmbMonitorTV);
+            
+            // Clear and repopulate each dropdown with exclusions
+            RefreshSingleDropdownFromCache(cmbMonitorHost, guestSelectedIndex, tvSelectedIndex, chkFullScreenHostScreen.Checked);
+            RefreshSingleDropdownFromCache(cmbMonitorGuest, hostSelectedIndex, tvSelectedIndex, chkFullScreenGuestScreen.Checked);
+            RefreshSingleDropdownFromCache(cmbMonitorTV, hostSelectedIndex, guestSelectedIndex, chkFullScreenTVScreen.Checked);
+            
+            // Restore selections if still available
+            SelectMonitorIndex(cmbMonitorHost, hostSelectedIndex);
+            SelectMonitorIndex(cmbMonitorGuest, guestSelectedIndex);
+            SelectMonitorIndex(cmbMonitorTV, tvSelectedIndex);
+        }
+        finally
+        {
+            // Re-attach event handlers after refresh is complete
+            cmbMonitorHost.SelectedIndexChanged += cmbMonitorHost_SelectedIndexChanged;
+            cmbMonitorGuest.SelectedIndexChanged += cmbMonitorGuest_SelectedIndexChanged;
+            cmbMonitorTV.SelectedIndexChanged += cmbMonitorTV_SelectedIndexChanged;
+        }
     }
     
     /// <summary>
@@ -2851,7 +3068,7 @@ public partial class OptionsDialog : Form
         dropdown.Items.Clear();
         
         // ALWAYS exclude primary monitor (Display 1) - that's where the control panel is
-        var availableMonitors = _cachedMonitors.Where(m => m.MonitorIndex > 0).ToList();
+        var availableMonitors = _cachedMonitors.Where(m => !m.Screen.Primary).ToList();
         
         // Add monitors that aren't selected by other dropdowns
         foreach (var monitor in availableMonitors)
@@ -2895,13 +3112,19 @@ public partial class OptionsDialog : Form
         bool hasEnoughMonitors = monitorCount >= 2;
         
         // Enable/disable controls based on monitor count
-        // Dropdowns always enabled via UpdateDropdownEnabledStates()
         chkFullScreenHostScreen.Enabled = hasEnoughMonitors;
         chkFullScreenGuestScreen.Enabled = hasEnoughMonitors;
         chkFullScreenTVScreen.Enabled = hasEnoughMonitors;
-        cmbMonitorHost.Enabled = hasEnoughMonitors;
-        cmbMonitorGuest.Enabled = hasEnoughMonitors;
-        cmbMonitorTV.Enabled = hasEnoughMonitors;
+        
+        // Dropdowns enabled based on checkbox state AND monitor count
+        // Checked checkbox = disabled dropdown (monitor assigned and locked)
+        // Unchecked checkbox = enabled dropdown (user can select monitor)
+        cmbMonitorHost.Enabled = hasEnoughMonitors && !chkFullScreenHostScreen.Checked;
+        cmbMonitorGuest.Enabled = hasEnoughMonitors && !chkFullScreenGuestScreen.Checked;
+        cmbMonitorTV.Enabled = hasEnoughMonitors && !chkFullScreenTVScreen.Checked;
+        
+        GameConsole.Debug($"[OptionsDialog] UpdateMonitorStatus set dropdown states: Host={cmbMonitorHost.Enabled}, Guest={cmbMonitorGuest.Enabled}, TV={cmbMonitorTV.Enabled}");
+        
         btnIdentifyMonitors.Enabled = hasEnoughMonitors;
         
         if (!hasEnoughMonitors)
@@ -3002,14 +3225,13 @@ public partial class OptionsDialog : Form
         if (comboBox.Items.Count == 0)
             return;
             
-        // Find item that starts with the monitor number
-        string searchPrefix = $"{monitorIndex + 1}:";
+        // Find MonitorInfo object with matching MonitorIndex
         for (int i = 0; i < comboBox.Items.Count; i++)
         {
-            string item = comboBox.Items[i]?.ToString() ?? "";
-            if (item.StartsWith(searchPrefix))
+            if (comboBox.Items[i] is MonitorInfo monitor && monitor.MonitorIndex == monitorIndex)
             {
                 comboBox.SelectedIndex = i;
+                GameConsole.Debug($"[OptionsDialog] SelectMonitorIndex: Selected monitor {monitorIndex} at dropdown index {i}");
                 return;
             }
         }
@@ -3018,6 +3240,7 @@ public partial class OptionsDialog : Form
         if (comboBox.SelectedIndex == -1 && comboBox.Items.Count > 0)
         {
             comboBox.SelectedIndex = 0;
+            GameConsole.Warn($"[OptionsDialog] SelectMonitorIndex: Monitor {monitorIndex} not found, selected first item");
         }
     }
 
@@ -3026,20 +3249,47 @@ public partial class OptionsDialog : Form
         if (comboBox.SelectedIndex < 0 || comboBox.SelectedItem == null)
             return 0;
             
-        // Parse monitor index from display text (format: "N:manufacturer:model (resolution)")
-        string displayText = comboBox.SelectedItem.ToString() ?? "";
-        int colonIndex = displayText.IndexOf(':');
-        if (colonIndex > 0)
+        // Extract MonitorIndex from MonitorInfo object
+        if (comboBox.SelectedItem is MonitorInfo monitor)
         {
-            string numberPart = displayText.Substring(0, colonIndex);
-            if (int.TryParse(numberPart, out int monitorNumber))
-            {
-                // Convert from 1-based display number to 0-based array index
-                return monitorNumber - 1;
-            }
+            GameConsole.Debug($"[OptionsDialog] GetSelectedMonitorIndex: Returning {monitor.MonitorIndex} from {monitor.DisplayText}");
+            return monitor.MonitorIndex;
         }
         
+        GameConsole.Warn($"[OptionsDialog] GetSelectedMonitorIndex: SelectedItem is not MonitorInfo, returning 0");
         return 0;
+    }
+
+    /// <summary>
+    /// Suspend all checkbox and dropdown events to prevent screen movement during settings load
+    /// </summary>
+    private void SuspendScreensTabEvents()
+    {
+        // Suspend checkbox events
+        chkFullScreenHostScreen.CheckedChanged -= chkFullScreenHost_CheckedChanged;
+        chkFullScreenGuestScreen.CheckedChanged -= chkFullScreenGuest_CheckedChanged;
+        chkFullScreenTVScreen.CheckedChanged -= chkFullScreenTV_CheckedChanged;
+        
+        // Suspend dropdown events
+        cmbMonitorHost.SelectedIndexChanged -= cmbMonitorHost_SelectedIndexChanged;
+        cmbMonitorGuest.SelectedIndexChanged -= cmbMonitorGuest_SelectedIndexChanged;
+        cmbMonitorTV.SelectedIndexChanged -= cmbMonitorTV_SelectedIndexChanged;
+    }
+
+    /// <summary>
+    /// Resume all checkbox and dropdown events after settings load
+    /// </summary>
+    private void ResumeScreensTabEvents()
+    {
+        // Resume checkbox events
+        chkFullScreenHostScreen.CheckedChanged += chkFullScreenHost_CheckedChanged;
+        chkFullScreenGuestScreen.CheckedChanged += chkFullScreenGuest_CheckedChanged;
+        chkFullScreenTVScreen.CheckedChanged += chkFullScreenTV_CheckedChanged;
+        
+        // Resume dropdown events
+        cmbMonitorHost.SelectedIndexChanged += cmbMonitorHost_SelectedIndexChanged;
+        cmbMonitorGuest.SelectedIndexChanged += cmbMonitorGuest_SelectedIndexChanged;
+        cmbMonitorTV.SelectedIndexChanged += cmbMonitorTV_SelectedIndexChanged;
     }
 
     private void btnIdentifyMonitors_Click(object? sender, EventArgs e)

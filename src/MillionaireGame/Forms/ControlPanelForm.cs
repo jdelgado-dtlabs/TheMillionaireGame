@@ -783,6 +783,25 @@ public partial class ControlPanelForm : Form
             PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
         }
         
+        // Auto-open screens on assigned monitors if full screen is enabled
+        if (_appSettings.Settings.FullScreenHostScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening Host Screen (full screen enabled)");
+            HostScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
+        if (_appSettings.Settings.FullScreenGuestScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening Guest Screen (full screen enabled)");
+            GuestScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
+        if (_appSettings.Settings.FullScreenTVScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening TV Screen (full screen enabled)");
+            TVScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
         // Initialize GameConsole LAST (after all screens are shown)
         // This prevents it from stealing focus and ensures proper icon loading
         // Only auto-show in debug mode; otherwise user must manually open via menu

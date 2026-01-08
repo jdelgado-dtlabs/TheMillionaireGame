@@ -56,7 +56,7 @@ public class MonitorInfoService
     }
 
     /// <summary>
-    /// Load all connected monitors in parallel with timeout protection.
+    /// Load all connected monitors with single WMI query and timeout protection.
     /// Returns a mix of WMI and fallback results - never throws exceptions.
     /// </summary>
     public async Task<List<MonitorInfo>> GetAllMonitorsAsync(CancellationToken cancellationToken = default)
@@ -69,18 +69,17 @@ public class MonitorInfoService
             GameConsole.Debug($"[MonitorInfo]   Screen[{i}]: {screens[i].DeviceName}, Primary: {screens[i].Primary}, Bounds: {screens[i].Bounds}");
         }
 
-        var tasks = screens.Select(screen => GetMonitorInfoAsync(screen, cancellationToken));
-        var results = await Task.WhenAll(tasks);
+        // Query WMI once for all monitors, then match to screens
+        var results = await QueryAllMonitorsWmiAsync(cancellationToken);
 
         GameConsole.Info($"[MonitorInfo] Loaded {results.Count(r => r.IsFromWmi)} from WMI, {results.Count(r => !r.IsFromWmi)} from fallback");
         
-        var list = results.ToList();
-        foreach (var result in list)
+        foreach (var result in results)
         {
             GameConsole.Debug($"[MonitorInfo]   Result: Index={result.MonitorIndex}, DisplayText={result.DisplayText}, FromWMI={result.IsFromWmi}");
         }
         
-        return list;
+        return results;
     }
 
     /// <summary>
@@ -101,7 +100,184 @@ public class MonitorInfoService
     }
 
     /// <summary>
-    /// Query WMI for monitor information with timeout and error handling.
+    /// Query WMI once for ALL monitors, then match to screens.
+    /// This is much more efficient than querying once per screen.
+    /// NEVER blocks UI thread - all WMI operations run in background.
+    /// </summary>
+    private async Task<List<MonitorInfo>> QueryAllMonitorsWmiAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(WMI_TIMEOUT_SECONDS));
+
+            // Run WMI query in background thread to avoid blocking UI
+            var results = await Task.Run(() => QueryAllMonitorsInternal(cts.Token), cts.Token);
+            
+            if (results != null && results.Count > 0)
+            {
+                return results;
+            }
+            else
+            {
+                GameConsole.Warn($"[MonitorInfo] WMI returned no monitors, using fallback for all screens");
+                return Screen.AllScreens.Select(CreateFallbackInfo).ToList();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            GameConsole.Warn($"[MonitorInfo] WMI query timeout ({WMI_TIMEOUT_SECONDS}s), using fallback for all screens");
+            return Screen.AllScreens.Select(CreateFallbackInfo).ToList();
+        }
+        catch (ManagementException ex)
+        {
+            GameConsole.Warn($"[MonitorInfo] WMI query failed: {ex.Message}, using fallback");
+            return Screen.AllScreens.Select(CreateFallbackInfo).ToList();
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[MonitorInfo] Unexpected error: {ex.Message}, using fallback");
+            return Screen.AllScreens.Select(CreateFallbackInfo).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Query WMI for monitfor ALL monitors - runs in background thread.
+    /// Matches all monitors to screens by extracting UID from InstanceName for proper Windows display correlation.
+    /// </summary>
+    private List<MonitorInfo>? QueryAllMonitorsInternal(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        try
+        {
+            var screens = Screen.AllScreens;
+            
+            // Get WmiMonitorID for detailed hardware info
+            var wmiScope = new ManagementScope(@"\\.\root\wmi");
+            var wmiQuery = new ObjectQuery("SELECT * FROM WmiMonitorID");
+            
+            using var wmiSearcher = new ManagementObjectSearcher(wmiScope, wmiQuery);
+            var wmiMonitors = wmiSearcher.Get().Cast<ManagementObject>().ToList();
+
+            if (wmiMonitors.Count == 0)
+            {
+                GameConsole.Debug($"[MonitorInfo] WMI returned no monitors");
+                return null;
+            }
+
+            // Extract UID from each monitor's InstanceName and create a sorted mapping
+            var monitorsByUid = new List<(int uid, ManagementObject monitor)>();
+            
+            foreach (var monitor in wmiMonitors)
+            {
+                var instanceName = monitor["InstanceName"] as string;
+                if (string.IsNullOrEmpty(instanceName))
+                    continue;
+                    
+                var uidMatch = System.Text.RegularExpressions.Regex.Match(instanceName, @"UID(\d+)");
+                if (uidMatch.Success && int.TryParse(uidMatch.Groups[1].Value, out int uid))
+                {
+                    monitorsByUid.Add((uid, monitor));
+                    GameConsole.Debug($"[MonitorInfo] Parsed InstanceName: {instanceName} -> UID={uid}");
+                }
+            }
+            
+            // Sort by UID (this gives us Windows display order)
+            monitorsByUid.Sort((a, b) => a.uid.CompareTo(b.uid));
+            GameConsole.Debug($"[MonitorInfo] Found {monitorsByUid.Count} monitors with UIDs (sorted by UID)");
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Build results for all screens
+            var results = new List<MonitorInfo>();
+            
+            foreach (var screen in screens)
+            {
+                ManagementObject? matchedMonitor = null;
+                int displayNumber = -1;
+                
+                // Primary display should be the first in Windows display order (lowest UID)
+                if (screen.Primary && monitorsByUid.Count > 0)
+                {
+                    matchedMonitor = monitorsByUid[0].monitor;
+                    displayNumber = 1;
+                    GameConsole.Debug($"[MonitorInfo] Matched PRIMARY {screen.DeviceName} to UID {monitorsByUid[0].uid} (Display {displayNumber})");
+                }
+                else
+                {
+                    // Match non-primary screens by X position
+                    var screensByX = screens.Where(s => !s.Primary).OrderBy(s => s.Bounds.X).ToList();
+                    int positionIndex = screensByX.IndexOf(screen);
+                    
+                    // Skip the first UID (it's the primary), then match by position
+                    if (positionIndex >= 0 && positionIndex + 1 < monitorsByUid.Count)
+                    {
+                        matchedMonitor = monitorsByUid[positionIndex + 1].monitor;
+                        displayNumber = positionIndex + 2; // +2 because primary is 1
+                        GameConsole.Debug($"[MonitorInfo] Matched {screen.DeviceName} by position (X={screen.Bounds.X}) to UID {monitorsByUid[positionIndex + 1].uid} (Display {displayNumber})");
+                    }
+                }
+                
+                if (matchedMonitor == null)
+                {
+                    GameConsole.Warn($"[MonitorInfo] Could not match WMI monitor for {screen.DeviceName}, using fallback");
+                    results.Add(CreateFallbackInfo(screen));
+                    continue;
+                }
+                
+                var finalInstanceName = matchedMonitor["InstanceName"] as string;
+                GameConsole.Debug($"[MonitorInfo] Final match InstanceName: {finalInstanceName}");
+                
+                string manufacturer = "";
+                string modelName = "";
+
+                var manufacturerData = matchedMonitor["ManufacturerName"] as ushort[];
+                if (manufacturerData != null && manufacturerData.Length > 0)
+                {
+                    manufacturer = new string(manufacturerData.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                }
+
+                var modelData = matchedMonitor["UserFriendlyName"] as ushort[];
+                if (modelData != null && modelData.Length > 0)
+                {
+                    modelName = new string(modelData.Where(c => c != 0).Select(c => (char)c).ToArray()).Trim();
+                }
+
+                if (!string.IsNullOrEmpty(manufacturer) || !string.IsNullOrEmpty(modelName))
+                {
+                    int monitorIndex = displayNumber > 0 ? displayNumber - 1 : Array.IndexOf(screens, screen);
+                    string displayText = FormatDisplayText(monitorIndex, manufacturer, modelName, screen);
+                    GameConsole.Debug($"[MonitorInfo] Created MonitorInfo: {displayText}");
+
+                    results.Add(new MonitorInfo
+                    {
+                        Screen = screen,
+                        Manufacturer = manufacturer,
+                        ModelName = modelName,
+                        DisplayText = displayText,
+                        IsFromWmi = true,
+                        MonitorIndex = monitorIndex
+                    });
+                }
+                else
+                {
+                    results.Add(CreateFallbackInfo(screen));
+                }
+            }
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Debug($"[MonitorInfo] WMI internal error: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Internal WMI query for single monitor - runs in background thread.
+    /// Used by GetMonitorInfoAsync for individual monitor queries and error handling.
     /// NEVER blocks UI thread - all WMI operations run in background.
     /// </summary>
     private async Task<MonitorInfo> QueryWmiSafeAsync(Screen screen, CancellationToken cancellationToken)
