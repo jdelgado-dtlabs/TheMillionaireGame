@@ -151,8 +151,25 @@ internal static class Program
         services.AddSingleton(questionRepository);
         services.AddSingleton(screenService);
         services.AddSingleton(soundService);
+        services.AddSingleton<MonitorInfoService>(); // v1.0.5: Multi-monitor support
         
         ServiceProvider = services.BuildServiceProvider();
+        
+        // Pre-load monitor information at startup for immediate availability
+        var monitorInfoService = ServiceProvider.GetRequiredService<MonitorInfoService>();
+        GameConsole.Info("[Startup] Pre-loading monitor information...");
+        _ = Task.Run(async () => 
+        {
+            try
+            {
+                var monitors = await monitorInfoService.GetAllMonitorsAsync();
+                GameConsole.Info($"[Startup] Pre-loaded {monitors.Count} monitors successfully");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[Startup] Failed to pre-load monitors: {ex.Message}");
+            }
+        });
         
         // Initialize telemetry service with database connection
         TelemetryService.Instance.Initialize(sqlSettings.Settings.GetConnectionString("dbMillionaire"));

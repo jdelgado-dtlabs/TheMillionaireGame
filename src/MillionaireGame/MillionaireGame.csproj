@@ -77,6 +77,9 @@
     <None Remove="lib\**\*" />
     <!-- Web server files - do not copy to output, will be served from embedded resources -->
     <Content Remove="..\MillionaireGame.Web\wwwroot\**\*.*" />
+    <!-- Exclude PowerShell script from being copied to output -->
+    <None Remove="CreateAppDataShortcut.ps1" />
+    <Content Remove="CreateAppDataShortcut.ps1" />
   </ItemGroup>
 
   <!-- Copy all lib assets after build (Debug/Release) -->
@@ -109,6 +112,18 @@
     <Copy SourceFiles="@(StreamDeckDlls)" DestinationFolder="$(PublishDir)" />
     <!-- Also copy to lib folder for reference -->
     <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(PublishDir)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!-- Create shortcut to AppData folder after build -->
+  <Target Name="CreateAppDataShortcut" AfterTargets="CopyLibAssets">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(OutputPath)&quot;" 
+          WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
+  <!-- Create shortcut to AppData folder after publish -->
+  <Target Name="CreateAppDataShortcutPublish" AfterTargets="CopyLibAssetsToPublish">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(PublishDir)&quot;" 
+          WorkingDirectory="$(ProjectDir)" />
   </Target>
 
 </Project>

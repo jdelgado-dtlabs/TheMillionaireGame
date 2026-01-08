@@ -34,6 +34,14 @@ public class ApplicationSettings
     public bool FullScreenTVScreenEnable { get; set; } = false;
     public int FullScreenTVScreenMonitor { get; set; } = 0;
 
+    // Multi-Monitor Settings (v1.0.5+)
+    public int? HostMonitorIndex { get; set; }
+    public int? GuestMonitorIndex { get; set; }
+    public int? TvMonitorIndex { get; set; }
+    public bool EnableHostFullscreen { get; set; } = false;
+    public bool EnableGuestFullscreen { get; set; } = false;
+    public bool EnableTvFullscreen { get; set; } = false;
+
     // Game Behavior Settings
     public bool ClearHostMessagesAtNewQuestion { get; set; } = false;
     public bool ShowAnswerOnlyOnHostScreenAtFinal { get; set; } = false;

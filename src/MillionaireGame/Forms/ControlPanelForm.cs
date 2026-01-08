@@ -4440,7 +4440,8 @@ public partial class ControlPanelForm : Form
 
     private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings, _gameService.MoneyTree);
+        var monitorInfoService = Program.ServiceProvider.GetRequiredService<Services.MonitorInfoService>();
+        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings, _gameService.MoneyTree, monitorInfoService);
         
         // Subscribe to settings applied event to update immediately when Apply is clicked
         optionsDialog.SettingsApplied += (s, ev) =>
