@@ -14,7 +14,8 @@
 - Fixed Ask The Audience online detection and display issues
 - Resolved permission issues in FFF Online voting system
 - Fixed nullability warnings in telemetry code (clean build with 0 warnings)
-- Fixed SQL file deployment path for telemetry database initialization
+- Fixed SQL file deployment path for database initialization
+- Fixed multi-monitor dropdown freeze when selecting monitors
 
 ### 🎨 UI Improvements
 - Expanded Options Dialog height (+80px) for better control visibility

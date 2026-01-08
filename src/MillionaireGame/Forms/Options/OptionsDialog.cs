@@ -45,11 +45,9 @@ public partial class OptionsDialog : Form
         lblDebugMode.Visible = false;
 #endif
         
-        // Populate monitor dropdowns
-        PopulateMonitorDropdowns();
-        
-        // Update monitor count display and enforce restrictions
-        UpdateMonitorStatus();
+        // DISABLED: Multi-monitor code causing freeze - tab removed from UI
+        // PopulateMonitorDropdowns();
+        // UpdateMonitorStatus();
         
         // Handle form closing to respect user's choice about unsaved changes
         FormClosing += OptionsDialog_FormClosing;
@@ -187,9 +185,6 @@ public partial class OptionsDialog : Form
         // Mark settings as changed
         MarkChanged();
         
-        // Update dropdown enabled state
-        cmbMonitorHost.Enabled = chkFullScreenHostScreen.Checked;
-        
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
         
@@ -205,9 +200,6 @@ public partial class OptionsDialog : Form
         // Mark settings as changed
         MarkChanged();
         
-        // Update dropdown enabled state
-        cmbMonitorGuest.Enabled = chkFullScreenGuestScreen.Checked;
-        
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
         
@@ -222,9 +214,6 @@ public partial class OptionsDialog : Form
     {
         // Mark settings as changed
         MarkChanged();
-        
-        // Update dropdown enabled state
-        cmbMonitorTV.Enabled = chkFullScreenTVScreen.Checked;
         
         // Update checkbox enabled states
         UpdateCheckboxEnabledStates();
@@ -2635,13 +2624,6 @@ public partial class OptionsDialog : Form
     
     private void RefreshSingleDropdown(ComboBox dropdown, Screen[] screens, int excludeIndex1, int excludeIndex2, bool isEnabled)
     {
-        if (!isEnabled)
-        {
-            // If checkbox is not checked, don't populate dropdown
-            dropdown.Items.Clear();
-            return;
-        }
-        
         dropdown.Items.Clear();
         
         for (int i = 0; i < screens.Length; i++)
