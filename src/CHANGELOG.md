@@ -17,6 +17,10 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Event suspension patterns to prevent infinite recursion
 
 ### Fixed
+- **Answer Letter Wrapping** ✅ NEW
+  * Increased letter rendering width from 60 to 80 pixels
+  * Prevents letter and colon from wrapping across lines
+  * Fixed on Host, Guest, and TV screens
 - **Monitor Detection Safety** ✅
   * All WMI queries now async with timeout protection
   * No more UI thread blocking during monitor detection

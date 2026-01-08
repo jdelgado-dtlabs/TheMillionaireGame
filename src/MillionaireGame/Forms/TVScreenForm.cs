@@ -296,7 +296,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             
             DrawScaledText(g, letter + ":", letterFont, letterBrush,
                 bounds.X + letterLeftPadding, bounds.Y + 15,
-                60, bounds.Height - 30,
+                80, bounds.Height - 30,
                 letterFormat);
 
             // Draw answer text with wrapping and auto-scaling
