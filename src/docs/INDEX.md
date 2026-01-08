@@ -1,8 +1,8 @@
 # Documentation Index
 **The Millionaire Game - C# Edition**  
-**Version**: v1.0.0  
-**Last Updated**: January 3, 2026  
-**Status**: ✅ Ready for v1.0 Release
+**Version**: v1.0.1  
+**Last Updated**: January 8, 2026  
+**Status**: ✅ v1.0.1 Released
 
 This index helps you find the right documentation for your needs.
 
@@ -13,11 +13,8 @@ This index helps you find the right documentation for your needs.
 **New to the project?**
 - Start with [`START_HERE.md`](START_HERE.md) - Next session guide with current status and priorities
 
-**Ready to test?**
-- See [`PRE_V1.0_TESTING_CHECKLIST.md`](PRE_V1.0_TESTING_CHECKLIST.md) - Comprehensive testing procedures
-
 **Want release status?**
-- Read [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Complete v1.0 readiness (97% complete)
+- Read [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Complete v1.0.1 release status
 
 **Need crash reports?**
 - Check [`CRASH_HANDLER_DOCUMENTATION.md`](CRASH_HANDLER_DOCUMENTATION.md) - Watchdog system and crash reporting
@@ -29,15 +26,17 @@ This index helps you find the right documentation for your needs.
 ### `/active/` - Current Work
 Documents for active development and near-term planning:
 
-- **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - ✅ v1.0 release readiness (97% complete - only user docs remaining)
-- **[`PRE_1.0_FINAL_CHECKLIST.md`](active/PRE_1.0_FINAL_CHECKLIST.md)** - Streamlined v1.0 testing checklist
+- **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - ✅ v1.0.1 released with post-release fixes
 
 ### `/sessions/` - Development History
 Chronological session summaries and checkpoints:
 
 **Recent Sessions (Jan 2026)**:
-- **[`SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md`](sessions/SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md)** - ✅ Dual currency & telemetry XLSX complete
 - **[`SESSION_2026-01-15_CRASH_HANDLER.md`](sessions/SESSION_2026-01-15_CRASH_HANDLER.md)** - ✅ Watchdog system implementation
+- **[`SESSION_2026-01-06_MULTI_MONITOR_EMERGENCY_FIX.md`](sessions/SESSION_2026-01-06_MULTI_MONITOR_EMERGENCY_FIX.md)** - ✅ Emergency multi-monitor WMI crash fix
+- **[`SESSION_2026-01-06_FFF_ATA_FIXES.md`](sessions/SESSION_2026-01-06_FFF_ATA_FIXES.md)** - ✅ FFF rankings & ATA online fixes
+- **[`SESSION_2026-01-04_STREAMDECK_MODULE6_INTEGRATION.md`](sessions/SESSION_2026-01-04_STREAMDECK_MODULE6_INTEGRATION.md)** - ✅ Stream Deck Module 6 integration
+- **[`SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md`](sessions/SESSION_2026-01-03_DUAL_CURRENCY_TELEMETRY.md)** - ✅ Dual currency & telemetry XLSX complete
 - **[`SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md`](sessions/SESSION_2026-01-03_CLOSING_SEQUENCE_DEBUG_MODE.md)** - ✅ Closing sequence & debug mode complete
 - **[`SESSION_2026-01-03_CLEANUP.md`](sessions/SESSION_2026-01-03_CLEANUP.md)** - ✅ Unicode emoji fix & Stream Deck cleanup
 
@@ -77,14 +76,24 @@ SQL scripts for database management:
 - **[`01_reset_questions_table.sql`](database/01_reset_questions_table.sql)** - Reset main questions table
 - **[`02_reset_fff_questions_table.sql`](database/02_reset_fff_questions_table.sql)** - Reset FFF questions table
 
+### `/release_notes/` - Release Documentation
+Official release notes and changelogs:
+
+- **[`RELEASE_NOTES_v1.0.1.md`](release_notes/RELEASE_NOTES_v1.0.1.md)** - v1.0.1 release (Bug fixes & improvements)
+- **[`RELEASE_NOTES_v1.0.0.md`](release_notes/RELEASE_NOTES_v1.0.0.md)** - v1.0.0 release (Initial release)
+- **[`RELEASE_NOTES_v1.0.0_DETAILED.md`](release_notes/RELEASE_NOTES_v1.0.0_DETAILED.md)** - Detailed v1.0 development notes
+
 ### `/archive/` - Historical Documents
 Completed phases and legacy documentation:
 
 **Completed Tasks**:
 - **[`PRE_1.0_COMPLETED_TASKS.md`](archive/PRE_1.0_COMPLETED_TASKS.md)** - Complete archive of 14 major features (v0.9.8)
+- **[`PRE_V1.0_TESTING_CHECKLIST.md`](archive/PRE_V1.0_TESTING_CHECKLIST.md)** - ✅ v1.0 testing procedures (COMPLETED Jan 3, 2026)
+- **[`MONEY_TREE_NUMBER_FORMATTING_PLAN.md`](archive/MONEY_TREE_NUMBER_FORMATTING_PLAN.md)** - ✅ Number formatting implementation (COMPLETED Jan 6, 2026)
+- **[`TELEMETRY_DATABASE_IMPLEMENTATION_PLAN.md`](archive/TELEMETRY_DATABASE_IMPLEMENTATION_PLAN.md)** - ✅ Telemetry database storage (COMPLETED)
 - **[`GAME_TELEMETRY_AUDIT_PLAN.md`](archive/GAME_TELEMETRY_AUDIT_PLAN.md)** - ✅ Telemetry system implementation (COMPLETED)
 - **[`CRASH_HANDLER_IMPLEMENTATION_PLAN.md`](archive/CRASH_HANDLER_IMPLEMENTATION_PLAN.md)** - ✅ Watchdog system implementation (COMPLETED)
-- **[`LIFELINE_HOTKEY_MAPPING_PLAN.md`](archive/LIFELINE_HOTKEY_MAPPING_PLAN.md)** - Completed keyboard shortcut implementation
+- **[`LIFELINE_HOTKEY_MAPPING_PLAN.md`](archive/LIFELINE_HOTKEY_MAPPING_PLAN.md)** - ✅ Keyboard shortcut implementation (COMPLETED)
 
 **Completed Phases**:
 - **[`phases/PHASE_5.2_COMPLETE.md`](archive/phases/PHASE_5.2_COMPLETE.md)**
@@ -146,8 +155,8 @@ Completed phases and legacy documentation:
 ### For Testers
 
 **Testing Procedures**:
-1. [`PRE_V1.0_TESTING_CHECKLIST.md`](PRE_V1.0_TESTING_CHECKLIST.md) - Comprehensive test checklist
-2. [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Test scenarios and status
+1. [`active/V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md) - Current status and test scenarios
+2. [`archive/PRE_V1.0_TESTING_CHECKLIST.md`](archive/PRE_V1.0_TESTING_CHECKLIST.md) - v1.0 testing checklist (archived)
 
 ### For Project Managers
 
@@ -218,5 +227,5 @@ Archive a document when:
 ---
 
 **Document Maintained By**: Development Team  
-**Last Audit**: December 31, 2025  
-**Next Review**: After v1.0 release
+**Last Audit**: January 8, 2026  
+**Next Review**: Post v1.0.1 stabilization
