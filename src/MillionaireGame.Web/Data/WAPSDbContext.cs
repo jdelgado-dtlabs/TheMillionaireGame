@@ -31,6 +31,8 @@ public class WAPSDbContext : DbContext
             entity.Property(e => e.HostName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Status).IsRequired().HasConversion<string>();
             entity.Property(e => e.CurrentMode).HasConversion<string>();
+            entity.Property(e => e.CurrentQuestionText).HasMaxLength(500);
+            entity.Property(e => e.CurrentQuestionOptionsJson).HasColumnType("nvarchar(max)");
             entity.HasIndex(e => e.CreatedAt);
         });
 
