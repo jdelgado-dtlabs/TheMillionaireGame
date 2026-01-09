@@ -3,6 +3,7 @@ using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Models.Telemetry;
+using MillionaireGame.Database;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
 using MillionaireGame.Utilities;
@@ -92,6 +93,24 @@ internal static class Program
                 // Database exists - ensure all tables exist (including WAPS tables)
                 // CreateDatabaseAsync has IF NOT EXISTS checks, so it's safe to run
                 dbContext.CreateDatabaseAsync().Wait();
+            }
+
+            // Run database migrations (after database exists)
+            try
+            {
+                GameConsole.Info("[Startup] Running database migrations...");
+                var migrationRunner = new MigrationRunner(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+                var migrationSuccess = await migrationRunner.RunMigrationsAsync();
+
+                if (!migrationSuccess)
+                {
+                    GameConsole.Warn("[Startup] Database migrations encountered errors - proceeding with caution");
+                }
+            }
+            catch (Exception migEx)
+            {
+                GameConsole.Error($"[Startup] Failed to run database migrations: {migEx.Message}");
+                // Continue anyway - app might still work with existing schema
             }
         }
         catch (Exception ex)

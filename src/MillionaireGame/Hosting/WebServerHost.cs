@@ -169,43 +169,9 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
-            // Ensure database schema is up to date
-            using (var scope = _host.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
-                try
-                {
-                    WebServerConsole.Info("[WebServer] Ensuring database schema is up to date...");
-                    
-                    // Use EnsureCreated for initial setup, then apply schema updates manually
-                    // This approach works regardless of migration history
-                    var database = context.Database;
-                    
-                    // Check if Sessions table has the new columns
-                    var checkColumnsSql = @"
-                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
-                                      WHERE TABLE_NAME = 'Sessions' AND COLUMN_NAME = 'CurrentQuestionText')
-                        BEGIN
-                            ALTER TABLE Sessions ADD CurrentQuestionText nvarchar(500) NULL
-                            PRINT 'Added CurrentQuestionText column'
-                        END
-                        
-                        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
-                                      WHERE TABLE_NAME = 'Sessions' AND COLUMN_NAME = 'CurrentQuestionOptionsJson')
-                        BEGIN
-                            ALTER TABLE Sessions ADD CurrentQuestionOptionsJson nvarchar(max) NULL
-                            PRINT 'Added CurrentQuestionOptionsJson column'
-                        END";
-                    
-                    await database.ExecuteSqlRawAsync(checkColumnsSql);
-                    WebServerConsole.Info("[WebServer] Database schema updated successfully");
-                }
-                catch (Exception ex)
-                {
-                    WebServerConsole.Error($"[WebServer] Failed to update database schema: {ex.Message}");
-                    throw;
-                }
-            }
+            // Database migrations are handled by main application startup
+            // Schema should already be up to date by the time web server starts
+            WebServerConsole.Info("[WebServer] Database migrations are handled by main application startup");
 
             // Clean up WAPS data on startup
             // Strategy: Archive ALL participants to history table for telemetry preservation,
