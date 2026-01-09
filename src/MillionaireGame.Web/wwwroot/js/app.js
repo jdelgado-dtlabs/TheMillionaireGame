@@ -276,6 +276,14 @@ async function joinSession(sessionId, displayName, participantId = null) {
                     
                     hideConnectionOverlay();
                     isReconnecting = false; // Clear flag
+                    
+                    // Request state sync to restore current game state
+                    try {
+                        await connection.invoke('RequestStateSync', currentSessionId, currentParticipantId);
+                        console.log('✓ Requested state sync after reconnection');
+                    } catch (err) {
+                        console.error('Failed to request state sync:', err);
+                    }
                 } else {
                     // Server restarted - session no longer exists, clear and restart
                     console.warn('Session no longer exists - server may have restarted');
@@ -423,6 +431,20 @@ function setupATAEventHandlers() {
     connection.on('ATAIntroStarted', (data) => {
         console.log("[ATA] ✓ ATAIntroStarted event received:", data);
         
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot vote");
+            showSpectatorMode('ATA', data.spectatorReason || 'You joined after voting started');
+            return;
+        }
+        
+        // Check if user can vote
+        if (data.canVote === false) {
+            console.log("⚠️ Cannot vote - eligibility check failed");
+            disableATAVoting('You are not eligible to vote');
+            return;
+        }
+        
         // Reset voting state
         ataHasVoted = false;
         hideATAMessage();
@@ -456,6 +478,20 @@ function setupATAEventHandlers() {
     
     connection.on('VotingStarted', (data) => {
         console.log("[ATA] ✓ VotingStarted event received:", data);
+        
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot vote");
+            showSpectatorMode('ATA', data.spectatorReason || 'You joined after voting started');
+            return;
+        }
+        
+        // Check if user can vote
+        if (data.canVote === false) {
+            console.log("⚠️ Cannot vote - eligibility check failed");
+            disableATAVoting('You are not eligible to vote');
+            return;
+        }
         
         // Reset voting state
         ataHasVoted = false;
@@ -708,6 +744,80 @@ function updateATAResults(results, totalVotes) {
 }
 
 // ============================================================================
+// Spectator Mode & Helper Functions
+// ============================================================================
+
+/**
+ * Show spectator mode with banner notification
+ */
+function showSpectatorMode(mode, reason) {
+    const container = document.querySelector('.container');
+    
+    // Create spectator banner if not exists
+    let banner = document.getElementById('spectatorBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'spectatorBanner';
+        banner.className = 'spectator-banner';
+        container.insertBefore(banner, container.firstChild);
+    }
+    
+    banner.innerHTML = `<strong>👁️ Spectator Mode:</strong> ${reason}`;
+    banner.style.display = 'block';
+    
+    if (mode === 'FFF') {
+        // Disable FFF submission
+        disableFFFSubmission(reason);
+    } else if (mode === 'ATA') {
+        // Disable ATA voting
+        disableATAVoting(reason);
+    }
+}
+
+/**
+ * Disable FFF answer submission with message
+ */
+function disableFFFSubmission(message) {
+    const submitBtn = document.getElementById('btnSubmitFFF');
+    const messageDiv = document.getElementById('fffMessage');
+    
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled-mode');
+    }
+    
+    if (messageDiv) {
+        messageDiv.textContent = message;
+        messageDiv.style.display = 'block';
+        messageDiv.classList.add('spectator-mode');
+    }
+    
+    // Disable answer selection
+    document.querySelectorAll('.fff-answer-item').forEach(item => {
+        item.style.pointerEvents = 'none';
+        item.style.opacity = '0.6';
+    });
+}
+
+/**
+ * Disable ATA voting with message
+ */
+function disableATAVoting(message) {
+    // Disable all vote buttons
+    document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled-mode');
+    });
+    
+    // Show message
+    showATAMessage(message, false);
+    const ataMessageDiv = document.getElementById('ataMessage');
+    if (ataMessageDiv) {
+        ataMessageDiv.classList.add('spectator-mode');
+    }
+}
+
+// ============================================================================
 // FFF (Fastest Finger First) Functions
 // ============================================================================
 
@@ -727,6 +837,21 @@ function setupFFFEventHandlers() {
     
     connection.on('QuestionStarted', (data) => {
         console.log("FFF Question Started:", data);
+        
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot participate");
+            showSpectatorMode('FFF', data.spectatorReason || 'You joined after the question started');
+            return;
+        }
+        
+        // Check if user can submit
+        if (data.canSubmit === false) {
+            console.log("⚠️ Cannot submit answers - eligibility check failed");
+            disableFFFSubmission('You are not eligible to participate');
+            return;
+        }
+        
         startFFFQuestion(data);
     });
 
@@ -977,8 +1102,9 @@ function startFFFTimerCountdown() {
             clearInterval(fffTimerInterval);
             fffTimerInterval = null;
             
+            // Disable submission when time expires (no auto-submit)
             if (!fffHasSubmitted) {
-                submitFFFAnswer(); // Auto-submit on timeout
+                disableFFFSubmission("Time's up! You did not submit an answer.");
             }
         }
     }, 1000);
