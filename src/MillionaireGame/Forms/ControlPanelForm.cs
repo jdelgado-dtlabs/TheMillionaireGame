@@ -4506,9 +4506,11 @@ public partial class ControlPanelForm : Form
             _hostScreen.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenHostScreenEnable)
+            if (_appSettings.Settings.FullScreenHostScreenEnable || _appSettings.Settings.EnableHostFullscreen)
             {
-                ApplyFullScreenToHostScreen(true, _appSettings.Settings.FullScreenHostScreenMonitor);
+                // Use new HostMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.HostMonitorIndex ?? _appSettings.Settings.FullScreenHostScreenMonitor;
+                ApplyFullScreenToHostScreen(true, monitorIndex);
             }
         }
         else
@@ -4567,9 +4569,11 @@ public partial class ControlPanelForm : Form
             _guestScreen.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenGuestScreenEnable)
+            if (_appSettings.Settings.FullScreenGuestScreenEnable || _appSettings.Settings.EnableGuestFullscreen)
             {
-                ApplyFullScreenToGuestScreen(true, _appSettings.Settings.FullScreenGuestScreenMonitor);
+                // Use new GuestMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.GuestMonitorIndex ?? _appSettings.Settings.FullScreenGuestScreenMonitor;
+                ApplyFullScreenToGuestScreen(true, monitorIndex);
             }
         }
         else
@@ -4675,9 +4679,11 @@ public partial class ControlPanelForm : Form
             tvForm.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenTVScreenEnable)
+            if (_appSettings.Settings.FullScreenTVScreenEnable || _appSettings.Settings.EnableTvFullscreen)
             {
-                ApplyFullScreenToTVScreen(true, _appSettings.Settings.FullScreenTVScreenMonitor);
+                // Use new TvMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.TvMonitorIndex ?? _appSettings.Settings.FullScreenTVScreenMonitor;
+                ApplyFullScreenToTVScreen(true, monitorIndex);
             }
         }
         else

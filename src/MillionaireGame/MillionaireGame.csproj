@@ -68,6 +68,8 @@
     <EmbeddedResource Include="lib\image\logo.png" />
     <EmbeddedResource Include="lib\image\logo.ico" />
     <EmbeddedResource Include="lib\textures\*.png" />
+    <!-- Embed database migration SQL files as resources -->
+    <EmbeddedResource Include="Database\Migrations\*.sql" />
   </ItemGroup>
 
   <!-- Exclusions -->

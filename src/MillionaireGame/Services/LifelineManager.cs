@@ -820,6 +820,18 @@ public class LifelineManager
 
             LogMessage?.Invoke($"[ATA] Broadcasting ATAIntroStarted to session group: {sessionId}");
 
+            // Update session with question details for state sync
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
+            if (sessionService != null)
+            {
+                await sessionService.UpdateSessionModeAsync(
+                    sessionId, 
+                    Web.Models.SessionMode.ATA, 
+                    null, // questionId not tracked
+                    question.QuestionText,
+                    new[] { question.AnswerA, question.AnswerB, question.AnswerC, question.AnswerD });
+            }
+
             // Broadcast game state change to ATAReady
             await webServerHost.BroadcastGameStateAsync(
                 sessionId,
@@ -878,6 +890,13 @@ public class LifelineManager
             const string sessionId = "LIVE";
 
             LogMessage?.Invoke($"[ATA] Broadcasting VotingStarted to session group: {sessionId}");
+
+            // Set voting start time in database (for timer validation)
+            var sessionService = scope.ServiceProvider.GetService<MillionaireGame.Web.Services.SessionService>();
+            if (sessionService != null)
+            {
+                await sessionService.SetVotingStartTimeAsync(sessionId);
+            }
 
             // Broadcast game state change to ATAVoting
             await webServerHost.BroadcastGameStateAsync(

@@ -2,9 +2,30 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
+## [Unreleased] - 2026-01-09
+
+### Fixed
+- **Web State Synchronization** ✅ NEW
+  * Mid-game joiners now receive correct game state (ATA intro, FFF question, etc.)
+  * Fixed ATA vote timeout validation (was counting 120s intro + voting, now only 60s voting window)
+  * Created LIVE session on web server startup to prevent race conditions
+  * Added `VotingStartTime` field to track actual voting start (separate from question display)
+  * Modified join handler to not override screen when joining into active game
+  * Fixed `UpdateSessionModeAsync` to not auto-create sessions (only startup does)
+  * Added WebServerConsole logging for state sync debugging
+  * SQL migration: `00006_add_voting_start_time.sql`
+
 ## [v1.0.5] - 2026-01-08
 
 ### Added
+- **mDNS Service Discovery** ✅ NEW
+  * Automatic network discovery via wwtbam.local domain
+  * No more manual IP address entry for audience participation
+  * Works on mobile devices, tablets, and computers
+  * Dynamic port detection (shows clean URL for port 80, includes port for others)
+  * Advertises on all active network interfaces (IPv4 and IPv6)
+  * Graceful degradation if mDNS not supported
+  * Based on Makaretu.Dns.Multicast library (RFC 6762/6763 compliant)
 - **Multi-Monitor Support Restored** ✅ NEW
   * Screens tab re-enabled with safe async monitor detection
   * MonitorInfoService with 2-second timeout protection and comprehensive error handling

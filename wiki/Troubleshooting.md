@@ -481,9 +481,55 @@ Before diving into specific issues, try these general fixes:
    - Create inbound rule for port 5278
 
 4. **Use Correct URL**
-   - Not `localhost` (only works on host computer)
-   - Use IP address shown in Control Panel
-   - Example: `http://192.168.1.100:5278`
+   - **Recommended**: Use `http://wwtbam.local` (mDNS domain)
+   - **Alternative**: Use IP address shown in Control Panel
+   - Examples:
+     - Port 80: `http://wwtbam.local`
+     - Port 5278: `http://wwtbam.local:5278` or `http://192.168.1.100:5278`
+
+### wwtbam.local Not Working
+
+**Symptom**: Audience can't access using wwtbam.local domain
+
+**Solutions:**
+
+1. **Device Doesn't Support mDNS**
+   - Some Android devices don't support .local domains
+   - Some corporate networks block mDNS
+   - **Fallback**: Use IP address instead (shown in Control Panel)
+
+2. **Multiple Networks/Interfaces**
+   - Computer connected to multiple networks
+   - Device on different network than expected
+   - Verify both devices on same WiFi network
+
+3. **Firewall Blocking mDNS**
+   - Windows Firewall may block UDP port 5353
+   - Allow mDNS through firewall:
+     - Windows Security → Firewall → Allow an app
+     - Add MillionaireGame.exe
+     - Allow UDP port 5353 for both Private and Public networks
+
+4. **Clear DNS Cache**
+   - Old DNS cache may interfere
+   - On audience device:
+   ```powershell
+   # Windows
+   ipconfig /flushdns
+   
+   # macOS/Linux
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+   ```
+
+5. **Try Different Browser**
+   - Some browsers cache DNS aggressively
+   - Try Chrome, Firefox, or Safari
+   - Use Private/Incognito mode
+
+6. **Verify Server Running**
+   - Check Control Panel shows "Web Server: Running"
+   - Check GameConsole logs for mDNS messages
+   - Look for: `[WebServer] mDNS service started`
 
 5. **Router AP Isolation**
    - Some routers isolate devices (hotel/public WiFi)
