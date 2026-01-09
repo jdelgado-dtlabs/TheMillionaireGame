@@ -592,8 +592,20 @@ public class WebServerHost : IDisposable
                 await context.Response.WriteAsync("<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
             });
 
-            // Android/Google connectivity check
+            // Android/Google connectivity checks (multiple endpoints for different Android versions)
             endpoints.MapGet("/generate_204", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+            
+            endpoints.MapGet("/gen_204", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+            
+            endpoints.MapGet("/blank.html", context =>
             {
                 context.Response.StatusCode = 204; // No Content
                 return Task.CompletedTask;
