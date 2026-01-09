@@ -169,6 +169,23 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
+            // Apply pending database migrations automatically
+            using (var scope = _host.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<WAPSDbContext>();
+                try
+                {
+                    WebServerConsole.Info("[WebServer] Checking for pending database migrations...");
+                    await context.Database.MigrateAsync();
+                    WebServerConsole.Info("[WebServer] Database migrations applied successfully");
+                }
+                catch (Exception ex)
+                {
+                    WebServerConsole.Error($"[WebServer] Failed to apply database migrations: {ex.Message}");
+                    throw;
+                }
+            }
+
             // Clean up WAPS data on startup
             // Strategy: Archive ALL participants to history table for telemetry preservation,
             // then clear live Participants table to prevent stale "live" status
