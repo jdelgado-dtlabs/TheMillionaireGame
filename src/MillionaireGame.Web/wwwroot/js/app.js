@@ -16,6 +16,9 @@ const STORAGE_KEYS = {
     SESSION_TIMESTAMP: 'waps_session_timestamp'
 };
 
+// Global wakelock reference
+let wakeLock = null;
+
 // Session Management Configuration
 const SESSION_CONFIG = {
     maxSessionDuration: 4 * 60 * 60 * 1000, // 4 hours (typical show duration)
@@ -1458,11 +1461,108 @@ function setupCleanupHandlers() {
     // Session cleanup happens when user explicitly leaves or clicks leave game
     
     // Handle visibility change (user switches tabs/minimizes)
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
             console.log("Page hidden - maintaining session but ready for cleanup");
+            // Release wakelock when page is hidden
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+                console.log("Wake Lock released (page hidden)");
+            }
+        } else {
+            console.log("Page visible - re-acquiring wake lock");
+            // Re-acquire wakelock when page becomes visible
+            await requestWakeLock();
         }
     });
+}
+
+// ============================================================================
+// Mobile Features: Wake Lock & Fullscreen
+// ============================================================================
+
+/**
+ * Request screen wake lock to keep device awake during game
+ */
+async function requestWakeLock() {
+    // Check if Wake Lock API is supported
+    if (!('wakeLock' in navigator)) {
+        console.log("Wake Lock API not supported on this device");
+        return;
+    }
+
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log("✓ Wake Lock acquired - screen will stay on");
+
+        wakeLock.addEventListener('release', () => {
+            console.log("Wake Lock released");
+        });
+    } catch (err) {
+        console.error(`Failed to acquire Wake Lock: ${err.name}, ${err.message}`);
+    }
+}
+
+/**
+ * Request fullscreen mode for mobile devices
+ */
+function requestFullscreen() {
+    const elem = document.documentElement;
+
+    // Check if already in fullscreen
+    if (document.fullscreenElement) {
+        console.log("Already in fullscreen mode");
+        return;
+    }
+
+    // Try different fullscreen APIs for cross-browser compatibility
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().then(() => {
+            console.log("✓ Fullscreen mode activated");
+        }).catch(err => {
+            console.log(`Fullscreen request failed: ${err.message}`);
+        });
+    } else if (elem.webkitRequestFullscreen) { // Safari
+        elem.webkitRequestFullscreen();
+        console.log("✓ Fullscreen mode activated (webkit)");
+    } else if (elem.msRequestFullscreen) { // IE11
+        elem.msRequestFullscreen();
+        console.log("✓ Fullscreen mode activated (ms)");
+    } else {
+        console.log("Fullscreen API not supported on this device");
+    }
+}
+
+/**
+ * Initialize mobile features (wake lock and fullscreen)
+ */
+async function initializeMobileFeatures() {
+    const deviceType = getDeviceType();
+    
+    // Only apply to mobile and tablet devices
+    if (deviceType === "Mobile" || deviceType === "Tablet") {
+        console.log(`Initializing mobile features for ${deviceType}...`);
+        
+        // Request wake lock
+        await requestWakeLock();
+        
+        // Request fullscreen on first user interaction
+        // (browsers require user gesture for fullscreen)
+        const enableFullscreenOnInteraction = () => {
+            requestFullscreen();
+            // Remove listener after first interaction
+            document.removeEventListener('touchstart', enableFullscreenOnInteraction);
+            document.removeEventListener('click', enableFullscreenOnInteraction);
+        };
+        
+        document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('click', enableFullscreenOnInteraction, { once: true });
+        
+        console.log("Mobile features initialized - fullscreen will activate on first touch/click");
+    } else {
+        console.log("Desktop device detected - skipping mobile-specific features");
+    }
 }
 
 // ============================================================================
@@ -1473,6 +1573,9 @@ function setupCleanupHandlers() {
  * Initialize application on page load
  */
 window.addEventListener('DOMContentLoaded', () => {
+    // Initialize mobile features (wake lock & fullscreen)
+    initializeMobileFeatures();
+    
     // Setup cleanup handlers for privacy/security
     setupCleanupHandlers();
     

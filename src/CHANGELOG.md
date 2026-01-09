@@ -5,6 +5,13 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2026-01-09
 
 ### Added
+- **Mobile Features** ✅ NEW
+  * Added Screen Wake Lock API to keep mobile device screens on during gameplay
+  * Added fullscreen mode for mobile/tablet devices (hides address bar and browser chrome)
+  * Automatic detection of mobile/tablet devices for feature activation
+  * Re-acquires wake lock automatically when page becomes visible after tab switching
+  * Fullscreen activates on first user touch/click (browser security requirement)
+  * Added mobile web app meta tags for iOS and Android standalone mode support
 - **Captive Portal Connectivity Endpoints** ✅ NEW
   * Added `/hotspot-detect.html` endpoint for Apple iOS/macOS connectivity checks
   * Added `/generate_204`, `/gen_204`, `/blank.html` endpoints for Android/Google connectivity checks (multiple endpoints for different Android versions)
