@@ -114,6 +114,46 @@ public class GameHub : Hub
         // Sync current game state to reconnecting/joining client
         await SyncClientStateAsync(sessionId, participant.Id);
         
+        // Determine appropriate initial state based on current session mode
+        var session = await _sessionService.GetSessionAsync(sessionId);
+        string initialState = "Lobby";
+        if (session?.CurrentMode == SessionMode.FFF)
+        {
+            initialState = "FFFLobby"; // Will be updated by sync event
+            _logger.LogInformation("Returning FFFLobby initial state for {ParticipantId}", participant.Id);
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                var logMethod = consoleType?.GetMethod("Info", new[] { typeof(string) });
+                logMethod?.Invoke(null, new object[] { $"[GameHub] Returning FFFLobby state for {participant.DisplayName}" });
+            }
+            catch { }
+        }
+        else if (session?.CurrentMode == SessionMode.ATA)
+        {
+            initialState = "ATAReady"; // Will be updated by sync event
+            _logger.LogInformation("Returning ATAReady initial state for {ParticipantId}", participant.Id);
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                var logMethod = consoleType?.GetMethod("Info", new[] { typeof(string) });
+                logMethod?.Invoke(null, new object[] { $"[GameHub] Returning ATAReady state for {participant.DisplayName}" });
+            }
+            catch { }
+        }
+        else
+        {
+            _logger.LogInformation("Session mode is {Mode}, returning Lobby initial state for {ParticipantId}", 
+                session?.CurrentMode?.ToString() ?? "null", participant.Id);
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                var logMethod = consoleType?.GetMethod("Info", new[] { typeof(string) });
+                logMethod?.Invoke(null, new object[] { $"[GameHub] Session mode is {session?.CurrentMode?.ToString() ?? "null"}, returning Lobby state for {participant.DisplayName}" });
+            }
+            catch { }
+        }
+        
         // Return participant info
         return new
         {
@@ -121,7 +161,7 @@ public class GameHub : Hub
             ParticipantId = participant.Id,
             DisplayName = participant.DisplayName,
             SessionId = sessionId,
-            State = participant.State.ToString(),
+            State = initialState,
             CanVote = !participant.HasUsedATA && participant.IsActive
         };
     }
@@ -360,9 +400,10 @@ public class GameHub : Hub
             }
             
             // Validate timer expiry (60 second limit + 500ms grace period for network latency)
-            if (session.QuestionStartTime.HasValue)
+            // Use VotingStartTime instead of QuestionStartTime to avoid counting intro time
+            if (session.VotingStartTime.HasValue)
             {
-                var elapsed = (submittedAt - session.QuestionStartTime.Value).TotalMilliseconds;
+                var elapsed = (submittedAt - session.VotingStartTime.Value).TotalMilliseconds;
                 if (elapsed > 60500) // 60s + 500ms grace
                 {
                     _logger.LogWarning("Late ATA vote rejected - Participant: {ParticipantId}, Elapsed: {Elapsed}ms",
@@ -380,7 +421,9 @@ public class GameHub : Hub
             }
             
             // Validate participant joined before voting started (anti-cheat)
-            if (session.QuestionStartTime.HasValue && participant.LastSeenAt > session.QuestionStartTime.Value)
+            // Check against VotingStartTime if available, otherwise QuestionStartTime
+            var votingStart = session.VotingStartTime ?? session.QuestionStartTime;
+            if (votingStart.HasValue && participant.LastSeenAt > votingStart.Value)
             {
                 _logger.LogWarning("Late joiner ATA vote rejected - Participant: {ParticipantId}",
                     participantId);
@@ -483,12 +526,31 @@ public class GameHub : Hub
     private async Task SyncClientStateAsync(string sessionId, string participantId)
     {
         var session = await _sessionService.GetSessionAsync(sessionId);
-        if (session?.CurrentMode == null || session.CurrentMode == SessionMode.Idle)
-            return;
-        
         var participant = await _sessionService.GetParticipantAsync(participantId);
         if (participant == null)
             return;
+        
+        // Then sync specific mode state if in FFF or ATA
+        if (session?.CurrentMode == null || session.CurrentMode == SessionMode.Idle)
+        {
+            // Only send generic game state if not in an active FFF/ATA mode
+            // (FFF/ATA have their own specific state events below)
+            var currentState = _sessionService.GetCurrentState();
+            if (currentState != Models.GameStateType.InitialLobby)
+            {
+                await Clients.Caller.SendAsync("GameStateChanged", new
+                {
+                    State = currentState,
+                    Message = GetStateMessage(currentState),
+                    Timestamp = DateTime.UtcNow,
+                    IsResync = true
+                });
+                
+                _logger.LogInformation("Synced game state {State} to client {ParticipantId}", 
+                    currentState, participantId);
+            }
+            return;
+        }
         
         if (session.CurrentMode == SessionMode.FFF)
         {
@@ -532,47 +594,74 @@ public class GameHub : Hub
             var ataState = await _sessionService.GetCurrentATAStateAsync(sessionId);
             if (ataState != null)
             {
-                // Calculate if voting is still active (60 second window)
-                var elapsed = (DateTime.UtcNow - ataState.StartTime).TotalSeconds;
-                var isStillActive = elapsed < 60 && ataState.IsActive;
-                
-                // Determine if participant can vote
-                // Only if they were connected BEFORE voting started OR voting already ended
-                var canVote = participant.LastSeenAt <= ataState.StartTime || !isStillActive;
-                
-                // Check if already voted
-                if (await _sessionService.HasParticipantVotedAsync(sessionId, participantId))
+                // Check if voting has started or if we're still in intro phase
+                if (!ataState.VotingStarted)
                 {
-                    canVote = false;
+                    // Intro phase - show question but voting hasn't started yet
+                    // All participants see the question in "waiting for voting" mode
+                    await Clients.Caller.SendAsync("ATAIntroStarted", new
+                    {
+                        QuestionText = ataState.QuestionText,
+                        OptionA = ataState.OptionA,
+                        OptionB = ataState.OptionB,
+                        OptionC = ataState.OptionC,
+                        OptionD = ataState.OptionD,
+                        TimeLimit = 120, // Intro phase timer
+                        StartTime = ataState.StartTime,
+                        IsResync = true
+                    });
+                    
+                    _logger.LogInformation("Synced ATA intro state to client for question {QuestionId}", 
+                        ataState.QuestionId);
                 }
-                
-                // Check if used ATA lifeline
-                if (participant.HasUsedATA)
+                else
                 {
-                    canVote = false;
+                    // Voting phase - determine if participant can vote
+                    var elapsed = (DateTime.UtcNow - ataState.StartTime).TotalSeconds;
+                    var isStillActive = elapsed < 60 && ataState.IsActive;
+                    
+                    // Can vote if they were connected BEFORE voting started OR voting already ended
+                    var canVote = participant.LastSeenAt <= ataState.StartTime || !isStillActive;
+                    
+                    // Check if already voted
+                    if (await _sessionService.HasParticipantVotedAsync(sessionId, participantId))
+                    {
+                        canVote = false;
+                    }
+                    
+                    // Check if used ATA lifeline
+                    if (participant.HasUsedATA)
+                    {
+                        canVote = false;
+                    }
+                    
+                    // Send voting started event with spectator flag if needed
+                    await Clients.Caller.SendAsync("VotingStarted", new
+                    {
+                        QuestionText = ataState.QuestionText,
+                        OptionA = ataState.OptionA,
+                        OptionB = ataState.OptionB,
+                        OptionC = ataState.OptionC,
+                        OptionD = ataState.OptionD,
+                        TimeLimit = Math.Max(0, 60 - (int)elapsed), // Remaining time
+                        StartTime = ataState.StartTime,
+                        IsResync = true,
+                        CanVote = canVote,
+                        SpectatorMode = !canVote && isStillActive,
+                        SpectatorReason = !canVote && isStillActive ? "You joined after voting started" : null
+                    });
+                    
+                    // Send current vote results
+                    await Clients.Caller.SendAsync("VotesUpdated", new
+                    {
+                        Results = ataState.CurrentResults,
+                        TotalVotes = ataState.TotalVotes,
+                        Timestamp = DateTime.UtcNow
+                    });
+                    
+                    _logger.LogInformation("Synced ATA voting state to client for question {QuestionId} (CanVote: {CanVote})", 
+                        ataState.QuestionId, canVote);
                 }
-                
-                // Send both the start event and current results
-                await Clients.Caller.SendAsync("ATAStarted", new
-                {
-                    QuestionId = ataState.QuestionId,
-                    QuestionText = ataState.QuestionText,
-                    StartTime = ataState.StartTime,
-                    IsResync = true,
-                    CanVote = canVote, // Can this participant vote?
-                    SpectatorMode = !canVote && isStillActive, // Viewing only
-                    SpectatorReason = !canVote && isStillActive ? "You joined after voting started" : null
-                });
-                
-                await Clients.Caller.SendAsync("VotesUpdated", new
-                {
-                    Results = ataState.CurrentResults,
-                    TotalVotes = ataState.TotalVotes,
-                    Timestamp = DateTime.UtcNow
-                });
-                
-                _logger.LogInformation("Synced ATA state to reconnected client for question {QuestionId} (CanVote: {CanVote})", 
-                    ataState.QuestionId, canVote);
             }
         }
     }
@@ -585,6 +674,30 @@ public class GameHub : Hub
         _logger.LogInformation("Client {ConnectionId} requested state sync for session {SessionId}", 
             Context.ConnectionId, sessionId);
         await SyncClientStateAsync(sessionId, participantId);
+    }
+    
+    /// <summary>
+    /// Get appropriate message for a game state
+    /// </summary>
+    private string GetStateMessage(Models.GameStateType state)
+    {
+        return state switch
+        {
+            Models.GameStateType.InitialLobby => "Welcome! Waiting for the game to start...",
+            Models.GameStateType.WaitingLobby => "Waiting for next round...",
+            Models.GameStateType.FFFLobby => "Get ready to play Fastest Finger First!",
+            Models.GameStateType.FFFQuestion => "Answer the question in the correct order!",
+            Models.GameStateType.FFFCalculating => "Calculating your response...",
+            Models.GameStateType.FFFNoResponse => "Thanks for participating!",
+            Models.GameStateType.FFFResults => "See the results!",
+            Models.GameStateType.FFFWinner => "We have a winner!",
+            Models.GameStateType.ATAReady => "Get ready to vote!",
+            Models.GameStateType.ATAVoting => "Vote now!",
+            Models.GameStateType.ATAVoteSubmitted => "Your vote has been recorded!",
+            Models.GameStateType.ATAResults => "See what the audience thinks!",
+            Models.GameStateType.GameComplete => "Thank you for playing!",
+            _ => "Please wait..."
+        };
     }
 
     #endregion

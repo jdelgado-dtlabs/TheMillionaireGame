@@ -222,13 +222,29 @@ public class WebServerHost : IDisposable
                     // Step 2: Clear ALL participants (live state resets on app restart)
                     var deletedAllParticipants = await context.Participants.ExecuteDeleteAsync();
                     
-                    // Step 3: Reset LIVE session to Active status (or delete it to start fresh)
+                    // Step 3: Ensure LIVE session exists and is Active
                     var liveSession = await context.Sessions.FindAsync("LIVE");
                     if (liveSession != null)
                     {
                         liveSession.Status = SessionStatus.Active;
+                        liveSession.CurrentMode = null; // Reset mode
                         await context.SaveChangesAsync();
                         WebServerConsole.Info("[WebServer] Reset LIVE session to Active status");
+                    }
+                    else
+                    {
+                        // Create LIVE session if it doesn't exist
+                        liveSession = new MillionaireGame.Web.Models.Session
+                        {
+                            Id = "LIVE",
+                            HostName = "Main Game Session",
+                            CreatedAt = DateTime.UtcNow,
+                            StartedAt = DateTime.UtcNow,
+                            Status = MillionaireGame.Web.Models.SessionStatus.Active
+                        };
+                        context.Sessions.Add(liveSession);
+                        await context.SaveChangesAsync();
+                        WebServerConsole.Info("[WebServer] Created LIVE session");
                     }
                     
                     // Step 4: Find incomplete sessions (PreGame or legacy Waiting with no game progress)
@@ -274,7 +290,7 @@ public class WebServerHost : IDisposable
             // Start mDNS service advertisement
             try
             {
-                _mdnsService = new MDnsServiceManager("wwtbam", _port);
+                _mdnsService = new MDnsServiceManager("wwtbam", _port, ipAddress);
                 _mdnsService.StartAdvertising();
 
                 // Show appropriate URL based on port

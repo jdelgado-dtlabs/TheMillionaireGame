@@ -20,16 +20,87 @@ namespace MillionaireGame.Web.Services
 
         public string ServiceName { get; }
         public int Port { get; }
+        public string BindAddress { get; }
+
+        /// <summary>
+        /// Log helper that uses WebServerConsole via reflection if available
+        /// </summary>
+        private static void LogInfo(string message)
+        {
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var method = consoleType.GetMethod("Info", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    method?.Invoke(null, new object[] { message });
+                    return;
+                }
+            }
+            catch { }
+            Console.WriteLine(message);
+        }
+
+        private static void LogWarn(string message)
+        {
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var method = consoleType.GetMethod("Warn", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    method?.Invoke(null, new object[] { message });
+                    return;
+                }
+            }
+            catch { }
+            Console.WriteLine(message);
+        }
+
+        private static void LogError(string message)
+        {
+            try
+            {
+                var consoleType = Type.GetType("MillionaireGame.Utilities.WebServerConsole, MillionaireGame");
+                if (consoleType != null)
+                {
+                    var method = consoleType.GetMethod("Error", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    method?.Invoke(null, new object[] { message });
+                    return;
+                }
+            }
+            catch { }
+            Console.WriteLine(message);
+        }
 
         /// <summary>
         /// Creates a new mDNS service manager
         /// </summary>
         /// <param name="serviceName">Service name (becomes serviceName.local)</param>
         /// <param name="port">Port number the web server is listening on</param>
-        public MDnsServiceManager(string serviceName, int port)
+        /// <param name="bindAddress">IP address the server is bound to (0.0.0.0, 127.0.0.1, or specific IP)</param>
+        public MDnsServiceManager(string serviceName, int port, string bindAddress)
         {
             ServiceName = serviceName ?? "wwtbam";
             Port = port;
+            BindAddress = bindAddress ?? "0.0.0.0";
+
+            LogInfo($"[mDNS] Initializing mDNS service: {ServiceName}.local on port {Port}");
+            LogInfo($"[mDNS] Bind address: {BindAddress}");
+
+            // Get addresses to advertise
+            var addresses = GetAdvertisableAddresses();
+            if (addresses.Length == 0)
+            {
+                LogInfo("[mDNS] No addresses available for advertising (server may be localhost-only)");
+                return; // Don't create service discovery if no addresses
+            }
+
+            LogInfo($"[mDNS] Will advertise {addresses.Length} address(es):");
+            foreach (var addr in addresses)
+            {
+                LogInfo($"[mDNS]   - {addr}");
+            }
 
             // Create service discovery instance
             _serviceDiscovery = new ServiceDiscovery();
@@ -39,7 +110,7 @@ namespace MillionaireGame.Web.Services
                 instanceName: ServiceName,
                 serviceName: "_http._tcp",
                 port: (ushort)port,
-                addresses: GetLocalIPAddresses()
+                addresses: addresses
             );
 
             // Add TXT records for additional metadata
@@ -64,8 +135,18 @@ namespace MillionaireGame.Web.Services
             if (_isAdvertising || _disposed)
                 return;
 
+            // Check if service was properly initialized
+            if (_serviceDiscovery == null || _serviceProfile == null)
+            {
+                LogInfo("[mDNS] Service not initialized (no addresses to advertise)");
+                return;
+            }
+
             try
             {
+                LogInfo($"[mDNS] Starting mDNS advertisement for {ServiceName}.local...");
+                LogInfo($"[mDNS] Listening on UDP port 5353 for mDNS queries");
+                
                 _serviceDiscovery.Advertise(_serviceProfile);
                 _isAdvertising = true;
 
@@ -74,21 +155,14 @@ namespace MillionaireGame.Web.Services
                     ? $"http://{ServiceName}.local"
                     : $"http://{ServiceName}.local:{Port}";
 
-                Console.WriteLine($"[mDNS] Advertising service: {ServiceName}.local on port {Port}");
-                Console.WriteLine($"[mDNS] Service can be accessed at: {accessUrl}");
-
-                // List advertised IP addresses
-                var addresses = GetLocalIPAddresses();
-                Console.WriteLine($"[mDNS] Advertising {addresses.Length} IP address(es):");
-                foreach (var addr in addresses)
-                {
-                    Console.WriteLine($"[mDNS]   - {addr}");
-                }
+                LogInfo($"[mDNS] ✓ mDNS service is now advertising");
+                LogInfo($"[mDNS] Access URL: {accessUrl}");
+                LogInfo($"[mDNS] Note: Windows may not resolve its own .local domains. Test from another device.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[mDNS] Failed to start advertising: {ex.Message}");
-                Console.WriteLine($"[mDNS] Service will still be accessible via IP address");
+                LogError($"[mDNS] Failed to start advertising: {ex.Message}");
+                LogInfo($"[mDNS] Service will still be accessible via IP address");
             }
         }
 
@@ -104,12 +178,47 @@ namespace MillionaireGame.Web.Services
             {
                 _serviceDiscovery.Unadvertise(_serviceProfile);
                 _isAdvertising = false;
-                Console.WriteLine($"[mDNS] Stopped advertising service: {ServiceName}.local");
+                LogInfo($"[mDNS] Stopped advertising service: {ServiceName}.local");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[mDNS] Error stopping advertisement: {ex.Message}");
+                LogError($"[mDNS] Error stopping advertisement: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Get IP addresses that should be advertised based on bind address
+        /// </summary>
+        private IPAddress[] GetAdvertisableAddresses()
+        {
+            // If bound to localhost only, don't advertise (mDNS for external access only)
+            if (BindAddress == "127.0.0.1" || BindAddress == "localhost")
+            {
+                LogInfo("[mDNS] Server bound to localhost only - mDNS not applicable");
+                return Array.Empty<IPAddress>();
+            }
+
+            var addresses = GetLocalIPAddresses();
+
+            // If bound to all interfaces (0.0.0.0), advertise all
+            if (BindAddress == "0.0.0.0")
+            {
+                return addresses;
+            }
+
+            // If bound to specific IP, only advertise that IP
+            if (IPAddress.TryParse(BindAddress, out var specificIP))
+            {
+                var filtered = addresses.Where(a => a.Equals(specificIP)).ToArray();
+                if (filtered.Length == 0)
+                {
+                    LogWarn($"[mDNS] Warning: Bind address {BindAddress} not found in active interfaces");
+                }
+                return filtered;
+            }
+
+            // Default: advertise all
+            return addresses;
         }
 
         /// <summary>
@@ -147,13 +256,13 @@ namespace MillionaireGame.Web.Services
                 if (addresses.Count == 0)
                 {
                     // Fallback: add localhost
-                    Console.WriteLine("[mDNS] No network interfaces found, using loopback");
+                    LogWarn("[mDNS] No network interfaces found, using loopback");
                     addresses.Add(IPAddress.Loopback);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[mDNS] Error getting network interfaces: {ex.Message}");
+                LogError($"[mDNS] Error getting network interfaces: {ex.Message}");
                 addresses.Add(IPAddress.Loopback);
             }
 

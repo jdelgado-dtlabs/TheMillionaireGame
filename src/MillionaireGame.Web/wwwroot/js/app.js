@@ -211,6 +211,21 @@ function clearSessionInfo() {
  */
 async function joinSession(sessionId, displayName, participantId = null) {
     try {
+        // Ensure SignalR library is loaded before proceeding
+        if (typeof signalR === 'undefined') {
+            console.error('SignalR library not loaded yet, waiting...');
+            // Wait for SignalR to load (max 5 seconds)
+            let attempts = 0;
+            while (typeof signalR === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof signalR === 'undefined') {
+                throw new Error('SignalR library failed to load');
+            }
+            console.log('SignalR library now available after waiting');
+        }
+
         hideError();
 
         // Collect device telemetry (anonymous, for statistics only)
@@ -413,7 +428,12 @@ async function joinSession(sessionId, displayName, participantId = null) {
         document.getElementById('displayParticipantId').textContent = currentParticipantId;
         document.getElementById('displayConnectionId').textContent = connection.connectionId;
 
-        showScreen('connectedScreen');
+        // Don't override screen if we're already in a game screen (from sync events)
+        // Only show connectedScreen if we're joining into a lobby state
+        if (result.state === 'Lobby' || result.state === 'WaitingLobby') {
+            showScreen('connectedScreen');
+        }
+        // Otherwise, sync events have already set the correct screen (ATA, FFF, etc)
 
     } catch (err) {
         console.error("Join failed:", err);
@@ -445,6 +465,8 @@ function setupATAEventHandlers() {
             return;
         }
         
+        console.log("[ATA] Setting up intro screen with question and options");
+        
         // Reset voting state
         ataHasVoted = false;
         hideATAMessage();
@@ -472,8 +494,10 @@ function setupATAEventHandlers() {
         // Show message
         showATAMessage("Please wait for voting to begin...", false);
         
+        console.log("[ATA] About to call showScreen('ataVotingScreen')");
         // Show ATA screen
         showScreen('ataVotingScreen');
+        console.log("[ATA] showScreen('ataVotingScreen') completed");
     });
     
     connection.on('VotingStarted', (data) => {

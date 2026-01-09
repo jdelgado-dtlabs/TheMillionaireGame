@@ -456,36 +456,56 @@ public class SessionService
         string? questionText = null, string[]? options = null)
     {
         var session = await _context.Sessions.FindAsync(sessionId);
+        if (session == null)
+        {
+            // Don't auto-create - session should already exist from participant joining
+            _logger.LogWarning("Session {SessionId} not found for mode update to {Mode}", sessionId, mode);
+            return;
+        }
+        
+        session.CurrentMode = mode;
+        session.CurrentQuestionId = questionId;
+        session.CurrentQuestionText = questionText;
+        
+        // Store options as JSON if provided
+        if (options != null && options.Length > 0)
+        {
+            session.CurrentQuestionOptionsJson = System.Text.Json.JsonSerializer.Serialize(options);
+        }
+        
+        // Set question start time when FFF or ATA question starts
+        if ((mode == SessionMode.FFF || mode == SessionMode.ATA) && questionId.HasValue)
+        {
+            session.QuestionStartTime = DateTime.UtcNow;
+            _logger.LogInformation("Question {QuestionId} started at {StartTime}", 
+                questionId, session.QuestionStartTime);
+        }
+        else if (mode == SessionMode.Idle)
+        {
+            session.QuestionStartTime = null;
+            session.VotingStartTime = null; // Clear voting start time too
+            session.CurrentQuestionText = null;
+            session.CurrentQuestionOptionsJson = null;
+        }
+        
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Updated session {SessionId} mode to {Mode}, question {QuestionId}", 
+            sessionId, mode, questionId);
+    }
+
+    /// <summary>
+    /// Set the voting start time for ATA (when voting actually begins, not when question is displayed)
+    /// </summary>
+    public async Task SetVotingStartTimeAsync(string sessionId)
+    {
+        var session = await _context.Sessions.FindAsync(sessionId);
         if (session != null)
         {
-            session.CurrentMode = mode;
-            session.CurrentQuestionId = questionId;
-            session.CurrentQuestionText = questionText;
-            
-            // Store options as JSON if provided
-            if (options != null && options.Length > 0)
-            {
-                session.CurrentQuestionOptionsJson = System.Text.Json.JsonSerializer.Serialize(options);
-            }
-            
-            // Set question start time when FFF or ATA question starts
-            if ((mode == SessionMode.FFF || mode == SessionMode.ATA) && questionId.HasValue)
-            {
-                session.QuestionStartTime = DateTime.UtcNow;
-                _logger.LogInformation("Question {QuestionId} started at {StartTime}", 
-                    questionId, session.QuestionStartTime);
-            }
-            else if (mode == SessionMode.Idle)
-            {
-                session.QuestionStartTime = null;
-                session.CurrentQuestionText = null;
-                session.CurrentQuestionOptionsJson = null;
-            }
-            
+            session.VotingStartTime = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Updated session {SessionId} mode to {Mode}, question {QuestionId}", 
-                sessionId, mode, questionId);
+            _logger.LogInformation("Voting started for session {SessionId} at {StartTime}", 
+                sessionId, session.VotingStartTime);
         }
     }
 
@@ -936,14 +956,17 @@ public class SessionService
     public async Task<ATAQuestionState?> GetCurrentATAStateAsync(string sessionId)
     {
         var session = await _context.Sessions.FindAsync(sessionId);
-        if (session?.CurrentMode != SessionMode.ATA || !session.CurrentQuestionId.HasValue)
+        if (session?.CurrentMode != SessionMode.ATA)
             return null;
         
-        // Calculate if voting is still active (60 second window)
-        var elapsed = session.QuestionStartTime.HasValue
-            ? (DateTime.UtcNow - session.QuestionStartTime.Value).TotalSeconds
+        // Determine if we're in intro phase (question shown) or voting phase (voting started)
+        bool votingStarted = session.VotingStartTime.HasValue;
+        
+        // Calculate if voting is still active (60 second window from VotingStartTime, not QuestionStartTime)
+        var elapsed = session.VotingStartTime.HasValue
+            ? (DateTime.UtcNow - session.VotingStartTime.Value).TotalSeconds
             : 0;
-        var isActive = elapsed < 60;
+        var isActive = votingStarted && elapsed < 60;
         
         // Get current voting percentages
         var percentages = await CalculateATAPercentagesAsync(sessionId);
@@ -951,11 +974,30 @@ public class SessionService
         
         var questionText = session.CurrentQuestionText ?? "Ask The Audience Question";
         
+        // Parse options from JSON (stored as ["A", "B", "C", "D"])
+        string[] options = new[] { "Option A", "Option B", "Option C", "Option D" };
+        if (!string.IsNullOrEmpty(session.CurrentQuestionOptionsJson))
+        {
+            try
+            {
+                options = System.Text.Json.JsonSerializer.Deserialize<string[]>(session.CurrentQuestionOptionsJson) ?? options;
+            }
+            catch
+            {
+                // Use defaults if parsing fails
+            }
+        }
+        
         return new ATAQuestionState
         {
-            QuestionId = session.CurrentQuestionId.Value,
+            QuestionId = session.CurrentQuestionId ?? 0, // ATA doesn't track question IDs
             QuestionText = questionText,
-            StartTime = session.QuestionStartTime ?? DateTime.UtcNow,
+            OptionA = options.Length > 0 ? options[0] : "Option A",
+            OptionB = options.Length > 1 ? options[1] : "Option B",
+            OptionC = options.Length > 2 ? options[2] : "Option C",
+            OptionD = options.Length > 3 ? options[3] : "Option D",
+            StartTime = session.VotingStartTime ?? session.QuestionStartTime ?? DateTime.UtcNow,
+            VotingStarted = votingStarted,
             CurrentResults = percentages,
             TotalVotes = totalVotes,
             IsActive = isActive

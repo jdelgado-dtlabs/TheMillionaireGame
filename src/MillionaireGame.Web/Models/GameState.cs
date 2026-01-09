@@ -52,9 +52,34 @@ public class ATAQuestionState
     public string QuestionText { get; set; } = string.Empty;
     
     /// <summary>
-    /// When the voting started
+    /// Answer option A
+    /// </summary>
+    public string OptionA { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Answer option B
+    /// </summary>
+    public string OptionB { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Answer option C
+    /// </summary>
+    public string OptionC { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Answer option D
+    /// </summary>
+    public string OptionD { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// When the voting started (or question started if voting hasn't begun yet)
     /// </summary>
     public DateTime StartTime { get; set; }
+    
+    /// <summary>
+    /// Whether voting has actually started (vs just showing question in intro)
+    /// </summary>
+    public bool VotingStarted { get; set; }
     
     /// <summary>
     /// Current voting percentages by option (A, B, C, D)

@@ -183,11 +183,12 @@
     </div>
 
     <!-- Third-Party Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <!-- Load SignalR library (try CDN, fallback to local for offline use) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js" 
+            onerror="this.onerror=null; this.remove(); var s=document.createElement('script'); s.src='/lib/signalr/signalr.min.js'; document.head.appendChild(s);"></script>
     
-    <!-- Application Script with dynamic cache busting -->
+    <!-- Application Script with cache busting -->
     <script>
-        // Load app.js with current timestamp to prevent caching
         document.write('<script src="/js/app.js?v=' + Date.now() + '"><\/script>');
     </script>
 
