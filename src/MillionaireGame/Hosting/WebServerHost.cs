@@ -582,6 +582,30 @@ public class WebServerHost : IDisposable
             endpoints.MapControllers();
             endpoints.MapHub<GameHub>("/hubs/game");
 
+            // Connectivity check endpoints for captive portal detection
+            // These prevent devices from showing "No Internet" warnings when connected to game network
+            
+            // Apple iOS/macOS connectivity check
+            endpoints.MapGet("/hotspot-detect.html", async context =>
+            {
+                context.Response.ContentType = "text/html";
+                await context.Response.WriteAsync("<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
+            });
+
+            // Android/Google connectivity check
+            endpoints.MapGet("/generate_204", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+
+            // Windows connectivity check (MSFT Connect Test)
+            endpoints.MapGet("/connecttest.txt", async context =>
+            {
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync("Microsoft Connect Test");
+            });
+
             // Health check endpoint
             endpoints.MapGet("/health", async context =>
             {

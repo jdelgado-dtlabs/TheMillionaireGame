@@ -4,6 +4,14 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 
 ## [Unreleased] - 2026-01-09
 
+### Added
+- **Captive Portal Connectivity Endpoints** ✅ NEW
+  * Added `/hotspot-detect.html` endpoint for Apple iOS/macOS connectivity checks
+  * Added `/generate_204` endpoint for Android/Google connectivity checks
+  * Added `/connecttest.txt` endpoint for Windows connectivity checks
+  * Prevents "No Internet" warnings when devices connect to dedicated game network
+  * Essential for isolated network deployments where all traffic routes to game server
+
 ### Fixed
 - **Web State Synchronization** ✅ NEW
   * Mid-game joiners now receive correct game state (ATA intro, FFF question, etc.)
