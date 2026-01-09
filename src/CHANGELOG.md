@@ -14,6 +14,12 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Fixed `UpdateSessionModeAsync` to not auto-create sessions (only startup does)
   * Added WebServerConsole logging for state sync debugging
   * SQL migration: `00006_add_voting_start_time.sql`
+- **mDNS Hostname Resolution** ✅ NEW
+  * Added A records (IPv4) and AAAA records (IPv6) to mDNS service profile
+  * Completes mDNS implementation - now advertises both service discovery AND hostname resolution
+  * Enables wwtbam.local to resolve to actual IP addresses (not just service discovery)
+  * Fixed Windows .local domain resolution (Windows typically ignores .local domains)
+  * 120-second TTL for hostname records
 
 ## [v1.0.5] - 2026-01-08
 

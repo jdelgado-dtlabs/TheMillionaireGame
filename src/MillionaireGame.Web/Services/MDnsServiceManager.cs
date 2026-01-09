@@ -113,6 +113,32 @@ namespace MillionaireGame.Web.Services
                 addresses: addresses
             );
 
+            // Add A/AAAA records for hostname resolution (critical for .local domain to resolve)
+            var hostName = $"{ServiceName}.local";
+            foreach (var address in addresses)
+            {
+                if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    // IPv4 - Add A record
+                    _serviceProfile.Resources.Add(new ARecord
+                    {
+                        Name = hostName,
+                        Address = address,
+                        TTL = TimeSpan.FromSeconds(120)
+                    });
+                }
+                else if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                {
+                    // IPv6 - Add AAAA record
+                    _serviceProfile.Resources.Add(new AAAARecord
+                    {
+                        Name = hostName,
+                        Address = address,
+                        TTL = TimeSpan.FromSeconds(120)
+                    });
+                }
+            }
+
             // Add TXT records for additional metadata
             _serviceProfile.Resources.Add(new TXTRecord
             {
