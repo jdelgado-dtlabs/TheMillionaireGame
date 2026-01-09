@@ -535,6 +535,26 @@ public class WebServerHost : IDisposable
         app.UseForwardedHeaders();
         app.UseCors("AllowAll");
 
+        // Android captive portal detection for hostname-based checks
+        // Some Android devices check connectivity by requesting root path with specific hostnames
+        app.Use(async (context, next) =>
+        {
+            // Check if the User-Agent is Android and they are hitting the root
+            if (context.Request.Path == "/" && 
+                context.Request.Headers["User-Agent"].ToString().Contains("Android", StringComparison.OrdinalIgnoreCase))
+            {
+                // If they are checking connectivity via Google/gstatic hostnames, return 204
+                // This handles Android's connectivity check that may use various Google domains
+                var hostname = context.Request.Host.Host.ToLowerInvariant();
+                if (hostname.Contains("gstatic") || hostname.Contains("google"))
+                {
+                    context.Response.StatusCode = 204;
+                    return;
+                }
+            }
+            await next();
+        });
+
         // Add cache prevention headers for privacy/security
         app.Use(async (context, next) =>
         {

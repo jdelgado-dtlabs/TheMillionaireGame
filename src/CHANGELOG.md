@@ -9,6 +9,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Added `/hotspot-detect.html` endpoint for Apple iOS/macOS connectivity checks
   * Added `/generate_204`, `/gen_204`, `/blank.html` endpoints for Android/Google connectivity checks (multiple endpoints for different Android versions)
   * Added `/connecttest.txt` endpoint for Windows connectivity checks
+  * Added hostname-based Android captive portal detection middleware (handles Google/gstatic hostname checks on root path)
   * Prevents "No Internet" warnings when devices connect to dedicated game network
   * Essential for isolated network deployments where all traffic routes to game server
 
