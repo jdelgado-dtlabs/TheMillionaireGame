@@ -1,35 +1,386 @@
-# Progressive Web App (PWA) Implementation Plan
+# Ephemeral Native-Like Web App Implementation Plan
 **Feature Branch**: `feature/pwa-native-app-experience`  
 **Date**: January 9, 2026  
-**Status**: PLANNING  
+**Status**: PLANNING - REVISED  
 
 ---
 
 ## Overview
-Transform the Millionaire Game web-based audience participation system into a Progressive Web App (PWA) that behaves like a native mobile application. This will enable users to install the app on their home screen, work offline (with limitations), and provide a native app-like experience.
+Enhance the Millionaire Game web-based audience participation system to provide a **native app-like experience** during gameplay, while maintaining its **ephemeral, session-based nature**. The app should feel like a native mobile app while in use, but **NOT persist** on user devices after the game session ends.
+
+### ⚠️ **CRITICAL DESIGN PRINCIPLE**
+**NO INSTALLATION. NO PERSISTENCE.**  
+The app must remain ephemeral - users access it during gameplay and it clears itself when the server shuts down or game ends. This is intentional to prevent clutter on user devices and maintain session-based operation.
 
 ---
 
 ## Goals
 
 ### Primary Objectives
-1. **Installability**: Enable "Add to Home Screen" on iOS, Android, and desktop
-2. **App-Like Experience**: Remove browser UI, use app icons, splash screens
-3. **Offline Support**: Cache static assets for faster loading and basic offline functionality
-4. **Native Feel**: Smooth animations, touch interactions, app-like navigation
-5. **Persistence**: App icon stays on home screen like a native app
+1. **Native Feel During Session**: Fullscreen, smooth animations, app-like UI
+2. **Session-Based Only**: Data clears when server stops or session ends
+3. **No Installation**: Prevent "Add to Home Screen" prompts
+4. **No Persistent Caching**: Minimal caching, no service worker
+5. **Clean Exit**: All data cleared on server shutdown or explicit leave
 
-### Non-Goals (Out of Scope)
-- Full offline gameplay (game requires real-time server connection)
-- Background sync for game state
-- Push notifications (not needed for live audience participation)
+### Anti-Goals (Explicitly Avoid)
+- ❌ PWA installability ("Add to Home Screen")
+- ❌ Service Worker with persistent caching
+- ❌ Offline functionality
+- ❌ App icons on home screen
+- ❌ Persistent storage beyond session
+- ❌ Background sync or push notifications
 
 ---
 
-## Technical Requirements
+## Current Status (Already Implemented)
 
-### 1. Web App Manifest (`manifest.json`)
-**Priority**: HIGH | **Effort**: 1-2 hours
+✅ **Mobile Features Already Working**:
+- Screen Wake Lock API (keeps screen on during gameplay)
+- Fullscreen/address bar hiding for Chrome Android
+- Dynamic viewport height for mobile browsers
+- Mobile web app meta tags for standalone feel
+- Automatic mobile/tablet detection
+- Session-based localStorage with cleanup handlers
+
+✅ **Session Management Already Working**:
+- Auto-cleanup on server shutdown (SignalR notification)
+- Auto-cleanup when leaving game explicitly
+- SessionStorage instead of persistent storage where appropriate
+- 4-hour session timeout with warnings
+
+---
+
+## Technical Requirements - Revised Approach
+
+### What We Need (Ephemeral Enhancements)
+
+#### 1. Prevent PWA Installation Prompts
+**Priority**: HIGH | **Effort**: 30 minutes
+
+**Problem**: Chrome/Android shows "Add to Home Screen" prompts by default
+
+**Solution**: Block installation prompts in JavaScript
+
+**File**: `src/MillionaireGame.Web/wwwroot/js/app.js`
+
+```javascript
+// Prevent PWA installation prompts (we want ephemeral sessions only)
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent the mini-infobar from appearing on mobile
+  e.preventDefault();
+  console.log('PWA install prompt blocked - app is session-based only');
+  // Do NOT store the event - we never want to show install UI
+});
+```
+
+**Reasoning**: We explicitly do NOT want users installing the app. It should be accessed fresh each game session.
+
+---
+
+#### 2. Enhanced Touch/Mobile Interactions
+**Priority**: HIGH | **Effort**: 2-3 hours
+
+**Already Done**:
+- ✅ Fullscreen/address bar hiding
+- ✅ Wake lock
+- ✅ Dynamic viewport
+
+**Still Needed**:
+- Touch feedback (haptic feedback on button presses)
+- Pull-to-refresh prevention (disable browser pull-to-refresh)
+- Pinch-zoom prevention (disable on game screens)
+- Touch delay removal (300ms tap delay fix)
+- Smooth scroll behavior
+
+**File**: `src/MillionaireGame.Web/wwwroot/css/app.css`
+
+```css
+/* Prevent browser pull-to-refresh */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Remove 300ms tap delay on mobile */
+* {
+  touch-action: manipulation;
+}
+
+/* Prevent pinch-zoom on game screens */
+body {
+  touch-action: pan-y;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* iOS momentum scrolling */
+body, .container {
+  -webkit-overflow-scrolling: touch;
+}
+```
+
+**File**: `src/MillionaireGame.Web/wwwroot/js/app.js`
+
+```javascript
+// Haptic feedback on button presses (if supported)
+function provideTouchFeedback() {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(10); // Very short vibration
+  }
+}
+
+// Add to all button click handlers
+document.querySelectorAll('button').forEach(button => {
+  button.addEventListener('touchstart', () => {
+    provideTouchFeedback();
+    // Visual feedback already handled by CSS :active states
+  }, { passive: true });
+});
+
+// Prevent pull-to-refresh
+document.body.addEventListener('touchmove', (e) => {
+  // Only prevent if scrolled to top
+  if (document.body.scrollTop === 0) {
+    e.preventDefault();
+  }
+}, { passive: false });
+```
+
+---
+
+#### 3. Minimal Session Caching (NOT Service Worker)
+**Priority**: MEDIUM | **Effort**: 1 hour
+
+**Approach**: Use browser's native HTTP caching with short TTLs, NOT service worker
+
+**File**: `src/MillionaireGame/Hosting/WebServerHost.cs`
+
+**Update cache headers for session-appropriate caching**:
+
+```csharp
+// In ConfigureApp method
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.ToLowerInvariant();
+    
+    // Static assets: Cache for session duration only (max 4 hours)
+    if (path != null && (path.EndsWith(".css") || path.EndsWith(".js") || 
+                         path.EndsWith(".png") || path.EndsWith(".jpg")))
+    {
+        // Allow browser caching but with short TTL
+        context.Response.Headers["Cache-Control"] = "public, max-age=14400"; // 4 hours
+    }
+    // HTML: No caching (always fresh from server)
+    else if (path != null && (path.EndsWith(".html") || path == "/"))
+    {
+        context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+        context.Response.Headers["Pragma"] = "no-cache";
+        context.Response.Headers["Expires"] = "0";
+    }
+    
+    await next();
+});
+```
+
+**Reasoning**: 
+- Browser's native caching provides performance during session
+- Short TTL (4 hours) matches session timeout
+- No service worker means no persistent offline caching
+- Clears automatically when cache expires
+
+---
+
+#### 4. Enhanced Session Cleanup
+**Priority**: HIGH | **Effort**: 1 hour
+
+**Already Done**:
+- ✅ SignalR disconnection clears localStorage
+- ✅ Server shutdown notification
+- ✅ Session timeout warnings
+
+**Still Needed**:
+- Clear browser cache on explicit leave
+- Visual confirmation of cleanup
+- "Session Ended" splash screen
+
+**File**: `src/MillionaireGame.Web/wwwroot/js/app.js`
+
+```javascript
+// Enhanced cleanup when leaving game
+async function leaveGame() {
+    try {
+        // 1. Notify server
+        if (connection) {
+            await connection.invoke("LeaveSession", currentSessionId, currentParticipantId);
+        }
+        
+        // 2. Clear all local data
+        clearSessionData();
+        
+        // 3. Clear cached data (request browser to clear)
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+        
+        // 4. Show cleanup confirmation
+        showCleanupConfirmation();
+        
+        // 5. After delay, reload to clear everything
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+        
+        console.log("✓ Session data cleared successfully");
+    } catch (error) {
+        console.error("Error during cleanup:", error);
+    }
+}
+
+// Show visual confirmation of cleanup
+function showCleanupConfirmation() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    overlay.innerHTML = `
+        <div style="text-align: center; color: white;">
+            <h1 style="color: #FFD700;">✓ Thank You!</h1>
+            <p>Session data has been cleared from your device.</p>
+            <p style="font-size: 0.9em; opacity: 0.7;">You can safely close this tab.</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+```
+
+---
+
+#### 5. Visual Polish for Native Feel
+**Priority**: MEDIUM | **Effort**: 2-3 hours
+
+**Enhancements**:
+- Smooth transitions between screens
+- Loading states with animations
+- Touch ripple effects on buttons
+- Swipe gestures (optional)
+- Native-style alerts/modals
+
+**File**: `src/MillionaireGame.Web/wwwroot/css/app.css`
+
+```css
+/* Smooth transitions */
+.screen {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.screen.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.screen:not(.active) {
+    opacity: 0;
+    transform: translateX(-20px);
+    pointer-events: none;
+}
+
+/* Touch ripple effect on buttons */
+button {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s ease-out;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+button:active::after {
+    width: 200%;
+    height: 200%;
+}
+
+/* Native-style loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Haptic-style visual feedback */
+button:active,
+.answer-option:active {
+    background: rgba(255, 215, 0, 0.2);
+}
+```
+
+---
+
+#### 6. Meta Tags Optimization
+**Priority**: LOW | **Effort**: 15 minutes
+
+**Remove PWA-related meta tags, keep only what enhances the session**:
+
+**File**: `src/MillionaireGame.Web/wwwroot/index.html`
+
+```html
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Millionaire Game - Audience</title>
+    
+    <!-- Prevent indexing (ephemeral app) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    
+    <!-- iOS: Look like native app during session -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Android: Look like native app during session -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#FFD700">
+    
+    <!-- DO NOT include manifest link - prevents installation prompts -->
+    <!-- <link rel="manifest" href="/manifest.json"> REMOVED -->
+    
+    <!-- Privacy & Cache Control -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="referrer" content="no-referrer">
+</head>
+```
+
+---
 
 **File**: `src/MillionaireGame.Web/wwwroot/manifest.json`
 
@@ -127,9 +478,284 @@ Transform the Millionaire Game web-based audience participation system into a Pr
 
 **Purpose**:
 - Cache static assets (HTML, CSS, JS, images, fonts)
-- Enable offline fallback page
-- Improve load performance
-- Required for PWA installability on Chrome/Android
+- Enable offline fallbac - Revised
+
+### Phase 1: Prevent Installation & Polish Basics (2-3 hours)
+1. ✅ Block PWA installation prompts in JavaScript
+2. ✅ Remove/prevent manifest.json linking
+3. ✅ Update meta tags (remove PWA installation hints)
+4. ✅ Add touch interaction improvements (300ms delay fix, pull-to-refresh block)
+5. ✅ Test that "Add to Home Screen" does NOT appear
+
+**Success Criteria**:
+- ✓ No "Add to Home Screen" prompts on any platform
+- ✓ Touch interactions feel immediate (no 300ms delay)
+- ✓ Pull-to-refresh disabled
+- ✓ App still feels native during session
+
+### Phase 2: Enhanced Touch & Visual Polish (2-3 hours)
+1. ✅ Add haptic feedback on button presses
+2. ✅ Implement touch ripple effects
+3. ✅ Add smooth screen transitions
+4. ✅ Improve loading states with animations
+5. ✅ Test on real mobile devices
+
+**Success Criteria**:
+- ✓ Buttons provide haptic feedback (if supported)
+- ✓ Visual feedback on all touch interactions
+- ✓ Smooth, native-like animations
+- ✓ No janky scrolling or transitions
+
+### Phase 3: Session Cache Optimization (1-2 hours)
+1. ✅ Update HTTP cache headers for session-appropriate caching
+2. ✅ Static assets: 4-hour cache (matches session timeout)
+3. ✅ HTML: No caching (always fresh)
+4. ✅ Test cache behavior in browser dev tools
+
+**Success Criteria**:
+- ✓ Static assets cached for performance during session
+- ✓ Cache expires after session timeout (4 hours)
+- ✓ No persistent caching beyond session
+- ✓ HTML always fresh from server
+
+### Phase 4: Enhanced Cleanup & Testing (2-3 hours)
+1. ✅ Add visual cleanup confirmation screen
+2. ✅ Clear browser caches on explicit leave
+3. ✅ Test session cleanup on Android, iOS, Desktop
+4. ✅ Verify no data persists after cleanup
+5. ✅ Update documentation
+
+**Success Criteria**:
+- ✓ Visual confirmation when session ends
+- ✓ All local data cleared on leave
+- ✓ Browser cache cleared (if API available)
+- ✓ Clean state verified in dev tools
+
+---
+
+## Testing Checklist - Ephemeral App
+
+### Chrome Android
+- [ ] NO "Add to Home Screen" prompt appears
+- [ ] App opens in browser tab (not standalone)
+- [ ] Fullscreen/hidden address bar works
+- [ ] Wake lock keeps screen on
+- [ ] Touch interactions feel immediate
+- [ ] Haptic feedback works on button presses
+- [ ] Session data clears on leave/disconnect
+- [ ] Cache clears after 4 hours
+
+### Safari iOS
+- [ ] NO "Add to Home Screen" in Share menu OR explicitly discouraged
+- [ ] App opens in Safari tab
+- [ ] Address bar hides on scroll
+- [ ] Wake lock works
+- [ ] Touch interactions smooth
+- [ ] Session data clears on leave
+- [ ] Status bar styled correctly
+
+### Chrome Desktop
+- [ ] NO install icon in address bar
+- [ ] App opens in browser tab
+- [ ] Responsive design works
+- [ ] Session data clears on close/leave
+
+### General
+- [ ] No persistent storage after session ends
+- [ ] Browser cache expires after 4 hours
+- [ ] Server shutdown triggers cleanup
+- [ ] "Session Ended" confirmation shows
+- [ ] No data in IndexedDB or Service Worker caches
+
+---
+
+## What We're NOT Building
+
+### ❌ No Web App Manifest
+- Removed from plan
+- Manifest enables installation - we don't want that
+- Keep app URL-based only
+
+### ❌ No Service Worker
+- Removed from plan  
+- Service workers enable offline functionality - unnecessary
+- Service workers cache persistently - against our design
+- Use native browser caching instead (short TTL)
+
+### ❌ No App Icons
+- Removed from plan
+- No home screen presence needed
+- Logo in browser tab is sufficient
+
+### ❌ No Splash Screens
+- Removed from plan
+- No installation = no splash screens needed
+- Fast loading from cache is sufficient
+
+### ❌ No Offline Functionality
+- Game requires real-time connection anyway
+- Offline mode would be misleading to users
+
+---
+
+## File Structure After Implementation
+
+```
+src/MillionaireGame.Web/wwwroot/
+├── index.html (updated - no manifest link, optimized meta tags)
+├── css/
+│   └── app.css (updated - touch interactions, animations)
+├── js/
+│   └── app.js (updated - block install prompts, enhanced cleanup)
+├── logo.png (existing - used in browser tab)
+└── favicon.ico (existing)
+
+NO NEW DIRECTORIES:
+❌ /icons/ - not needed
+❌ /splash/ - not needed  
+❌ manifest.json - explicitly avoided
+❌ sw.js - explicitly avoided
+```
+
+---
+
+## Benefits - Ephemeral Approach
+
+### User Experience
+- **Native Feel**: App-like experience during gameplay
+- **No Clutter**: Doesn't litter user's home screen
+- **Privacy**: Data automatically clears after session
+- **Simple**: Just visit URL, play, done
+- **Fast**: Cached during session, fresh next time
+
+### Technical Benefits
+- **Simpler**: No service worker complexity
+- **Privacy-Focused**: Session-based, ephemeral by design
+- **Maintenance**: No persistent cache invalidation issues
+- **Compliance**: Easier GDPR/privacy compliance (no persistent data)
+
+### Business Benefits
+- **Intentional Design**: Users access fresh each game
+- **No App Store**: Still bypasses app stores
+- **Lower Support**: No "how do I uninstall" questions
+- **Event-Based**: Perfect for one-time event participation
+
+---
+
+## Risks & Mitigations - Revised
+
+### Risk: Users Want to Install
+**Impact**: LOW  
+**Mitigation**: 
+- Design philosophy: ephemeral by intent
+- If demand emerges, can add later
+- Focus on ease of access (URL + QR code)
+
+### Risk: Performance Without Service Worker
+**Impact**: LOW  
+**Mitigation**:
+- Native browser caching provides good performance
+- Assets are small (HTML, CSS, JS, logo)
+- 4-hour cache matches session duration
+- Users typically play for < 1 hour
+
+### Risk: Cache Not Clearing
+**Impact**: MEDIUM  
+**Mitigation**:
+- Multiple cleanup mechanisms (localStorage, cache headers, explicit clear)
+- Visual confirmation when cleanup succeeds
+- Short cache TTL ensures automatic expiry
+- Server shutdown notification triggers cleanup
+
+---
+
+## Success Metrics - Revised
+
+### Native Feel
+- [ ] Touch interactions feel immediate (< 50ms)
+- [ ] Smooth animations (60 FPS)
+- [ ] Fullscreen works on mobile
+- [ ] Wake lock keeps screen on
+
+### Ephemerality
+- [ ] NO "Add to Home Screen" prompts
+- [ ] NO persistent data after session
+- [ ] Cache clears after 4 hours
+- [ ] Cleanup confirmation shows
+
+### Performance
+- [ ] First load < 2 seconds
+- [ ] Subsequent loads < 500ms (browser cache)
+- [ ] No service worker delays
+
+### Privacy
+- [ ] All session data clears on disconnect
+- [ ] No IndexedDB persistence
+- [ ] No service worker caches
+- [ ] Browser cache expires automatically
+
+---
+
+## Documentation Updates
+
+After implementation:
+1. Update `README.md` - emphasize ephemeral design
+2. Add "How It Works" section explaining session-based operation
+3. Document cleanup behavior for users
+4. Update CHANGELOG.md with enhancements
+5. Add troubleshooting for cache issues
+
+---
+
+## Estimated Timeline - Revised
+
+- **Phase 1 (Block Installation & Touch)**: 2-3 hours
+- **Phase 2 (Visual Polish)**: 2-3 hours
+- **Phase 3 (Session Caching)**: 1-2 hours
+- **Phase 4 (Enhanced Cleanup)**: 2-3 hours
+
+**Total**: 7-11 hours (down from 10-14 hours)
+
+---
+
+## Key Differences from Original Plan
+
+| Feature | Original PWA Plan | Revised Ephemeral Plan |
+|---------|------------------|----------------------|
+| **Installation** | ✓ "Add to Home Screen" | ❌ Explicitly blocked |
+| **Manifest** | ✓ Required | ❌ Removed |
+| **Service Worker** | ✓ Full caching | ❌ Not used |
+| **App Icons** | ✓ 8+ sizes | ❌ Not needed |
+| **Splash Screens** | ✓ iOS specific | ❌ Not needed |
+| **Persistence** | ✓ Permanent | ❌ Session only |
+| **Offline** | ✓ Supported | ❌ Intentionally not |
+| **Native Feel** | ✓ Yes | ✓ YES (kept this!) |
+| **Performance** | ✓ Cached | ✓ Session cached |
+| **Privacy** | ~ Persistent data | ✓ Auto-cleanup |
+
+---
+
+## Philosophy: Ephemeral by Design
+
+This app is designed for **live event participation**:
+- Users scan QR code or visit URL during game
+- They participate for 10-60 minutes  
+- When game ends, app clears itself
+- Next game = fresh start
+
+**This is a feature, not a limitation.**
+
+Like a carnival ticket - you use it for the ride, then it's done. No installation, no persistent data, no cleanup burden on users. Simple, clean, intentional.
+
+---
+
+## Next Steps
+
+1. **Review Philosophy**: Confirm ephemeral approach aligns with vision
+2. **Implementation**: Follow revised phases (7-11 hours)
+3. **Testing**: Verify NO installation prompts appear
+4. **Validation**: Test session cleanup thoroughly
+5. **Documentation**: Update docs with ephemeral design philosophyrome/Android
 
 **Caching Strategy**:
 
