@@ -1890,8 +1890,10 @@ async function initializeMobileFeatures() {
     console.log(`Touch support: ${'ontouchstart' in window || navigator.maxTouchPoints > 0}`);
     console.log("=======================");
     
-    // TEMPORARY: Show debug panel on ALL devices to diagnose tablet detection
-    showDebugPanel(deviceType, ua);
+    // Show debug panel on mobile/tablet devices for diagnostics
+    if (deviceType === "Mobile" || deviceType === "Tablet") {
+        showDebugPanel(deviceType, ua);
+    }
     
     // Only apply to mobile and tablet devices
     if (deviceType === "Mobile" || deviceType === "Tablet") {
