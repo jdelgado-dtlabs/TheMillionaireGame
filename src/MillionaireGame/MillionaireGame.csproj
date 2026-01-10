@@ -89,12 +89,10 @@
   <Target Name="CopyLibAssets" AfterTargets="Build">
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico;lib\image\streamdeck\*.png" />
       <SqlFiles Include="lib\sql\**\*.*" />
       <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(OutputPath)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(OutputPath)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(OutputPath)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(OutputPath)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
@@ -103,13 +101,11 @@
   <Target Name="CopyLibAssetsToPublish" AfterTargets="Publish">
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico;lib\image\streamdeck\*.png" />
       <SqlFiles Include="lib\sql\**\*.*" />
       <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
       <StreamDeckDlls Include="lib\StreamDeck\*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(ImageFiles)" DestinationFiles="@(ImageFiles->'$(PublishDir)lib\image\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(PublishDir)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
     <!-- Copy StreamDeck DLLs to root for single-file publish -->
     <Copy SourceFiles="@(StreamDeckDlls)" DestinationFolder="$(PublishDir)" />
