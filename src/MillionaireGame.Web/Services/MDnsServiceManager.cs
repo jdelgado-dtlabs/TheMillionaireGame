@@ -13,8 +13,8 @@ namespace MillionaireGame.Web.Services
     /// </summary>
     public class MDnsServiceManager : IDisposable
     {
-        private readonly ServiceDiscovery _serviceDiscovery;
-        private readonly ServiceProfile _serviceProfile;
+        private readonly ServiceDiscovery? _serviceDiscovery;
+        private readonly ServiceProfile? _serviceProfile;
         private bool _isAdvertising;
         private bool _disposed;
 
@@ -197,7 +197,7 @@ namespace MillionaireGame.Web.Services
         /// </summary>
         public void StopAdvertising()
         {
-            if (!_isAdvertising || _disposed)
+            if (!_isAdvertising || _disposed || _serviceDiscovery == null || _serviceProfile == null)
                 return;
 
             try
