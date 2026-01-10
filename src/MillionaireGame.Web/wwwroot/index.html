@@ -193,9 +193,9 @@
     </div>
 
     <!-- Third-Party Libraries -->
-    <!-- Load SignalR library (try CDN, fallback to local for offline use) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js" 
-            onerror="this.onerror=null; this.remove(); var s=document.createElement('script'); s.src='/lib/signalr/signalr.min.js'; document.head.appendChild(s);"></script>
+    <!-- Load SignalR library - Local first for reliability on isolated networks -->
+    <!-- Local file ensures offline/degraded network compatibility -->
+    <script src="/lib/signalr/signalr.min.js"></script>
     
     <!-- Application Script with cache busting -->
     <script>
