@@ -8,6 +8,11 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 - **Mobile Features** ✅ NEW
   * Added Screen Wake Lock API to keep mobile device screens on during gameplay
   * Added fullscreen mode for mobile/tablet devices (hides address bar and browser chrome)
+  * Improved Chrome Android fullscreen support with scroll-to-hide and navigationUI options
+  * Added dynamic viewport height (dvh) CSS for better mobile display
+  * Automatic address bar hiding via scroll on Chrome Android (fallback when fullscreen API unavailable)
+  * Scroll event listener to maintain hidden address bar state
+  * Standalone/PWA mode detection to avoid unnecessary fullscreen requests
   * Automatic detection of mobile/tablet devices for feature activation
   * Re-acquires wake lock automatically when page becomes visible after tab switching
   * Fullscreen activates on first user touch/click (browser security requirement)

@@ -1506,31 +1506,62 @@ async function requestWakeLock() {
 
 /**
  * Request fullscreen mode for mobile devices
+ * Chrome Android doesn't support traditional fullscreen API well,
+ * so we use a hybrid approach: scroll to hide address bar + fullscreen API
  */
 function requestFullscreen() {
     const elem = document.documentElement;
 
+    // First, scroll to top to hide address bar on mobile browsers
+    window.scrollTo(0, 1);
+    
+    // For Chrome Android, we need to check if running as PWA/standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+        || window.navigator.standalone 
+        || document.referrer.includes('android-app://');
+    
+    if (isStandalone) {
+        console.log("Running in standalone mode - fullscreen not needed");
+        return;
+    }
+
     // Check if already in fullscreen
-    if (document.fullscreenElement) {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
         console.log("Already in fullscreen mode");
         return;
     }
 
     // Try different fullscreen APIs for cross-browser compatibility
+    // Chrome Android and Safari iOS handle this differently
     if (elem.requestFullscreen) {
-        elem.requestFullscreen().then(() => {
+        elem.requestFullscreen({ navigationUI: "hide" }).then(() => {
             console.log("✓ Fullscreen mode activated");
+            window.scrollTo(0, 1); // Scroll again after fullscreen
         }).catch(err => {
-            console.log(`Fullscreen request failed: ${err.message}`);
+            console.log(`Fullscreen request failed: ${err.message} - using scroll fallback`);
+            // Fallback: just scroll to hide address bar
+            window.scrollTo(0, 1);
         });
-    } else if (elem.webkitRequestFullscreen) { // Safari
-        elem.webkitRequestFullscreen();
-        console.log("✓ Fullscreen mode activated (webkit)");
-    } else if (elem.msRequestFullscreen) { // IE11
-        elem.msRequestFullscreen();
-        console.log("✓ Fullscreen mode activated (ms)");
+    } else if (elem.webkitRequestFullscreen) { // Safari iOS
+        try {
+            elem.webkitRequestFullscreen();
+            console.log("✓ Fullscreen mode activated (webkit)");
+            window.scrollTo(0, 1);
+        } catch (err) {
+            console.log(`Webkit fullscreen failed: ${err.message}`);
+            window.scrollTo(0, 1);
+        }
+    } else if (elem.webkitEnterFullscreen) { // iOS video element fallback
+        try {
+            elem.webkitEnterFullscreen();
+            console.log("✓ Fullscreen mode activated (webkit enter)");
+        } catch (err) {
+            console.log(`Webkit enter fullscreen failed: ${err.message}`);
+            window.scrollTo(0, 1);
+        }
     } else {
-        console.log("Fullscreen API not supported on this device");
+        console.log("Fullscreen API not supported - using scroll to hide address bar");
+        window.scrollTo(0, 1);
     }
 }
 
@@ -1547,13 +1578,29 @@ async function initializeMobileFeatures() {
         // Request wake lock
         await requestWakeLock();
         
+        // For Chrome Android: maintain hidden address bar on scroll
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (window.scrollY < 1) {
+                    window.scrollTo(0, 1);
+                }
+            }, 100);
+        }, { passive: true });
+        
         // Request fullscreen on first user interaction
         // (browsers require user gesture for fullscreen)
         const enableFullscreenOnInteraction = () => {
             requestFullscreen();
-            // Remove listener after first interaction
-            document.removeEventListener('touchstart', enableFullscreenOnInteraction);
-            document.removeEventListener('click', enableFullscreenOnInteraction);
+            // Keep trying to maintain fullscreen on subsequent interactions
+            setTimeout(() => {
+                document.addEventListener('touchstart', () => {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        window.scrollTo(0, 1);
+                    }
+                }, { passive: true });
+            }, 1000);
         };
         
         document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
