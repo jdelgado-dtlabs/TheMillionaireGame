@@ -1,15 +1,19 @@
 # UPnP/SSDP Service Discovery Implementation Plan
-**Status:** 📋 Planning  
-**Branch:** feature/upnp-ssdp-discovery  
-**Created:** January 9, 2026
+**Status:** �️ Archived - Not Needed  
+**Branch:** ~~feature/upnp-ssdp-discovery~~ (not created)  
+**Created:** January 9, 2026  
+**Archived:** January 10, 2026
 
-## Overview
+## Archive Reason
+**mDNS is working reliably on Windows 10/11.** Testing confirmed that `wwtbam.local` hostname resolution works on PC, phone, and tablet without requiring UPnP/SSDP. Modern Windows has native mDNS support, making this implementation unnecessary. The existing discovery stack (mDNS + QR code + IP fallback) is sufficient.
+
+## Original Overview
 Add UPnP (Universal Plug and Play) / SSDP (Simple Service Discovery Protocol) alongside existing mDNS to provide better Windows network discovery support for the Millionaire Game web server.
 
-## Problem Statement
-- **mDNS limitations:** Windows doesn't resolve its own .local domains (though other devices work fine)
+## Original Problem Statement (Incorrect Assumption)
+- **mDNS limitations:** Windows doesn't resolve its own .local domains (though other devices work fine) - **PROVEN FALSE**
 - **Current workaround:** Users must manually type IP address (or scan QR code)
-- **Goal:** Provide automatic discovery that works well on Windows networks
+- **Goal:** Provide automatic discovery that works well on Windows networks - **ALREADY ACHIEVED WITH mDNS**
 
 ## Why UPnP/SSDP?
 
