@@ -555,15 +555,27 @@ public class WebServerHost : IDisposable
             await next();
         });
 
-        // Add cache prevention headers for privacy/security
+        // Add cache headers for session-appropriate caching (ephemeral native app experience)
         app.Use(async (context, next) =>
         {
             var path = context.Request.Path.Value?.ToLowerInvariant();
-            if (path != null && (path.EndsWith(".html") || path.EndsWith(".js") || path.EndsWith(".css") || path == "/"))
+            if (path != null)
             {
-                context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
-                context.Response.Headers["Pragma"] = "no-cache";
-                context.Response.Headers["Expires"] = "0";
+                // HTML files: No caching (always fetch fresh for latest game state)
+                if (path.EndsWith(".html") || path == "/")
+                {
+                    context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+                    context.Response.Headers["Pragma"] = "no-cache";
+                    context.Response.Headers["Expires"] = "0";
+                }
+                // Static assets (JS, CSS, images): Session-appropriate caching (4 hours)
+                // Matches SESSION_CONFIG.maxSessionDuration for ephemeral experience
+                else if (path.EndsWith(".js") || path.EndsWith(".css") || 
+                         path.EndsWith(".png") || path.EndsWith(".jpg") || 
+                         path.EndsWith(".svg") || path.EndsWith(".ico"))
+                {
+                    context.Response.Headers["Cache-Control"] = "public, max-age=14400"; // 4 hours
+                }
             }
             await next();
         });

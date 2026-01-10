@@ -5,7 +5,42 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ## [Unreleased] - 2026-01-09
 
 ### Added
-- **Mobile Features** ✅ NEW
+- **Ephemeral Native-Like Web App Experience** ✅ NEW
+  * **Philosophy:** App feels native during gameplay but leaves no persistent trace afterward (like a carnival ticket)
+  * **Phase 1: Installation Prevention**
+    - Added `beforeinstallprompt` event handler to block PWA installation prompts on all browsers
+    - Updated viewport meta tag with `user-scalable=no` for native app feel
+    - Changed status bar style to `black-translucent` for immersive mobile experience
+    - Added `theme-color` meta tag (#FFD700 gold) for Android status bar theming
+    - Added `nosnippet` to robots meta tag for privacy
+    - Explicitly prevented manifest.json link to disable "Add to Home Screen" prompts
+    - Added CSS `overscroll-behavior-y: contain` to prevent pull-to-refresh gesture
+    - Added CSS `touch-action: pan-y` to remove 300ms tap delay on mobile
+  * **Phase 2: Visual Polish & Touch Interactions**
+    - Added touch ripple effects on buttons using CSS pseudo-elements (::after with animated expansion)
+    - Added button scale transformation (scale(0.95)) on :active state for tactile feedback
+    - Added haptic feedback (10ms vibration pulse) on all button presses via Vibration API
+    - Added smooth screen transitions (opacity + translateX with 0.3s ease-in-out)
+    - Added answer option touch feedback (background color change + scale(0.98))
+    - Added loading spinner animations (@keyframes spin)
+    - Added accessibility focus styles (2px gold outline)
+    - All animations optimized for 60 FPS performance
+    - Prevented pull-to-refresh via touchmove event handler (JavaScript layer)
+  * **Phase 3: Session-Appropriate Caching**
+    - Updated WebServerHost.cs cache headers for ephemeral experience
+    - HTML: `Cache-Control: no-cache, no-store, must-revalidate` (always fresh)
+    - Static assets (JS/CSS/images): `Cache-Control: public, max-age=14400` (4-hour TTL, matches session timeout)
+    - Removed aggressive cache prevention on static assets (improves load performance)
+    - Cache duration aligned with SESSION_CONFIG.maxSessionDuration
+  * **Phase 4: Enhanced Cleanup & Privacy**
+    - Added `performEnhancedCleanup()` function that clears localStorage, sessionStorage, and browser caches
+    - Enhanced "Leave" button to trigger cache clearing via Cache API
+    - Releases wake lock and exits fullscreen on cleanup
+    - Added visual cleanup confirmation screen with "Session Ended" message
+    - Confirmation screen shows checkmark animation and "All data has been cleared" notice
+    - Users can safely close page after cleanup confirmation
+    - Version bumped to 0.6.4-ephemeral (Ephemeral Native-Like Experience)
+- **Mobile Features** ✅ NEW (from previous commits)
   * Added Screen Wake Lock API to keep mobile device screens on during gameplay
   * Added fullscreen mode for mobile/tablet devices (hides address bar and browser chrome)
   * Improved Chrome Android fullscreen support with scroll-to-hide and navigationUI options
@@ -17,7 +52,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Re-acquires wake lock automatically when page becomes visible after tab switching
   * Fullscreen activates on first user touch/click (browser security requirement)
   * Added mobile web app meta tags for iOS and Android standalone mode support
-- **Captive Portal Connectivity Endpoints** ✅ NEW
+- **Captive Portal Connectivity Endpoints** ✅ NEW (from previous commits)
   * Added `/hotspot-detect.html` endpoint for Apple iOS/macOS connectivity checks
   * Added `/generate_204`, `/gen_204`, `/blank.html` endpoints for Android/Google connectivity checks (multiple endpoints for different Android versions)
   * Added `/connecttest.txt` endpoint for Windows connectivity checks
