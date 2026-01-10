@@ -1672,19 +1672,29 @@ function setupCleanupHandlers() {
 async function requestWakeLock() {
     // Check if Wake Lock API is supported
     if (!('wakeLock' in navigator)) {
-        console.log("Wake Lock API not supported on this device");
+        console.log("⚠️ Wake Lock API not supported on this device");
         return;
     }
 
     try {
+        // Check document visibility state - wake lock requires visible page
+        if (document.visibilityState !== 'visible') {
+            console.log("⚠️ Document not visible, skipping wake lock request");
+            return;
+        }
+        
         wakeLock = await navigator.wakeLock.request('screen');
         console.log("✓ Wake Lock acquired - screen will stay on");
+        console.log(`Wake Lock type: ${wakeLock.type}, released: ${wakeLock.released}`);
 
         wakeLock.addEventListener('release', () => {
-            console.log("Wake Lock released");
+            console.log("⚠️ Wake Lock released");
         });
     } catch (err) {
-        console.error(`Failed to acquire Wake Lock: ${err.name}, ${err.message}`);
+        console.error(`❌ Failed to acquire Wake Lock: ${err.name}, ${err.message}`);
+        if (err.name === 'NotAllowedError') {
+            console.log("💡 Wake Lock requires user interaction - will retry on first tap");
+        }
     }
 }
 
