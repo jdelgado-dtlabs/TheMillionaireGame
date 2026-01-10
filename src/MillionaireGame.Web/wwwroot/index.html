@@ -44,6 +44,15 @@
             </div>
         </div>
         
+        <!-- Debug Panel (Mobile only) -->
+        <div id="debugPanel" style="display: none; position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.9); color: #0f0; padding: 10px; border: 1px solid #0f0; font-family: monospace; font-size: 10px; z-index: 9999; max-width: 300px; border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <strong style="color: #0ff;">DEBUG INFO</strong>
+                <button id="closeDebug" style="background: #f00; color: #fff; border: none; padding: 2px 8px; cursor: pointer; border-radius: 3px;">✕</button>
+            </div>
+            <div id="debugContent" style="line-height: 1.4;"></div>
+        </div>
+        
         <!-- Join Screen -->
         <div id="joinScreen" class="screen active">
             <div class="status disconnected">Not Connected</div>

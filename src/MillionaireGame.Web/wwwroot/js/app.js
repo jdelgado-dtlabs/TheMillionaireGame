@@ -1822,6 +1822,43 @@ function preventPullToRefresh() {
 }
 
 /**
+ * Show debug panel with device detection info (mobile/tablet only)
+ */
+function showDebugPanel(deviceType, ua) {
+    const debugPanel = document.getElementById('debugPanel');
+    const debugContent = document.getElementById('debugContent');
+    const closeButton = document.getElementById('closeDebug');
+    
+    if (!debugPanel || !debugContent) return;
+    
+    const wakeLockSupported = 'wakeLock' in navigator;
+    const wakeLockStatus = wakeLock ? `ACTIVE (${wakeLock.released ? 'released' : 'locked'})` : 
+                          wakeLockSupported ? 'Not acquired yet' : 'NOT SUPPORTED';
+    
+    const uaTruncated = ua.length > 60 ? ua.substring(0, 60) + '...' : ua;
+    
+    debugContent.innerHTML = `
+        <div><strong>Type:</strong> ${deviceType}</div>
+        <div><strong>Screen:</strong> ${window.innerWidth}x${window.innerHeight}</div>
+        <div><strong>Touch:</strong> ${'ontouchstart' in window || navigator.maxTouchPoints > 0 ? 'YES' : 'NO'}</div>
+        <div><strong>Wake Lock:</strong> ${wakeLockStatus}</div>
+        <div style="margin-top: 5px; font-size: 8px; opacity: 0.7;"><strong>UA:</strong><br>${uaTruncated}</div>
+    `;
+    
+    debugPanel.style.display = 'block';
+    
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+        debugPanel.style.display = 'none';
+    }, 10000);
+    
+    // Close button handler
+    closeButton.onclick = () => {
+        debugPanel.style.display = 'none';
+    };
+}
+
+/**
  * Initialize mobile features (wake lock, fullscreen, haptic feedback, pull-to-refresh prevention)
  */
 async function initializeMobileFeatures() {
@@ -1834,6 +1871,11 @@ async function initializeMobileFeatures() {
     console.log(`User Agent: ${ua}`);
     console.log(`Touch support: ${'ontouchstart' in window || navigator.maxTouchPoints > 0}`);
     console.log("=======================");
+    
+    // Show debug panel on mobile/tablet devices
+    if (deviceType === "Mobile" || deviceType === "Tablet") {
+        showDebugPanel(deviceType, ua);
+    }
     
     // Only apply to mobile and tablet devices
     if (deviceType === "Mobile" || deviceType === "Tablet") {
