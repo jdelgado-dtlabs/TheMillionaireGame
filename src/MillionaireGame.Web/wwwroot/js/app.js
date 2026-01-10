@@ -1439,6 +1439,26 @@ function showScreen(screenId) {
     }
 }
 
+/**
+ * Adjust container max-height dynamically based on actual screen dimensions
+ */
+function adjustContainerHeight() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    
+    // Get actual viewport height
+    const viewportHeight = window.innerHeight;
+    
+    // Account for body padding (20px top + 20px bottom = 40px total)
+    const bodyPadding = 40;
+    const maxHeight = viewportHeight - bodyPadding;
+    
+    // Apply the calculated max-height
+    container.style.maxHeight = `${maxHeight}px`;
+    
+    console.log(`Container max-height adjusted to ${maxHeight}px (viewport: ${viewportHeight}px, padding: ${bodyPadding}px)`);
+}
+
 // ============================================================================
 // Event Listeners & Initialization
 // ============================================================================
@@ -1840,6 +1860,16 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Setup cleanup handlers for privacy/security
     setupCleanupHandlers();
+    
+    // Adjust container height based on screen dimensions
+    adjustContainerHeight();
+    
+    // Re-adjust on window resize and orientation change
+    window.addEventListener('resize', adjustContainerHeight);
+    window.addEventListener('orientationchange', () => {
+        // Delay slightly to ensure orientation change is complete
+        setTimeout(adjustContainerHeight, 100);
+    });
     
     // Pre-fill session code (hidden field) with auto-generated ID
     const sessionCode = getSessionCode();
