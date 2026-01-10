@@ -264,21 +264,6 @@ public class GameDatabaseContext : IDisposable
             await command.ExecuteNonQueryAsync();
         }
 
-        // Create telemetry tables by executing the SQL script
-        var telemetryScript = await System.IO.File.ReadAllTextAsync(
-            System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "sql", "telemetry_tables.sql"));
-
-        // Split by GO statements and execute each batch
-        var batches = telemetryScript.Split(new[] { "\r\nGO\r\n", "\nGO\n" }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var batch in batches)
-        {
-            if (!string.IsNullOrWhiteSpace(batch))
-            {
-                using var command = new SqlCommand(batch, useDbConnection);
-                await command.ExecuteNonQueryAsync();
-            }
-        }
-
         useDbConnection.Close();
     }
 
