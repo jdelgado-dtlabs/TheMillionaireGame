@@ -12,7 +12,7 @@ namespace MillionaireGame.Watchdog;
 /// </summary>
 public class GitHubOAuthManager
 {
-    private const string ClientId = "Ov23liYOUR_CLIENT_ID_HERE"; // TODO: Replace with actual Client ID from GitHub OAuth App
+    private const string ClientId = "Ov23li3IoDybo9YFX1wm"; // GitHub OAuth App Client ID
     private const string DeviceCodeUrl = "https://github.com/login/device/code";
     private const string AccessTokenUrl = "https://github.com/login/oauth/access_token";
     private const string AuthorizeUrl = "https://github.com/login/device";
