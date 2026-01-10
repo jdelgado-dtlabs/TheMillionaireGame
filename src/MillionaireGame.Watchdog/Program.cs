@@ -1,33 +1,23 @@
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace MillionaireGame.Watchdog;
 
 class Program
 {
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetConsoleWindow();
-
-    [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    private const int SW_HIDE = 0;
-    private const int SW_SHOW = 5;
-
+    [STAThread]
     static void Main(string[] args)
     {
-        // Hide console window on startup
-        var consoleWindow = GetConsoleWindow();
-        ShowWindow(consoleWindow, SW_HIDE);
-        
-        Console.Title = "Millionaire Game - Watchdog";
+        // Initialize Windows Forms for hidden operation
+        Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
         
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        Console.WriteLine("====================================");
-        Console.WriteLine("Millionaire Game Watchdog");
-        Console.WriteLine($"Version {version?.ToString(3) ?? "1.0.0"}");
-        Console.WriteLine("====================================");
-        Console.WriteLine();
+        WatchdogConsole.Info("====================================");
+        WatchdogConsole.Info("Millionaire Game Watchdog");
+        WatchdogConsole.Info($"Version {version?.ToString(3) ?? "1.0.0"}");
+        WatchdogConsole.Info("====================================");
+        WatchdogConsole.Info("");
 
         // Get application path
         string appPath;
@@ -48,17 +38,20 @@ class Program
 
         if (!File.Exists(appPath))
         {
-            Console.WriteLine($"ERROR: Application not found at: {appPath}");
-            Console.WriteLine();
-            Console.WriteLine("Usage: MillionaireGame.Watchdog.exe [path-to-MillionaireGame.exe] [app-arguments]");
-            Console.WriteLine();
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
+            WatchdogConsole.Error($"Application not found at: {appPath}");
+            WatchdogConsole.Info("Usage: MillionaireGame.Watchdog.exe [path-to-MillionaireGame.exe] [app-arguments]");
+            
+            // Show error dialog since this is a fatal error
+            MessageBox.Show(
+                $"ERROR: Application not found at:\n{appPath}\n\nUsage: MillionaireGame.Watchdog.exe [path-to-MillionaireGame.exe] [app-arguments]",
+                "Millionaire Game Watchdog - Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
             return;
         }
 
         // Start monitoring
-        var monitor = new ProcessMonitor(appPath, appArgs, () => ShowConsoleWindow());
+        var monitor = new ProcessMonitor(appPath, appArgs);
         
         try
         {
@@ -66,22 +59,21 @@ class Program
         }
         catch (Exception ex)
         {
-            ShowConsoleWindow();
-            Console.WriteLine($"[Watchdog] FATAL ERROR: {ex.Message}");
-            Console.WriteLine(ex.StackTrace);
-            Console.WriteLine();
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
+            WatchdogConsole.Error($"FATAL ERROR in watchdog: {ex.Message}");
+            WatchdogConsole.Error($"Exception: {ex.GetType().Name}");
+            WatchdogConsole.Error($"Stack trace: {ex.StackTrace}");
+            
+            // Show error dialog
+            MessageBox.Show(
+                $"Watchdog FATAL ERROR:\n{ex.Message}\n\nLog file: {WatchdogConsole.CurrentLogFilePath}",
+                "Millionaire Game Watchdog - Fatal Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
         finally
         {
             monitor.Shutdown();
+            WatchdogConsole.Shutdown();
         }
-    }
-
-    private static void ShowConsoleWindow()
-    {
-        var consoleWindow = GetConsoleWindow();
-        ShowWindow(consoleWindow, SW_SHOW);
     }
 }
