@@ -610,6 +610,14 @@ public partial class FFFOnlinePanel : UserControl
                 btnIntroExplain.BackColor = Color.Gray;
                 btnShowQuestion.Enabled = true;
                 btnShowQuestion.BackColor = Color.LightGreen;
+                btnRevealAnswers.Enabled = false;
+                btnRevealAnswers.BackColor = Color.Gray;
+                btnRevealCorrect.Enabled = false;
+                btnRevealCorrect.BackColor = Color.Gray;
+                btnShowWinners.Enabled = false;
+                btnShowWinners.BackColor = Color.Gray;
+                btnWinner.Enabled = false;
+                btnWinner.BackColor = Color.Gray;
                 break;
                 
             case FFFFlowState.QuestionShown:
