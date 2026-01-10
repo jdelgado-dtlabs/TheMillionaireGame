@@ -1075,8 +1075,19 @@ function startFFFQuestion(data) {
     // Update UI with question text
     const questionText = data.Question || data.question || data.QuestionText || data.questionText || 'Question';
     document.getElementById('fffQuestionText').textContent = questionText;
-    document.getElementById('btnSubmitFFF').disabled = false;
+    
+    // Re-enable submit button and remove disabled styling
+    const submitBtn = document.getElementById('btnSubmitFFF');
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('disabled-mode');
+    
     document.getElementById('fffMessage').style.display = 'none';
+    
+    // Re-enable answer selection
+    document.querySelectorAll('.fff-answer-item').forEach(item => {
+        item.style.pointerEvents = 'auto';
+        item.style.opacity = '1';
+    });
     
     // Render answer list
     renderFFFAnswers();
@@ -1421,6 +1432,8 @@ function showScreen(screenId) {
     const screen = document.getElementById(screenId);
     if (screen) {
         screen.classList.add('active');
+        // Scroll to top when showing new screen to ensure visibility
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
         console.error(`Screen not found: ${screenId}`);
     }
