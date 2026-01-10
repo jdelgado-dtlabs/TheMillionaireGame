@@ -34,7 +34,7 @@ This integration communicates directly with Stream Deck hardware through the Str
 - Stream Deck Plus - Different layout, not tested
 
 ### Software
-- **The Millionaire Game v1.0+** - Stream Deck support built-in
+- **The Millionaire Game v1.0.5+** - Stream Deck support built-in with embedded images
 - **Windows 10/11** - Required operating system
 - **NO Stream Deck Software Required** - Direct hardware control via StreamDeckSharp library
 - **Stream Deck Software Must Be CLOSED** - Conflicts with direct hardware control

@@ -27,6 +27,13 @@ This index helps you find the right documentation for your needs.
 Documents for active development and near-term planning:
 
 - **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - ✅ v1.0.1 released with post-release fixes
+- **[`GITHUB_CRASH_REPORTING_PLAN.md`](active/GITHUB_CRASH_REPORTING_PLAN.md)** - 📋 GitHub OAuth crash reporting implementation plan
+- **[`STATE_SYNC_IMPLEMENTATION_PLAN.md`](active/STATE_SYNC_IMPLEMENTATION_PLAN.md)** - Web state synchronization
+- **[`DATABASE_MIGRATION_SYSTEM_PLAN.md`](active/DATABASE_MIGRATION_SYSTEM_PLAN.md)** - Database migration framework
+- **[`MDNS_SERVICE_DISCOVERY_PLAN.md`](active/MDNS_SERVICE_DISCOVERY_PLAN.md)** - mDNS service discovery
+- **[`PWA_NATIVE_APP_IMPLEMENTATION_PLAN.md`](active/PWA_NATIVE_APP_IMPLEMENTATION_PLAN.md)** - Progressive Web App implementation
+- **[`UPNP_SSDP_DISCOVERY_PLAN.md`](active/UPNP_SSDP_DISCOVERY_PLAN.md)** - UPnP/SSDP discovery
+- **[`V1.0.5_MULTIMONITOR_RECOVERY_PLAN.md`](active/V1.0.5_MULTIMONITOR_RECOVERY_PLAN.md)** - Multi-monitor recovery
 
 ### `/sessions/` - Development History
 Chronological session summaries and checkpoints:

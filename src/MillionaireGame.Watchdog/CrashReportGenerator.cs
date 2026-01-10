@@ -74,27 +74,57 @@ public class CrashReportGenerator
         report.AppendLine($"- Threads: {crashInfo.LastThreadCount}");
         report.AppendLine();
 
-        // GameConsole log
+        // Application logs
         report.AppendLine("[RECENT LOGS]");
         try
         {
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GameConsole.log");
-            if (File.Exists(logPath))
+            // Logs are stored in %LOCALAPPDATA%\TheMillionaireGame\Logs\
+            // Filename format: yyyy-MM-dd_HH-mm-ss_{prefix}.log
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var logsDirectory = Path.Combine(localAppData, "TheMillionaireGame", "Logs");
+            
+            if (Directory.Exists(logsDirectory))
             {
-                var logLines = File.ReadLines(logPath).Reverse().Take(100).Reverse();
-                foreach (var line in logLines)
+                // Include both game and webserver logs
+                var logPrefixes = new[] { "game", "webserver" };
+                bool foundAnyLogs = false;
+                
+                foreach (var prefix in logPrefixes)
                 {
-                    report.AppendLine(line);
+                    var logFiles = Directory.GetFiles(logsDirectory, $"*_{prefix}.log")
+                        .OrderByDescending(f => File.GetLastWriteTime(f))
+                        .ToList();
+                    
+                    if (logFiles.Count > 0)
+                    {
+                        foundAnyLogs = true;
+                        var mostRecentLog = logFiles[0];
+                        report.AppendLine($"--- {prefix.ToUpper()} LOG: {Path.GetFileName(mostRecentLog)} ---");
+                        report.AppendLine();
+                        
+                        // Read last 50 lines per log (100 total max)
+                        var logLines = File.ReadLines(mostRecentLog).Reverse().Take(50).Reverse();
+                        foreach (var line in logLines)
+                        {
+                            report.AppendLine(line);
+                        }
+                        report.AppendLine();
+                    }
+                }
+                
+                if (!foundAnyLogs)
+                {
+                    report.AppendLine("(No log files found)");
                 }
             }
             else
             {
-                report.AppendLine("(Log file not found)");
+                report.AppendLine($"(Log directory not found: {logsDirectory})");
             }
         }
         catch (Exception ex)
         {
-            report.AppendLine($"(Error reading log: {ex.Message})");
+            report.AppendLine($"(Error reading logs: {ex.Message})");
         }
         report.AppendLine();
 

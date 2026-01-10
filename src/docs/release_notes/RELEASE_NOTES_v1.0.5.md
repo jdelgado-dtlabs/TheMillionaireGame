@@ -1,196 +1,145 @@
-# Release Notes - Version 1.0.5
-**The Millionaire Game - C# Edition**  
-**Release Date**: January 9, 2026  
-**Build Status**: ✅ Production Ready
-
----
+# Release v1.0.5: Mobile/Tablet Optimization & Critical Bug Fixes
 
 ## 🎯 Overview
+Version 1.0.5 focuses on **mobile/tablet optimization**, **critical bug fixes** for the Fastest Finger First (FFF) and Ask The Audience (ATA) online systems, **multi-monitor support restoration**, and **comprehensive web state synchronization**. This release enhances the audience participation experience with improved device detection, responsive design fixes, and diagnostic tools for live show troubleshooting.
 
-Version 1.0.5 focuses on **mobile/tablet optimization** and **critical bug fixes** for the Fastest Finger First (FFF) online system. This release enhances the audience participation experience with improved device detection, responsive design fixes, and diagnostic tools for live show troubleshooting.
+## ⭐ Major Features
 
----
-
-## ✨ What's New
+### Multi-Monitor Support Restored
+- Screens tab re-enabled with safe async monitor detection
+- MonitorInfoService with 2-second timeout protection and comprehensive error handling
+- UID-based monitor ordering to match Windows display numbers
+- Lazy initialization - monitors load only when Screens tab selected
+- Monitor assignments persist across sessions
+- Screens auto-open at startup when full screen enabled
+- Single WMI query optimization (consolidated from 3 parallel queries)
+- Fixed dropdown enable/disable logic - checkboxes properly disable monitor selectors when full screen active
 
 ### Enhanced Mobile/Tablet Detection
-- **Multi-Strategy Device Detection**: Implements 4 detection strategies to accurately identify tablets and mobile devices
-  - User-Agent pattern matching
-  - Android-specific checks (Android without Mobile flag)
-  - Screen size heuristics (>=768px width or height)
-  - Touch capability + screen size combination
-- **Proper Tablet Classification**: Android tablets now correctly detected as "Tablet" instead of "Desktop"
-- **Mobile Feature Activation**: Tablets now receive wake lock, fullscreen mode, and haptic feedback
-- **Console Logging**: Each detection path logs to console for debugging
+- Multi-strategy device detection (UA patterns, Android-specific checks, screen size heuristics >=768px, touch + size combination)
+- Proper classification of Android tablets (previously detected as Desktop)
+- Mobile features now activate correctly on all tablet devices
+- Console logging for each detection path
 
 ### On-Screen Debug Panel
-- **Live Show Diagnostics**: Fixed-position overlay showing device information
-- **Information Displayed**:
-  - Device type (Mobile/Tablet/Desktop)
-  - Screen resolution
-  - Touch support status
-  - Wake lock status
-  - User agent string (truncated)
-- **Auto-Hide**: Panel automatically disappears after 10 seconds
-- **Manual Close**: Red X button for immediate dismissal
-- **Mobile/Tablet Only**: Only displays on Mobile and Tablet devices
-- **Crash Prevention**: Comprehensive error handling with 100ms DOM readiness delay
-- **Use Case**: Helps operators diagnose audience member connection issues during live shows
+- Fixed-position diagnostic overlay showing device information (device type, screen resolution, touch support, wake lock status, user agent)
+- Auto-hides after 10 seconds with manual close button
+- Only displays on Mobile/Tablet devices
+- Valuable for troubleshooting audience member connection issues during live shows
 
 ### Mobile Container Optimization
-- **Dynamic Height Calculation**: JavaScript calculates container max-height using actual `window.innerHeight - 40px`
-- **More Reliable than Viewport Units**: Avoids CSS vh/dvh inconsistencies across mobile browsers
-- **Orientation Support**: Automatically recalculates on resize and orientation change (100ms delay)
-- **Vertical Centering**: Uses `margin: auto 0` for proper centering with overflow support
-- **Internal Scrolling**: Maintains `overflow-y: auto` when content exceeds calculated height
+- Dynamic height calculation using actual window.innerHeight - 40px
+- More reliable than CSS vh/dvh units across mobile browsers
+- Automatic recalculation on resize and orientation change
+- Vertical centering with overflow support
+- Internal scrolling when content exceeds calculated height
 
----
+### Web State Synchronization (NEW)
+- **Mid-Game Joiners**: Clients joining during active game phases now see current state instead of lobby
+- **ATA Intro Sync**: Participants joining during ATA intro see question/answers with disabled buttons
+- **ATA Voting Sync**: Participants joining during voting see active question with vote buttons enabled
+- **VotingStartTime Tracking**: New database field separates intro phase (120s) from voting window (60s)
+- **Session Persistence**: LIVE session created on web server startup (prevents auto-create race conditions)
+- **Smart Join Logic**: Frontend only shows connected screen if actually in lobby state
+
+### mDNS Hostname Resolution (NEW)
+- **A/AAAA Records**: Added IPv4 (A) and IPv6 (AAAA) records for hostname resolution
+- **Complete mDNS**: Previously only had SRV/TXT service discovery records
+- **`wwtbam.local` Resolution**: Clients can now resolve hostname to actual IP addresses
+- **120-second TTL**: Appropriate record caching for local network
 
 ## 🐛 Critical Bug Fixes
 
+### FFF Online System Fixes
+- **Rankings Display**: Fixed FFF rankings always showing 0 - changed desktop client to call correct hub method (`GetFFFResults` vs non-existent `CalculateRankings`)
+- **Player Pre-Selection Removed**: Eliminated confusing `SelectFFFPlayers` endpoint that randomly picked 8 players before question shown
+- **All Can Play**: All participants in lobby can now answer FFF questions, top 8 fastest correct answers shown in rankings
+- **Host Intro Broadcast**: Fixed Host Intro not broadcasting to waiting lobby - made sessionId nullable, broadcasts to all clients when null
+
+### ATA Online System Fixes (CRITICAL)
+- **ATA Mode Detection**: Fixed ATA always showing offline mode despite participants in lobby
+- **LIVE Session Refactor**: All ATA methods now use direct `LIVE` session reference instead of querying for Active status
+- **Session Status Compatibility**: Removed incompatible Active session queries (sessions change status throughout game lifecycle)
+- **Startup Cleanup**: Reset LIVE session to Active status on web server start for proper state management
+- **Vote Timeout Fix**: Votes no longer rejected as "70+ seconds late" when submitted within 2-3 seconds
+  - Now uses `VotingStartTime` (60s window) instead of `QuestionStartTime` (120s intro phase)
+  - Prevents false timeout rejections
+
+### Answer Letter Wrapping Fix
+- Increased answer letter rendering width from 60 to 80 pixels across all three screen forms (Host, Guest, TV)
+- Prevents letter and colon separation ("A:" → "A\n:") during text wrapping
+- Fixed graphical glitches where letters wrapped incorrectly at scaled resolutions
+
 ### FFF No-Winner Scenario Handling
-**Problem**: When no participants answered correctly in FFF mode, clicking "Confirm Winner" threw an error instead of showing the retry message.
+- Fixed button enable logic when no participants answered correctly
+- Orange button color as visual indicator for no-winner scenario
+- Proper retry flow with reset to QuestionReady state
+- Explicit button state management to prevent re-clicking
 
-**Root Cause**: 
-- `UpdateUIState()` didn't distinguish between single-winner and no-winner scenarios
-- `btnWinner_Click()` had overly strict guard preventing no-winner code execution
+### Web UI Improvements
+- Fixed submit button appearing greyed but clickable on new questions
+- Auto scroll-to-top on screen transitions prevents hidden content
+- Dynamic container height prevents viewport overflow on small screens
+- Enhanced wake lock debugging with comprehensive error logging
 
-**Solution**:
-- Split `UpdateUIState()` logic into 3 branches: multi-winner/single-winner/no-winner
-- No-winner button now shows **orange color** as visual indicator
-- Removed strict guard to allow no-winner handling code to execute
-- QuestionReady state explicitly disables all downstream buttons to prevent re-clicking
+### Monitor Detection Safety
+- All WMI queries now async with timeout protection
+- No more UI thread blocking during monitor detection
+- Graceful degradation on WMI failure
+- Comprehensive error handling throughout
 
-**Result**: 
-- Clicking Confirm Winner with no winners properly displays "❌ No Winners" message
-- Plays wrong answer sound
-- Broadcasts NoWinner to web clients
-- Resets to QuestionReady state for retry
+## 🛠️ Deployment Improvements
 
-### Web UI Submit Button Visual State
-**Problem**: Submit button appeared greyed out but was still functionally clickable on new FFF questions.
+- **Stream Deck Images Embedded**: All 12 Stream Deck PNG files now part of executable
+- **Telemetry Migration Integrated**: Migration 00007 creates telemetry tables automatically
+- **Zero Manual Setup**: No separate SQL scripts to run
+- **Clean Build**: Zero compiler warnings
 
-**Root Cause**: 'disabled-mode' CSS class wasn't removed when re-enabling button.
-
-**Solution**:
-- `startFFFQuestion()` now explicitly removes 'disabled-mode' class alongside setting `disabled = false`
-- Answer items properly re-enabled with `pointerEvents: 'auto'` and `opacity: 1`
-
-**Result**: Submit button appears and functions correctly on all new questions.
-
-### Web Screen Scrolling Issues
-**Problem**: Timer expiration caused orange message boxes to appear below viewport without scrolling ability.
-
-**Root Cause**: Screen transitions didn't ensure new content was visible.
-
-**Solution**:
-- Added `window.scrollTo({ top: 0, behavior: 'smooth' })` to `showScreen()` function
-- All screen transitions now automatically scroll to top
-
-**Result**: Newly displayed content always visible without manual scrolling.
-
-### Wake Lock Debugging Enhancements
-**Improvements**:
-- Added `document.visibilityState` check before requesting wake lock
-- Enhanced error logging with emoji indicators (✓, ⚠️, ❌, 💡)
-- Specific handling for `NotAllowedError` (requires user interaction)
-- Logs wake lock type and released status for diagnostics
-
----
-
-## 🔄 Changes
-
-### FFF Instructions Removed from Web Client
-- Removed yellow instruction box from web interface
-- Instructions explained pregame by host during setup phase
-- Cleaner, more streamlined participant interface
-
----
-
-## 📊 Technical Details
-
-### Files Modified (14 commits)
-1. `FFFOnlinePanel.cs` - FFF no-winner flow fixes (commits 3620524, 92ef1d9)
-2. `app.js` - Mobile detection, debug panel, container height, scrolling (commits 9b66083, eec1e65, eb598a8, 2475473, ef71101, e0d7e1a, 3f0edd7)
-3. `index.html` - Debug panel structure, removed instructions (commits d790e6a, ef71101)
-4. `app.css` - Container positioning and overflow (commits a02528b, eec1e65, eb598a8)
-
-### JavaScript Version
-- Bumped to **0.6.4-ephemeral** (Ephemeral Native-Like Experience with mobile fixes)
-
-### Browser Compatibility
-- Tested on Chrome Android (tablets and phones)
-- Tested on Mobile Safari (iOS)
-- Tested on Desktop Chrome, Firefox, Edge
-
-### Build Status
-- ✅ Build succeeded with 2 acceptable warnings (MDnsServiceManager nullable fields)
-- ✅ All 14 commits pushed to origin/master-v1.0.5
-- ✅ Application tested on Desktop, Mobile, and Tablet devices
-
----
-
-## 📦 Deployment
+## 📥 Installation
 
 ### Requirements
 - .NET 8 Desktop Runtime (x64)
 - Windows 10/11 (64-bit)
 - SQL Server LocalDB or SQL Server Express
 
-### Installation
-1. Run `MillionaireGameSetup.exe`
+### New Installation
+1. Run `MillionaireGameSetup-v1.0.5.exe`
 2. Follow installation wizard
-3. Launch application via Start Menu or Desktop shortcut
+3. Launch application
 
-### Upgrade from v1.0.1
-- Application automatically migrates existing database schema
+### Upgrade from v1.0.1+
+- Application automatically migrates database schema (including new VotingStartTime field)
 - Settings and question data preserved
 - No manual intervention required
 
----
+## 📝 What's Changed
 
-## 🎮 Usage Notes
+**Full Changelog**: https://github.com/Macronair/TheMillionaireGame/compare/v1.0.1...v1.0.5
 
-### Mobile/Tablet Participation
-- Android tablets now properly detected and receive mobile features
-- Wake lock keeps screen on during gameplay
-- Fullscreen mode hides browser chrome for immersive experience
-- Haptic feedback on button presses (10ms vibration)
-- Debug panel helps troubleshoot connection issues
+### Commits Summary
+- 20+ commits merged to master
+- Multi-monitor support restoration with dropdown UX fixes
+- Mobile/tablet detection enhancements
+- **FFF online system fixes** (rankings, pre-selection, Host Intro broadcast)
+- **ATA online system fixes** (offline mode detection, vote timeout, LIVE session refactor)
+- **Web state synchronization** (mid-game joiners, ATA intro/voting sync)
+- **mDNS hostname resolution** (A/AAAA records)
+- Answer letter wrapping fixes
+- FFF no-winner flow fixes
+- Container overflow and scrolling fixes
+- Build system improvements
 
-### Operator Guide
-- **FFF No-Winner Scenario**: Orange "Confirm Winner" button indicates no winners, click to show retry message
-- **Debug Panel**: Visible on audience mobile/tablet devices for 10 seconds after page load
-- **Network Discovery**: Continue using wwtbam.local for automatic IP discovery
+## 📚 Documentation
 
----
+- Updated User Guide with mobile/tablet information
+- Enhanced troubleshooting documentation
+- Migration system documentation (now includes 7 automatic migrations)
 
-## 🔮 What's Next
-
-Version 1.0.6 development planning:
-- Database migration system for future schema changes
-- Progressive Web App (PWA) enhancements
-- UPnP/SSDP discovery alternatives
-- State synchronization improvements
-
----
-
-## 📝 Credits
+## 👏 Credits
 
 **Development**: Jean Francois Delgado  
-**Based on Original Work**: Marco Loenen (Macronair)  
-**License**: See LICENSE file
+**Based on Original Work**: Marco Loenen (Macronair)
 
 ---
 
-## 🐛 Known Issues
-
-- None reported for v1.0.5
-
----
-
-## 📞 Support
-
-For issues, questions, or feature requests:
-- GitHub Issues: https://github.com/Macronair/TheMillionaireGame/issues
-- Wiki: https://github.com/Macronair/TheMillionaireGame/wiki
+**Release Date**: January 9, 2026

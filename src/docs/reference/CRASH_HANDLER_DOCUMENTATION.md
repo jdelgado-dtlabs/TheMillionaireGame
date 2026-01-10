@@ -153,12 +153,32 @@ Report Generated: 2024-01-15 14:35:43
 - Threads: 42
 
 [RECENT LOGS]
-(Last 100 lines from GameConsole.log)
+--- GAME LOG: 2024-01-15_14-00-00_game.log ---
+
+(Last 50 lines from game log)
+
+--- WEBSERVER LOG: 2024-01-15_14-00-00_webserver.log ---
+
+(Last 50 lines from webserver log)
 
 ====================================
 END OF CRASH REPORT
 ====================================
 ```
+
+### Log File Location
+The crash report includes recent logs from:
+```
+%LOCALAPPDATA%\TheMillionaireGame\Logs\
+```
+
+Both application logs are included:
+- **Game Log**: `*_game.log` (last 50 lines)
+- **WebServer Log**: `*_webserver.log` (last 50 lines)
+
+Filename format: `yyyy-MM-dd_HH-mm-ss_{prefix}.log`
+
+The most recent log file for each type is automatically selected.
 
 ### Report Retention
 - Maximum 10 reports are kept

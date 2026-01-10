@@ -22,6 +22,10 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);lib\**</DefaultItemExcludes>
     <!-- Prevent any content files from being included in single file -->
     <IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+    <!-- Include native libraries in single file bundle (extracted at runtime) -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- Exclude satellite assemblies (localization) - app is English only -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -90,11 +94,10 @@
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
       <SqlFiles Include="lib\sql\**\*.*" />
-      <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(OutputPath)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(OutputPath)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(OutputPath)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <!-- StreamDeck DLLs are copied to output root automatically via Reference Private=true -->
   </Target>
 
   <!-- Copy all lib assets after publish -->
@@ -102,15 +105,10 @@
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
       <SqlFiles Include="lib\sql\**\*.*" />
-      <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
-      <StreamDeckDlls Include="lib\StreamDeck\*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(SoundsFiles)" DestinationFiles="@(SoundsFiles->'$(PublishDir)lib\sounds\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(SqlFiles)" DestinationFiles="@(SqlFiles->'$(PublishDir)lib\sql\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <!-- Copy StreamDeck DLLs to root for single-file publish -->
-    <Copy SourceFiles="@(StreamDeckDlls)" DestinationFolder="$(PublishDir)" />
-    <!-- Also copy to lib folder for reference -->
-    <Copy SourceFiles="@(StreamDeckFiles)" DestinationFiles="@(StreamDeckFiles->'$(PublishDir)lib\StreamDeck\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <!-- StreamDeck DLLs are copied to output root automatically via Reference Private=true -->
   </Target>
 
   <!-- Create shortcut to AppData folder after build -->

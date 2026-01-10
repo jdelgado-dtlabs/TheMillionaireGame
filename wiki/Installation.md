@@ -26,8 +26,8 @@ The Windows installer handles all dependencies and configuration automatically.
 
 #### Step 1: Download the Installer
 1. Visit the [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
-2. Find the latest release (e.g., `v1.0.0`)
-3. Download `MillionaireGameSetup.exe`
+2. Find the latest release (e.g., `v1.0.5`)
+3. Download `MillionaireGameSetup-v1.0.5.exe` (approximately 190 MB)
 
 #### Step 2: Run the Installer
 1. Double-click `MillionaireGameSetup.exe`

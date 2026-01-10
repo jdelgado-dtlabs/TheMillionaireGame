@@ -2,10 +2,15 @@
 
 All notable changes to The Millionaire Game C# Edition will be documented in this file.
 
-## [Unreleased] - 2026-01-09
+## [Unreleased]
 
 ### Added
-- **Ephemeral Native-Like Web App Experience** ✅ NEW
+- Future features will be listed here
+
+## [v1.0.5] - 2026-01-09
+
+### Added
+- **Ephemeral Native-Like Web App Experience** ✅
   * **Philosophy:** App feels native during gameplay but leaves no persistent trace afterward (like a carnival ticket)
   * **Phase 1: Installation Prevention**
     - Added `beforeinstallprompt` event handler to block PWA installation prompts on all browsers
@@ -40,7 +45,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
     - Confirmation screen shows checkmark animation and "All data has been cleared" notice
     - Users can safely close page after cleanup confirmation
     - Version bumped to 0.6.4-ephemeral (Ephemeral Native-Like Experience)
-- **Mobile Features** ✅ NEW (from previous commits)
+- **Mobile Features** ✅
   * Added Screen Wake Lock API to keep mobile device screens on during gameplay
   * Added fullscreen mode for mobile/tablet devices (hides address bar and browser chrome)
   * Improved Chrome Android fullscreen support with scroll-to-hide and navigationUI options
@@ -52,35 +57,22 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Re-acquires wake lock automatically when page becomes visible after tab switching
   * Fullscreen activates on first user touch/click (browser security requirement)
   * Added mobile web app meta tags for iOS and Android standalone mode support
-- **Captive Portal Connectivity Endpoints** ✅ NEW (from previous commits)
+- **Captive Portal Connectivity Endpoints** ✅
   * Added `/hotspot-detect.html` endpoint for Apple iOS/macOS connectivity checks
   * Added `/generate_204`, `/gen_204`, `/blank.html` endpoints for Android/Google connectivity checks (multiple endpoints for different Android versions)
   * Added `/connecttest.txt` endpoint for Windows connectivity checks
   * Added hostname-based Android captive portal detection middleware (handles Google/gstatic hostname checks on root path)
   * Prevents "No Internet" warnings when devices connect to dedicated game network
   * Essential for isolated network deployments where all traffic routes to game server
-
-### Fixed
-- **Web State Synchronization** ✅ NEW
-  * Mid-game joiners now receive correct game state (ATA intro, FFF question, etc.)
-  * Fixed ATA vote timeout validation (was counting 120s intro + voting, now only 60s voting window)
-  * Created LIVE session on web server startup to prevent race conditions
-  * Added `VotingStartTime` field to track actual voting start (separate from question display)
-  * Modified join handler to not override screen when joining into active game
-  * Fixed `UpdateSessionModeAsync` to not auto-create sessions (only startup does)
-  * Added WebServerConsole logging for state sync debugging
-  * SQL migration: `00006_add_voting_start_time.sql`
-- **mDNS Hostname Resolution** ✅ NEW
+- **mDNS Hostname Resolution** ✅
   * Added A records (IPv4) and AAAA records (IPv6) to mDNS service profile
   * Completes mDNS implementation - now advertises both service discovery AND hostname resolution
   * Enables wwtbam.local to resolve to actual IP addresses (not just service discovery)
   * Fixed Windows .local domain resolution (Windows typically ignores .local domains)
   * 120-second TTL for hostname records
 
-## [v1.0.5] - 2026-01-09
-
 ### Added
-- **mDNS Service Discovery** ✅ NEW
+- **mDNS Service Discovery** ✅
   * Automatic network discovery via wwtbam.local domain
   * No more manual IP address entry for audience participation
   * Works on mobile devices, tablets, and computers
@@ -88,7 +80,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Advertises on all active network interfaces (IPv4 and IPv6)
   * Graceful degradation if mDNS not supported
   * Based on Makaretu.Dns.Multicast library (RFC 6762/6763 compliant)
-- **Multi-Monitor Support Restored** ✅ NEW
+- **Multi-Monitor Support Restored** ✅
   * Screens tab re-enabled with safe async monitor detection
   * MonitorInfoService with 2-second timeout protection and comprehensive error handling
   * UID-based monitor ordering to match Windows display numbers
@@ -98,12 +90,12 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Single WMI query optimization (consolidated from 3× parallel queries)
   * Proper dropdown enable/disable based on checkbox state
   * Event suspension patterns to prevent infinite recursion
-- **Enhanced Mobile/Tablet Detection** ✅ NEW
+- **Enhanced Mobile/Tablet Detection** ✅
   * Multi-strategy device detection: UA patterns, Android-specific checks, screen size heuristics (>=768px), touch + size combination
   * Proper classification of Android tablets (previously detected as Desktop)
   * Console logging for each detection path
   * Mobile features now activate correctly on all tablet devices
-- **On-Screen Debug Panel for Mobile/Tablet** ✅ NEW
+- **On-Screen Debug Panel for Mobile/Tablet** ✅
   * Fixed-position diagnostic overlay (top-right, green terminal style)
   * Shows device type, screen resolution, touch support, wake lock status, user agent
   * Auto-hides after 10 seconds with manual close button
@@ -113,6 +105,15 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Valuable for live show diagnostics when audience members have connection issues
 
 ### Fixed
+- **Web State Synchronization** ✅
+  * Mid-game joiners now receive correct game state (ATA intro, FFF question, etc.)
+  * Fixed ATA vote timeout validation (was counting 120s intro + voting, now only 60s voting window)
+  * Created LIVE session on web server startup to prevent race conditions
+  * Added `VotingStartTime` field to track actual voting start (separate from question display)
+  * Modified join handler to not override screen when joining into active game
+  * Fixed `UpdateSessionModeAsync` to not auto-create sessions (only startup does)
+  * Added WebServerConsole logging for state sync debugging
+  * SQL migration: `00006_add_voting_start_time.sql`
 - **FFF No-Winner Scenario Handling** ✅ CRITICAL
   * Fixed "Confirm Winner" button being enabled when no participants answered correctly
   * Button now shows orange color (visual indicator) when no winners exist

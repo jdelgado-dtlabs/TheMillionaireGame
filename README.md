@@ -2,9 +2,9 @@
 
 A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game show experience, built with .NET 8 and Windows Forms.
 
-**Version**: 1.0.0 (January 2026)  
+**Version**: 1.0.5 (January 9, 2026)  
 **Build Status**: ✅ **PERFECT** (0 warnings, 0 errors)  
-**Status**: 🎉 v1.0 Release
+**Status**: 🎉 v1.0.5 Released - Mobile/Tablet Optimizations & Critical Bug Fixes
 
 ## Quick Start
 
@@ -25,7 +25,7 @@ The wiki contains all information needed to **install, configure, and run the ga
 
 ## Project Structure
 
-- **`src/`** - Main C# solution and projects (v1.0.0)
+- **`src/`** - Main C# solution and projects (v1.0.5)
   - `MillionaireGame/` - Main game application (Windows Forms)
   - `MillionaireGame.Core/` - Core business logic and services
   - `MillionaireGame.Web/` - Web API and SignalR backend for WAPS
@@ -66,11 +66,14 @@ Browse by category:
 
 ### Web-Based Audience Participation (WAPS)
 - ✅ Real-time audience voting via mobile web interface
-- ✅ FFF (Fastest Finger First) online mode
-- ✅ SignalR-based real-time communication
+- ✅ FFF (Fastest Finger First) online mode with all-play participation
+- ✅ SignalR-based real-time communication with mid-game join support
 - ✅ QR code joining for easy mobile access
 - ✅ Progressive Web App (PWA) for cross-platform support
+- ✅ Enhanced mobile/tablet detection with on-screen debug panel
 - ✅ Device telemetry and privacy-compliant data collection
+- ✅ Dynamic container height with responsive design
+- ✅ mDNS hostname resolution (wwtbam.local)
 
 ### Technical Excellence
 - ✅ **CSCore audio engine** with DSP (silence detection, crossfading, audio queue)
@@ -94,9 +97,20 @@ Browse by category:
 
 ## Development Status
 
-✅ **Version 1.0.0 - RELEASED** (January 4, 2026)
+✅ **Version 1.0.5 - RELEASED** (January 9, 2026)
 
 All core features complete, perfect build quality (0 warnings, 0 errors), production-ready installer available.
+
+**Latest Release Highlights**:
+- Mobile/tablet optimization with enhanced device detection
+- FFF online system fixes (rankings display, all-play participation)
+- ATA online system fixes (offline mode detection, vote timeout)
+- Multi-monitor support restored with safe async detection
+- Web state synchronization for mid-game joiners
+- mDNS hostname resolution (A/AAAA records)
+- Answer letter wrapping fixes across all screens
+- Stream Deck images embedded as resources
+- 7 automatic database migrations
 
 **Key Achievements**:
 - 18 major features implemented and tested
@@ -106,7 +120,7 @@ All core features complete, perfect build quality (0 warnings, 0 errors), produc
 - Web-Based Audience Participation System (WAPS)
 - Comprehensive documentation and wiki
 
-See [`src/docs/V1.0_RELEASE_STATUS.md`](src/docs/V1.0_RELEASE_STATUS.md) for complete feature list and [`src/CHANGELOG.md`](src/CHANGELOG.md) for detailed release notes.
+See [`src/docs/active/V1.0_RELEASE_STATUS.md`](src/docs/active/V1.0_RELEASE_STATUS.md) for complete feature list and [`src/CHANGELOG.md`](src/CHANGELOG.md) for detailed release notes.
 
 ## Contributing
 

@@ -71,17 +71,21 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 
 ## 🚀 Latest Release
 
-**Version**: 1.0.0 (Pre-release)  
-**Status**: Release Candidate  
+**Version**: 1.0.5  
+**Release Date**: January 9, 2026  
+**Status**: Stable Release  
 **Download**: [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 
-### What's New
-- Complete C# rewrite from VB.NET
-- Modern .NET 8 framework
-- Enhanced graphics engine
-- Web audience participation
-- Crash monitoring system
-- Comprehensive telemetry
+### What's New in v1.0.5
+- Mobile/tablet optimization with enhanced device detection
+- FFF online system fixes (rankings display, all-play participation)
+- ATA online system fixes (offline mode detection, vote timeout)
+- Multi-monitor support restored with safe async detection
+- Web state synchronization for mid-game joiners
+- mDNS hostname resolution (wwtbam.local)
+- Answer letter wrapping fixes
+- Stream Deck images embedded as resources
+- 7 automatic database migrations
 
 ---
 
@@ -142,18 +146,19 @@ The application features multiple display interfaces for different roles:
 
 ## 📋 Project Status
 
-### Current Version: Pre-v1.0
+### Current Version: v1.0.5 (Stable)
 - ✅ Core game mechanics
 - ✅ Graphics engine
 - ✅ Sound system
-- ✅ Web integration
+- ✅ Web integration with mobile optimization
 - ✅ Crash monitoring
 - ✅ Telemetry system
 - ✅ Stream Deck integration
-- 📝 Documentation (In Progress)
+- ✅ Multi-monitor support
+- ✅ Complete documentation
 
 ### Roadmap
-- v1.0: Initial public release with complete feature set
+- v1.1: Additional mobile/tablet enhancements
 - v1.2: Full theme system implementation
 - v1.5: Yamaha TF and QLabs Lighting integration
 
