@@ -42,12 +42,43 @@ const SESSION_CONFIG = {
  */
 function getDeviceType() {
     const ua = navigator.userAgent;
+    
+    // Check for tablet first (more specific patterns)
+    // iPad, Android tablets, and other tablet devices
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        console.log("Device detected as Tablet based on user agent");
         return "Tablet";
     }
+    
+    // Additional tablet detection: check screen size for devices that might not report correctly
+    // Tablets typically have screens >= 768px width in landscape
+    const isLikelyTablet = (window.innerWidth >= 768 && window.innerHeight >= 600) || 
+                          (window.innerWidth >= 600 && window.innerHeight >= 768);
+    
+    // If it's Android without "mobi" in UA, it's likely a tablet
+    if (/Android/i.test(ua) && !/Mobile/i.test(ua)) {
+        console.log("Device detected as Tablet (Android without Mobile flag)");
+        return "Tablet";
+    }
+    
+    // Check for mobile devices
     if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        // But if screen is large, might be a tablet misreporting
+        if (isLikelyTablet) {
+            console.log("Device detected as Tablet (Mobile UA but large screen)");
+            return "Tablet";
+        }
+        console.log("Device detected as Mobile");
         return "Mobile";
     }
+    
+    // Check if it might be a tablet based on screen size alone
+    if (isLikelyTablet && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        console.log("Device detected as Tablet (touch-enabled with tablet-sized screen)");
+        return "Tablet";
+    }
+    
+    console.log("Device detected as Desktop");
     return "Desktop";
 }
 
@@ -1795,10 +1826,18 @@ function preventPullToRefresh() {
  */
 async function initializeMobileFeatures() {
     const deviceType = getDeviceType();
+    const ua = navigator.userAgent;
+    
+    console.log("=== Device Detection ===");
+    console.log(`Device Type: ${deviceType}`);
+    console.log(`Screen: ${window.innerWidth}x${window.innerHeight}`);
+    console.log(`User Agent: ${ua}`);
+    console.log(`Touch support: ${'ontouchstart' in window || navigator.maxTouchPoints > 0}`);
+    console.log("=======================");
     
     // Only apply to mobile and tablet devices
     if (deviceType === "Mobile" || deviceType === "Tablet") {
-        console.log(`Initializing mobile features for ${deviceType}...`);
+        console.log(`✓ Initializing mobile features for ${deviceType}...`);
         
         // Request wake lock
         await requestWakeLock();
