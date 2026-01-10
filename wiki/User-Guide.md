@@ -1075,7 +1075,7 @@ All screens render at 1920x1080 base resolution and auto-scale to fit display.
 
 ## Web Audience Participation
 
-Enable live audience interaction for the "Ask the Audience" lifeline.
+Enable live audience interaction for the "Ask the Audience" lifeline and "Fastest Finger First" contestant selection.
 
 ### Enabling Web Server
 
@@ -1095,21 +1095,65 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
    - Server status shows "Running"
    - Connection URL displayed (e.g., `http://192.168.1.100:5278`)
 
+### Network Discovery (mDNS)
+
+**Automatic Discovery:**
+- Server advertises itself as `wwtbam.local` on the network
+- Audience members can access via:
+  - `http://wwtbam.local:5278` (recommended - no IP address needed)
+  - Direct IP address (e.g., `http://192.168.1.100:5278`)
+- Works automatically on most modern devices (iOS, Android, Windows, macOS)
+- No manual IP address entry required
+
+**Dedicated Network Setup:**
+- For isolated game networks (router with no internet), captive portal endpoints are included
+- Prevents "No Internet" warnings on connected devices
+- Apple, Android, and Windows connectivity checks supported
+
 ### Audience Connection
 
-**Local Network:**
-1. Audience members connect to same WiFi
-2. Visit URL shown in Control Panel
-3. Enter name/nickname
-4. Join lobby
+**Connection Methods:**
 
-**Internet (Advanced):**
-- Requires port forwarding on router
-- Or use reverse proxy (ngrok, etc.)
-- Configure firewall rules
-- Use HTTPS for security
+1. **Via mDNS Hostname (Recommended)**:
+   - Visit `http://wwtbam.local:5278`
+   - Automatically resolves to game server
+   - No IP address needed
 
-### Voting Process
+2. **Via Direct IP**:
+   - Use URL shown in Control Panel
+   - Example: `http://192.168.1.100:5278`
+
+3. **Via QR Code** (if generated):
+   - Scan QR code with mobile device
+   - Automatically opens web app
+
+**Join Process:**
+1. Enter name/nickname
+2. Click "Join Game"
+3. Wait in lobby for game to start
+
+### Mobile Experience
+
+**Native-Like App Feel:**
+- Fullscreen mode on mobile devices (hides address bar)
+- Screen stays awake during gameplay (wake lock)
+- Touch-optimized interface with haptic feedback
+- Smooth animations and transitions
+- Pull-to-refresh disabled for game stability
+
+**Ephemeral Design:**
+- App does NOT install on devices ("Add to Home Screen" blocked)
+- Session-based only - clears data when game ends
+- No persistent storage beyond 4-hour session timeout
+- "Leave" button fully clears all data from device
+
+**Device Support:**
+- iOS Safari (iPhone/iPad)
+- Android Chrome
+- Desktop browsers (Chrome, Firefox, Edge, Safari)
+- Tablets (Android and iPad)
+
+### Ask the Audience Voting
 
 1. **Lifeline Activated**
    - Operator clicks "Ask the Audience" button
@@ -1118,7 +1162,8 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
 2. **Audience Votes**
    - Each person selects A, B, C, or D
    - Vote submitted instantly
-   - Can change vote until closed
+   - After voting, only selected answer is shown (green highlight)
+   - Results bars display below selected answer
 
 3. **Results Display**
    - Operator closes voting (auto-closes after timer)
@@ -1126,18 +1171,46 @@ Enable live audience interaction for the "Ask the Audience" lifeline.
    - Results shown on TV Screen as bar chart
    - Contestant sees audience's choice
 
+**Mobile Optimization:**
+- Non-selected answers hidden after voting to save screen space
+- Results fit entirely on screen without scrolling
+- Touch-friendly buttons with visual feedback
+
+### Fastest Finger First
+
+1. **Start FFF**
+   - Operator clicks "Pick Player" button
+   - FFF question appears on all connected devices
+
+2. **Participants Respond**
+   - Drag/tap answers to arrange in correct order
+   - Submit answer
+   - Timer shows time remaining
+
+3. **Winner Selection**
+   - Fastest correct answer wins
+   - Winner becomes the contestant
+   - Results shown to all participants
+
 ### Security Considerations
 
 **Network Security:**
 - Use secure WiFi (WPA2/WPA3)
 - Change default port if desired
-- Enable HTTPS for public networks
-- Monitor connected users
+- Enable HTTPS for public networks (requires reverse proxy)
+- Monitor connected users in Control Panel
 
 **Fair Play:**
-- One vote per connection
-- Prevent early voting (questions hidden until lifeline used)
-- Optional: Require codes to join
+- One vote per connection per question
+- Questions hidden until lifeline/FFF activated
+- Vote locking prevents changes after submission
+- Device telemetry tracked (browser, OS, device type)
+
+**Privacy:**
+- Session-based data only (4-hour timeout)
+- Automatic cleanup on server shutdown
+- No persistent tracking across games
+- Explicit "Leave" button clears all local data
 
 ---
 

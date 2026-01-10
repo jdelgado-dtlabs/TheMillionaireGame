@@ -536,6 +536,59 @@ Before diving into specific issues, try these general fixes:
    - Cannot communicate between devices
    - Use different network or disable AP isolation
 
+### Mobile Device Issues
+
+**Symptom**: Mobile devices having problems with web app
+
+**Solutions:**
+
+1. **Fullscreen Not Working (Android Chrome)**
+   - Chrome on Android has limited fullscreen API support
+   - App uses scroll-to-hide address bar as fallback
+   - This is normal behavior - not a bug
+   - Address bar hides when scrolling down
+
+2. **Screen Turns Off During Game**
+   - Wake Lock API may not be supported
+   - Check browser support: Modern Chrome/Safari required
+   - Manually adjust device settings:
+     - iOS: Settings → Display & Brightness → Auto-Lock → Never
+     - Android: Settings → Display → Screen timeout → 30 minutes
+
+3. **Pull-to-Refresh Interfering**
+   - App prevents this by design, but some devices override
+   - Try different browser (Chrome vs. Safari)
+   - Avoid swiping from very top of screen
+
+4. **"Add to Home Screen" Prompt Appears**
+   - Should be blocked, but some browsers show it anyway
+   - **Do NOT install** - app is session-based only
+   - Dismiss the prompt
+   - This won't affect gameplay
+
+5. **Touch Interactions Not Smooth**
+   - Ensure device has good network connection
+   - Close other browser tabs/apps
+   - Try refreshing the page
+   - Clear browser cache if persistent
+
+6. **Results Don't Fit on Screen (ATA)**
+   - After voting, non-selected answers should hide automatically
+   - If all 4 answers still visible, report bug
+   - Try refreshing page before voting again
+
+7. **Data Persists Between Games**
+   - App should clear data when leaving or server stops
+   - Manually clear: Tap "Leave" button
+   - Browser cache clear: Settings → Clear browsing data
+   - Session timeout: 4 hours maximum
+
+8. **Haptic Feedback Not Working**
+   - Vibration API may not be supported on all devices
+   - iOS Safari: Works on iPhone, not iPad
+   - Android Chrome: Should work on all devices
+   - Not critical to gameplay - visual feedback still present
+
 ### Voting Not Working
 
 **Symptom**: Audience connected but votes not registering
