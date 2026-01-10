@@ -1149,9 +1149,21 @@ Enable live audience interaction for the "Ask the Audience" lifeline and "Fastes
 
 **Device Support:**
 - iOS Safari (iPhone/iPad)
-- Android Chrome
+- Android Chrome (phones and tablets)
 - Desktop browsers (Chrome, Firefox, Edge, Safari)
 - Tablets (Android and iPad)
+
+**Enhanced Tablet Detection (v1.0.5):**
+- Multi-strategy device detection ensures Android tablets properly classified
+- Tablets receive mobile features: wake lock, fullscreen, haptic feedback
+- Console logging helps diagnose device detection issues
+
+**On-Screen Diagnostics (v1.0.5):**
+- Debug panel appears on mobile/tablet devices for 10 seconds after page load
+- Shows: device type, screen resolution, touch support, wake lock status
+- Auto-hides after 10 seconds (can manually close)
+- Valuable for troubleshooting audience member connection issues during live shows
+- Does not appear on desktop browsers
 
 ### Ask the Audience Voting
 
@@ -1175,6 +1187,8 @@ Enable live audience interaction for the "Ask the Audience" lifeline and "Fastes
 - Non-selected answers hidden after voting to save screen space
 - Results fit entirely on screen without scrolling
 - Touch-friendly buttons with visual feedback
+- Dynamic container height prevents overflow on small screens
+- Automatic scroll-to-top ensures content visibility
 
 ### Fastest Finger First
 

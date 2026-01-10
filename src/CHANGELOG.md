@@ -77,7 +77,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Fixed Windows .local domain resolution (Windows typically ignores .local domains)
   * 120-second TTL for hostname records
 
-## [v1.0.5] - 2026-01-08
+## [v1.0.5] - 2026-01-09
 
 ### Added
 - **mDNS Service Discovery** ✅ NEW
@@ -98,8 +98,53 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Single WMI query optimization (consolidated from 3× parallel queries)
   * Proper dropdown enable/disable based on checkbox state
   * Event suspension patterns to prevent infinite recursion
+- **Enhanced Mobile/Tablet Detection** ✅ NEW
+  * Multi-strategy device detection: UA patterns, Android-specific checks, screen size heuristics (>=768px), touch + size combination
+  * Proper classification of Android tablets (previously detected as Desktop)
+  * Console logging for each detection path
+  * Mobile features now activate correctly on all tablet devices
+- **On-Screen Debug Panel for Mobile/Tablet** ✅ NEW
+  * Fixed-position diagnostic overlay (top-right, green terminal style)
+  * Shows device type, screen resolution, touch support, wake lock status, user agent
+  * Auto-hides after 10 seconds with manual close button
+  * Only displays on Mobile/Tablet devices (not Desktop)
+  * Comprehensive error handling prevents page crashes
+  * 100ms DOM readiness delay for reliability
+  * Valuable for live show diagnostics when audience members have connection issues
 
 ### Fixed
+- **FFF No-Winner Scenario Handling** ✅ CRITICAL
+  * Fixed "Confirm Winner" button being enabled when no participants answered correctly
+  * Button now shows orange color (visual indicator) when no winners exist
+  * Clicking button properly displays "❌ No Winners" message and allows retry
+  * Removed overly strict guard condition that prevented no-winner code from executing
+  * QuestionReady state now explicitly disables all downstream buttons to prevent re-clicking
+  * No-winner flow: broadcasts NoWinner to web clients, shows red label, plays wrong sound, resets to QuestionReady state
+- **Web UI Submit Button Visual State** ✅
+  * Fixed submit button appearing greyed out but still clickable on new FFF questions
+  * Now properly removes 'disabled-mode' CSS class when re-enabling button
+  * Answer items correctly re-enabled (pointer-events: auto, opacity: 1)
+- **Web Screen Scrolling Issues** ✅
+  * Fixed timer expiration causing message boxes to appear below viewport
+  * Added automatic scroll-to-top (smooth behavior) on all screen transitions
+  * Ensures newly displayed content is always visible without manual scrolling
+- **Mobile Container Overflow** ✅
+  * Fixed content extending beyond viewport bottom on mobile devices without scrolling
+  * Implemented dynamic JavaScript height calculation using actual window.innerHeight - 40px
+  * More reliable than CSS viewport units (vh/dvh) across different mobile browsers
+  * Added resize and orientationchange event listeners (100ms delay for orientation)
+  * Container uses margin: auto 0 for vertical centering with overflow support
+  * Maintains overflow-y: auto for internal scrolling when content exceeds calculated height
+- **Tablet Detection and Mobile Features** ✅
+  * Fixed Android tablets being incorrectly detected as Desktop devices
+  * Enhanced getDeviceType() with 4 detection strategies: UA patterns, Android-without-Mobile flag, screen size heuristics (>=768px), touch + size combination
+  * Tablet devices now properly receive mobile features: wake lock, fullscreen, haptic feedback
+  * Added comprehensive console logging for each detection path
+- **Wake Lock Debugging** ✅
+  * Added document.visibilityState check before requesting wake lock
+  * Enhanced error logging with emoji indicators (✓, ⚠️, ❌, 💡)
+  * Specific handling for NotAllowedError (user interaction required)
+  * Logs wake lock type and released status for diagnostics
 - **Answer Letter Wrapping** ✅ NEW
   * Increased letter rendering width from 60 to 80 pixels
   * Prevents letter and colon from wrapping across lines
@@ -111,6 +156,10 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
   * Comprehensive error handling throughout
 
 ### Changed
+- **FFF Instructions Removed from Web Client** ✅
+  * Removed yellow instruction box from web interface
+  * Instructions will be explained pregame by host during setup phase
+  * Cleaner, more streamlined interface for participants
 - **Settings Persistence** ✅
   * Monitor assignments save/load correctly
   * Settings use database-compatible property names
