@@ -1599,9 +1599,32 @@ function setupCleanupHandlers() {
                 console.log("Wake Lock released (page hidden)");
             }
         } else {
-            console.log("Page visible - re-acquiring wake lock");
+            console.log("Page visible - re-acquiring wake lock and attempting fullscreen");
             // Re-acquire wakelock when page becomes visible
             await requestWakeLock();
+            
+            // Try to re-enter fullscreen on mobile devices
+            // Note: Most browsers will require a user gesture, but we try anyway
+            const deviceType = getDeviceType();
+            if (deviceType === "Mobile" || deviceType === "Tablet") {
+                // Check if we exited fullscreen while page was hidden
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    // Scroll to hide address bar as fallback (always works)
+                    window.scrollTo(0, 1);
+                    
+                    // Set up re-entry on next user interaction
+                    const reenterFullscreen = () => {
+                        console.log("Attempting to re-enter fullscreen after visibility change");
+                        requestFullscreen();
+                    };
+                    
+                    // Listen for next touch/click to re-enter fullscreen
+                    document.addEventListener('touchstart', reenterFullscreen, { once: true });
+                    document.addEventListener('click', reenterFullscreen, { once: true });
+                    
+                    console.log("Fullscreen exited - will re-enter on next user interaction");
+                }
+            }
         }
     });
 }
