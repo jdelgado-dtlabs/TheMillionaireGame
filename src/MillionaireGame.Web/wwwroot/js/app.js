@@ -794,11 +794,16 @@ async function submitATAVote(option) {
         
         ataHasVoted = true;
         
-        // Disable all vote buttons
+        // Hide non-selected buttons and keep only the selected one visible
         document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
             btn.disabled = true;
             if (btn.dataset.option === option) {
                 btn.classList.add('selected');
+                // Keep selected button visible
+                btn.style.display = '';
+            } else {
+                // Hide non-selected buttons to save screen space
+                btn.style.display = 'none';
             }
         });
 
