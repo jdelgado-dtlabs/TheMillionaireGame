@@ -68,6 +68,7 @@
     <EmbeddedResource Include="lib\image\logo.png" />
     <EmbeddedResource Include="lib\image\logo.ico" />
     <EmbeddedResource Include="lib\textures\*.png" />
+    <EmbeddedResource Include="lib\image\streamdeck\*.png" />
     <!-- Embed database migration SQL files as resources -->
     <EmbeddedResource Include="Database\Migrations\*.sql" />
   </ItemGroup>
@@ -88,7 +89,7 @@
   <Target Name="CopyLibAssets" AfterTargets="Build">
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico;lib\image\streamdeck\*.png" />
       <SqlFiles Include="lib\sql\**\*.*" />
       <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
     </ItemGroup>
@@ -102,7 +103,7 @@
   <Target Name="CopyLibAssetsToPublish" AfterTargets="Publish">
     <ItemGroup>
       <SoundsFiles Include="lib\sounds\**\*.*" />
-      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico" />
+      <ImageFiles Include="lib\image\**\*.*" Exclude="lib\image\logo.png;lib\image\logo.ico;lib\image\streamdeck\*.png" />
       <SqlFiles Include="lib\sql\**\*.*" />
       <StreamDeckFiles Include="lib\StreamDeck\**\*.*" />
       <StreamDeckDlls Include="lib\StreamDeck\*.dll" />
