@@ -28,6 +28,8 @@ public class WebServerHost : IDisposable
     private string? _baseUrl;
     private readonly string _sqlConnectionString;
     private bool _isDisposed;
+    private MDnsServiceManager? _mdnsService;
+    private int _port;
 
     public bool IsRunning => _host != null;
     public string? BaseUrl => _baseUrl;
@@ -84,6 +86,9 @@ public class WebServerHost : IDisposable
         {
             throw new InvalidOperationException("Server is already running. Stop it before starting again.");
         }
+
+        // Store port for mDNS
+        _port = port;
 
         try
         {
@@ -169,6 +174,10 @@ public class WebServerHost : IDisposable
 
             _host = builder.Build();
 
+            // Database migrations are handled by main application startup
+            // Schema should already be up to date by the time web server starts
+            WebServerConsole.Info("[WebServer] Database migrations are handled by main application startup");
+
             // Clean up WAPS data on startup
             // Strategy: Archive ALL participants to history table for telemetry preservation,
             // then clear live Participants table to prevent stale "live" status
@@ -213,13 +222,29 @@ public class WebServerHost : IDisposable
                     // Step 2: Clear ALL participants (live state resets on app restart)
                     var deletedAllParticipants = await context.Participants.ExecuteDeleteAsync();
                     
-                    // Step 3: Reset LIVE session to Active status (or delete it to start fresh)
+                    // Step 3: Ensure LIVE session exists and is Active
                     var liveSession = await context.Sessions.FindAsync("LIVE");
                     if (liveSession != null)
                     {
                         liveSession.Status = SessionStatus.Active;
+                        liveSession.CurrentMode = null; // Reset mode
                         await context.SaveChangesAsync();
                         WebServerConsole.Info("[WebServer] Reset LIVE session to Active status");
+                    }
+                    else
+                    {
+                        // Create LIVE session if it doesn't exist
+                        liveSession = new MillionaireGame.Web.Models.Session
+                        {
+                            Id = "LIVE",
+                            HostName = "Main Game Session",
+                            CreatedAt = DateTime.UtcNow,
+                            StartedAt = DateTime.UtcNow,
+                            Status = MillionaireGame.Web.Models.SessionStatus.Active
+                        };
+                        context.Sessions.Add(liveSession);
+                        await context.SaveChangesAsync();
+                        WebServerConsole.Info("[WebServer] Created LIVE session");
                     }
                     
                     // Step 4: Find incomplete sessions (PreGame or legacy Waiting with no game progress)
@@ -262,6 +287,31 @@ public class WebServerHost : IDisposable
             await Task.Delay(500);
             WebServerConsole.Info("[WebServer] Server ready to accept connections");
 
+            // Start mDNS service advertisement
+            try
+            {
+                _mdnsService = new MDnsServiceManager("wwtbam", _port, ipAddress);
+                _mdnsService.StartAdvertising();
+
+                // Show appropriate URL based on port
+                string accessUrl = _port == 80
+                    ? "http://wwtbam.local"
+                    : $"http://wwtbam.local:{_port}";
+                WebServerConsole.Info($"[WebServer] mDNS service advertising at: {accessUrl}");
+
+                // Warn if not using port 80
+                if (_port != 80)
+                {
+                    WebServerConsole.Info($"[WebServer] Note: Port {_port} requires including port in URL. Set port to 80 for cleanest URLs.");
+                }
+            }
+            catch (Exception ex)
+            {
+                WebServerConsole.Warn($"[WebServer] Failed to start mDNS service: {ex.Message}");
+                WebServerConsole.Warn("[WebServer] Service will still be accessible via IP address");
+                // Continue without mDNS - not critical
+            }
+
             ServerStarted?.Invoke(this, _baseUrl);
         }
         catch (Exception ex)
@@ -282,6 +332,22 @@ public class WebServerHost : IDisposable
         {
             WebServerConsole.Debug("WebServerHost.StopAsync: Host is already null, nothing to stop.");
             return;
+        }
+
+        // Stop mDNS advertisement
+        if (_mdnsService != null)
+        {
+            try
+            {
+                _mdnsService.StopAdvertising();
+                _mdnsService.Dispose();
+                _mdnsService = null;
+                WebServerConsole.Info("[WebServer] mDNS service stopped");
+            }
+            catch (Exception ex)
+            {
+                WebServerConsole.Warn($"[WebServer] Error stopping mDNS service: {ex.Message}");
+            }
         }
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -469,15 +535,47 @@ public class WebServerHost : IDisposable
         app.UseForwardedHeaders();
         app.UseCors("AllowAll");
 
-        // Add cache prevention headers for privacy/security
+        // Android captive portal detection for hostname-based checks
+        // Some Android devices check connectivity by requesting root path with specific hostnames
+        app.Use(async (context, next) =>
+        {
+            // Check if the User-Agent is Android and they are hitting the root
+            if (context.Request.Path == "/" && 
+                context.Request.Headers["User-Agent"].ToString().Contains("Android", StringComparison.OrdinalIgnoreCase))
+            {
+                // If they are checking connectivity via Google/gstatic hostnames, return 204
+                // This handles Android's connectivity check that may use various Google domains
+                var hostname = context.Request.Host.Host.ToLowerInvariant();
+                if (hostname.Contains("gstatic") || hostname.Contains("google"))
+                {
+                    context.Response.StatusCode = 204;
+                    return;
+                }
+            }
+            await next();
+        });
+
+        // Add cache headers for session-appropriate caching (ephemeral native app experience)
         app.Use(async (context, next) =>
         {
             var path = context.Request.Path.Value?.ToLowerInvariant();
-            if (path != null && (path.EndsWith(".html") || path.EndsWith(".js") || path.EndsWith(".css") || path == "/"))
+            if (path != null)
             {
-                context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
-                context.Response.Headers["Pragma"] = "no-cache";
-                context.Response.Headers["Expires"] = "0";
+                // HTML files: No caching (always fetch fresh for latest game state)
+                if (path.EndsWith(".html") || path == "/")
+                {
+                    context.Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0";
+                    context.Response.Headers["Pragma"] = "no-cache";
+                    context.Response.Headers["Expires"] = "0";
+                }
+                // Static assets (JS, CSS, images): Session-appropriate caching (4 hours)
+                // Matches SESSION_CONFIG.maxSessionDuration for ephemeral experience
+                else if (path.EndsWith(".js") || path.EndsWith(".css") || 
+                         path.EndsWith(".png") || path.EndsWith(".jpg") || 
+                         path.EndsWith(".svg") || path.EndsWith(".ico"))
+                {
+                    context.Response.Headers["Cache-Control"] = "public, max-age=14400"; // 4 hours
+                }
             }
             await next();
         });
@@ -516,6 +614,42 @@ public class WebServerHost : IDisposable
             endpoints.MapControllers();
             endpoints.MapHub<GameHub>("/hubs/game");
 
+            // Connectivity check endpoints for captive portal detection
+            // These prevent devices from showing "No Internet" warnings when connected to game network
+            
+            // Apple iOS/macOS connectivity check
+            endpoints.MapGet("/hotspot-detect.html", async context =>
+            {
+                context.Response.ContentType = "text/html";
+                await context.Response.WriteAsync("<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>");
+            });
+
+            // Android/Google connectivity checks (multiple endpoints for different Android versions)
+            endpoints.MapGet("/generate_204", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+            
+            endpoints.MapGet("/gen_204", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+            
+            endpoints.MapGet("/blank.html", context =>
+            {
+                context.Response.StatusCode = 204; // No Content
+                return Task.CompletedTask;
+            });
+
+            // Windows connectivity check (MSFT Connect Test)
+            endpoints.MapGet("/connecttest.txt", async context =>
+            {
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync("Microsoft Connect Test");
+            });
+
             // Health check endpoint
             endpoints.MapGet("/health", async context =>
             {
@@ -542,6 +676,7 @@ public class WebServerHost : IDisposable
         GC.SuppressFinalize(this);
     }
 }
+
 /// <summary>
 /// Custom logger provider that writes to WebServerConsole
 /// </summary>
@@ -607,4 +742,3 @@ internal class WebServerConsoleLogger : ILogger
         }
     }
 }
-

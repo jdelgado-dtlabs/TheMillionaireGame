@@ -2,7 +2,7 @@
 ; Requires Inno Setup 6.0 or later: https://jrsoftware.org/isinfo.php
 
 #define MyAppName "The Millionaire Game"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.5"
 #define MyAppPublisher "Jean Francois Delgado"
 #define MyAppURL "https://github.com/Macronair/TheMillionaireGame"
 #define MyAppExeName "MillionaireGame.exe"

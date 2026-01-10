@@ -215,9 +215,9 @@ namespace MillionaireGame.Forms.Options
             // tabControl
             // 
             tabControl.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            // TEMPORARILY DISABLED: Screens tab removed due to multi-monitor freeze issue
-            // tabControl.Controls.Add(tabScreens);
+            // v1.0.5: Multi-monitor feature restored with async safety - Broadcast first so Screens tab initializes on click
             tabControl.Controls.Add(tabBroadcast);
+            tabControl.Controls.Add(tabScreens);
             tabControl.Controls.Add(tabLifelines);
             tabControl.Controls.Add(tabMoneyTree);
             tabControl.Controls.Add(tabSounds);

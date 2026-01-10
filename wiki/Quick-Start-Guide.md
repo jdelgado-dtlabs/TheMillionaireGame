@@ -104,10 +104,20 @@ Enable mobile voting for Ask the Audience and FFF Online:
      - Public - Accessible from anywhere
      - Local Network - Only local network devices
      - Localhost Only - This computer only
-   - **Port**: Set port number (default: 5278)
+   - **Port**: Set port number (default: 5278, recommended: 80 for cleanest URLs)
    - **Start at Application Launch** - Auto-start web server when app opens
    - **Start/Stop Web Server** - Control server manually
 3. Click **Apply** to save settings
+
+#### Easy Access with mDNS
+The server automatically advertises itself as **wwtbam.local** on your network:
+- ✅ **No IP address needed** - Participants simply visit `http://wwtbam.local`
+- ✅ **Works on all devices** - Phones, tablets, and computers
+- ✅ **Clean URLs with port 80** - If you set port to 80, URL is just `http://wwtbam.local`
+- ✅ **Other ports show port number** - For port 5278: `http://wwtbam.local:5278`
+- ✅ **Automatic on all networks** - Works on any network interface
+
+**Note**: Some devices may not support .local domains. Fallback to IP address display in Control Panel if needed.
 
 > 💡 **Tip**: For your first game, use default money tree settings and skip WAPS configuration.
 

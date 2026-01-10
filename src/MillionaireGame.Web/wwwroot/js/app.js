@@ -1,7 +1,7 @@
 ﻿/**
  * Who Wants to be a Millionaire
  * Audience Participation System
- * Version: 0.6.3-2512 (Device Telemetry & Privacy)
+ * Version: 0.6.4-ephemeral (Ephemeral Native-Like Experience)
  */
 
 // ============================================================================
@@ -15,6 +15,16 @@ const STORAGE_KEYS = {
     AUTO_SESSION_ID: 'waps_auto_session_id',
     SESSION_TIMESTAMP: 'waps_session_timestamp'
 };
+
+// Global wakelock reference
+let wakeLock = null;
+
+// Prevent PWA installation (ephemeral by design)
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    console.log('PWA install prompt blocked - app is ephemeral/session-based only');
+    return false;
+});
 
 // Session Management Configuration
 const SESSION_CONFIG = {
@@ -32,12 +42,43 @@ const SESSION_CONFIG = {
  */
 function getDeviceType() {
     const ua = navigator.userAgent;
+    
+    // Check for tablet first (more specific patterns)
+    // iPad, Android tablets, and other tablet devices
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        console.log("Device detected as Tablet based on user agent");
         return "Tablet";
     }
+    
+    // Additional tablet detection: check screen size for devices that might not report correctly
+    // Tablets typically have screens >= 768px width in landscape
+    const isLikelyTablet = (window.innerWidth >= 768 && window.innerHeight >= 600) || 
+                          (window.innerWidth >= 600 && window.innerHeight >= 768);
+    
+    // If it's Android without "mobi" in UA, it's likely a tablet
+    if (/Android/i.test(ua) && !/Mobile/i.test(ua)) {
+        console.log("Device detected as Tablet (Android without Mobile flag)");
+        return "Tablet";
+    }
+    
+    // Check for mobile devices
     if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        // But if screen is large, might be a tablet misreporting
+        if (isLikelyTablet) {
+            console.log("Device detected as Tablet (Mobile UA but large screen)");
+            return "Tablet";
+        }
+        console.log("Device detected as Mobile");
         return "Mobile";
     }
+    
+    // Check if it might be a tablet based on screen size alone
+    if (isLikelyTablet && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        console.log("Device detected as Tablet (touch-enabled with tablet-sized screen)");
+        return "Tablet";
+    }
+    
+    console.log("Device detected as Desktop");
     return "Desktop";
 }
 
@@ -202,6 +243,118 @@ function clearSessionInfo() {
     localStorage.removeItem(STORAGE_KEYS.DISPLAY_NAME);
 }
 
+/**
+ * Enhanced cleanup - clear all session data including caches
+ * Called when user explicitly leaves the game
+ */
+async function performEnhancedCleanup() {
+    console.log("Performing enhanced cleanup for ephemeral session...");
+    
+    // Clear all localStorage data
+    clearSessionInfo();
+    localStorage.removeItem(STORAGE_KEYS.AUTO_SESSION_ID);
+    localStorage.removeItem(STORAGE_KEYS.SESSION_TIMESTAMP);
+    
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
+    // Clear browser caches if Cache API is available
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+            console.log("Browser caches cleared");
+        } catch (err) {
+            console.warn("Could not clear browser caches:", err);
+        }
+    }
+    
+    // Release wake lock if held
+    if (wakeLock) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+            console.log("Wake lock released");
+        } catch (err) {
+            console.warn("Could not release wake lock:", err);
+        }
+    }
+    
+    // Exit fullscreen if in fullscreen mode
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+        try {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                await document.webkitExitFullscreen();
+            }
+            console.log("Exited fullscreen mode");
+        } catch (err) {
+            console.warn("Could not exit fullscreen:", err);
+        }
+    }
+    
+    console.log("Enhanced cleanup complete - all ephemeral data cleared");
+}
+
+/**
+ * Show visual confirmation that cleanup is complete
+ */
+function showCleanupConfirmation() {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    
+    // Show confirmation message
+    const confirmationHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.5s ease-in-out;
+        ">
+            <div style="
+                text-align: center;
+                color: white;
+                max-width: 90%;
+                animation: slideUp 0.5s ease-out;
+            ">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">✓</div>
+                <h2 style="font-size: 1.8rem; margin: 0 0 1rem 0; color: #FFD700;">Session Ended</h2>
+                <p style="font-size: 1.1rem; margin: 0; color: rgba(255,255,255,0.8);">
+                    All data has been cleared from this device.<br>
+                    Thank you for playing!
+                </p>
+                <p style="font-size: 0.9rem; margin: 1.5rem 0 0 0; color: rgba(255,255,255,0.5);">
+                    You can safely close this page.
+                </p>
+            </div>
+        </div>
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(30px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        </style>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', confirmationHTML);
+}
+
 // ============================================================================
 // SignalR Connection & Event Handlers
 // ============================================================================
@@ -211,6 +364,21 @@ function clearSessionInfo() {
  */
 async function joinSession(sessionId, displayName, participantId = null) {
     try {
+        // Ensure SignalR library is loaded before proceeding
+        if (typeof signalR === 'undefined') {
+            console.error('SignalR library not loaded yet, waiting...');
+            // Wait for SignalR to load (max 5 seconds)
+            let attempts = 0;
+            while (typeof signalR === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof signalR === 'undefined') {
+                throw new Error('SignalR library failed to load');
+            }
+            console.log('SignalR library now available after waiting');
+        }
+
         hideError();
 
         // Collect device telemetry (anonymous, for statistics only)
@@ -276,6 +444,14 @@ async function joinSession(sessionId, displayName, participantId = null) {
                     
                     hideConnectionOverlay();
                     isReconnecting = false; // Clear flag
+                    
+                    // Request state sync to restore current game state
+                    try {
+                        await connection.invoke('RequestStateSync', currentSessionId, currentParticipantId);
+                        console.log('✓ Requested state sync after reconnection');
+                    } catch (err) {
+                        console.error('Failed to request state sync:', err);
+                    }
                 } else {
                     // Server restarted - session no longer exists, clear and restart
                     console.warn('Session no longer exists - server may have restarted');
@@ -405,7 +581,12 @@ async function joinSession(sessionId, displayName, participantId = null) {
         document.getElementById('displayParticipantId').textContent = currentParticipantId;
         document.getElementById('displayConnectionId').textContent = connection.connectionId;
 
-        showScreen('connectedScreen');
+        // Don't override screen if we're already in a game screen (from sync events)
+        // Only show connectedScreen if we're joining into a lobby state
+        if (result.state === 'Lobby' || result.state === 'WaitingLobby') {
+            showScreen('connectedScreen');
+        }
+        // Otherwise, sync events have already set the correct screen (ATA, FFF, etc)
 
     } catch (err) {
         console.error("Join failed:", err);
@@ -422,6 +603,22 @@ function setupATAEventHandlers() {
     // Handle ATA Intro - Show question in view-only mode
     connection.on('ATAIntroStarted', (data) => {
         console.log("[ATA] ✓ ATAIntroStarted event received:", data);
+        
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot vote");
+            showSpectatorMode('ATA', data.spectatorReason || 'You joined after voting started');
+            return;
+        }
+        
+        // Check if user can vote
+        if (data.canVote === false) {
+            console.log("⚠️ Cannot vote - eligibility check failed");
+            disableATAVoting('You are not eligible to vote');
+            return;
+        }
+        
+        console.log("[ATA] Setting up intro screen with question and options");
         
         // Reset voting state
         ataHasVoted = false;
@@ -450,12 +647,28 @@ function setupATAEventHandlers() {
         // Show message
         showATAMessage("Please wait for voting to begin...", false);
         
+        console.log("[ATA] About to call showScreen('ataVotingScreen')");
         // Show ATA screen
         showScreen('ataVotingScreen');
+        console.log("[ATA] showScreen('ataVotingScreen') completed");
     });
     
     connection.on('VotingStarted', (data) => {
         console.log("[ATA] ✓ VotingStarted event received:", data);
+        
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot vote");
+            showSpectatorMode('ATA', data.spectatorReason || 'You joined after voting started');
+            return;
+        }
+        
+        // Check if user can vote
+        if (data.canVote === false) {
+            console.log("⚠️ Cannot vote - eligibility check failed");
+            disableATAVoting('You are not eligible to vote');
+            return;
+        }
         
         // Reset voting state
         ataHasVoted = false;
@@ -612,11 +825,16 @@ async function submitATAVote(option) {
         
         ataHasVoted = true;
         
-        // Disable all vote buttons
+        // Hide non-selected buttons and keep only the selected one visible
         document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
             btn.disabled = true;
             if (btn.dataset.option === option) {
                 btn.classList.add('selected');
+                // Keep selected button visible
+                btn.style.display = '';
+            } else {
+                // Hide non-selected buttons to save screen space
+                btn.style.display = 'none';
             }
         });
 
@@ -708,6 +926,80 @@ function updateATAResults(results, totalVotes) {
 }
 
 // ============================================================================
+// Spectator Mode & Helper Functions
+// ============================================================================
+
+/**
+ * Show spectator mode with banner notification
+ */
+function showSpectatorMode(mode, reason) {
+    const container = document.querySelector('.container');
+    
+    // Create spectator banner if not exists
+    let banner = document.getElementById('spectatorBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'spectatorBanner';
+        banner.className = 'spectator-banner';
+        container.insertBefore(banner, container.firstChild);
+    }
+    
+    banner.innerHTML = `<strong>👁️ Spectator Mode:</strong> ${reason}`;
+    banner.style.display = 'block';
+    
+    if (mode === 'FFF') {
+        // Disable FFF submission
+        disableFFFSubmission(reason);
+    } else if (mode === 'ATA') {
+        // Disable ATA voting
+        disableATAVoting(reason);
+    }
+}
+
+/**
+ * Disable FFF answer submission with message
+ */
+function disableFFFSubmission(message) {
+    const submitBtn = document.getElementById('btnSubmitFFF');
+    const messageDiv = document.getElementById('fffMessage');
+    
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('disabled-mode');
+    }
+    
+    if (messageDiv) {
+        messageDiv.textContent = message;
+        messageDiv.style.display = 'block';
+        messageDiv.classList.add('spectator-mode');
+    }
+    
+    // Disable answer selection
+    document.querySelectorAll('.fff-answer-item').forEach(item => {
+        item.style.pointerEvents = 'none';
+        item.style.opacity = '0.6';
+    });
+}
+
+/**
+ * Disable ATA voting with message
+ */
+function disableATAVoting(message) {
+    // Disable all vote buttons
+    document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled-mode');
+    });
+    
+    // Show message
+    showATAMessage(message, false);
+    const ataMessageDiv = document.getElementById('ataMessage');
+    if (ataMessageDiv) {
+        ataMessageDiv.classList.add('spectator-mode');
+    }
+}
+
+// ============================================================================
 // FFF (Fastest Finger First) Functions
 // ============================================================================
 
@@ -727,6 +1019,21 @@ function setupFFFEventHandlers() {
     
     connection.on('QuestionStarted', (data) => {
         console.log("FFF Question Started:", data);
+        
+        // Check if this is a state sync for a spectator
+        if (data.spectatorMode) {
+            console.log("⚠️ Joined as spectator - cannot participate");
+            showSpectatorMode('FFF', data.spectatorReason || 'You joined after the question started');
+            return;
+        }
+        
+        // Check if user can submit
+        if (data.canSubmit === false) {
+            console.log("⚠️ Cannot submit answers - eligibility check failed");
+            disableFFFSubmission('You are not eligible to participate');
+            return;
+        }
+        
         startFFFQuestion(data);
     });
 
@@ -799,8 +1106,19 @@ function startFFFQuestion(data) {
     // Update UI with question text
     const questionText = data.Question || data.question || data.QuestionText || data.questionText || 'Question';
     document.getElementById('fffQuestionText').textContent = questionText;
-    document.getElementById('btnSubmitFFF').disabled = false;
+    
+    // Re-enable submit button and remove disabled styling
+    const submitBtn = document.getElementById('btnSubmitFFF');
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('disabled-mode');
+    
     document.getElementById('fffMessage').style.display = 'none';
+    
+    // Re-enable answer selection
+    document.querySelectorAll('.fff-answer-item').forEach(item => {
+        item.style.pointerEvents = 'auto';
+        item.style.opacity = '1';
+    });
     
     // Render answer list
     renderFFFAnswers();
@@ -977,8 +1295,9 @@ function startFFFTimerCountdown() {
             clearInterval(fffTimerInterval);
             fffTimerInterval = null;
             
+            // Disable submission when time expires (no auto-submit)
             if (!fffHasSubmitted) {
-                submitFFFAnswer(); // Auto-submit on timeout
+                disableFFFSubmission("Time's up! You did not submit an answer.");
             }
         }
     }, 1000);
@@ -1144,9 +1463,31 @@ function showScreen(screenId) {
     const screen = document.getElementById(screenId);
     if (screen) {
         screen.classList.add('active');
+        // Scroll to top when showing new screen to ensure visibility
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
         console.error(`Screen not found: ${screenId}`);
     }
+}
+
+/**
+ * Adjust container max-height dynamically based on actual screen dimensions
+ */
+function adjustContainerHeight() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    
+    // Get actual viewport height
+    const viewportHeight = window.innerHeight;
+    
+    // Account for body padding (20px top + 20px bottom = 40px total)
+    const bodyPadding = 40;
+    const maxHeight = viewportHeight - bodyPadding;
+    
+    // Apply the calculated max-height
+    container.style.maxHeight = `${maxHeight}px`;
+    
+    console.log(`Container max-height adjusted to ${maxHeight}px (viewport: ${viewportHeight}px, padding: ${bodyPadding}px)`);
 }
 
 // ============================================================================
@@ -1194,13 +1535,17 @@ function setupEventListeners() {
         }
     });
 
-    // Leave button
+    // Leave button with enhanced cleanup
     document.getElementById('btnLeave').addEventListener('click', async () => {
         if (connection) {
             await connection.stop();
         }
-        clearSessionData();
-        showScreen('joinScreen');
+        
+        // Perform enhanced cleanup (clear caches, release resources)
+        await performEnhancedCleanup();
+        
+        // Show cleanup confirmation
+        showCleanupConfirmation();
     });
 
     // ATA vote button handlers
@@ -1308,11 +1653,307 @@ function setupCleanupHandlers() {
     // Session cleanup happens when user explicitly leaves or clicks leave game
     
     // Handle visibility change (user switches tabs/minimizes)
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
             console.log("Page hidden - maintaining session but ready for cleanup");
+            // Release wakelock when page is hidden
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+                console.log("Wake Lock released (page hidden)");
+            }
+        } else {
+            console.log("Page visible - re-acquiring wake lock and attempting fullscreen");
+            // Re-acquire wakelock when page becomes visible
+            await requestWakeLock();
+            
+            // Try to re-enter fullscreen on mobile devices
+            // Note: Most browsers will require a user gesture, but we try anyway
+            const deviceType = getDeviceType();
+            if (deviceType === "Mobile" || deviceType === "Tablet") {
+                // Check if we exited fullscreen while page was hidden
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    // Scroll to hide address bar as fallback (always works)
+                    window.scrollTo(0, 1);
+                    
+                    // Set up re-entry on next user interaction
+                    const reenterFullscreen = () => {
+                        console.log("Attempting to re-enter fullscreen after visibility change");
+                        requestFullscreen();
+                    };
+                    
+                    // Listen for next touch/click to re-enter fullscreen
+                    document.addEventListener('touchstart', reenterFullscreen, { once: true });
+                    document.addEventListener('click', reenterFullscreen, { once: true });
+                    
+                    console.log("Fullscreen exited - will re-enter on next user interaction");
+                }
+            }
         }
     });
+}
+
+// ============================================================================
+// Mobile Features: Wake Lock & Fullscreen
+// ============================================================================
+
+/**
+ * Request screen wake lock to keep device awake during game
+ */
+async function requestWakeLock() {
+    // Check if Wake Lock API is supported
+    if (!('wakeLock' in navigator)) {
+        console.log("⚠️ Wake Lock API not supported on this device");
+        return;
+    }
+
+    try {
+        // Check document visibility state - wake lock requires visible page
+        if (document.visibilityState !== 'visible') {
+            console.log("⚠️ Document not visible, skipping wake lock request");
+            return;
+        }
+        
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log("✓ Wake Lock acquired - screen will stay on");
+        console.log(`Wake Lock type: ${wakeLock.type}, released: ${wakeLock.released}`);
+
+        wakeLock.addEventListener('release', () => {
+            console.log("⚠️ Wake Lock released");
+        });
+    } catch (err) {
+        console.error(`❌ Failed to acquire Wake Lock: ${err.name}, ${err.message}`);
+        if (err.name === 'NotAllowedError') {
+            console.log("💡 Wake Lock requires user interaction - will retry on first tap");
+        }
+    }
+}
+
+/**
+ * Request fullscreen mode for mobile devices
+ * Chrome Android doesn't support traditional fullscreen API well,
+ * so we use a hybrid approach: scroll to hide address bar + fullscreen API
+ */
+function requestFullscreen() {
+    const elem = document.documentElement;
+
+    // First, scroll to top to hide address bar on mobile browsers
+    window.scrollTo(0, 1);
+    
+    // For Chrome Android, we need to check if running as PWA/standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+        || window.navigator.standalone 
+        || document.referrer.includes('android-app://');
+    
+    if (isStandalone) {
+        console.log("Running in standalone mode - fullscreen not needed");
+        return;
+    }
+
+    // Check if already in fullscreen
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+        console.log("Already in fullscreen mode");
+        return;
+    }
+
+    // Try different fullscreen APIs for cross-browser compatibility
+    // Chrome Android and Safari iOS handle this differently
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen({ navigationUI: "hide" }).then(() => {
+            console.log("✓ Fullscreen mode activated");
+            window.scrollTo(0, 1); // Scroll again after fullscreen
+        }).catch(err => {
+            console.log(`Fullscreen request failed: ${err.message} - using scroll fallback`);
+            // Fallback: just scroll to hide address bar
+            window.scrollTo(0, 1);
+        });
+    } else if (elem.webkitRequestFullscreen) { // Safari iOS
+        try {
+            elem.webkitRequestFullscreen();
+            console.log("✓ Fullscreen mode activated (webkit)");
+            window.scrollTo(0, 1);
+        } catch (err) {
+            console.log(`Webkit fullscreen failed: ${err.message}`);
+            window.scrollTo(0, 1);
+        }
+    } else if (elem.webkitEnterFullscreen) { // iOS video element fallback
+        try {
+            elem.webkitEnterFullscreen();
+            console.log("✓ Fullscreen mode activated (webkit enter)");
+        } catch (err) {
+            console.log(`Webkit enter fullscreen failed: ${err.message}`);
+            window.scrollTo(0, 1);
+        }
+    } else {
+        console.log("Fullscreen API not supported - using scroll to hide address bar");
+        window.scrollTo(0, 1);
+    }
+}
+
+/**
+ * Provide haptic feedback on touch interactions (mobile only)
+ */
+function provideTouchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(10); // Short 10ms haptic pulse
+    }
+}
+
+/**
+ * Prevent pull-to-refresh on mobile browsers
+ */
+function preventPullToRefresh() {
+    let startY = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].pageY;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+        const currentY = e.touches[0].pageY;
+        const isAtTop = window.scrollY === 0;
+        const isPullingDown = currentY > startY;
+        
+        // Prevent pull-to-refresh when at top of page and pulling down
+        if (isAtTop && isPullingDown) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
+
+/**
+ * Show debug panel with device detection info (mobile/tablet only)
+ */
+function showDebugPanel(deviceType, ua) {
+    try {
+        // Delay slightly to ensure DOM is ready
+        setTimeout(() => {
+            const debugPanel = document.getElementById('debugPanel');
+            const debugContent = document.getElementById('debugContent');
+            const closeButton = document.getElementById('closeDebug');
+            
+            if (!debugPanel || !debugContent) {
+                console.warn("Debug panel elements not found in DOM");
+                return;
+            }
+            
+            const wakeLockSupported = 'wakeLock' in navigator;
+            let wakeLockStatus = 'NOT SUPPORTED';
+            try {
+                wakeLockStatus = wakeLock ? `ACTIVE (${wakeLock.released ? 'released' : 'locked'})` : 
+                              wakeLockSupported ? 'Not acquired yet' : 'NOT SUPPORTED';
+            } catch (e) {
+                wakeLockStatus = 'ERROR: ' + e.message;
+            }
+            
+            const uaTruncated = ua && ua.length > 60 ? ua.substring(0, 60) + '...' : (ua || 'Unknown');
+            const touchSupport = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            
+            debugContent.innerHTML = `
+                <div><strong>Type:</strong> ${deviceType}</div>
+                <div><strong>Screen:</strong> ${window.innerWidth}x${window.innerHeight}</div>
+                <div><strong>Touch:</strong> ${touchSupport ? 'YES' : 'NO'}</div>
+                <div><strong>Wake Lock:</strong> ${wakeLockStatus}</div>
+                <div style="margin-top: 5px; font-size: 8px; opacity: 0.7;"><strong>UA:</strong><br>${uaTruncated}</div>
+            `;
+            
+            debugPanel.style.display = 'block';
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                debugPanel.style.display = 'none';
+            }, 10000);
+            
+            // Close button handler
+            if (closeButton) {
+                closeButton.onclick = () => {
+                    debugPanel.style.display = 'none';
+                };
+            }
+        }, 100); // 100ms delay to ensure DOM is ready
+    } catch (error) {
+        console.error("Error in showDebugPanel:", error);
+    }
+}
+
+/**
+ * Initialize mobile features (wake lock, fullscreen, haptic feedback, pull-to-refresh prevention)
+ */
+async function initializeMobileFeatures() {
+    const deviceType = getDeviceType();
+    const ua = navigator.userAgent;
+    
+    console.log("=== Device Detection ===");
+    console.log(`Device Type: ${deviceType}`);
+    console.log(`Screen: ${window.innerWidth}x${window.innerHeight}`);
+    console.log(`User Agent: ${ua}`);
+    console.log(`Touch support: ${'ontouchstart' in window || navigator.maxTouchPoints > 0}`);
+    console.log("=======================");
+    
+    // Show debug panel on mobile/tablet devices for diagnostics
+    if (deviceType === "Mobile" || deviceType === "Tablet") {
+        showDebugPanel(deviceType, ua);
+    }
+    
+    // Only apply to mobile and tablet devices
+    if (deviceType === "Mobile" || deviceType === "Tablet") {
+        console.log(`✓ Initializing mobile features for ${deviceType}...`);
+        
+        // Request wake lock
+        await requestWakeLock();
+        
+        // Prevent pull-to-refresh gesture
+        preventPullToRefresh();
+        
+        // Add haptic feedback to all buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                provideTouchFeedback();
+            }
+        }, { passive: true });
+        
+        // For Chrome Android: maintain hidden address bar on scroll
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (window.scrollY < 1) {
+                    window.scrollTo(0, 1);
+                }
+            }, 100);
+        }, { passive: true });
+        
+        // Request fullscreen on first user interaction
+        // (browsers require user gesture for fullscreen)
+        const enableFullscreenOnInteraction = () => {
+            requestFullscreen();
+            // Keep trying to maintain fullscreen on subsequent interactions
+            setTimeout(() => {
+                document.addEventListener('touchstart', () => {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        window.scrollTo(0, 1);
+                    }
+                }, { passive: true });
+            }, 1000);
+        };
+        
+        // Attempt fullscreen immediately (will fail due to browser security, but worth trying)
+        requestFullscreen();
+        
+        // Listen for earliest possible user interactions to trigger fullscreen
+        document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('touchmove', enableFullscreenOnInteraction, { once: true, passive: true });
+        document.addEventListener('touchend', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('click', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('pointerdown', enableFullscreenOnInteraction, { once: true });
+        
+        // Also trigger on input focus (when user taps name field)
+        document.addEventListener('focus', enableFullscreenOnInteraction, { once: true, capture: true });
+        
+        console.log("Mobile features initialized - fullscreen will trigger on any interaction");
+    } else {
+        console.log("Desktop device detected - skipping mobile-specific features");
+    }
 }
 
 // ============================================================================
@@ -1323,8 +1964,21 @@ function setupCleanupHandlers() {
  * Initialize application on page load
  */
 window.addEventListener('DOMContentLoaded', () => {
+    // Initialize mobile features (wake lock & fullscreen)
+    initializeMobileFeatures();
+    
     // Setup cleanup handlers for privacy/security
     setupCleanupHandlers();
+    
+    // Adjust container height based on screen dimensions
+    adjustContainerHeight();
+    
+    // Re-adjust on window resize and orientation change
+    window.addEventListener('resize', adjustContainerHeight);
+    window.addEventListener('orientationchange', () => {
+        // Delay slightly to ensure orientation change is complete
+        setTimeout(adjustContainerHeight, 100);
+    });
     
     // Pre-fill session code (hidden field) with auto-generated ID
     const sessionCode = getSessionCode();

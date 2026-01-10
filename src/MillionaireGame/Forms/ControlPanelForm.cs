@@ -783,6 +783,25 @@ public partial class ControlPanelForm : Form
             PreviewScreenToolStripMenuItem_Click(null, EventArgs.Empty);
         }
         
+        // Auto-open screens on assigned monitors if full screen is enabled
+        if (_appSettings.Settings.FullScreenHostScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening Host Screen (full screen enabled)");
+            HostScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
+        if (_appSettings.Settings.FullScreenGuestScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening Guest Screen (full screen enabled)");
+            GuestScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
+        if (_appSettings.Settings.FullScreenTVScreenEnable)
+        {
+            GameConsole.Info("[Startup] Auto-opening TV Screen (full screen enabled)");
+            TVScreenToolStripMenuItem_Click(null, EventArgs.Empty);
+        }
+        
         // Initialize GameConsole LAST (after all screens are shown)
         // This prevents it from stealing focus and ensures proper icon loading
         // Only auto-show in debug mode; otherwise user must manually open via menu
@@ -4440,7 +4459,8 @@ public partial class ControlPanelForm : Form
 
     private void OptionsToolStripMenuItem_Click(object? sender, EventArgs e)
     {
-        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings, _gameService.MoneyTree);
+        var monitorInfoService = Program.ServiceProvider.GetRequiredService<Services.MonitorInfoService>();
+        using var optionsDialog = new Options.OptionsDialog(_appSettings.Settings, _appSettings, _gameService.MoneyTree, monitorInfoService);
         
         // Subscribe to settings applied event to update immediately when Apply is clicked
         optionsDialog.SettingsApplied += (s, ev) =>
@@ -4486,9 +4506,11 @@ public partial class ControlPanelForm : Form
             _hostScreen.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenHostScreenEnable)
+            if (_appSettings.Settings.FullScreenHostScreenEnable || _appSettings.Settings.EnableHostFullscreen)
             {
-                ApplyFullScreenToHostScreen(true, _appSettings.Settings.FullScreenHostScreenMonitor);
+                // Use new HostMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.HostMonitorIndex ?? _appSettings.Settings.FullScreenHostScreenMonitor;
+                ApplyFullScreenToHostScreen(true, monitorIndex);
             }
         }
         else
@@ -4547,9 +4569,11 @@ public partial class ControlPanelForm : Form
             _guestScreen.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenGuestScreenEnable)
+            if (_appSettings.Settings.FullScreenGuestScreenEnable || _appSettings.Settings.EnableGuestFullscreen)
             {
-                ApplyFullScreenToGuestScreen(true, _appSettings.Settings.FullScreenGuestScreenMonitor);
+                // Use new GuestMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.GuestMonitorIndex ?? _appSettings.Settings.FullScreenGuestScreenMonitor;
+                ApplyFullScreenToGuestScreen(true, monitorIndex);
             }
         }
         else
@@ -4655,9 +4679,11 @@ public partial class ControlPanelForm : Form
             tvForm.Show();
             
             // Auto fullscreen to assigned monitor if enabled
-            if (_appSettings.Settings.FullScreenTVScreenEnable)
+            if (_appSettings.Settings.FullScreenTVScreenEnable || _appSettings.Settings.EnableTvFullscreen)
             {
-                ApplyFullScreenToTVScreen(true, _appSettings.Settings.FullScreenTVScreenMonitor);
+                // Use new TvMonitorIndex if available, otherwise fall back to old setting
+                int monitorIndex = _appSettings.Settings.TvMonitorIndex ?? _appSettings.Settings.FullScreenTVScreenMonitor;
+                ApplyFullScreenToTVScreen(true, monitorIndex);
             }
         }
         else

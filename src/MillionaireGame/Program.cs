@@ -3,6 +3,7 @@ using MillionaireGame.Core.Game;
 using MillionaireGame.Core.Settings;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Models.Telemetry;
+using MillionaireGame.Database;
 using MillionaireGame.Forms;
 using MillionaireGame.Services;
 using MillionaireGame.Utilities;
@@ -51,10 +52,8 @@ internal static class Program
         DebugMode = true;
         #endif
         
-        // Setup global exception handlers
-        Application.ThreadException += Application_ThreadException;
-        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        // NOTE: Removed global exception handlers to allow watchdog to detect crashes
+        // The watchdog now handles crash detection and reporting
         
         // Load SQL connection settings from sql.xml
         var sqlSettings = new SqlSettingsManager();
@@ -94,6 +93,24 @@ internal static class Program
                 // Database exists - ensure all tables exist (including WAPS tables)
                 // CreateDatabaseAsync has IF NOT EXISTS checks, so it's safe to run
                 dbContext.CreateDatabaseAsync().Wait();
+            }
+
+            // Run database migrations (after database exists)
+            try
+            {
+                GameConsole.Info("[Startup] Running database migrations...");
+                var migrationRunner = new MigrationRunner(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+                var migrationSuccess = await migrationRunner.RunMigrationsAsync();
+
+                if (!migrationSuccess)
+                {
+                    GameConsole.Warn("[Startup] Database migrations encountered errors - proceeding with caution");
+                }
+            }
+            catch (Exception migEx)
+            {
+                GameConsole.Error($"[Startup] Failed to run database migrations: {migEx.Message}");
+                // Continue anyway - app might still work with existing schema
             }
         }
         catch (Exception ex)
@@ -153,8 +170,25 @@ internal static class Program
         services.AddSingleton(questionRepository);
         services.AddSingleton(screenService);
         services.AddSingleton(soundService);
+        services.AddSingleton<MonitorInfoService>(); // v1.0.5: Multi-monitor support
         
         ServiceProvider = services.BuildServiceProvider();
+        
+        // Pre-load monitor information at startup for immediate availability
+        var monitorInfoService = ServiceProvider.GetRequiredService<MonitorInfoService>();
+        GameConsole.Info("[Startup] Pre-loading monitor information...");
+        _ = Task.Run(async () => 
+        {
+            try
+            {
+                var monitors = await monitorInfoService.GetAllMonitorsAsync();
+                GameConsole.Info($"[Startup] Pre-loaded {monitors.Count} monitors successfully");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[Startup] Failed to pre-load monitors: {ex.Message}");
+            }
+        });
         
         // Initialize telemetry service with database connection
         TelemetryService.Instance.Initialize(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
@@ -164,12 +198,15 @@ internal static class Program
         
         // Start heartbeat service for watchdog monitoring
         _heartbeatService = new HeartbeatService();
-        _heartbeatService.Start();
         _heartbeatService.SetActivity("Initializing");
-        GameConsole.Debug("[Heartbeat] Service started");
+        GameConsole.Debug("[Heartbeat] Service created");
 
         // Create and run main control panel (FIRST window to show)
         var controlPanel = new ControlPanelForm(gameService, appSettings, sqlSettings, questionRepository, screenService, soundService);
+        
+        // Now that we have the main form, start heartbeat with UI monitoring
+        _heartbeatService.Start(controlPanel);
+        GameConsole.Debug("[Heartbeat] Service started with UI monitoring");
         
         // Register application exit handler for telemetry completion
         Application.ApplicationExit += (s, e) =>
@@ -191,85 +228,6 @@ internal static class Program
         _heartbeatService.Stop();
         _heartbeatService.Dispose();
         GameConsole.Debug("[Heartbeat] Service stopped");
-    }
-
-    /// <summary>
-    /// Handles unhandled exceptions in Windows Forms UI threads
-    /// </summary>
-    private static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
-    {
-        LogUnhandledException(e.Exception, "UI Thread Exception");
-    }
-
-    /// <summary>
-    /// Handles unhandled exceptions in non-UI threads
-    /// </summary>
-    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-    {
-        var exception = e.ExceptionObject as Exception;
-        LogUnhandledException(exception, "AppDomain Unhandled Exception");
-    }
-
-    /// <summary>
-    /// Logs unhandled exceptions to GameConsole and displays error dialog
-    /// </summary>
-    private static void LogUnhandledException(Exception? exception, string source)
-    {
-        if (exception == null)
-        {
-            GameConsole.Error($"[{source}] Unknown exception occurred (null exception object)");
-            return;
-        }
-
-        // Log to GameConsole
-        GameConsole.LogSeparator();
-        GameConsole.Error($"[UNHANDLED EXCEPTION] {source}");
-        GameConsole.LogSeparator();
-        GameConsole.Error($"Exception Type: {exception.GetType().FullName}");
-        GameConsole.Error($"Message: {exception.Message}");
-        GameConsole.Error($"Source: {exception.Source}");
-        
-        if (exception.TargetSite != null)
-        {
-            GameConsole.Error($"Method: {exception.TargetSite.DeclaringType?.FullName}.{exception.TargetSite.Name}");
-        }
-        
-        GameConsole.Error($"Stack Trace:");
-        GameConsole.Error(exception.StackTrace ?? "(No stack trace available)");
-        
-        // Log inner exceptions
-        if (exception.InnerException != null)
-        {
-            GameConsole.Error($"Inner Exception: {exception.InnerException.GetType().FullName}");
-            GameConsole.Error($"Inner Message: {exception.InnerException.Message}");
-            GameConsole.Error($"Inner Stack Trace:");
-            GameConsole.Error(exception.InnerException.StackTrace ?? "(No stack trace available)");
-        }
-        
-        GameConsole.LogSeparator();
-
-        // Show error dialog to user
-        var message = $"An unhandled exception has occurred:\n\n{exception.Message}\n\n" +
-                     $"Source: {source}\n" +
-                     $"Type: {exception.GetType().Name}\n\n" +
-                     $"This error has been logged to the console and log file.\n\n" +
-                     $"Click OK to continue or Cancel to exit the application.";
-
-        var result = MessageBox.Show(
-            message,
-            "Unhandled Exception",
-            MessageBoxButtons.OKCancel,
-            MessageBoxIcon.Error);
-
-        if (result == DialogResult.Cancel)
-        {
-            GameConsole.Error("User chose to exit application after unhandled exception.");
-            Application.Exit();
-        }
-        else
-        {
-            GameConsole.Info("User chose to continue after unhandled exception.");
-        }
     }
     
     /// <summary>

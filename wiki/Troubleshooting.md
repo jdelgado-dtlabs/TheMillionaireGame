@@ -481,14 +481,113 @@ Before diving into specific issues, try these general fixes:
    - Create inbound rule for port 5278
 
 4. **Use Correct URL**
-   - Not `localhost` (only works on host computer)
-   - Use IP address shown in Control Panel
-   - Example: `http://192.168.1.100:5278`
+   - **Recommended**: Use `http://wwtbam.local` (mDNS domain)
+   - **Alternative**: Use IP address shown in Control Panel
+   - Examples:
+     - Port 80: `http://wwtbam.local`
+     - Port 5278: `http://wwtbam.local:5278` or `http://192.168.1.100:5278`
+
+### wwtbam.local Not Working
+
+**Symptom**: Audience can't access using wwtbam.local domain
+
+**Solutions:**
+
+1. **Device Doesn't Support mDNS**
+   - Some Android devices don't support .local domains
+   - Some corporate networks block mDNS
+   - **Fallback**: Use IP address instead (shown in Control Panel)
+
+2. **Multiple Networks/Interfaces**
+   - Computer connected to multiple networks
+   - Device on different network than expected
+   - Verify both devices on same WiFi network
+
+3. **Firewall Blocking mDNS**
+   - Windows Firewall may block UDP port 5353
+   - Allow mDNS through firewall:
+     - Windows Security → Firewall → Allow an app
+     - Add MillionaireGame.exe
+     - Allow UDP port 5353 for both Private and Public networks
+
+4. **Clear DNS Cache**
+   - Old DNS cache may interfere
+   - On audience device:
+   ```powershell
+   # Windows
+   ipconfig /flushdns
+   
+   # macOS/Linux
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+   ```
+
+5. **Try Different Browser**
+   - Some browsers cache DNS aggressively
+   - Try Chrome, Firefox, or Safari
+   - Use Private/Incognito mode
+
+6. **Verify Server Running**
+   - Check Control Panel shows "Web Server: Running"
+   - Check GameConsole logs for mDNS messages
+   - Look for: `[WebServer] mDNS service started`
 
 5. **Router AP Isolation**
    - Some routers isolate devices (hotel/public WiFi)
    - Cannot communicate between devices
    - Use different network or disable AP isolation
+
+### Mobile Device Issues
+
+**Symptom**: Mobile devices having problems with web app
+
+**Solutions:**
+
+1. **Fullscreen Not Working (Android Chrome)**
+   - Chrome on Android has limited fullscreen API support
+   - App uses scroll-to-hide address bar as fallback
+   - This is normal behavior - not a bug
+   - Address bar hides when scrolling down
+
+2. **Screen Turns Off During Game**
+   - Wake Lock API may not be supported
+   - Check browser support: Modern Chrome/Safari required
+   - Manually adjust device settings:
+     - iOS: Settings → Display & Brightness → Auto-Lock → Never
+     - Android: Settings → Display → Screen timeout → 30 minutes
+
+3. **Pull-to-Refresh Interfering**
+   - App prevents this by design, but some devices override
+   - Try different browser (Chrome vs. Safari)
+   - Avoid swiping from very top of screen
+
+4. **"Add to Home Screen" Prompt Appears**
+   - Should be blocked, but some browsers show it anyway
+   - **Do NOT install** - app is session-based only
+   - Dismiss the prompt
+   - This won't affect gameplay
+
+5. **Touch Interactions Not Smooth**
+   - Ensure device has good network connection
+   - Close other browser tabs/apps
+   - Try refreshing the page
+   - Clear browser cache if persistent
+
+6. **Results Don't Fit on Screen (ATA)**
+   - After voting, non-selected answers should hide automatically
+   - If all 4 answers still visible, report bug
+   - Try refreshing page before voting again
+
+7. **Data Persists Between Games**
+   - App should clear data when leaving or server stops
+   - Manually clear: Tap "Leave" button
+   - Browser cache clear: Settings → Clear browsing data
+   - Session timeout: 4 hours maximum
+
+8. **Haptic Feedback Not Working**
+   - Vibration API may not be supported on all devices
+   - iOS Safari: Works on iPhone, not iPad
+   - Android Chrome: Should work on all devices
+   - Not critical to gameplay - visual feedback still present
 
 ### Voting Not Working
 

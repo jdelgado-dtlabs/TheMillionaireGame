@@ -610,6 +610,14 @@ public partial class FFFOnlinePanel : UserControl
                 btnIntroExplain.BackColor = Color.Gray;
                 btnShowQuestion.Enabled = true;
                 btnShowQuestion.BackColor = Color.LightGreen;
+                btnRevealAnswers.Enabled = false;
+                btnRevealAnswers.BackColor = Color.Gray;
+                btnRevealCorrect.Enabled = false;
+                btnRevealCorrect.BackColor = Color.Gray;
+                btnShowWinners.Enabled = false;
+                btnShowWinners.BackColor = Color.Gray;
+                btnWinner.Enabled = false;
+                btnWinner.BackColor = Color.Gray;
                 break;
                 
             case FFFFlowState.QuestionShown:
@@ -653,16 +661,27 @@ public partial class FFFOnlinePanel : UserControl
                         btnWinner.Enabled = false;
                         btnWinner.BackColor = Color.Gray;
                     }
-                    else
+                    else if (correctCount == 1)
                     {
-                        // Single/no correct - skip Show Winners, go straight to Confirm Winner
-                        GameConsole.Log($"[FFF] Only {correctCount} correct answer(s) - skipping Show Winners, enabling Confirm Winner directly");
+                        // Single correct answer - skip Show Winners, go straight to Confirm Winner
+                        GameConsole.Log("[FFF] Single correct answer - skipping Show Winners, enabling Confirm Winner directly");
                         btnRevealCorrect.Enabled = false;
                         btnRevealCorrect.BackColor = Color.Gray;
                         btnShowWinners.Enabled = false;
                         btnShowWinners.BackColor = Color.Gray;
                         btnWinner.Enabled = true;
                         btnWinner.BackColor = Color.LightGreen;
+                    }
+                    else
+                    {
+                        // No correct answers - enable Confirm Winner to show no-winner message
+                        GameConsole.Warn("[FFF] No correct answers - enabling Confirm Winner to handle no-winner scenario");
+                        btnRevealCorrect.Enabled = false;
+                        btnRevealCorrect.BackColor = Color.Gray;
+                        btnShowWinners.Enabled = false;
+                        btnShowWinners.BackColor = Color.Gray;
+                        btnWinner.Enabled = true;
+                        btnWinner.BackColor = Color.Orange; // Orange to indicate no-winner scenario
                     }
                 }
                 else
@@ -1380,12 +1399,13 @@ public partial class FFFOnlinePanel : UserControl
     
     private void btnWinner_Click(object? sender, EventArgs e)
     {
-        if (_soundService == null || _rankings.Count == 0)
+        if (_soundService == null)
         {
-            GameConsole.Error("[FFF] No rankings available - cannot announce winner");
+            GameConsole.Error("[FFF] Sound service not initialized");
             return;
         }
         
+        // Allow execution even when _rankings is empty or all wrong - we handle both scenarios below
         GameConsole.Log("[FFF] Step 6: Confirm Winner started");
         
         var correctAnswers = _rankings.Where(r => r.IsCorrect).ToList();
