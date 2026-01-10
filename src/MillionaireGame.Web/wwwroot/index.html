@@ -2,21 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Who Wants to be a Millionaire - Audience Participation</title>
     
-    <!-- Mobile Web App Meta Tags -->
+    <!-- Mobile Web App Meta Tags (ephemeral session only) -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Millionaire">
+    <meta name="theme-color" content="#FFD700">
     
     <!-- Privacy & Security Meta Tags -->
-    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="referrer" content="no-referrer">
+    
+    <!-- Explicitly prevent PWA installation (ephemeral by design) -->
+    <!-- NO manifest link - prevents 'Add to Home Screen' prompts -->
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">

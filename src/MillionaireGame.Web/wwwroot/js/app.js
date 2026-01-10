@@ -1,7 +1,7 @@
 ﻿/**
  * Who Wants to be a Millionaire
  * Audience Participation System
- * Version: 0.6.3-2512 (Device Telemetry & Privacy)
+ * Version: 0.6.4-ephemeral (Ephemeral Native-Like Experience)
  */
 
 // ============================================================================
@@ -18,6 +18,13 @@ const STORAGE_KEYS = {
 
 // Global wakelock reference
 let wakeLock = null;
+
+// Prevent PWA installation (ephemeral by design)
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    console.log('PWA install prompt blocked - app is ephemeral/session-based only');
+    return false;
+});
 
 // Session Management Configuration
 const SESSION_CONFIG = {
@@ -203,6 +210,118 @@ function clearSessionInfo() {
     localStorage.removeItem(STORAGE_KEYS.SESSION_ID);
     localStorage.removeItem(STORAGE_KEYS.PARTICIPANT_ID);
     localStorage.removeItem(STORAGE_KEYS.DISPLAY_NAME);
+}
+
+/**
+ * Enhanced cleanup - clear all session data including caches
+ * Called when user explicitly leaves the game
+ */
+async function performEnhancedCleanup() {
+    console.log("Performing enhanced cleanup for ephemeral session...");
+    
+    // Clear all localStorage data
+    clearSessionInfo();
+    localStorage.removeItem(STORAGE_KEYS.AUTO_SESSION_ID);
+    localStorage.removeItem(STORAGE_KEYS.SESSION_TIMESTAMP);
+    
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
+    // Clear browser caches if Cache API is available
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+            console.log("Browser caches cleared");
+        } catch (err) {
+            console.warn("Could not clear browser caches:", err);
+        }
+    }
+    
+    // Release wake lock if held
+    if (wakeLock) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+            console.log("Wake lock released");
+        } catch (err) {
+            console.warn("Could not release wake lock:", err);
+        }
+    }
+    
+    // Exit fullscreen if in fullscreen mode
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+        try {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                await document.webkitExitFullscreen();
+            }
+            console.log("Exited fullscreen mode");
+        } catch (err) {
+            console.warn("Could not exit fullscreen:", err);
+        }
+    }
+    
+    console.log("Enhanced cleanup complete - all ephemeral data cleared");
+}
+
+/**
+ * Show visual confirmation that cleanup is complete
+ */
+function showCleanupConfirmation() {
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+    });
+    
+    // Show confirmation message
+    const confirmationHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.5s ease-in-out;
+        ">
+            <div style="
+                text-align: center;
+                color: white;
+                max-width: 90%;
+                animation: slideUp 0.5s ease-out;
+            ">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">✓</div>
+                <h2 style="font-size: 1.8rem; margin: 0 0 1rem 0; color: #FFD700;">Session Ended</h2>
+                <p style="font-size: 1.1rem; margin: 0; color: rgba(255,255,255,0.8);">
+                    All data has been cleared from this device.<br>
+                    Thank you for playing!
+                </p>
+                <p style="font-size: 0.9rem; margin: 1.5rem 0 0 0; color: rgba(255,255,255,0.5);">
+                    You can safely close this page.
+                </p>
+            </div>
+        </div>
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(30px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        </style>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', confirmationHTML);
 }
 
 // ============================================================================
@@ -675,11 +794,16 @@ async function submitATAVote(option) {
         
         ataHasVoted = true;
         
-        // Disable all vote buttons
+        // Hide non-selected buttons and keep only the selected one visible
         document.querySelectorAll('#ataVoteButtons .vote-button').forEach(btn => {
             btn.disabled = true;
             if (btn.dataset.option === option) {
                 btn.classList.add('selected');
+                // Keep selected button visible
+                btn.style.display = '';
+            } else {
+                // Hide non-selected buttons to save screen space
+                btn.style.display = 'none';
             }
         });
 
@@ -1347,13 +1471,17 @@ function setupEventListeners() {
         }
     });
 
-    // Leave button
+    // Leave button with enhanced cleanup
     document.getElementById('btnLeave').addEventListener('click', async () => {
         if (connection) {
             await connection.stop();
         }
-        clearSessionData();
-        showScreen('joinScreen');
+        
+        // Perform enhanced cleanup (clear caches, release resources)
+        await performEnhancedCleanup();
+        
+        // Show cleanup confirmation
+        showCleanupConfirmation();
     });
 
     // ATA vote button handlers
@@ -1566,7 +1694,38 @@ function requestFullscreen() {
 }
 
 /**
- * Initialize mobile features (wake lock and fullscreen)
+ * Provide haptic feedback on touch interactions (mobile only)
+ */
+function provideTouchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(10); // Short 10ms haptic pulse
+    }
+}
+
+/**
+ * Prevent pull-to-refresh on mobile browsers
+ */
+function preventPullToRefresh() {
+    let startY = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].pageY;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+        const currentY = e.touches[0].pageY;
+        const isAtTop = window.scrollY === 0;
+        const isPullingDown = currentY > startY;
+        
+        // Prevent pull-to-refresh when at top of page and pulling down
+        if (isAtTop && isPullingDown) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
+
+/**
+ * Initialize mobile features (wake lock, fullscreen, haptic feedback, pull-to-refresh prevention)
  */
 async function initializeMobileFeatures() {
     const deviceType = getDeviceType();
@@ -1577,6 +1736,16 @@ async function initializeMobileFeatures() {
         
         // Request wake lock
         await requestWakeLock();
+        
+        // Prevent pull-to-refresh gesture
+        preventPullToRefresh();
+        
+        // Add haptic feedback to all buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                provideTouchFeedback();
+            }
+        }, { passive: true });
         
         // For Chrome Android: maintain hidden address bar on scroll
         let scrollTimeout;
@@ -1606,7 +1775,7 @@ async function initializeMobileFeatures() {
         document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
         document.addEventListener('click', enableFullscreenOnInteraction, { once: true });
         
-        console.log("Mobile features initialized - fullscreen will activate on first touch/click");
+        console.log("Mobile features initialized - fullscreen, haptic feedback, and pull-to-refresh prevention active");
     } else {
         console.log("Desktop device detected - skipping mobile-specific features");
     }
