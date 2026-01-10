@@ -1795,10 +1795,20 @@ async function initializeMobileFeatures() {
             }, 1000);
         };
         
-        document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
-        document.addEventListener('click', enableFullscreenOnInteraction, { once: true });
+        // Attempt fullscreen immediately (will fail due to browser security, but worth trying)
+        requestFullscreen();
         
-        console.log("Mobile features initialized - fullscreen, haptic feedback, and pull-to-refresh prevention active");
+        // Listen for earliest possible user interactions to trigger fullscreen
+        document.addEventListener('touchstart', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('touchmove', enableFullscreenOnInteraction, { once: true, passive: true });
+        document.addEventListener('touchend', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('click', enableFullscreenOnInteraction, { once: true });
+        document.addEventListener('pointerdown', enableFullscreenOnInteraction, { once: true });
+        
+        // Also trigger on input focus (when user taps name field)
+        document.addEventListener('focus', enableFullscreenOnInteraction, { once: true, capture: true });
+        
+        console.log("Mobile features initialized - fullscreen will trigger on any interaction");
     } else {
         console.log("Desktop device detected - skipping mobile-specific features");
     }
