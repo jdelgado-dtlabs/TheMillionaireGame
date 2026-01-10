@@ -1,8 +1,13 @@
--- =============================================
--- Telemetry Database Tables
--- Version: v1.0.1
--- Description: Creates telemetry tracking tables and updates existing WAPS tables
--- =============================================
+-- ============================================================================
+-- Migration: 00007_add_telemetry_tables
+-- Description: Creates telemetry tracking tables for game statistics and
+--              updates existing WAPS tables with GameSessionId foreign keys.
+--              Tracks game sessions, rounds, lifeline usage, and links web
+--              audience participation data to game sessions.
+-- Author: System
+-- Date: 2026-01-09
+-- Dependencies: Requires 00003_create_waps_tables (Participants, FFFAnswers, ATAVotes tables must exist)
+-- ============================================================================
 
 -- Table 1: GameSessions
 -- Stores high-level game session information
@@ -92,7 +97,8 @@ GO
 -- Update existing WAPS tables with GameSessionId foreign key
 
 -- Add GameSessionId to Participants table
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'Participants') AND name = 'GameSessionId')
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'Participants' AND COLUMN_NAME = 'GameSessionId')
 BEGIN
     ALTER TABLE Participants ADD GameSessionId NVARCHAR(50) NULL;
     
@@ -110,7 +116,8 @@ END
 GO
 
 -- Add GameSessionId to FFFAnswers table
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'FFFAnswers') AND name = 'GameSessionId')
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'FFFAnswers' AND COLUMN_NAME = 'GameSessionId')
 BEGIN
     ALTER TABLE FFFAnswers ADD GameSessionId NVARCHAR(50) NULL;
     
@@ -128,7 +135,8 @@ END
 GO
 
 -- Add GameSessionId to ATAVotes table
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'ATAVotes') AND name = 'GameSessionId')
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'ATAVotes' AND COLUMN_NAME = 'GameSessionId')
 BEGIN
     ALTER TABLE ATAVotes ADD GameSessionId NVARCHAR(50) NULL;
     
@@ -145,4 +153,5 @@ BEGIN
 END
 GO
 
-PRINT 'Telemetry tables setup complete!';
+PRINT 'Migration 00007_add_telemetry_tables completed successfully'
+GO
