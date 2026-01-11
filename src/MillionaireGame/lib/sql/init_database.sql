@@ -1,6 +1,6 @@
 ﻿-- ============================================================================
 -- The Millionaire Game - Database Initialization Script
--- Version: 1.0.0
+-- Version: 1.0.1
 -- Description: Creates and populates Questions and FFF Questions tables
 -- ============================================================================
 -- This script will:
@@ -13,33 +13,15 @@
 --       automatically by the application at runtime.
 -- ============================================================================
 
-USE dbMillionaire;
-GO
-
--- ============================================================================
--- DROP TABLES (if they exist)
--- ============================================================================
-
+-- Drop existing tables if they exist
 IF OBJECT_ID('dbo.questions', 'U') IS NOT NULL
-BEGIN
-    PRINT 'Dropping existing questions table...';
     DROP TABLE dbo.questions;
-END
-GO
 
 IF OBJECT_ID('dbo.fff_questions', 'U') IS NOT NULL
-BEGIN
-    PRINT 'Dropping existing fff_questions table...';
     DROP TABLE dbo.fff_questions;
-END
 GO
 
--- ============================================================================
--- CREATE QUESTIONS TABLE
--- ============================================================================
-
-PRINT 'Creating questions table...';
-
+-- Create questions table
 CREATE TABLE dbo.questions (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Question NTEXT NOT NULL,
@@ -52,14 +34,8 @@ CREATE TABLE dbo.questions (
     Used BIT NOT NULL DEFAULT 0,
     Note NTEXT NULL
 );
-GO
 
--- ============================================================================
--- CREATE FFF_QUESTIONS TABLE
--- ============================================================================
-
-PRINT 'Creating fff_questions table...';
-
+-- Create fff_questions table
 CREATE TABLE dbo.fff_questions (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Question NTEXT NOT NULL,
@@ -72,18 +48,7 @@ CREATE TABLE dbo.fff_questions (
 );
 GO
 
-PRINT 'Tables created successfully.';
-PRINT 'Ready to populate with question data...';
-GO
-
--- ============================================================================
--- INSERT QUESTIONS DATA (80 Questions)
--- Level 1 = Easy (Q1-5), Level 2 = Medium (Q6-10), Level 3 = Hard (Q11-14), Level 4 = Million (Q15)
--- ============================================================================
-
-PRINT 'Inserting questions data...';
-GO
-
+-- Insert all regular questions (80 total - 20 per level)
 -- LEVEL 1 QUESTIONS (Easy - Game Questions 1-5: $100 to $1,000)
 INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('What is the capital of France?', 'London', 'Berlin', 'Paris', 'Madrid', 'C', 1, 'This city is home to the Eiffel Tower and was called the "City of Light"'),
@@ -108,11 +73,9 @@ INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('What do we call a baby dog?', 'Kitten', 'Puppy', 'Cub', 'Calf', 'B', 1, 'This term for a young dog sounds similar to the word "pup"'),
 ('Which season comes after winter?', 'Summer', 'Spring', 'Fall', 'Autumn', 'B', 1, 'This season is when flowers bloom and birds return from migration'),
 ('What shape is a stop sign?', 'Circle', 'Square', 'Triangle', 'Octagon', 'D', 1, 'This eight-sided shape is unique among traffic signs'),
-('How many hours are in a day?', 'Twelve', 'Twenty', 'Twenty-four', 'Thirty-six', 'C', 1, 'This is twice the number of hours from noon to midnight');
-GO
+('How many hours are in a day?', 'Twelve', 'Twenty', 'Twenty-four', 'Thirty-six', 'C', 1, 'This is twice the number of hours from noon to midnight'),
 
 -- LEVEL 2 QUESTIONS (Medium - Game Questions 6-10: $2,000 to $32,000)
-INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('Who painted the Mona Lisa?', 'Vincent van Gogh', 'Leonardo da Vinci', 'Pablo Picasso', 'Claude Monet', 'B', 2, 'This Renaissance artist was also an inventor who designed flying machines'),
 ('What is the chemical symbol for gold?', 'Go', 'Gd', 'Au', 'Ag', 'C', 2, 'This symbol comes from the Latin word "aurum" meaning shining dawn'),
 ('In what year did World War II end?', '1943', '1944', '1945', '1946', 'C', 2, 'This was the year the atomic bombs were dropped on Japan'),
@@ -135,11 +98,9 @@ INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('How many teeth does an adult human typically have?', '28', '30', '32', '34', 'C', 2, 'This includes four wisdom teeth if they all develop'),
 ('What is the largest organ in the human body?', 'Liver', 'Brain', 'Heart', 'Skin', 'D', 2, 'This organ covers your entire body and protects you from the outside world'),
 ('Who developed the theory of relativity?', 'Isaac Newton', 'Albert Einstein', 'Nikola Tesla', 'Stephen Hawking', 'B', 2, 'This physicist with wild hair is famous for E=mc²'),
-('What is the longest river in the world?', 'Amazon', 'Nile', 'Mississippi', 'Yangtze', 'B', 2, 'This African river flows through Egypt and into the Mediterranean Sea');
-GO
+('What is the longest river in the world?', 'Amazon', 'Nile', 'Mississippi', 'Yangtze', 'B', 2, 'This African river flows through Egypt and into the Mediterranean Sea'),
 
 -- LEVEL 3 QUESTIONS (Hard - Game Questions 11-14: $64,000 to $500,000)
-INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('What is the only mammal capable of true flight?', 'Flying squirrel', 'Bat', 'Flying lemur', 'Sugar glider', 'B', 3, 'This nocturnal creature uses echolocation to navigate in darkness'),
 ('Which element has the atomic number 1?', 'Helium', 'Hydrogen', 'Oxygen', 'Nitrogen', 'B', 3, 'This lightest element makes up 75% of all matter in the universe'),
 ('Who wrote "1984"?', 'Aldous Huxley', 'Ray Bradbury', 'George Orwell', 'H.G. Wells', 'C', 3, 'This British author also wrote "Animal Farm" about revolutionary pigs'),
@@ -162,11 +123,9 @@ INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('What is the second most spoken language in the world?', 'English', 'Spanish', 'Mandarin Chinese', 'Hindi', 'B', 3, 'This Romance language is the official language in 20 countries'),
 ('How many chambers does a human heart have?', 'Two', 'Three', 'Four', 'Five', 'C', 3, 'This number includes two atria and two ventricles'),
 ('What is the currency of Switzerland?', 'Euro', 'Swiss Franc', 'Krone', 'Pound', 'B', 3, 'Switzerland is not in the EU and uses its own currency'),
-('Who invented the telephone?', 'Thomas Edison', 'Nikola Tesla', 'Alexander Graham Bell', 'Guglielmo Marconi', 'C', 3, 'This Scottish-born inventor famously made the first call to his assistant Watson');
-GO
+('Who invented the telephone?', 'Thomas Edison', 'Nikola Tesla', 'Alexander Graham Bell', 'Guglielmo Marconi', 'C', 3, 'This Scottish-born inventor famously made the first call to his assistant Watson'),
 
 -- LEVEL 4 QUESTIONS (Million Dollar - Game Question 15)
-INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('What is the oldest continuously inhabited city in the world?', 'Athens', 'Damascus', 'Jerusalem', 'Jericho', 'B', 4, 'This Syrian city has been continuously inhabited since 11,000 BCE'),
 ('Who was the first woman to win a Nobel Prize?', 'Rosalind Franklin', 'Marie Curie', 'Dorothy Hodgkin', 'Barbara McClintock', 'B', 4, 'This Polish-French physicist discovered radium and polonium'),
 ('What is the longest-running Broadway show?', 'Cats', 'Les Miserables', 'The Phantom of the Opera', 'Chicago', 'C', 4, 'This Andrew Lloyd Webber musical ran for over 35 years'),
@@ -192,18 +151,8 @@ INSERT INTO questions (Question, A, B, C, D, CorrectAnswer, Level, Note) VALUES
 ('Who wrote the original "Sherlock Holmes" stories?', 'Agatha Christie', 'Arthur Conan Doyle', 'Edgar Allan Poe', 'G.K. Chesterton', 'B', 4, 'This Scottish physician created the famous detective and his companion Watson');
 GO
 
-PRINT 'Questions table populated: 80 questions (20 per level)';
-GO
-
--- ============================================================================
--- INSERT FFF_QUESTIONS DATA (44 Questions)
--- ============================================================================
-
-PRINT 'Inserting FFF questions data...';
-GO
-
+-- Insert all FFF questions (44 total)
 INSERT INTO fff_questions (Question, A, B, C, D, CorrectAnswer, Used) VALUES
--- Geography & Size Ordering
 ('Put these planets in order from closest to farthest from the Sun', 'Mars', 'Venus', 'Earth', 'Mercury', 'DBCA', 0),
 ('Put these oceans by area (largest to smallest)', 'Indian', 'Pacific', 'Atlantic', 'Arctic', 'BCAD', 0),
 ('Put these continents by population (most to least)', 'Africa', 'Asia', 'Europe', 'North America', 'BACD', 0),
@@ -265,13 +214,4 @@ INSERT INTO fff_questions (Question, A, B, C, D, CorrectAnswer, Used) VALUES
 ('Put these FIFA World Cups in chronological order (oldest to newest)', 'Brazil 2014', 'Germany 2006', 'South Africa 2010', 'Russia 2018', 'BCAD', 0),
 ('Put these Super Bowl winning teams in chronological order of first win', 'New England Patriots', 'Green Bay Packers', 'Dallas Cowboys', 'Pittsburgh Steelers', 'BCDA', 0),
 ('Put these track and field events by distance (shortest to longest)', '100m', 'Marathon', '400m', '5000m', 'ACDB', 0);
-GO
-
-PRINT 'FFF questions table populated: 44 questions';
-GO
-
-PRINT '============================================================================';
-PRINT 'Database initialization complete!';
-PRINT 'Tables created: questions (80 questions), fff_questions (44 questions)';
-PRINT '============================================================================';
 GO

@@ -374,9 +374,12 @@ public partial class FirstRunWizard : Form
         // Read SQL file
         string sqlContent = await File.ReadAllTextAsync(sqlFilePath);
         
-        // Split by GO statements (handle both \r\n and \n)
-        string[] batches = sqlContent.Split(new[] { "\r\nGO\r\n", "\nGO\n", "\r\nGO\n", "\nGO\r\n" }, 
-            StringSplitOptions.RemoveEmptyEntries);
+        // Split by GO statements using regex to handle any whitespace/newline combination
+        string[] batches = System.Text.RegularExpressions.Regex.Split(
+            sqlContent, 
+            @"^\s*GO\s*$", 
+            System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        );
         
         string connectionString = settings.GetConnectionString("dbMillionaire");
         
@@ -386,14 +389,26 @@ public partial class FirstRunWizard : Form
             connection.Open();
             
             int batchNumber = 0;
+            int executedBatches = 0;
+            
             foreach (var batch in batches)
             {
                 batchNumber++;
                 
-                // Skip empty batches or comment-only lines
+                // Skip empty batches, whitespace-only, or comment-only lines
                 string trimmedBatch = batch.Trim();
-                if (string.IsNullOrEmpty(trimmedBatch) || trimmedBatch.StartsWith("--"))
+                if (string.IsNullOrWhiteSpace(trimmedBatch) || 
+                    trimmedBatch.StartsWith("--") || 
+                    trimmedBatch.All(c => c == '-' || char.IsWhiteSpace(c)))
                 {
+                    GameConsole.Debug($"Skipping empty/comment batch {batchNumber}");
+                    continue;
+                }
+                
+                // Skip USE statements (already connected to database)
+                if (trimmedBatch.StartsWith("USE ", StringComparison.OrdinalIgnoreCase))
+                {
+                    GameConsole.Debug($"Skipping USE statement in batch {batchNumber}");
                     continue;
                 }
                 
@@ -402,17 +417,19 @@ public partial class FirstRunWizard : Form
                     using var command = new SqlCommand(trimmedBatch, connection);
                     command.CommandTimeout = 120; // 2 minutes for large INSERT statements
                     command.ExecuteNonQuery();
+                    executedBatches++;
                     GameConsole.Debug($"Executed SQL batch {batchNumber} successfully");
                 }
                 catch (Exception ex)
                 {
                     GameConsole.Error($"Failed to execute SQL batch {batchNumber}: {ex.Message}");
+                    GameConsole.Debug($"Batch content (first 200 chars): {trimmedBatch.Substring(0, Math.Min(200, trimmedBatch.Length))}...");
                     throw new Exception($"Failed to execute SQL batch {batchNumber}: {ex.Message}", ex);
                 }
             }
+            
+            GameConsole.Info($"Successfully loaded {executedBatches} SQL batches (skipped {batchNumber - executedBatches})");
         });
-        
-        GameConsole.Info($"Successfully loaded {batches.Length} SQL batches");
     }
 
     #endregion
