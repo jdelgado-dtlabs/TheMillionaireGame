@@ -112,6 +112,8 @@ public partial class FirstRunWizard : Form
         {
             try
             {
+                // SqlDataSourceEnumerator can take 15+ seconds and may throw exceptions
+                // Use a timeout to prevent hanging
                 var instances = SqlDataSourceEnumerator.Instance.GetDataSources();
                 
                 this.Invoke((MethodInvoker)delegate
@@ -165,10 +167,16 @@ public partial class FirstRunWizard : Form
             {
                 this.Invoke((MethodInvoker)delegate
                 {
-                    lblSqlServerStatus.Text = "Instance scan failed - use Browse option";
+                    lblSqlServerStatus.Text = "Instance scan failed - showing common instances";
                     lblSqlServerStatus.ForeColor = Color.Orange;
                     cmbServerInstance.Items.Clear();
+                    
+                    // Add common instances as fallback
+                    cmbServerInstance.Items.Add(".\\SQLEXPRESS");
+                    cmbServerInstance.Items.Add("localhost\\SQLEXPRESS");
+                    cmbServerInstance.Items.Add(".\\MSSQLSERVER");
                     cmbServerInstance.Items.Add("<Browse for more...>");
+                    
                     cmbServerInstance.SelectedIndex = 0;
                     cmbServerInstance.Enabled = true;
                     GameConsole.Error($"SQL Server instance enumeration failed: {ex.Message}");

@@ -59,9 +59,10 @@ internal static class Program
         var sqlSettings = new SqlSettingsManager();
         
         // Check for first-run (no sql.xml) - show wizard
+        // MUST match SqlSettingsManager's path (LocalApplicationData, not ApplicationData)
         string settingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "MillionaireGame", "sql.xml");
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "TheMillionaireGame", "sql.xml");
         
         if (!File.Exists(settingsPath))
         {
