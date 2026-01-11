@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.Data.Sql;
 using Microsoft.Data.SqlClient;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Helpers;
@@ -99,12 +100,11 @@ public partial class FirstRunWizard : Form
 
     /// <summary>
     /// Enumerates SQL Server instances on local machine (SSMS-style)
-    /// Populates dropdown with common instances + "Browse for more..." option
-    /// NOTE: SqlDataSourceEnumerator is not available in .NET 8, so we use common instance names
+    /// Populates dropdown with detected instances + "Browse for more..." option
     /// </summary>
     private async Task EnumerateSqlInstancesAsync()
     {
-        lblSqlServerStatus.Text = "Checking for common SQL Server instances...";
+        lblSqlServerStatus.Text = "Scanning for SQL Server instances...";
         lblSqlServerStatus.ForeColor = Color.Blue;
         cmbServerInstance.Enabled = false;
         
@@ -112,37 +112,51 @@ public partial class FirstRunWizard : Form
         {
             try
             {
+                var instances = SqlDataSourceEnumerator.Instance.GetDataSources();
+                
                 this.Invoke((MethodInvoker)delegate
                 {
                     cmbServerInstance.Items.Clear();
                     
-                    // Add common SQL Server instance names
-                    // Users can select these or use "Browse for more..." to enter custom
-                    var commonInstances = new List<string>
+                    int localInstanceCount = 0;
+                    foreach (DataRow row in instances.Rows)
                     {
-                        ".\\SQLEXPRESS",
-                        ".\\MSSQLSERVER",
-                        "localhost\\SQLEXPRESS",
-                        "localhost\\MSSQLSERVER",
-                        $"{Environment.MachineName}\\SQLEXPRESS",
-                        $"{Environment.MachineName}\\MSSQLSERVER"
-                    };
-                    
-                    // Remove duplicates
-                    commonInstances = commonInstances.Distinct().ToList();
-                    
-                    foreach (var instance in commonInstances)
-                    {
-                        cmbServerInstance.Items.Add(instance);
+                        string serverName = row["ServerName"]?.ToString() ?? "";
+                        string instanceName = row["InstanceName"]?.ToString() ?? "";
+                        
+                        // Only show local instances
+                        if (!string.IsNullOrEmpty(serverName) && 
+                            (serverName.Equals(".", StringComparison.OrdinalIgnoreCase) ||
+                             serverName.Equals("(local)", StringComparison.OrdinalIgnoreCase) ||
+                             serverName.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            string displayName = string.IsNullOrEmpty(instanceName) 
+                                ? serverName 
+                                : $"{serverName}\\{instanceName}";
+                            
+                            cmbServerInstance.Items.Add(displayName);
+                            localInstanceCount++;
+                        }
                     }
                     
                     // Always add "Browse for more..." option
                     cmbServerInstance.Items.Add("<Browse for more...>");
                     
-                    lblSqlServerStatus.Text = $"Showing {commonInstances.Count} common instance(s)";
-                    lblSqlServerStatus.ForeColor = Color.Green;
-                    cmbServerInstance.SelectedIndex = 0; // Select first instance
-                    GameConsole.Info($"Populated {commonInstances.Count} common SQL Server instances");
+                    // Update status
+                    if (localInstanceCount > 0)
+                    {
+                        lblSqlServerStatus.Text = $"Found {localInstanceCount} local instance(s)";
+                        lblSqlServerStatus.ForeColor = Color.Green;
+                        cmbServerInstance.SelectedIndex = 0; // Select first instance
+                        GameConsole.Info($"Found {localInstanceCount} local SQL Server instances");
+                    }
+                    else
+                    {
+                        lblSqlServerStatus.Text = "No instances detected - use Browse option";
+                        lblSqlServerStatus.ForeColor = Color.Gray;
+                        cmbServerInstance.SelectedIndex = 0; // Select "Browse for more..."
+                        GameConsole.Info("No local SQL Server instances detected");
+                    }
                     
                     cmbServerInstance.Enabled = true;
                 });
@@ -151,13 +165,13 @@ public partial class FirstRunWizard : Form
             {
                 this.Invoke((MethodInvoker)delegate
                 {
-                    lblSqlServerStatus.Text = "Use Browse option to enter server details";
+                    lblSqlServerStatus.Text = "Instance scan failed - use Browse option";
                     lblSqlServerStatus.ForeColor = Color.Orange;
                     cmbServerInstance.Items.Clear();
                     cmbServerInstance.Items.Add("<Browse for more...>");
                     cmbServerInstance.SelectedIndex = 0;
                     cmbServerInstance.Enabled = true;
-                    GameConsole.Error($"SQL Server instance population failed: {ex.Message}");
+                    GameConsole.Error($"SQL Server instance enumeration failed: {ex.Message}");
                 });
             }
         });
