@@ -29,16 +29,6 @@ public partial class FirstRunWizard : Form
         btnFinish.Enabled = false;
         chkLoadSampleData.Enabled = false;
         grpConnectionDetails.Visible = false;
-        
-        // Start background tasks with error handling
-        try
-        {
-            _ = DetectLocalDBAsync();
-        }
-        catch (Exception ex)
-        {
-            GameConsole.Error($"Error starting LocalDB detection: {ex.Message}");
-        }
     }
 
     protected override async void OnLoad(EventArgs e)
@@ -62,59 +52,6 @@ public partial class FirstRunWizard : Form
             cmbServerInstance.Enabled = true;
         }
     }
-
-    #region LocalDB Detection
-
-    /// <summary>
-    /// Detects if LocalDB is installed and available
-    /// Updates status label accordingly
-    /// </summary>
-    private async Task<bool> DetectLocalDBAsync()
-    {
-        try
-        {
-            lblLocalDBStatus.Text = "Checking LocalDB availability...";
-            lblLocalDBStatus.ForeColor = Color.Blue;
-            
-            bool isAvailable = await Task.Run(() =>
-            {
-                try
-                {
-                    using var connection = new SqlConnection("Server=(LocalDB)\\MSSQLLocalDB;Integrated Security=true;Connection Timeout=5;");
-                    connection.Open();
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
-            });
-            
-            if (isAvailable)
-            {
-                lblLocalDBStatus.Text = "✓ LocalDB detected and ready";
-                lblLocalDBStatus.ForeColor = Color.Green;
-                GameConsole.Info("LocalDB detected and available");
-            }
-            else
-            {
-                lblLocalDBStatus.Text = "✗ LocalDB not detected - please reinstall the game";
-                lblLocalDBStatus.ForeColor = Color.Red;
-                GameConsole.Warn("LocalDB not detected on system");
-            }
-            
-            return isAvailable;
-        }
-        catch (Exception ex)
-        {
-            lblLocalDBStatus.Text = "✗ Error checking LocalDB";
-            lblLocalDBStatus.ForeColor = Color.Red;
-            GameConsole.Error($"Error detecting LocalDB: {ex.Message}");
-            return false;
-        }
-    }
-
-    #endregion
 
     #region SQL Server Instance Enumeration
 
@@ -488,7 +425,6 @@ public partial class FirstRunWizard : Form
         {
             cmbServerInstance.Enabled = false;
             grpConnectionDetails.Visible = false;
-            lblLocalDBStatus.Visible = true;
             lblSqlServerStatus.Visible = false;
             
             // Reset connection test
@@ -505,7 +441,6 @@ public partial class FirstRunWizard : Form
         if (radSqlServer.Checked)
         {
             cmbServerInstance.Enabled = true;
-            lblLocalDBStatus.Visible = false;
             lblSqlServerStatus.Visible = true;
             
             // Check if "Browse for more..." is selected

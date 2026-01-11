@@ -22,7 +22,6 @@ partial class FirstRunWizard
         this.lblSubtitle = new Label();
         this.grpDatabaseType = new GroupBox();
         this.radLocalDB = new RadioButton();
-        this.lblLocalDBStatus = new Label();
         this.lblLocalDBDescription = new Label();
         this.radSqlServer = new RadioButton();
         this.cmbServerInstance = new ComboBox();
@@ -93,7 +92,6 @@ partial class FirstRunWizard
         // grpDatabaseType
         // 
         this.grpDatabaseType.Controls.Add(this.radLocalDB);
-        this.grpDatabaseType.Controls.Add(this.lblLocalDBStatus);
         this.grpDatabaseType.Controls.Add(this.lblLocalDBDescription);
         this.grpDatabaseType.Controls.Add(this.radSqlServer);
         this.grpDatabaseType.Controls.Add(this.cmbServerInstance);
@@ -119,23 +117,13 @@ partial class FirstRunWizard
         this.radLocalDB.UseVisualStyleBackColor = true;
         this.radLocalDB.CheckedChanged += radLocalDB_CheckedChanged;
         // 
-        // lblLocalDBStatus
-        // 
-        this.lblLocalDBStatus.AutoSize = true;
-        this.lblLocalDBStatus.Location = new Point(32, 52);
-        this.lblLocalDBStatus.Name = "lblLocalDBStatus";
-        this.lblLocalDBStatus.Size = new Size(200, 15);
-        this.lblLocalDBStatus.TabIndex = 1;
-        this.lblLocalDBStatus.Text = "Checking LocalDB availability...";
-        this.lblLocalDBStatus.ForeColor = Color.Gray;
-        // 
         // lblLocalDBDescription
         // 
-        this.lblLocalDBDescription.Location = new Point(32, 72);
+        this.lblLocalDBDescription.Location = new Point(32, 52);
         this.lblLocalDBDescription.Name = "lblLocalDBDescription";
-        this.lblLocalDBDescription.Size = new Size(530, 40);
+        this.lblLocalDBDescription.Size = new Size(530, 60);
         this.lblLocalDBDescription.TabIndex = 2;
-        this.lblLocalDBDescription.Text = "Simplest option - zero configuration needed. Lightweight, on-demand database perfect for single-user game show hosting.";
+        this.lblLocalDBDescription.Text = "Simplest option - zero configuration needed. Lightweight, on-demand database perfect for single-user game show hosting. Installed automatically with the game.";
         this.lblLocalDBDescription.ForeColor = Color.Gray;
         // 
         // radSqlServer
@@ -426,7 +414,6 @@ partial class FirstRunWizard
     private Label lblSubtitle;
     private GroupBox grpDatabaseType;
     private RadioButton radLocalDB;
-    private Label lblLocalDBStatus;
     private Label lblLocalDBDescription;
     private RadioButton radSqlServer;
     private ComboBox cmbServerInstance;
