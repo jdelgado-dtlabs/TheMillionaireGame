@@ -4,7 +4,7 @@
 #define MyAppName "The Millionaire Game"
 #define MyAppVersion "1.1.0"
 #define MyAppPublisher "Jean Francois Delgado"
-#define MyAppURL "https://github.com/Macronair/TheMillionaireGame"
+#define MyAppURL "https://github.com/jdelgado-dtlabs/TheMillionaireGame"
 #define MyAppExeName "MillionaireGame.exe"
 #define MyAppIcon "..\src\MillionaireGame\lib\image\logo.ico"
 
