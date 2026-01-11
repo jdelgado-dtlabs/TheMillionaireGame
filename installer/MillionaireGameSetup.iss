@@ -2,7 +2,7 @@
 ; Requires Inno Setup 6.0 or later: https://jrsoftware.org/isinfo.php
 
 #define MyAppName "The Millionaire Game"
-#define MyAppVersion "1.0.5"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Jean Francois Delgado"
 #define MyAppURL "https://github.com/Macronair/TheMillionaireGame"
 #define MyAppExeName "MillionaireGame.exe"
@@ -65,16 +65,17 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 [Code]
 var
   DotNetDownloadPage: TDownloadWizardPage;
-  SqlExpressDownloadPage: TDownloadWizardPage;
+  SqlLocalDBDownloadPage: TDownloadWizardPage;
 
 const
   // .NET 8.0 Desktop Runtime x64 (evergreen link - always latest)
   DotNetRuntimeURL = 'https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe';
   DotNetInstallerName = 'windowsdesktop-runtime-8.0-win-x64.exe';
   
-  // SQL Server Express (evergreen link - always latest)
-  SqlExpressURL = 'https://go.microsoft.com/fwlink/?linkid=866658';
-  SqlExpressInstallerName = 'SQLServer-Express-Setup.exe';
+  // SQL Server Express LocalDB (lightweight, 40-50 MB)
+  // Note: This is the direct download link for SQL Server 2022 Express LocalDB
+  SqlLocalDBURL = 'https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi';
+  SqlLocalDBInstallerName = 'SqlLocalDB.msi';
 
 function GetUninstallString(): String;
 var
@@ -138,40 +139,35 @@ begin
     Result := RegQueryStringValue(HKLM64, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost', 'Version', Version) and (Version >= '8.0.0');
 end;
 
-function IsSqlExpressInstalled(): Boolean;
+function IsLocalDBInstalled(): Boolean;
 var
-  Names: TArrayOfString;
-  I: Integer;
+  LocalDBPath: String;
 begin
   Result := False;
   
-  // Check for SQL Server installations in registry
-  if RegGetSubkeyNames(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server', Names) then
+  // Check for SqlLocalDB.exe in common installation paths
+  // SQL Server 2022
+  LocalDBPath := ExpandConstant('{pf}\Microsoft SQL Server\160\Tools\Binn\SqlLocalDB.exe');
+  if FileExists(LocalDBPath) then
   begin
-    for I := 0 to GetArrayLength(Names) - 1 do
-    begin
-      // Look for SQLEXPRESS or any SQL Server instance
-      if (Pos('SQLEXPRESS', Uppercase(Names[I])) > 0) or 
-         (Pos('MSSQL', Uppercase(Names[I])) > 0) then
-      begin
-        Result := True;
-        Break;
-      end;
-    end;
+    Result := True;
+    Exit;
   end;
   
-  // Also check 64-bit registry
-  if not Result and RegGetSubkeyNames(HKLM64, 'SOFTWARE\Microsoft\Microsoft SQL Server', Names) then
+  // SQL Server 2019
+  LocalDBPath := ExpandConstant('{pf}\Microsoft SQL Server\150\Tools\Binn\SqlLocalDB.exe');
+  if FileExists(LocalDBPath) then
   begin
-    for I := 0 to GetArrayLength(Names) - 1 do
-    begin
-      if (Pos('SQLEXPRESS', Uppercase(Names[I])) > 0) or 
-         (Pos('MSSQL', Uppercase(Names[I])) > 0) then
-      begin
-        Result := True;
-        Break;
-      end;
-    end;
+    Result := True;
+    Exit;
+  end;
+  
+  // SQL Server 2017
+  LocalDBPath := ExpandConstant('{pf}\Microsoft SQL Server\140\Tools\Binn\SqlLocalDB.exe');
+  if FileExists(LocalDBPath) then
+  begin
+    Result := True;
+    Exit;
   end;
 end;
 
@@ -183,10 +179,10 @@ begin
     DotNetDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
   
-  // Create download page for SQL Server Express if needed
-  if not IsSqlExpressInstalled() then
+  // Create download page for SQL Server LocalDB if needed
+  if not IsLocalDBInstalled() then
   begin
-    SqlExpressDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
+    SqlLocalDBDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
 end;
 
@@ -248,40 +244,45 @@ begin
     end;
   end;
   
-  // Download SQL Server Express if needed
-  if Result and (CurPageID = wpReady) and not IsSqlExpressInstalled() and (SqlExpressDownloadPage <> nil) then
+  // Download SQL Server LocalDB if needed
+  if Result and (CurPageID = wpReady) and not IsLocalDBInstalled() and (SqlLocalDBDownloadPage <> nil) then
   begin
-    if MsgBox('SQL Server Express is not installed. Would you like to download and install it now?' + #13#10 + 
+    if MsgBox('SQL Server Express LocalDB is not installed. Would you like to download and install it now?' + #13#10 + 
               'This is required for the database functionality.' + #13#10#13#10 +
-              'Note: The installer will download a small bootstrapper that will then download the full SQL Server Express.',
+              'Note: LocalDB is a lightweight SQL Server database engine (40-50 MB) designed for development and single-user applications.',
               mbConfirmation, MB_YESNO) = IDYES then
     begin
-      SqlExpressDownloadPage.Clear;
-      SqlExpressDownloadPage.Add(SqlExpressURL, SqlExpressInstallerName, '');
-      SqlExpressDownloadPage.Show;
+      SqlLocalDBDownloadPage.Clear;
+      SqlLocalDBDownloadPage.Add(SqlLocalDBURL, SqlLocalDBInstallerName, '');
+      SqlLocalDBDownloadPage.Show;
       
       try
         try
-          SqlExpressDownloadPage.Download;
+          SqlLocalDBDownloadPage.Download;
         except
-          if not SqlExpressDownloadPage.AbortedByUser then
-            MsgBox('Error downloading SQL Server Express. You can install it manually later.', mbError, MB_OK);
+          if not SqlLocalDBDownloadPage.AbortedByUser then
+            MsgBox('Error downloading SQL Server LocalDB. You can install it manually later from:' + #13#10 + SqlLocalDBURL, mbError, MB_OK);
         end;
       finally
-        SqlExpressDownloadPage.Hide;
+        SqlLocalDBDownloadPage.Hide;
       end;
       
-      // Launch SQL Server Express installer (bootstrapper)
-      if FileExists(ExpandConstant('{tmp}\' + SqlExpressInstallerName)) then
+      // Install SQL Server LocalDB if download succeeded
+      if FileExists(ExpandConstant('{tmp}\' + SqlLocalDBInstallerName)) then
       begin
-        MsgBox('SQL Server Express installer will now launch. Please complete the installation.' + #13#10#13#10 +
-               'Recommended settings:' + #13#10 +
-               '- Choose "Download Media" or "Basic" installation' + #13#10 +
-               '- Instance name: SQLEXPRESS (default)' + #13#10 +
-               '- Authentication: Windows Authentication (default)' + #13#10#13#10 +
-               'Click OK to continue...', mbInformation, MB_OK);
-               
-        ShellExec('', ExpandConstant('{tmp}\' + SqlExpressInstallerName), '', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+        MsgBox('SQL Server LocalDB will now install silently. This may take a few minutes...', mbInformation, MB_OK);
+        
+        if ShellExec('', 'msiexec.exe', '/i "' + ExpandConstant('{tmp}\' + SqlLocalDBInstallerName) + '" /quiet IACCEPTSQLLOCALDBLICENSETERMS=YES', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        begin
+          if ResultCode = 0 then
+            MsgBox('SQL Server LocalDB installed successfully!', mbInformation, MB_OK)
+          else if ResultCode = 3010 then
+            MsgBox('SQL Server LocalDB installed successfully. A reboot may be required.', mbInformation, MB_OK)
+          else
+            MsgBox('SQL Server LocalDB installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
+        end
+        else
+          MsgBox('Failed to launch SQL Server LocalDB installer.', mbError, MB_OK);
       end;
     end;
   end;
