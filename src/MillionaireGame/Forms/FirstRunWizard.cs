@@ -30,10 +30,17 @@ public partial class FirstRunWizard : Form
         if (preselectedDbType?.ToLowerInvariant() == "sqlexpress")
         {
             radSqlServer.Checked = true; // SQL Server Express was installed
+            GameConsole.Info("[FirstRunWizard] Preselected SQL Server Express from installer");
+        }
+        else if (preselectedDbType?.ToLowerInvariant() == "remote")
+        {
+            radSqlServer.Checked = true; // Remote SQL Server selected
+            GameConsole.Info("[FirstRunWizard] Preselected remote SQL Server from installer");
         }
         else
         {
             radLocalDB.Checked = true; // LocalDB is default
+            GameConsole.Info("[FirstRunWizard] Defaulting to LocalDB");
         }
         
         btnFinish.Enabled = false;
