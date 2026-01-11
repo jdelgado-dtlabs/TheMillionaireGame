@@ -45,6 +45,7 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
@@ -113,14 +114,12 @@
 
   <!-- Create shortcut to AppData folder after build -->
   <Target Name="CreateAppDataShortcut" AfterTargets="CopyLibAssets">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(OutputPath)&quot;" 
-          WorkingDirectory="$(ProjectDir)" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(OutputPath)&quot;" WorkingDirectory="$(ProjectDir)" />
   </Target>
 
   <!-- Create shortcut to AppData folder after publish -->
   <Target Name="CreateAppDataShortcutPublish" AfterTargets="CopyLibAssetsToPublish">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(PublishDir)&quot;" 
-          WorkingDirectory="$(ProjectDir)" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)CreateAppDataShortcut.ps1&quot; -OutputPath &quot;$(PublishDir)&quot;" WorkingDirectory="$(ProjectDir)" />
   </Target>
 
 </Project>

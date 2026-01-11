@@ -57,6 +57,28 @@ internal static class Program
         
         // Load SQL connection settings from sql.xml
         var sqlSettings = new SqlSettingsManager();
+        
+        // Check for first-run (no sql.xml) - show wizard
+        string settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "MillionaireGame", "sql.xml");
+        
+        if (!File.Exists(settingsPath))
+        {
+            GameConsole.Info("[Startup] First run detected - launching database setup wizard");
+            
+            using var wizard = new FirstRunWizard();
+            var wizardResult = wizard.ShowDialog();
+            
+            if (wizardResult != DialogResult.OK)
+            {
+                GameConsole.Info("[Startup] Database setup cancelled by user - exiting application");
+                return;
+            }
+            
+            GameConsole.Info("[Startup] Database setup completed successfully");
+        }
+        
         sqlSettings.LoadSettings();
 
         // Initialize database
@@ -64,39 +86,29 @@ internal static class Program
         
         try
         {
-            // Check if database exists, create if not
-            bool dbExists = dbContext.DatabaseExistsAsync().Result;
+            // Database should now exist (created by wizard or already exists)
+            // Just verify it exists, don't show MessageBox
+            bool dbExists = await dbContext.DatabaseExistsAsync();
             if (!dbExists)
             {
-                var result = MessageBox.Show(
-                    "Database not found. Would you like to create it?",
-                    "Database Setup",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (result == DialogResult.Yes)
-                {
-                    dbContext.CreateDatabaseAsync().Wait();
-                    MessageBox.Show(
-                        "Database created successfully!",
-                        "Success",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
-                else
-                {
-                    return;
-                }
+                GameConsole.Error("[Startup] Database does not exist after setup - this should not happen");
+                MessageBox.Show(
+                    "Database configuration error. Please restart the application.",
+                    "Database Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
             }
-            else
-            {
-                // Database exists - ensure all tables exist (including WAPS tables)
-                // CreateDatabaseAsync has IF NOT EXISTS checks, so it's safe to run
-                dbContext.CreateDatabaseAsync().Wait();
-            }
+            
+            GameConsole.Info("[Startup] Database connection verified");
+            
+            // Ensure all tables exist (including WAPS tables)
+            // CreateDatabaseAsync has IF NOT EXISTS checks, so it's safe to run
+            await dbContext.CreateDatabaseAsync();
 
             // Run database migrations (after database exists)
             try
+
             {
                 GameConsole.Info("[Startup] Running database migrations...");
                 var migrationRunner = new MigrationRunner(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
