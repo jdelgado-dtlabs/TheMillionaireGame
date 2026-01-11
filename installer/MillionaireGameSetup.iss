@@ -60,12 +60,23 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsLocalDBChoice
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=sqlexpress"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsSqlExpressChoice
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=remote"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsRemoteServerChoice
 
 [Code]
 var
   DotNetDownloadPage: TDownloadWizardPage;
-  SqlLocalDBDownloadPage: TDownloadWizardPage;
+  SqlDownloadPage: TDownloadWizardPage;
+  DatabaseChoicePage: TWizardPage;
+  RadLocalDB: TRadioButton;
+  RadSqlExpress: TRadioButton;
+  RadRemoteServer: TRadioButton;
+  LblDatabaseChoice: TLabel;
+  LblLocalDBDesc: TLabel;
+  LblSqlExpressDesc: TLabel;
+  LblRemoteServerDesc: TLabel;
+  UserDatabaseChoice: Integer; // 0=LocalDB, 1=SqlExpress, 2=Remote
 
 const
   // .NET 8.0 Desktop Runtime x64 (evergreen link - always latest)
@@ -73,9 +84,12 @@ const
   DotNetInstallerName = 'windowsdesktop-runtime-8.0-win-x64.exe';
   
   // SQL Server Express LocalDB (lightweight, 40-50 MB)
-  // Note: This is the direct download link for SQL Server 2022 Express LocalDB
   SqlLocalDBURL = 'https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi';
   SqlLocalDBInstallerName = 'SqlLocalDB.msi';
+  
+  // SQL Server 2022 Express with Advanced Services (1.5 GB download, includes full SQL Server features)
+  SqlExpressURL = 'https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SQLEXPR_x64_ENU.exe';
+  SqlExpressInstallerName = 'SQLEXPR_x64_ENU.exe';
 
 function GetUninstallString(): String;
 var
@@ -128,6 +142,22 @@ begin
     Result := True;
 end;
 
+// Check functions for [Run] section
+function IsLocalDBChoice(): Boolean;
+begin
+  Result := UserDatabaseChoice = 0;
+end;
+
+function IsSqlExpressChoice(): Boolean;
+begin
+  Result := UserDatabaseChoice = 1;
+end;
+
+function IsRemoteServerChoice(): Boolean;
+begin
+  Result := UserDatabaseChoice = 2;
+end;
+
 function IsDotNetInstalled(): Boolean;
 var
   Version: String;
@@ -171,26 +201,150 @@ begin
   end;
 end;
 
+function IsSqlExpressInstalled(): Boolean;
+var
+  SqlExpressPath: String;
+begin
+  Result := False;
+  
+  // Check for SQLEXPRESS instance in common installation paths
+  // SQL Server 2022
+  SqlExpressPath := ExpandConstant('{pf}\Microsoft SQL Server\160\Setup Bootstrap\SQLExpress');
+  if DirExists(SqlExpressPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  
+  // SQL Server 2019
+  SqlExpressPath := ExpandConstant('{pf}\Microsoft SQL Server\150\Setup Bootstrap\SQLExpress');
+  if DirExists(SqlExpressPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  
+  // SQL Server 2017
+  SqlExpressPath := ExpandConstant('{pf}\Microsoft SQL Server\140\Setup Bootstrap\SQLExpress');
+  if DirExists(SqlExpressPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+end;
+
 procedure InitializeWizard();
 begin
+  UserDatabaseChoice := 0; // Default to LocalDB
+  
+  // Create custom database choice page (only if neither database is installed)
+  if not IsLocalDBInstalled() and not IsSqlExpressInstalled() then
+  begin
+    DatabaseChoicePage := CreateCustomPage(wpWelcome, 'Database Selection', 'Choose your SQL Server database option');
+    
+    // Title label
+    LblDatabaseChoice := TLabel.Create(WizardForm);
+    LblDatabaseChoice.Parent := DatabaseChoicePage.Surface;
+    LblDatabaseChoice.Left := 0;
+    LblDatabaseChoice.Top := 0;
+    LblDatabaseChoice.Width := DatabaseChoicePage.SurfaceWidth;
+    LblDatabaseChoice.Caption := 'The Millionaire Game requires a SQL Server database.' + #13#10 + 'Please select a database option:';
+    LblDatabaseChoice.WordWrap := True;
+    LblDatabaseChoice.AutoSize := True;
+    
+    // LocalDB radio button
+    RadLocalDB := TRadioButton.Create(WizardForm);
+    RadLocalDB.Parent := DatabaseChoicePage.Surface;
+    RadLocalDB.Left := 0;
+    RadLocalDB.Top := LblDatabaseChoice.Top + LblDatabaseChoice.Height + 20;
+    RadLocalDB.Width := DatabaseChoicePage.SurfaceWidth;
+    RadLocalDB.Caption := 'SQL Server Express LocalDB (Recommended)';
+    RadLocalDB.Checked := True;
+    RadLocalDB.Font.Style := [fsBold];
+    
+    // LocalDB description
+    LblLocalDBDesc := TLabel.Create(WizardForm);
+    LblLocalDBDesc.Parent := DatabaseChoicePage.Surface;
+    LblLocalDBDesc.Left := 20;
+    LblLocalDBDesc.Top := RadLocalDB.Top + RadLocalDB.Height + 5;
+    LblLocalDBDesc.Width := DatabaseChoicePage.SurfaceWidth - 20;
+    LblLocalDBDesc.Caption := 'Lightweight database for single-user applications. Best for standalone use.' + #13#10 + 
+                              'Download size: ~50 MB | No remote access | Automatic startup';
+    LblLocalDBDesc.WordWrap := True;
+    LblLocalDBDesc.AutoSize := True;
+    
+    // SQL Express radio button
+    RadSqlExpress := TRadioButton.Create(WizardForm);
+    RadSqlExpress.Parent := DatabaseChoicePage.Surface;
+    RadSqlExpress.Left := 0;
+    RadSqlExpress.Top := LblLocalDBDesc.Top + LblLocalDBDesc.Height + 20;
+    RadSqlExpress.Width := DatabaseChoicePage.SurfaceWidth;
+    RadSqlExpress.Caption := 'SQL Server 2022 Express (Advanced)';
+    RadSqlExpress.Font.Style := [fsBold];
+    
+    // SQL Express description
+    LblSqlExpressDesc := TLabel.Create(WizardForm);
+    LblSqlExpressDesc.Parent := DatabaseChoicePage.Surface;
+    LblSqlExpressDesc.Left := 20;
+    LblSqlExpressDesc.Top := RadSqlExpress.Top + RadSqlExpress.Height + 5;
+    LblSqlExpressDesc.Width := DatabaseChoicePage.SurfaceWidth - 20;
+    LblSqlExpressDesc.Caption := 'Full-featured database with remote access and advanced features.' + #13#10 + 
+                                 'Download size: ~1.5 GB | Supports remote connections | Requires manual configuration';
+    LblSqlExpressDesc.WordWrap := True;
+    LblSqlExpressDesc.AutoSize := True;
+    
+    // Remote Server radio button
+    RadRemoteServer := TRadioButton.Create(WizardForm);
+    RadRemoteServer.Parent := DatabaseChoicePage.Surface;
+    RadRemoteServer.Left := 0;
+    RadRemoteServer.Top := LblSqlExpressDesc.Top + LblSqlExpressDesc.Height + 20;
+    RadRemoteServer.Width := DatabaseChoicePage.SurfaceWidth;
+    RadRemoteServer.Caption := 'Remote SQL Server (I already have a server)';
+    RadRemoteServer.Font.Style := [fsBold];
+    
+    // Remote Server description
+    LblRemoteServerDesc := TLabel.Create(WizardForm);
+    LblRemoteServerDesc.Parent := DatabaseChoicePage.Surface;
+    LblRemoteServerDesc.Left := 20;
+    LblRemoteServerDesc.Top := RadRemoteServer.Top + RadRemoteServer.Height + 5;
+    LblRemoteServerDesc.Width := DatabaseChoicePage.SurfaceWidth - 20;
+    LblRemoteServerDesc.Caption := 'Connect to an existing SQL Server instance (local network or remote).' + #13#10 + 
+                                   'No installation required | You''ll configure connection details after setup';
+    LblRemoteServerDesc.WordWrap := True;
+    LblRemoteServerDesc.AutoSize := True;
+  end;
+  
   // Create download page for .NET Runtime if needed
   if not IsDotNetInstalled() then
   begin
     DotNetDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
   
-  // Create download page for SQL Server LocalDB if needed
-  if not IsLocalDBInstalled() then
+  // Create download page for SQL Server (will be used for either LocalDB or Express)
+  if not IsLocalDBInstalled() and not IsSqlExpressInstalled() then
   begin
-    SqlLocalDBDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
+    SqlDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
   ResultCode: Integer;
+  SqlUrl: String;
+  SqlInstaller: String;
 begin
   Result := True;
+  
+  // Save user's database choice
+  if (DatabaseChoicePage <> nil) and (CurPageID = DatabaseChoicePage.ID) then
+  begin
+    if RadSqlExpress.Checked then
+      UserDatabaseChoice := 1
+    else if RadRemoteServer.Checked then
+      UserDatabaseChoice := 2
+    else
+      UserDatabaseChoice := 0; // LocalDB (default)
+  end;
   
   // Download .NET Runtime if needed
   if (CurPageID = wpReady) and not IsDotNetInstalled() and (DotNetDownloadPage <> nil) then
@@ -244,35 +398,81 @@ begin
     end;
   end;
   
-  // Download SQL Server LocalDB if needed
-  if Result and (CurPageID = wpReady) and not IsLocalDBInstalled() and (SqlLocalDBDownloadPage <> nil) then
+  // Download and install SQL Server (LocalDB or Express based on user choice)
+  // Skip if user chose Remote Server option
+  if Result and (CurPageID = wpReady) and not IsLocalDBInstalled() and not IsSqlExpressInstalled() and (SqlDownloadPage <> nil) and (UserDatabaseChoice <> 2) then
   begin
-    if MsgBox('SQL Server Express LocalDB is not installed. Would you like to download and install it now?' + #13#10 + 
-              'This is required for the database functionality.' + #13#10#13#10 +
-              'Note: LocalDB is a lightweight SQL Server database engine (40-50 MB) designed for development and single-user applications.',
-              mbConfirmation, MB_YESNO) = IDYES then
+    // Determine which SQL Server to install
+    if UserDatabaseChoice = 1 then
     begin
-      SqlLocalDBDownloadPage.Clear;
-      SqlLocalDBDownloadPage.Add(SqlLocalDBURL, SqlLocalDBInstallerName, '');
-      SqlLocalDBDownloadPage.Show;
+      SqlUrl := SqlExpressURL;
+      SqlInstaller := SqlExpressInstallerName;
       
-      try
-        try
-          SqlLocalDBDownloadPage.Download;
-        except
-          if not SqlLocalDBDownloadPage.AbortedByUser then
-            MsgBox('Error downloading SQL Server LocalDB. You can install it manually later from:' + #13#10 + SqlLocalDBURL, mbError, MB_OK);
-        end;
-      finally
-        SqlLocalDBDownloadPage.Hide;
-      end;
-      
-      // Install SQL Server LocalDB if download succeeded
-      if FileExists(ExpandConstant('{tmp}\' + SqlLocalDBInstallerName)) then
+      if MsgBox('SQL Server 2022 Express will be downloaded and installed.' + #13#10 + 
+                'Download size: ~1.5 GB' + #13#10#13#10 +
+                'Note: This will take several minutes. Continue?',
+                mbConfirmation, MB_YESNO) <> IDYES then
       begin
+        Result := False;
+        Exit;
+      end;
+    end
+    else
+    begin
+      SqlUrl := SqlLocalDBURL;
+      SqlInstaller := SqlLocalDBInstallerName;
+    end;
+    
+    SqlDownloadPage.Clear;
+    SqlDownloadPage.Add(SqlUrl, SqlInstaller, '');
+    SqlDownloadPage.Show;
+    
+    try
+      try
+        SqlDownloadPage.Download;
+      except
+        if not SqlDownloadPage.AbortedByUser then
+        begin
+          if UserDatabaseChoice = 1 then
+            MsgBox('Error downloading SQL Server Express. You can install it manually later.', mbError, MB_OK)
+          else
+            MsgBox('Error downloading SQL Server LocalDB. You can install it manually later.', mbError, MB_OK);
+        end;
+      end;
+    finally
+      SqlDownloadPage.Hide;
+    end;
+    
+    // Install SQL Server if download succeeded
+    if FileExists(ExpandConstant('{tmp}\' + SqlInstaller)) then
+    begin
+      if UserDatabaseChoice = 1 then
+      begin
+        // SQL Server Express installation
+        MsgBox('SQL Server 2022 Express will now install. This may take 10-15 minutes...' + #13#10#13#10 +
+               'The installer will run in a separate window. Please wait for it to complete.', mbInformation, MB_OK);
+        
+        if ShellExec('', ExpandConstant('{tmp}\' + SqlInstaller), 
+                     '/Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=Install /FEATURES=SQLEngine /INSTANCENAME=SQLEXPRESS /SECURITYMODE=SQL /SAPWD="MillionaireGame2026!" /TCPENABLED=1', 
+                     '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        begin
+          if ResultCode = 0 then
+            MsgBox('SQL Server 2022 Express installed successfully!', mbInformation, MB_OK)
+          else if ResultCode = 3010 then
+            MsgBox('SQL Server 2022 Express installed successfully. A reboot may be required.', mbInformation, MB_OK)
+          else
+            MsgBox('SQL Server Express installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
+        end
+        else
+          MsgBox('Failed to launch SQL Server Express installer.', mbError, MB_OK);
+      end
+      else
+      begin
+        // LocalDB installation
         MsgBox('SQL Server LocalDB will now install silently. This may take a few minutes...', mbInformation, MB_OK);
         
-        if ShellExec('', 'msiexec.exe', '/i "' + ExpandConstant('{tmp}\' + SqlLocalDBInstallerName) + '" /quiet IACCEPTSQLLOCALDBLICENSETERMS=YES', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        if ShellExec('', 'msiexec.exe', '/i "' + ExpandConstant('{tmp}\' + SqlInstaller) + '" /quiet IACCEPTSQLLOCALDBLICENSETERMS=YES', 
+                     '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
         begin
           if ResultCode = 0 then
             MsgBox('SQL Server LocalDB installed successfully!', mbInformation, MB_OK)
