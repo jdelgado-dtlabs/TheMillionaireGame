@@ -565,11 +565,11 @@ src/MillionaireGame/MillionaireGame.csproj
 **Test Date:** 2026-01-11  
 **Test Environment:**
 - OS: Windows 11
-- SQL Instance: SQL Express (LocalDB not installed)
-- sql.xml: Backed up and removed
+- SQL Instance: SQL Server LocalDB (MSSQLLocalDB v17.0.925.4)
+- sql.xml: Removed to simulate first-run
 - Application: Built successfully and launched
 
-**Testing Results:**
+**Initial Testing (SQL Express):**
 1. ✅ sql.xml removed (simulated first-run)
 2. ✅ Application built successfully
 3. ✅ Application launched
@@ -577,19 +577,35 @@ src/MillionaireGame/MillionaireGame.csproj
 5. ✅ SQL Server option worked (used SQL Express)
 6. ✅ Connection test successful
 7. ✅ Database creation successful
-8. ✅ Sample data loading successful
-9. ✅ Application proceeded to main form after wizard
+8. ❌ Sample data loading failed - "Invalid object name 'fff_questions'" (batch 14)
 
-**Notes:**
-- User tested with SQL Express (not LocalDB)
-- All wizard functionality confirmed working
-- LocalDB installation needed for proper testing of default option
-- Installer needs update to include SQL LocalDB runtime
+**Issue Resolution:**
+- **Problem:** Original init_database.sql had 20+ batches with many GO statements
+- **Root Cause:** Batch execution order and table creation timing issue
+- **Solution:** Rewrote SQL script to consolidate into 3 batches:
+  1. DROP tables (if exist)
+  2. CREATE both tables
+  3. INSERT all 124 questions (80 + 44 FFF)
+- **Changes:** Removed USE statement, PRINT statements, consolidated all INSERT statements
 
-**Next Actions:**
-- Install SQL Server LocalDB for complete testing
-- Update Inno Setup installer to include SqlLocalDB.msi
-- Retest with LocalDB as default option
+**Final Testing (LocalDB):**
+1. ✅ LocalDB confirmed installed and running
+2. ✅ sql.xml removed (simulated first-run)
+3. ✅ Wizard appeared correctly on startup
+4. ✅ LocalDB option selected (default)
+5. ✅ Connection test successful
+6. ✅ Database creation successful on LocalDB
+7. ✅ **Sample data loading successful** - All 80 questions + 44 FFF questions loaded
+8. ✅ Application proceeded to main form after wizard
+9. ✅ sql.xml created with correct LocalDB settings
+
+**Confirmed Working:**
+- ✅ First-run detection logic
+- ✅ LocalDB connection and database creation
+- ✅ Sample data loading (124 questions total)
+- ✅ Settings persistence (sql.xml)
+- ✅ Watchdog heartbeat during wizard
+- ✅ Application startup after successful wizard completion
 
 ---
 
