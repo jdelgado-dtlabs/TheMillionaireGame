@@ -26,7 +26,16 @@ This index helps you find the right documentation for your needs.
 ### `/active/` - Current Work
 Documents for active development and near-term planning:
 
+**Plugin Architecture (v1.1.0)**:
+- **[`LIGHTING_PLUGIN_ARCHITECTURE.md`](active/LIGHTING_PLUGIN_ARCHITECTURE.md)** - 📋 Lighting control plugin system architecture
+- **[`SOUND_PLUGIN_ARCHITECTURE.md`](active/SOUND_PLUGIN_ARCHITECTURE.md)** - 📋 Sound/mixer control plugin system architecture
+- **[`UNIFIED_PLUGIN_MANAGER_PLAN.md`](active/UNIFIED_PLUGIN_MANAGER_PLAN.md)** - 📋 Optional unified plugin manager (v1.2.0)
+- **[`ETC_ION_PLUGIN_PLAN.md`](active/ETC_ION_PLUGIN_PLAN.md)** - 📋 ETC Ion Classic lighting plugin implementation
+- **[`YAMAHA_TF_PLUGIN_IMPLEMENTATION.md`](active/YAMAHA_TF_PLUGIN_IMPLEMENTATION.md)** - 📋 Yamaha TF Rack sound plugin implementation
+
+**Active Plans**:
 - **[`V1.0_RELEASE_STATUS.md`](active/V1.0_RELEASE_STATUS.md)** - ✅ v1.0.1 released with post-release fixes
+- **[`FIRST_RUN_WIZARD_PLAN.md`](active/FIRST_RUN_WIZARD_PLAN.md)** - 📋 First run setup wizard for new installations
 - **[`GITHUB_CRASH_REPORTING_PLAN.md`](active/GITHUB_CRASH_REPORTING_PLAN.md)** - 📋 GitHub OAuth crash reporting implementation plan
 - **[`STATE_SYNC_IMPLEMENTATION_PLAN.md`](active/STATE_SYNC_IMPLEMENTATION_PLAN.md)** - Web state synchronization
 - **[`DATABASE_MIGRATION_SYSTEM_PLAN.md`](active/DATABASE_MIGRATION_SYSTEM_PLAN.md)** - Database migration framework
