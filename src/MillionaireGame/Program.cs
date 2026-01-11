@@ -68,11 +68,23 @@ internal static class Program
         {
             GameConsole.Info("[Startup] First run detected - launching database setup wizard");
             
+            // Check for --db-type command-line argument (set by installer)
+            string? preselectedDbType = null;
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].StartsWith("--db-type=", StringComparison.OrdinalIgnoreCase))
+                {
+                    preselectedDbType = args[i].Substring("--db-type=".Length);
+                    GameConsole.Info($"[Startup] Preselected database type from installer: {preselectedDbType}");
+                    break;
+                }
+            }
+            
             // Start heartbeat service for wizard to prevent watchdog timeout
             _heartbeatService = new HeartbeatService();
             _heartbeatService.SetActivity("Database Setup Wizard");
             
-            using var wizard = new FirstRunWizard();
+            using var wizard = new FirstRunWizard(preselectedDbType);
             
             // Start heartbeat with wizard form
             _heartbeatService.Start(wizard);

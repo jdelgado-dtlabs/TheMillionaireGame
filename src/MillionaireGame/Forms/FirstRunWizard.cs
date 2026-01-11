@@ -17,15 +17,25 @@ public partial class FirstRunWizard : Form
     private bool _isTestingConnection;
     private bool _connectionTestPassed;
     private bool _databaseExists;
+    private readonly string? _preselectedDbType;
 
-    public FirstRunWizard()
+    public FirstRunWizard(string? preselectedDbType = null)
     {
         InitializeComponent();
         IconHelper.ApplyToForm(this);
         _settingsManager = new SqlSettingsManager();
+        _preselectedDbType = preselectedDbType;
         
-        // Set initial state
-        radLocalDB.Checked = true; // LocalDB is default
+        // Set initial state based on preselected type or default to LocalDB
+        if (preselectedDbType?.ToLowerInvariant() == "sqlexpress")
+        {
+            radSqlServer.Checked = true; // SQL Server Express was installed
+        }
+        else
+        {
+            radLocalDB.Checked = true; // LocalDB is default
+        }
+        
         btnFinish.Enabled = false;
         chkLoadSampleData.Enabled = false;
         grpConnectionDetails.Visible = false;
