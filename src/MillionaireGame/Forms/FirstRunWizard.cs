@@ -1,5 +1,4 @@
 using System.Data;
-using Microsoft.Data.Sql;
 using Microsoft.Data.SqlClient;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Helpers;
@@ -31,16 +30,37 @@ public partial class FirstRunWizard : Form
         chkLoadSampleData.Enabled = false;
         grpConnectionDetails.Visible = false;
         
-        // Start background tasks
-        _ = DetectLocalDBAsync();
+        // Start background tasks with error handling
+        try
+        {
+            _ = DetectLocalDBAsync();
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"Error starting LocalDB detection: {ex.Message}");
+        }
     }
 
     protected override async void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
         
-        // Start enumerating SQL instances (may take 10-15 seconds)
-        await EnumerateSqlInstancesAsync();
+        try
+        {
+            // Start enumerating SQL instances (may take 10-15 seconds)
+            await EnumerateSqlInstancesAsync();
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"Error in FirstRunWizard.OnLoad: {ex.Message}");
+            // Ensure UI is still functional even if enumeration fails
+            if (cmbServerInstance.Items.Count == 0)
+            {
+                cmbServerInstance.Items.Add("<Browse for more...>");
+                cmbServerInstance.SelectedIndex = 0;
+            }
+            cmbServerInstance.Enabled = true;
+        }
     }
 
     #region LocalDB Detection

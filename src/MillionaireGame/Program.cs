@@ -68,8 +68,21 @@ internal static class Program
         {
             GameConsole.Info("[Startup] First run detected - launching database setup wizard");
             
+            // Start heartbeat service for wizard to prevent watchdog timeout
+            _heartbeatService = new HeartbeatService();
+            _heartbeatService.SetActivity("Database Setup Wizard");
+            
             using var wizard = new FirstRunWizard();
+            
+            // Start heartbeat with wizard form
+            _heartbeatService.Start(wizard);
+            
             var wizardResult = wizard.ShowDialog();
+            
+            // Stop heartbeat after wizard closes
+            _heartbeatService.Stop();
+            _heartbeatService.Dispose();
+            _heartbeatService = null;
             
             if (wizardResult != DialogResult.OK)
             {
