@@ -399,7 +399,7 @@ public partial class FirstRunWizard : Form
             System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
         );
 
-        GameConsole.Info($"[SampleData] Total batches found: {batches.Length}");
+        GameConsole.Debug($"[SampleData] Total batches found: {batches.Length}");
 
         string connectionString = settings.GetConnectionString("dbMillionaire");
 
@@ -415,19 +415,19 @@ public partial class FirstRunWizard : Form
             {
                 batchNumber++;
                 string trimmedBatch = batch.Trim();
-                GameConsole.Info($"[SampleData] Batch {batchNumber} (first 100 chars): {trimmedBatch.Substring(0, Math.Min(100, trimmedBatch.Length))}");
+                GameConsole.Debug($"[SampleData] Batch {batchNumber} (first 100 chars): {trimmedBatch.Substring(0, Math.Min(100, trimmedBatch.Length))}");
 
                 // Only skip if truly empty
                 if (string.IsNullOrWhiteSpace(trimmedBatch))
                 {
-                    GameConsole.Warn($"[SampleData] Skipping empty batch {batchNumber}");
+                    GameConsole.Debug($"[SampleData] Skipping empty batch {batchNumber}");
                     continue;
                 }
 
                 // Skip USE statements (already connected to database)
                 if (trimmedBatch.StartsWith("USE ", StringComparison.OrdinalIgnoreCase))
                 {
-                    GameConsole.Warn($"[SampleData] Skipping USE statement in batch {batchNumber}");
+                    GameConsole.Debug($"[SampleData] Skipping USE statement in batch {batchNumber}");
                     continue;
                 }
 
@@ -437,17 +437,17 @@ public partial class FirstRunWizard : Form
                     command.CommandTimeout = 120; // 2 minutes for large INSERT statements
                     command.ExecuteNonQuery();
                     executedBatches++;
-                    GameConsole.Info($"[SampleData] Executed SQL batch {batchNumber} successfully");
+                    GameConsole.Debug($"[SampleData] Executed SQL batch {batchNumber} successfully");
                 }
                 catch (Exception ex)
                 {
                     GameConsole.Error($"[SampleData] Failed to execute SQL batch {batchNumber}: {ex.Message}");
-                    GameConsole.Info($"[SampleData] Batch content (first 200 chars): {trimmedBatch.Substring(0, Math.Min(200, trimmedBatch.Length))}...");
+                    GameConsole.Debug($"[SampleData] Batch content (first 200 chars): {trimmedBatch.Substring(0, Math.Min(200, trimmedBatch.Length))}...");
                     throw new Exception($"Failed to execute SQL batch {batchNumber}: {ex.Message}", ex);
                 }
             }
 
-            GameConsole.Info($"[SampleData] Successfully loaded {executedBatches} SQL batches (skipped {batchNumber - executedBatches})");
+            GameConsole.Debug($"[SampleData] Successfully loaded {executedBatches} SQL batches (skipped {batchNumber - executedBatches})");
         });
     }
 
