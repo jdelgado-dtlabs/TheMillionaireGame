@@ -320,6 +320,7 @@ public partial class FirstRunWizard : Form
                 }
             }
             
+            _settingsManager.Settings = settings;
             _settingsManager.SaveSettings();
             GameConsole.Info("Database configuration saved to sql.xml");
             
@@ -393,59 +394,60 @@ public partial class FirstRunWizard : Form
         
         // Split by GO statements using regex to handle any whitespace/newline combination
         string[] batches = System.Text.RegularExpressions.Regex.Split(
-            sqlContent, 
-            @"^\s*GO\s*$", 
+            sqlContent,
+            @"^\s*GO\s*$",
             System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase
         );
-        
+
+        GameConsole.Info($"[SampleData] Total batches found: {batches.Length}");
+
         string connectionString = settings.GetConnectionString("dbMillionaire");
-        
+
         await Task.Run(() =>
         {
             using var connection = new SqlConnection(connectionString);
             connection.Open();
-            
+
             int batchNumber = 0;
             int executedBatches = 0;
-            
+
             foreach (var batch in batches)
             {
                 batchNumber++;
-                
-                // Skip empty batches, whitespace-only, or comment-only lines
                 string trimmedBatch = batch.Trim();
-                if (string.IsNullOrWhiteSpace(trimmedBatch) || 
-                    trimmedBatch.StartsWith("--") || 
-                    trimmedBatch.All(c => c == '-' || char.IsWhiteSpace(c)))
+                GameConsole.Info($"[SampleData] Batch {batchNumber} (first 100 chars): {trimmedBatch.Substring(0, Math.Min(100, trimmedBatch.Length))}");
+
+                // Only skip if truly empty
+                if (string.IsNullOrWhiteSpace(trimmedBatch))
                 {
-                    GameConsole.Debug($"Skipping empty/comment batch {batchNumber}");
+                    GameConsole.Warn($"[SampleData] Skipping empty batch {batchNumber}");
                     continue;
                 }
-                
+
                 // Skip USE statements (already connected to database)
                 if (trimmedBatch.StartsWith("USE ", StringComparison.OrdinalIgnoreCase))
                 {
-                    GameConsole.Debug($"Skipping USE statement in batch {batchNumber}");
+                    GameConsole.Warn($"[SampleData] Skipping USE statement in batch {batchNumber}");
                     continue;
                 }
-                
+
                 try
                 {
                     using var command = new SqlCommand(trimmedBatch, connection);
                     command.CommandTimeout = 120; // 2 minutes for large INSERT statements
                     command.ExecuteNonQuery();
                     executedBatches++;
-                    GameConsole.Debug($"Executed SQL batch {batchNumber} successfully");
+                    GameConsole.Info($"[SampleData] Executed SQL batch {batchNumber} successfully");
                 }
                 catch (Exception ex)
                 {
-                    GameConsole.Error($"Failed to execute SQL batch {batchNumber}: {ex.Message}");
-                    GameConsole.Debug($"Batch content (first 200 chars): {trimmedBatch.Substring(0, Math.Min(200, trimmedBatch.Length))}...");
+                    GameConsole.Error($"[SampleData] Failed to execute SQL batch {batchNumber}: {ex.Message}");
+                    GameConsole.Info($"[SampleData] Batch content (first 200 chars): {trimmedBatch.Substring(0, Math.Min(200, trimmedBatch.Length))}...");
                     throw new Exception($"Failed to execute SQL batch {batchNumber}: {ex.Message}", ex);
                 }
             }
-            
-            GameConsole.Info($"Successfully loaded {executedBatches} SQL batches (skipped {batchNumber - executedBatches})");
+
+            GameConsole.Info($"[SampleData] Successfully loaded {executedBatches} SQL batches (skipped {batchNumber - executedBatches})");
         });
     }
 
