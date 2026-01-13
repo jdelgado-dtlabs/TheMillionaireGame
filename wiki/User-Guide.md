@@ -1387,24 +1387,60 @@ The TV screen supports background customization through Settings → Broadcast t
 
 ### Crash Recovery
 
-The application includes automatic crash monitoring.
+The application includes automatic crash monitoring with integrated GitHub reporting.
 
 **Watchdog Service:**
 - Monitors for crashes and freezes
 - Automatically restarts application
 - Generates diagnostic reports
 - Preserves game state when possible
+- Runs completely hidden (no console window)
 
-**Crash Reports:**
-Located in `Logs/CrashReports/`
-- Stack traces
-- Memory dumps
-- Event logs
-- System information
+**Automated Crash Reporting (v1.0.6+):**
+When a crash occurs, a dialog automatically appears:
 
-**Reporting Crashes:**
-Submit crash reports to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) with:
-- Crash report file
+1. **Crash Report Dialog**
+   - Shows crash details (exit code, meaning, activity)
+   - User input fields:
+     - **Description**: What were you doing when it crashed?
+     - **Reproduction Steps**: How to reproduce the issue
+     - **Email** (optional): For follow-up communication
+   - **Include Options**: System info, logs (with privacy protection)
+   - Three action buttons:
+     - **Submit to GitHub**: One-click submission (requires authentication)
+     - **Save Locally**: Save report without submitting
+     - **Don't Send**: Dismiss dialog
+
+2. **GitHub Authentication**
+   - First-time only: OAuth device flow authentication
+   - Shows verification code and opens GitHub in browser
+   - Token stored securely in Windows Credential Manager
+   - Subsequent crashes use cached authentication
+
+3. **Privacy Protection**
+   - **Automatic Data Sanitization**: Removes personal information
+     - Usernames and file paths → `<USERPATH>`
+     - Machine names → `<MACHINE>`
+     - Connection strings, API keys → `<REDACTED>`
+     - Email addresses → `<EMAIL>`
+     - IP addresses → `<IP>` (preserves localhost)
+   - **Preview Report**: Review sanitized report before submission
+
+4. **Duplicate Detection**
+   - Automatically checks for similar crashes (7-day window)
+   - Links to existing issue if duplicate found
+   - Prevents issue flooding
+
+**Crash Report Location:**
+`%LocalAppData%\TheMillionaireGame\CrashReports\`
+- Full stack traces
+- Memory information
+- System details
+- Sanitized logs
+
+**Manual Reporting:**
+If automated reporting fails, submit manually to [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues) with:
+- Crash report file from CrashReports folder
 - Steps to reproduce
 - Expected vs actual behavior
 

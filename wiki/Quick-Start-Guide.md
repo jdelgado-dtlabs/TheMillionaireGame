@@ -12,39 +12,44 @@ Get up and running with The Millionaire Game in 5 minutes! This guide walks you 
 
 ---
 
-## Step 1: Launch and Initial Setup (1 minute)
+## Step 1: Launch and First-Run Setup (2 minutes)
 
 ### Launch the Application
 1. Double-click the desktop shortcut or Start Menu entry
-2. The **Control Panel** window opens - this is your operator interface
-3. Other screens (TV Screen, Host Screen, Guest Screen) can be opened via the **Screens** menu
+2. **First-Run Wizard** appears (only on first launch)
 
-### First-Time Setup
-On first launch, the application will:
-- Initialize the database (creates settings and WAPS tables)
-- Create default configuration files
+### First-Run Database Wizard
+The wizard guides you through database setup:
 
-### Database Question Loading
-The application does NOT automatically load questions. You must populate the question database:
+**Step 1: Choose Database Type**
+- **LocalDB (Automatic)** - Recommended for most users
+  - Zero configuration required
+  - Lightweight, bundled with installer
+  - Perfect for single-user installations
+- **SQL Server (Advanced)** - For existing SQL Server installations
+  - Auto-detects local instances
+  - Supports remote connections
 
-**Option A: During Installation**
-- Check the "Initialize SQL Server database" option during install
-- This runs the `init_database.sql` script automatically
+**Step 2: Test Connection**
+- Click "Test Connection" button
+- Wizard verifies database connectivity
+- Shows whether database exists or needs creation
 
-**Option B: After Installation (SQL Script)**
-1. Locate `init_database.sql` in the application directory
-2. Run the script against your SQL Server Express instance
-3. This populates:
-   - Main game questions (80 generic trivia questions)
-   - FFF questions (41 ordering questions)
+**Step 3: Optional Sample Data**
+- Check "Load sample trivia data" to import:
+  - **80 trivia questions** (4-level difficulty system)
+  - **44 Fastest Finger First ordering questions**
+- Sample questions are free to use as templates
 
-**Option C: Question Editor (Easiest)**
-1. In Control Panel, go to **Game → Editor**
-2. Use the **Questions** tab for main game questions
-3. Use the **FFF Questions** tab for Fastest Finger First questions
-4. Add questions manually through the editor interface, or:
-   - Click **Import** to load questions from CSV file
-   - Click **Export** to save questions to CSV file
+**Step 4: Finish Setup**
+- Click "Finish" to save configuration
+- Database created automatically if needed
+- Control Panel opens when complete
+
+### After First Launch
+- The wizard only appears once
+- Database settings saved to configuration
+- To change database later: **Game → Settings → Database** tab
 
 > 💡 **Tip**: If using multiple monitors, configure screen assignments via **Game → Settings → Screens** tab for automatic positioning.
 

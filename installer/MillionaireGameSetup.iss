@@ -60,9 +60,15 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; Auto-detected database installations (first-time install with existing SQL)
+; No flag = LocalDB (default), --db-type=sqlserver for any SQL Server installation
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=sqlserver"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsDetectedSqlServer
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsDetectedLocalDB
+
+; User-selected database options (from wizard)
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsLocalDBChoice
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=sqlexpress"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsSqlExpressChoice
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=remote"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsRemoteServerChoice
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=sqlserver"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsSqlExpressChoice
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--db-type=sqlserver"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent; Check: IsRemoteServerChoice
 
 [Code]
 var
@@ -77,6 +83,7 @@ var
   LblSqlExpressDesc: TLabel;
   LblRemoteServerDesc: TLabel;
   UserDatabaseChoice: Integer; // 0=LocalDB, 1=SqlExpress, 2=Remote
+  DetectedDatabaseType: String; // Stores auto-detected database type for first-run
 
 const
   // .NET 8.0 Desktop Runtime x64 (evergreen link - always latest)
@@ -142,20 +149,34 @@ begin
     Result := True;
 end;
 
-// Check functions for [Run] section
+// Check functions for [Run] section - Auto-detected installations
+function IsDetectedSqlServer(): Boolean;
+begin
+  // Covers both SQL Server Express and full SQL Server
+  Result := (DetectedDatabaseType = 'sqlserver') and (DatabaseChoicePage = nil);
+end;
+
+function IsDetectedLocalDB(): Boolean;
+begin
+  Result := (DetectedDatabaseType = 'localdb') and (DatabaseChoicePage = nil);
+end;
+
+// Check functions for [Run] section - User-selected from wizard
 function IsLocalDBChoice(): Boolean;
 begin
-  Result := UserDatabaseChoice = 0;
+  Result := (UserDatabaseChoice = 0) and (DatabaseChoicePage <> nil);
 end;
 
 function IsSqlExpressChoice(): Boolean;
 begin
-  Result := UserDatabaseChoice = 1;
+  // SQL Express choice triggers --db-type=sqlserver (works same as full SQL Server)
+  Result := (UserDatabaseChoice = 1) and (DatabaseChoicePage <> nil);
 end;
 
 function IsRemoteServerChoice(): Boolean;
 begin
-  Result := UserDatabaseChoice = 2;
+  // Remote server choice also triggers --db-type=sqlserver
+  Result := (UserDatabaseChoice = 2) and (DatabaseChoicePage <> nil);
 end;
 
 function IsDotNetInstalled(): Boolean;
@@ -233,12 +254,85 @@ begin
   end;
 end;
 
+function IsSqlServerInstalled(): Boolean;
+var
+  SqlServerPath: String;
+  InstanceNames: String;
+begin
+  Result := False;
+  
+  // Check for full SQL Server installation (not Express or LocalDB)
+  // Look for MSSQLSERVER (default instance) or any named instances
+  
+  // Check registry for installed instances
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Microsoft SQL Server', 'InstalledInstances', InstanceNames) then
+  begin
+    // If we find instances other than just 'SQLEXPRESS', it's full SQL Server
+    if (Pos('MSSQLSERVER', InstanceNames) > 0) or 
+       ((Length(InstanceNames) > 0) and (Pos('SQLEXPRESS', InstanceNames) = 0)) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+  
+  // Additional check: Look for SQL Server setup bootstrap (non-Express)
+  // SQL Server 2022
+  SqlServerPath := ExpandConstant('{pf}\Microsoft SQL Server\160\Setup Bootstrap\SQL2022');
+  if DirExists(SqlServerPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  
+  // SQL Server 2019
+  SqlServerPath := ExpandConstant('{pf}\Microsoft SQL Server\150\Setup Bootstrap\SQL2019');
+  if DirExists(SqlServerPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+  
+  // SQL Server 2017
+  SqlServerPath := ExpandConstant('{pf}\Microsoft SQL Server\140\Setup Bootstrap\SQL2017');
+  if DirExists(SqlServerPath) then
+  begin
+    Result := True;
+    Exit;
+  end;
+end;
+
+function GetDetectedDatabaseType(): String;
+begin
+  // Detection hierarchy:
+  // 1. SQL Server (Express or full) - both work the same way
+  // 2. LocalDB (only if SQL Server not installed)
+  // 3. None - show installation wizard
+  
+  if IsSqlServerInstalled() or IsSqlExpressInstalled() then
+  begin
+    Result := 'sqlserver';
+    Exit;
+  end;
+  
+  if IsLocalDBInstalled() then
+  begin
+    Result := 'localdb';
+    Exit;
+  end;
+  
+  // No SQL Server installation detected
+  Result := '';
+end;
+
 procedure InitializeWizard();
 begin
   UserDatabaseChoice := 0; // Default to LocalDB
+  DetectedDatabaseType := GetDetectedDatabaseType(); // Detect existing SQL installations
   
-  // Create custom database choice page (only if neither database is installed)
-  if not IsLocalDBInstalled() and not IsSqlExpressInstalled() then
+  // Create custom database choice page (only if no SQL Server is installed)
+  // If SQL Server is detected, we'll auto-select it and skip the wizard page
+  if DetectedDatabaseType = '' then
   begin
     DatabaseChoicePage := CreateCustomPage(wpWelcome, 'Database Selection', 'Choose your SQL Server database option');
     
@@ -321,7 +415,8 @@ begin
   end;
   
   // Create download page for SQL Server (will be used for either LocalDB or Express)
-  if not IsLocalDBInstalled() and not IsSqlExpressInstalled() then
+  // Only create if no SQL Server installation was detected
+  if DetectedDatabaseType = '' then
   begin
     SqlDownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing), SetupMessage(msgPreparingDesc), nil);
   end;
@@ -399,8 +494,8 @@ begin
   end;
   
   // Download and install SQL Server (LocalDB or Express based on user choice)
-  // Skip if user chose Remote Server option
-  if Result and (CurPageID = wpReady) and not IsLocalDBInstalled() and not IsSqlExpressInstalled() and (SqlDownloadPage <> nil) and (UserDatabaseChoice <> 2) then
+  // Skip if user chose Remote Server option OR if SQL Server is already detected
+  if Result and (CurPageID = wpReady) and (DetectedDatabaseType = '') and (SqlDownloadPage <> nil) and (UserDatabaseChoice <> 2) then
   begin
     // Determine which SQL Server to install
     if UserDatabaseChoice = 1 then

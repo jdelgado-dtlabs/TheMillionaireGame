@@ -69,6 +69,7 @@ internal static class Program
             GameConsole.Info("[Startup] First run detected - launching database setup wizard");
             
             // Check for --db-type command-line argument (set by installer)
+            // Expected values: null (default LocalDB) or "sqlserver" (SQL Server/Express)
             string? preselectedDbType = null;
             for (int i = 0; i < args.Length; i++)
             {

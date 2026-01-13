@@ -1,9 +1,10 @@
 # First-Run Database Wizard - Implementation Plan
 
-**Status:** Planning  
+**Status:** ✅ Complete (Tested & Deployed)  
 **Priority:** High  
-**Target Version:** 1.1.0  
-**Created:** 2026-01-10
+**Target Version:** 1.0.6  
+**Created:** 2026-01-10  
+**Completed:** 2026-01-12
 
 ---
 
@@ -38,12 +39,24 @@ Currently, when the application runs for the first time:
 
 **Before current database initialization:**
 ```csharp
+// Check for command-line database type hint from installer
+string dbTypeHint = null;
+var args = Environment.GetCommandLineArgs();
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--db-type" && i + 1 < args.Length)
+    {
+        dbTypeHint = args[i + 1].ToLower(); // "sqlserver" or null (LocalDB default)
+        break;
+    }
+}
+
 // Check if sql.xml exists
 var sqlSettings = new SqlSettingsManager();
 if (!File.Exists(sqlSettings.FilePath))
 {
-    // Show first-run wizard
-    using var wizard = new FirstRunWizard();
+    // Show first-run wizard with database type hint
+    using var wizard = new FirstRunWizard(dbTypeHint);
     if (wizard.ShowDialog() != DialogResult.OK)
     {
         // User cancelled - cannot run without database
@@ -55,6 +68,10 @@ if (!File.Exists(sqlSettings.FilePath))
 sqlSettings.LoadSettings();
 // ... existing code ...
 ```
+
+**Note:** The installer detects existing SQL Server installations and passes `--db-type` parameter:
+- No flag (default) = LocalDB detected or no SQL Server found
+- `--db-type=sqlserver` = SQL Server Express or full SQL Server detected (both work identically)
 
 ---
 
@@ -380,6 +397,44 @@ if (!File.Exists(sqlFilePath))
 
 ---
 
+## Installer Intelligence (Inno Setup)
+
+### SQL Server Detection Hierarchy
+
+The installer (`MillionaireGameSetup.iss`) intelligently detects existing SQL Server installations and passes the appropriate `--db-type` parameter to the application on first run.
+
+**Detection Priority:**
+
+1. **SQL Server (any edition)** (`--db-type=sqlserver`)
+   - Includes both SQL Server Express and full SQL Server
+   - Registry check: `HKLM\SOFTWARE\Microsoft\Microsoft SQL Server\InstalledInstances` for any instances
+   - File system check: `{pf}\Microsoft SQL Server\{version}\Setup Bootstrap\` directories
+   - **Rationale:** SQL Server and SQL Server Express work identically from a connection perspective. The same dialog works for both local and remote instances.
+
+2. **LocalDB** (no flag - default behavior)
+   - File system check: `{pf}\Microsoft SQL Server\{version}\Tools\Binn\SqlLocalDB.exe`
+   - Only selected if SQL Server/Express are NOT installed
+   - Prevents false positives (LocalDB is often bundled with full SQL Server)
+
+**Key Behaviors:**
+
+- **First-time install with SQL Server/Express:** Database choice page is skipped, passes `--db-type=sqlserver`
+- **First-time install with LocalDB only:** Database choice page is skipped, no parameter passed (LocalDB is default)
+- **First-time install without any SQL Server:** Database choice page appears, user selects installation option
+- **Upgrade install:** No detection, uses existing configuration
+
+**Example Scenarios:**
+
+| Installed SQL | Installer Behavior | First-Run Wizard Behavior | Parameter |
+|---------------|-------------------|---------------------------|-----------|
+| SQL Server 2022 | Skips database choice | Auto-selects "SQL Server" option | `--db-type=sqlserver` |
+| SQL Server Express 2019 | Skips database choice | Auto-selects "SQL Server" option | `--db-type=sqlserver` |
+| LocalDB only | Skips database choice | Auto-selects "LocalDB (Automatic)" option | None (default) |
+| SQL Server + LocalDB | Skips database choice | Auto-selects "SQL Server" (LocalDB ignored) | `--db-type=sqlserver` |
+| None | Shows database choice page | User selects from all options | Based on selection |
+
+---
+
 ## Components Affected by LocalDB Migration
 
 ### Installation & Deployment
@@ -481,42 +536,51 @@ if (!File.Exists(sqlFilePath))
 
 ## Testing Checklist
 
+**Testing Completed:** 2026-01-11 ✅ All tests passed
+
 ### First-Run Scenarios
-- [ ] Fresh install (no sql.xml)
-- [ ] Deleted sql.xml (simulated first-run)
-- [ ] sql.xml exists (wizard should NOT show)
+- [x] Fresh install (no sql.xml)
+- [x] Deleted sql.xml (simulated first-run)
+- [x] sql.xml exists (wizard should NOT show)
 
 ### LocalDB Option
-- [ ] Test connection succeeds
-- [ ] Database created successfully
-- [ ] Sample data loads correctly
-- [ ] sql.xml saved with correct LocalDB settings
+- [x] Test connection succeeds
+- [x] Database created successfully
+- [x] Sample data loads correctly
+- [x] sql.xml saved with correct LocalDB settings
 
 ### SQL Server Express Option
-- [ ] Instance enumeration finds SQLEXPRESS
-- [ ] Instance enumeration finds custom instances
-- [ ] No instances found → appropriate warning
-- [ ] Selected instance connects successfully
-- [ ] Database created on selected instance
+- [x] Instance enumeration finds SQLEXPRESS
+- [x] Instance enumeration finds custom instances
+- [x] No instances found → appropriate warning
+- [x] Selected instance connects successfully
+- [x] Database created on selected instance
 
 ### Remote Server Option
-- [ ] Valid credentials → connection succeeds
-- [ ] Invalid credentials → shows error
-- [ ] Wrong server → shows error
-- [ ] Firewall blocked → shows error
-- [ ] All fields required validation
+- [x] Valid credentials → connection succeeds
+- [x] Invalid credentials → shows error
+- [x] Wrong server → shows error
+- [x] Firewall blocked → shows error
+- [x] All fields required validation
 
 ### Database Creation
-- [ ] Database doesn't exist → creates successfully
-- [ ] Database already exists → skips creation, shows message
-- [ ] Sample data checkbox enabled/disabled correctly
-- [ ] Sample data loads all 80 questions + 44 FFF questions
+- [x] Database doesn't exist → creates successfully
+- [x] Database already exists → skips creation, shows message
+- [x] Sample data checkbox enabled/disabled correctly
+- [x] Sample data loads all 80 questions + 44 FFF questions
 
 ### Error Recovery
-- [ ] Test fails → can retry with different settings
-- [ ] Database creation fails → shows error, allows retry
-- [ ] Sample data fails → continues without sample data
-- [ ] Cancel confirmation works correctly
+- [x] Test fails → can retry with different settings
+- [x] Database creation fails → shows error, allows retry
+- [x] Sample data fails → continues without sample data
+- [x] Cancel confirmation works correctly
+
+### Bug Fixes During Testing
+**Issue:** Settings not being saved - wizard would create default settings regardless of user input
+- **Root Cause:** SqlConnectionSettings property had private setter, preventing new settings from being assigned
+- **Fix:** Changed property setter to public and ensured settings are saved to SettingsManager before serialization
+- **Resolution:** Settings now properly persist to sql.xml with user-configured values
+- **Status:** ✅ Fixed and verified
 
 ---
 
@@ -653,6 +717,8 @@ sqlSettings.LoadSettings();
 
 ## Success Criteria
 
+**All criteria met as of 2026-01-12:**
+
 - ✅ No more confusing MessageBoxes on first run
 - ✅ Users can set up database in under 2 minutes
 - ✅ SQL Express instance detection works reliably
@@ -662,6 +728,7 @@ sqlSettings.LoadSettings();
 - ✅ sql.xml created correctly for all options
 - ✅ Clear error messages guide users to solutions
 - ✅ Application exits gracefully on cancel
+- ✅ Settings persistence bug fixed and verified
 
 ---
 
@@ -731,24 +798,32 @@ lblStatus.ForeColor = Color.Green;
 
 ## Implementation Priority
 
-**Phase 1 - Core Functionality:**
-1. Create FirstRunWizard form with basic layout
-2. Add radio button options (LocalDB, SQL Express, Remote)
-3. Implement SQL Server instance enumeration
-4. Add connection testing logic
-5. Implement database creation flow
+**Status: ✅ COMPLETE - All phases finished**
 
-**Phase 2 - Integration:**
-6. Modify Program.cs to show wizard on first-run
-7. Test all connection scenarios
-8. Verify sql.xml creation
+**Phase 1 - Core Functionality:** ✅ Complete
+1. ✅ Create FirstRunWizard form with basic layout
+2. ✅ Add radio button options (LocalDB, SQL Express, Remote)
+3. ✅ Implement SQL Server instance enumeration
+4. ✅ Add connection testing logic
+5. ✅ Implement database creation flow
 
-**Phase 3 - Polish:**
-9. Add sample data loading
-10. Improve error messages
-11. Add status animations/colors
-12. Testing and bug fixes
+**Phase 2 - Integration:** ✅ Complete
+6. ✅ Modify Program.cs to show wizard on first-run
+7. ✅ Test all connection scenarios
+8. ✅ Verify sql.xml creation
+9. ✅ Fix settings persistence bug
+
+**Phase 3 - Polish:** ✅ Complete
+10. ✅ Add sample data loading
+11. ✅ Improve error messages
+12. ✅ Add status animations/colors
+13. ✅ Testing and bug fixes
+
+**Phase 4 - Installer Integration:** ✅ Complete
+14. ✅ Implement SQL Server detection in installer
+15. ✅ Add command-line parameter support
+16. ✅ Test auto-detection scenarios
 
 ---
 
-**Status:** Ready for implementation pending approval
+**Final Status:** ✅ Ready for production deployment in v1.0.6

@@ -101,21 +101,28 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **Check Crash Reports**
-   - Location: `%LocalAppData%\MillionaireGame\CrashReports\`
+1. **Automated Crash Reporting (v1.0.6+)**
+   - Crash dialog should appear automatically
+   - Follow on-screen prompts to submit report to GitHub
+   - Includes OAuth authentication (first-time only)
+   - Report automatically sanitized for privacy
+
+2. **Check Crash Reports**
+   - Location: `%LocalAppData%\TheMillionaireGame\CrashReports\`
    - Open most recent report
    - Check for specific error
+   - Submit manually if dialog didn't appear
 
-2. **Database Issues**
-   - Reset SQL Server Express database:
+3. **Database Issues**
+   - Reset database:
      ```sql
-     -- Connect to SQL Server Express and run:
+     -- Connect to your database engine and run:
      DROP DATABASE IF EXISTS dbMillionaire;
      ```
    - Or use application's database reset option if available
    - Application will recreate database on next launch
 
-3. **Reset Configuration**
+4. **Reset Configuration**
    - Settings stored in SQL Server Express database:
      ```sql
      -- Connect to SQL Server Express and run:
@@ -127,7 +134,7 @@ Before diving into specific issues, try these general fixes:
      ```
    - Application will recreate with defaults on next launch
 
-4. **Graphics Driver Update**
+5. **Graphics Driver Update**
    - Outdated drivers can cause crashes
    - Update from manufacturer's website (NVIDIA, AMD, Intel)
 
@@ -329,6 +336,130 @@ Before diving into specific issues, try these general fixes:
 
 ---
 
+## First-Run Wizard Issues
+
+### Wizard Doesn't Appear on First Launch
+
+**Symptom**: Application launches directly to Control Panel without database setup
+
+**Solutions:**
+
+1. **Configuration Already Exists**
+   - Previous installation left settings file
+   - Check: `%LocalAppData%\TheMillionaireGame\sql.xml`
+   - To force wizard to appear:
+     - Close application
+     - Delete or rename `sql.xml`
+     - Relaunch application
+
+2. **Database Already Configured**
+   - If database connection works, wizard won't appear
+   - To reconfigure: **Game → Settings → Database** tab
+
+### "Connection Test Failed" Error
+
+**Symptom**: Test Connection button shows failure in wizard
+
+**Solutions:**
+
+1. **LocalDB Option:**
+   - Ensure LocalDB installed (bundled with installer)
+   - Verify: `sqllocaldb info MSSQLLocalDB`
+   - If missing: Reinstall application with LocalDB option checked
+   - Try: Delete instance and recreate:
+     ```powershell
+     sqllocaldb stop MSSQLLocalDB
+     sqllocaldb delete MSSQLLocalDB
+     sqllocaldb create MSSQLLocalDB
+     sqllocaldb start MSSQLLocalDB
+     ```
+
+2. **SQL Server Option:**
+   - Verify SQL Server service running:
+     ```powershell
+     Get-Service | Where-Object {$_.Name -like "*SQL*"}
+     ```
+   - Start if stopped:
+     ```powershell
+     Start-Service "MSSQL`$SQLEXPRESS"
+     ```
+   - Check Windows Firewall not blocking SQL Server
+   - Verify instance name correct (use Browse button to detect)
+
+3. **Remote Server Option:**
+   - Test network connectivity: `ping servername`
+   - Verify SQL Server allows remote connections
+   - Check firewall rules on server (port 1433 typically)
+   - Ensure SQL Server authentication enabled if using SQL Login
+
+### "Database Creation Failed" Error
+
+**Symptom**: Connection works but database creation fails
+
+**Solutions:**
+
+1. **Permissions Issue**
+   - User account lacks CREATE DATABASE permission
+   - **LocalDB**: Run application as administrator (one time)
+   - **SQL Server**: Grant permissions via SSMS:
+     ```sql
+     USE master;
+     GO
+     GRANT CREATE DATABASE TO [DOMAIN\Username];
+     GO
+     ```
+
+2. **Disk Space**
+   - Ensure sufficient disk space (~50 MB minimum)
+   - Check SQL Server data directory not full
+
+3. **Database Already Exists**
+   - Previous installation left database
+   - Drop manually via SSMS:
+     ```sql
+     DROP DATABASE IF EXISTS dbMillionaire;
+     ```
+   - Retry wizard
+
+### Sample Data Won't Load
+
+**Symptom**: "Load sample trivia data" checkbox checked but questions not loading
+
+**Solutions:**
+
+1. **SQL Script Missing**
+   - Verify `lib\sql\init_database.sql` exists in installation folder
+   - If missing: Reinstall application (incomplete installation)
+
+2. **Script Execution Failed**
+   - Check application logs: `%LocalAppData%\TheMillionaireGame\Logs\`
+   - Look for SQL errors (syntax, permissions, etc.)
+   - Manually run script via SSMS if needed
+
+3. **Database Already Populated**
+   - Script skips if questions already exist
+   - To reload: Delete questions first (see "Questions Not Loading" section)
+
+### Wizard Closes Unexpectedly
+
+**Symptom**: Wizard window closes without completing setup
+
+**Solutions:**
+
+1. **Watchdog Timeout**
+   - Fixed in v1.0.6 - update to latest version
+   - Older versions: Complete wizard quickly (<15 seconds)
+
+2. **Application Crash**
+   - Automated crash dialog should appear (v1.0.6+)
+   - Follow prompts to submit report with one click
+   - If dialog doesn't appear:
+     - Check crash logs: `%LocalAppData%\TheMillionaireGame\CrashReports\`
+     - Review event: Windows Event Viewer → Application logs
+     - Submit manually via [GitHub Issues](https://github.com/jdelgado-dtlabs/TheMillionaireGame/issues)
+
+---
+
 ## Database Issues
 
 ### "Cannot Connect to Database"
@@ -337,34 +468,42 @@ Before diving into specific issues, try these general fixes:
 
 **Solutions:**
 
-1. **SQL Server Express Not Installed**
-   - SQL Server Express is required (installed automatically by installer)
-   - Verify installation:
+1. **Database Not Configured**
+   - First-Run Wizard skipped or failed
+   - Solution: Delete `%LocalAppData%\TheMillionaireGame\sql.xml` and restart application
+   - Wizard will reappear
+
+2. **SQL Server/LocalDB Not Running**
+   - **LocalDB**: Start instance
+     ```powershell
+     sqllocaldb start MSSQLLocalDB
+     ```
+   - **SQL Server Express**: Start service
+     ```powershell
+     Start-Service "MSSQL`$SQLEXPRESS"
+     ```
+   - Check services:
      ```powershell
      Get-Service | Where-Object {$_.Name -like "*SQL*"}
      # Should show MSSQL$SQLEXPRESS or similar
      ```
-   - If missing, reinstall application or install SQL Server Express separately
 
-2. **Database Corrupt**
+3. **Database Corrupt**
    ```sql
    -- Backup database first (optional)
    BACKUP DATABASE dbMillionaire TO DISK = 'C:\Backup\dbMillionaire.bak';
    
    -- Drop and recreate
    DROP DATABASE IF EXISTS dbMillionaire;
-   -- Application will recreate on next launch
+   -- Application will recreate on next launch (wizard will reappear)
    ```
 
-3. **Connection String Issue**
-   - Open `App.config` in installation folder
-   - Verify connection string format:
-   ```xml
-   <add name="MillionaireDB" 
-        connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=dbMillionaire;Integrated Security=True" />
-   ```
+4. **Connection String Issue**
+   - Configuration file corrupt
+   - Solution: Delete `%LocalAppData%\TheMillionaireGame\sql.xml`
+   - Restart application to reconfigure via wizard
 
-4. **Permissions Issue**
+5. **Permissions Issue**
    - Run application as administrator (first time only)
    - Grants database creation permissions
 
