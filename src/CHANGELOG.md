@@ -7,6 +7,95 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ### Added
 - Future features will be listed here
 
+## [v1.0.6] - 2026-01-12
+
+### Added
+- **First-Run Database Setup Wizard** ✅
+  * Automatic detection when sql.xml is missing
+  * User-friendly database configuration interface
+  * LocalDB and SQL Server instance support
+  * Optional sample data loading (80 + 44 questions)
+  * Integrated with watchdog heartbeat system
+- **Installer Database Choice** ✅
+  * Radio buttons to choose LocalDB or SQL Server Express during installation
+  * Automatic download and installation of selected database engine
+  * Command-line flag support to preselect database type in wizard
+
+### Fixed
+- SQL batch execution compatibility (consolidated from 20+ batches to 3)
+- Settings path consistency (LocalApplicationData)
+- Watchdog timeout during modal dialogs
+
+### GitHub Crash Reporting System
+**Added in v1.0.6** ✅
+  * **Phase 0: Hidden Watchdog Architecture**
+    - Converted watchdog from console app to WinExe (no visible window)
+    - Added Windows Forms support for crash dialogs
+    - Implemented file-based logging system (WatchdogConsole)
+    - Watchdog runs completely invisible until crash/freeze detected
+    - Logs written to `%LOCALAPPDATA%\TheMillionaireGame\Logs\Watchdog_*.log`
+  * **Phase 1: Core Infrastructure**
+    - GitHubOAuthManager: OAuth Device Flow authentication
+    - SecureTokenManager: DPAPI-encrypted token storage at `%LOCALAPPDATA%\TheMillionaireGame\github_token.enc`
+    - UserCrashContext model for capturing user input
+    - SubmissionResult model for tracking submission outcomes
+    - Enhanced CrashInfo model with exit code meanings and report paths
+  * **Phase 2: Data Sanitization & UI**
+    - DataSanitizer class with 13 passing unit tests
+    - Removes all PII: machine names, usernames, absolute paths, AppData paths
+    - Redacts environment variables, connection strings, API keys, IPv4 addresses, emails
+    - CrashReportDialog (350+ lines): Professional Windows 11-style crash reporting UI
+    - User can provide description, reproduction steps, optional email
+    - System info and logs inclusion checkboxes
+    - Email validation using System.Net.Mail.MailAddress
+    - GitHubAuthDialog (250+ lines): OAuth device flow authentication UI
+    - Displays large copyable user code for GitHub authorization
+    - Copy code and open browser buttons
+    - Real-time authentication status updates with progress indicator
+    - ReviewReportDialog (150+ lines): Preview sanitized crash reports
+    - Monospace read-only display with copy-to-clipboard
+    - Explains sanitization placeholders like [MACHINE], [USER], [APP_DIR]
+  * **Phase 3: GitHub Integration**
+    - GitHubIssueSubmitter (360+ lines): Complete GitHub REST API integration
+    - Creates formatted markdown issues with tables and collapsible sections
+    - Automatic labeling: bug, crash-report, automated
+    - 10KB report truncation for large crashes
+    - Duplicate crash detection: searches for same exit code in last 7 days
+    - Returns existing issue details if duplicate found
+    - ProcessMonitor.HandleCrash() complete rewrite:
+      1. Generate crash report with CrashReportGenerator
+      2. Show CrashReportDialog on STA thread
+      3. Check GitHub authentication, show GitHubAuthDialog if needed
+      4. Sanitize report with DataSanitizer
+      5. Submit via GitHubIssueSubmitter
+      6. Show success confirmation
+      7. Optional browser launch to view created issue
+    - Comprehensive fallback error handling with MessageBox
+    - WatchdogConsole logging throughout all operations
+  * **OAuth Configuration**
+    - Registered GitHub OAuth App: "Millionaire Game Crash Reporter"
+    - Client ID: `Ov23li3IoDybo9YFX1wm`
+    - Device flow requires no client secret (secure by design)
+    - Requests `public_repo` scope for issue creation only
+  * **Testing**
+    - 13/13 DataSanitizer tests passing
+    - 25/36 total tests passing (69%)
+    - MillionaireGame.Watchdog.Tests project created
+    - Unit tests for all sanitization methods
+  * **Implementation Metrics**
+    - ~2,000+ lines of production code
+    - 10 new files created
+    - 6 files modified
+    - Perfect build: 0 warnings, 0 errors
+    - 21 files changed, 4,176 insertions(+), 224 deletions(-)
+
+### Changed
+- **Watchdog Logging**: All Console.WriteLine calls replaced with WatchdogConsole
+- **Error Handling**: Enhanced with comprehensive try-catch and fallback MessageBox
+- **Project Structure**: Added MillionaireGame.Watchdog.Tests to solution
+- **Database Setup**: From manual SQL scripts to automated wizard
+- **Crash Reporting**: From manual file submission to one-click GitHub integration
+
 ## [v1.0.5] - 2026-01-09
 
 ### Added

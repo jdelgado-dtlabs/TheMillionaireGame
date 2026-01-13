@@ -2,9 +2,9 @@
 
 A modern C# implementation of the classic "Who Wants to Be a Millionaire?" game show experience, built with .NET 8 and Windows Forms.
 
-**Version**: 1.0.5 (January 9, 2026)  
+**Version**: 1.0.6 (January 12, 2026)  
 **Build Status**: ✅ **PERFECT** (0 warnings, 0 errors)  
-**Status**: 🎉 v1.0.5 Released - Mobile/Tablet Optimizations & Critical Bug Fixes
+**Status**: 🎉 v1.0.6 Released - First-Run Wizard & Enhanced Crash Reporting
 
 ## Quick Start
 
@@ -78,7 +78,9 @@ Browse by category:
 ### Technical Excellence
 - ✅ **CSCore audio engine** with DSP (silence detection, crossfading, audio queue)
 - ✅ **Unified SQL Server database** with simplified 4-level difficulty system (80 main + 44 FFF questions)
-- ✅ **Watchdog crash monitoring** with automatic restart and diagnostic reporting
+- ✅ **First-Run Database Setup Wizard** with LocalDB/SQL Server support and sample data loading
+- ✅ **GitHub Crash Reporting** with OAuth authentication, data sanitization, and duplicate detection
+- ✅ **Watchdog crash monitoring** with automatic restart, hidden operation, and one-click GitHub submission
 - ✅ Question database editor with CSV import/export
 - ✅ Comprehensive settings management
 - ✅ **Zero-warning build** (0 warnings, 0 errors)
@@ -92,25 +94,23 @@ Browse by category:
 - **SignalR 8.0.11** - Real-time web communication for WAPS
 - **Microsoft.Data.SqlClient 5.2.2** - Modern SQL Server connectivity
 - **Entity Framework Core 8.0.11** - Database ORM
-- **SQL Server Express** - Unified database for all game data (questions, FFF, ATA, WAPS)
+- **SQL Server LocalDB / Express** - Unified database for all game data (questions, FFF, ATA, WAPS)
 - **StreamDeckSharp (Custom)** - Module 6 support with custom HID driver
 
 ## Development Status
 
-✅ **Version 1.0.5 - RELEASED** (January 9, 2026)
+✅ **Version 1.0.6 - RELEASED** (January 12, 2026)
 
 All core features complete, perfect build quality (0 warnings, 0 errors), production-ready installer available.
 
 **Latest Release Highlights**:
-- Mobile/tablet optimization with enhanced device detection
-- FFF online system fixes (rankings display, all-play participation)
-- ATA online system fixes (offline mode detection, vote timeout)
-- Multi-monitor support restored with safe async detection
-- Web state synchronization for mid-game joiners
-- mDNS hostname resolution (A/AAAA records)
-- Answer letter wrapping fixes across all screens
-- Stream Deck images embedded as resources
-- 7 automatic database migrations
+- **First-Run Database Setup Wizard** - Automated database configuration with LocalDB/SQL Server support
+- **GitHub Crash Reporting** - One-click crash submission with OAuth authentication and data sanitization
+- **Intelligent Installer** - Automatic SQL Server detection with simplified 2-parameter system
+- **Enhanced Watchdog** - Hidden operation with professional crash reporting dialogs
+- **Comprehensive Testing** - 24 wizard test cases passed, 13/13 sanitization tests passing
+- **Documentation** - Complete wiki updates for First-Run Wizard and automated crash reporting
+- **Bug Fixes** - Settings persistence, SqlDataSourceEnumerator crashes, watchdog timeout issues
 
 **Key Achievements**:
 - 18 major features implemented and tested
