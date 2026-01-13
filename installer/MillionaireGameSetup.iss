@@ -1,6 +1,22 @@
 ; Inno Setup Script for The Millionaire Game
 ; Requires Inno Setup 6.0 or later: https://jrsoftware.org/isinfo.php
 
+; Auto-download SqlLocalDB.msi if missing
+#define SqlLocalDBPath "lib\sql\SqlLocalDB.msi"
+#define SqlLocalDBUrl "https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi"
+
+#if !FileExists(SqlLocalDBPath)
+  #pragma message "SqlLocalDB.msi not found. Downloading..."
+  #expr Exec("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -Command ""New-Item -ItemType Directory -Path 'lib\sql' -Force | Out-Null; Invoke-WebRequest -Uri '" + SqlLocalDBUrl + "' -OutFile '" + SqlLocalDBPath + "' -UseBasicParsing""", "", SW_HIDE, ewWaitUntilTerminated)
+  #if FileExists(SqlLocalDBPath)
+    #pragma message "SqlLocalDB.msi downloaded successfully!"
+  #else
+    #error "Failed to download SqlLocalDB.msi. Please download manually from: " + SqlLocalDBUrl
+  #endif
+#else
+  #pragma message "SqlLocalDB.msi found - using existing file"
+#endif
+
 #define MyAppName "The Millionaire Game"
 #define MyAppVersion "1.0.6"
 #define MyAppPublisher "Jean Francois Delgado"

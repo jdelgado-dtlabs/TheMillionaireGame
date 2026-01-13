@@ -8,22 +8,19 @@ This directory contains the Inno Setup script for creating The Millionaire Game 
    - Download from: https://jrsoftware.org/isinfo.php
    - Install the full version (includes compiler)
 
-2. **SQL Server LocalDB Installer** (Required for bundling)
+2. **SQL Server LocalDB Installer** (Auto-downloaded during build)
    - **Download URL**: https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi
    - **File Size**: ~50 MB
-   - **Location**: Must be placed at `installer/lib/sql/SqlLocalDB.msi`
+   - **Location**: Automatically downloaded to `installer/lib/sql/SqlLocalDB.msi` during compilation
    - **Purpose**: Bundled with installer for LocalDB option (no download at install time)
    
-   **Download command**:
+   **Note**: The installer script automatically downloads SqlLocalDB.msi if missing during compilation.
+   
+   **Manual download** (optional):
    ```powershell
-   # Create directory if it doesn't exist
+   # Only needed if automatic download fails
    New-Item -ItemType Directory -Path "installer\lib\sql" -Force
-   
-   # Download SqlLocalDB.msi
    Invoke-WebRequest -Uri "https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi" -OutFile "installer\lib\sql\SqlLocalDB.msi"
-   
-   # Verify download
-   Test-Path "installer\lib\sql\SqlLocalDB.msi"  # Should return: True
    ```
 
 3. **Built Application**
