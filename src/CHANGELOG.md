@@ -7,7 +7,7 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ### Added
 - Future features will be listed here
 
-## [v1.0.6] - 2026-01-11
+## [v1.0.6] - 2026-01-12
 
 ### Added
 - **First-Run Database Setup Wizard** ✅
@@ -26,10 +26,8 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 - Settings path consistency (LocalApplicationData)
 - Watchdog timeout during modal dialogs
 
-## [v1.1.0] - 2026-01-10
-
-### Added
-- **GitHub Crash Reporting System** ✅
+### GitHub Crash Reporting System
+**Added in v1.0.6** ✅
   * **Phase 0: Hidden Watchdog Architecture**
     - Converted watchdog from console app to WinExe (no visible window)
     - Added Windows Forms support for crash dialogs
@@ -95,6 +93,8 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 - **Watchdog Logging**: All Console.WriteLine calls replaced with WatchdogConsole
 - **Error Handling**: Enhanced with comprehensive try-catch and fallback MessageBox
 - **Project Structure**: Added MillionaireGame.Watchdog.Tests to solution
+- **Database Setup**: From manual SQL scripts to automated wizard
+- **Crash Reporting**: From manual file submission to one-click GitHub integration
 
 ## [v1.0.5] - 2026-01-09
 
