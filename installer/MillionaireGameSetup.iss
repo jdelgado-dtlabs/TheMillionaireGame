@@ -50,6 +50,8 @@ Name: "initializedb"; Description: "Initialize SQL Server database (creates dbMi
 [Files]
 Source: "..\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; SQL Server LocalDB (bundled with installer)
+Source: "lib\sql\SqlLocalDB.msi"; DestDir: "{app}\lib\sql"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -90,13 +92,12 @@ const
   DotNetRuntimeURL = 'https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe';
   DotNetInstallerName = 'windowsdesktop-runtime-8.0-win-x64.exe';
   
-  // SQL Server Express LocalDB (lightweight, 40-50 MB)
-  SqlLocalDBURL = 'https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SqlLocalDB.msi';
-  SqlLocalDBInstallerName = 'SqlLocalDB.msi';
-  
   // SQL Server 2022 Express with Advanced Services (1.5 GB download, includes full SQL Server features)
   SqlExpressURL = 'https://download.microsoft.com/download/3/8/d/38de7036-2433-4207-8eae-06e247e17b25/SQLEXPR_x64_ENU.exe';
   SqlExpressInstallerName = 'SQLEXPR_x64_ENU.exe';
+  
+  // SQL Server LocalDB (bundled with installer - no download needed)
+  SqlLocalDBInstallerPath = '{app}\lib\sql\SqlLocalDB.msi';
 
 function GetUninstallString(): String;
 var
@@ -493,29 +494,20 @@ begin
     end;
   end;
   
-  // Download and install SQL Server (LocalDB or Express based on user choice)
-  // Skip if user chose Remote Server option OR if SQL Server is already detected
-  if Result and (CurPageID = wpReady) and (DetectedDatabaseType = '') and (SqlDownloadPage <> nil) and (UserDatabaseChoice <> 2) then
+  // Download and install SQL Server Express (only if user chose Express)
+  // Skip if user chose Remote Server option OR LocalDB (bundled) OR if SQL Server is already detected
+  if Result and (CurPageID = wpReady) and (DetectedDatabaseType = '') and (SqlDownloadPage <> nil) and (UserDatabaseChoice = 1) then
   begin
-    // Determine which SQL Server to install
-    if UserDatabaseChoice = 1 then
+    SqlUrl := SqlExpressURL;
+    SqlInstaller := SqlExpressInstallerName;
+    
+    if MsgBox('SQL Server 2022 Express will be downloaded and installed.' + #13#10 + 
+              'Download size: ~1.5 GB' + #13#10#13#10 +
+              'Note: This will take several minutes. Continue?',
+              mbConfirmation, MB_YESNO) <> IDYES then
     begin
-      SqlUrl := SqlExpressURL;
-      SqlInstaller := SqlExpressInstallerName;
-      
-      if MsgBox('SQL Server 2022 Express will be downloaded and installed.' + #13#10 + 
-                'Download size: ~1.5 GB' + #13#10#13#10 +
-                'Note: This will take several minutes. Continue?',
-                mbConfirmation, MB_YESNO) <> IDYES then
-      begin
-        Result := False;
-        Exit;
-      end;
-    end
-    else
-    begin
-      SqlUrl := SqlLocalDBURL;
-      SqlInstaller := SqlLocalDBInstallerName;
+      Result := False;
+      Exit;
     end;
     
     SqlDownloadPage.Clear;
@@ -528,57 +520,33 @@ begin
       except
         if not SqlDownloadPage.AbortedByUser then
         begin
-          if UserDatabaseChoice = 1 then
-            MsgBox('Error downloading SQL Server Express. You can install it manually later.', mbError, MB_OK)
-          else
-            MsgBox('Error downloading SQL Server LocalDB. You can install it manually later.', mbError, MB_OK);
+          MsgBox('Error downloading SQL Server Express. You can install it manually later.', mbError, MB_OK);
         end;
       end;
     finally
       SqlDownloadPage.Hide;
     end;
     
-    // Install SQL Server if download succeeded
+    // Install SQL Server Express if download succeeded
     if FileExists(ExpandConstant('{tmp}\' + SqlInstaller)) then
     begin
-      if UserDatabaseChoice = 1 then
+      // SQL Server Express installation
+      MsgBox('SQL Server 2022 Express will now install. This may take 10-15 minutes...' + #13#10#13#10 +
+             'The installer will run in a separate window. Please wait for it to complete.', mbInformation, MB_OK);
+      
+      if ShellExec('', ExpandConstant('{tmp}\' + SqlInstaller), 
+                   '/Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=Install /FEATURES=SQLEngine /INSTANCENAME=SQLEXPRESS /SECURITYMODE=SQL /SAPWD="MillionaireGame2026!" /TCPENABLED=1', 
+                   '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
       begin
-        // SQL Server Express installation
-        MsgBox('SQL Server 2022 Express will now install. This may take 10-15 minutes...' + #13#10#13#10 +
-               'The installer will run in a separate window. Please wait for it to complete.', mbInformation, MB_OK);
-        
-        if ShellExec('', ExpandConstant('{tmp}\' + SqlInstaller), 
-                     '/Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=Install /FEATURES=SQLEngine /INSTANCENAME=SQLEXPRESS /SECURITYMODE=SQL /SAPWD="MillionaireGame2026!" /TCPENABLED=1', 
-                     '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
-        begin
-          if ResultCode = 0 then
-            MsgBox('SQL Server 2022 Express installed successfully!', mbInformation, MB_OK)
-          else if ResultCode = 3010 then
-            MsgBox('SQL Server 2022 Express installed successfully. A reboot may be required.', mbInformation, MB_OK)
-          else
-            MsgBox('SQL Server Express installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
-        end
+        if ResultCode = 0 then
+          MsgBox('SQL Server 2022 Express installed successfully!', mbInformation, MB_OK)
+        else if ResultCode = 3010 then
+          MsgBox('SQL Server 2022 Express installed successfully. A reboot may be required.', mbInformation, MB_OK)
         else
-          MsgBox('Failed to launch SQL Server Express installer.', mbError, MB_OK);
+          MsgBox('SQL Server Express installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
       end
       else
-      begin
-        // LocalDB installation
-        MsgBox('SQL Server LocalDB will now install silently. This may take a few minutes...', mbInformation, MB_OK);
-        
-        if ShellExec('', 'msiexec.exe', '/i "' + ExpandConstant('{tmp}\' + SqlInstaller) + '" /quiet IACCEPTSQLLOCALDBLICENSETERMS=YES', 
-                     '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
-        begin
-          if ResultCode = 0 then
-            MsgBox('SQL Server LocalDB installed successfully!', mbInformation, MB_OK)
-          else if ResultCode = 3010 then
-            MsgBox('SQL Server LocalDB installed successfully. A reboot may be required.', mbInformation, MB_OK)
-          else
-            MsgBox('SQL Server LocalDB installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
-        end
-        else
-          MsgBox('Failed to launch SQL Server LocalDB installer.', mbError, MB_OK);
-      end;
+        MsgBox('Failed to launch SQL Server Express installer.', mbError, MB_OK);
     end;
   end;
 end;
@@ -588,9 +556,35 @@ var
   ResultCode: Integer;
   PowerShellScript: String;
   ScriptFile: String;
+  LocalDBPath: String;
 begin
   if CurStep = ssPostInstall then
   begin
+    // Install SQL Server LocalDB if user chose LocalDB option and it's not already installed
+    if (DetectedDatabaseType = '') and (UserDatabaseChoice = 0) and not IsLocalDBInstalled() then
+    begin
+      LocalDBPath := ExpandConstant(SqlLocalDBInstallerPath);
+      if FileExists(LocalDBPath) then
+      begin
+        MsgBox('SQL Server LocalDB will now install silently. This may take a few minutes...', mbInformation, MB_OK);
+        
+        if ShellExec('', 'msiexec.exe', '/i "' + LocalDBPath + '" /quiet IACCEPTSQLLOCALDBLICENSETERMS=YES', 
+                     '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        begin
+          if ResultCode = 0 then
+            MsgBox('SQL Server LocalDB installed successfully!', mbInformation, MB_OK)
+          else if ResultCode = 3010 then
+            MsgBox('SQL Server LocalDB installed successfully! A reboot may be required.', mbInformation, MB_OK)
+          else
+            MsgBox('SQL Server LocalDB installation completed with code: ' + IntToStr(ResultCode), mbInformation, MB_OK);
+        end
+        else
+          MsgBox('Failed to launch SQL Server LocalDB installer.', mbError, MB_OK);
+      end
+      else
+        MsgBox('SQL Server LocalDB installer not found at: ' + LocalDBPath, mbError, MB_OK);
+    end;
+    
     // Check if user wants to initialize the database (check the task checkbox)
     if WizardIsTaskSelected('initializedb') then
     begin
