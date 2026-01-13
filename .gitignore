@@ -377,3 +377,6 @@ StreamDeckSharp/
 
 # Installer output directory (compiled installers tracked as release artifacts)
 installer/output/
+
+# Installer dependencies (SqlLocalDB.msi downloaded during build)
+installer/lib/sql/

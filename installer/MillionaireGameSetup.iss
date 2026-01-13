@@ -7,7 +7,7 @@
 
 #if !FileExists(SqlLocalDBPath)
   #pragma message "SqlLocalDB.msi not found. Downloading..."
-  #expr Exec("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -Command ""New-Item -ItemType Directory -Path 'lib\sql' -Force | Out-Null; Invoke-WebRequest -Uri '" + SqlLocalDBUrl + "' -OutFile '" + SqlLocalDBPath + "' -UseBasicParsing""", "", SW_HIDE, ewWaitUntilTerminated)
+  #expr Exec("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -Command ""New-Item -ItemType Directory -Path 'lib\sql' -Force | Out-Null; Invoke-WebRequest -Uri '" + SqlLocalDBUrl + "' -OutFile '" + SqlLocalDBPath + "' -UseBasicParsing""", "", 0, 2)
   #if FileExists(SqlLocalDBPath)
     #pragma message "SqlLocalDB.msi downloaded successfully!"
   #else
