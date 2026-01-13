@@ -34,10 +34,11 @@ Implement a comprehensive theming system that allows users to customize the visu
 6. **Database Storage:** All theme configurations stored in SQL Server database
 
 ### Secondary Goals
-- Export/import theme configurations
+- Export/import individual theme configurations
+- **Export/import theme packs** (multiple themes bundled together)
 - Theme preview system
 - Real-time theme switching during game
-- Community theme sharing (future consideration)
+- Community theme sharing via theme packs
 
 ## Architecture
 
@@ -196,6 +197,32 @@ CREATE TABLE ThemePresets (
 );
 ```
 
+#### `ThemePacks`
+```sql
+CREATE TABLE ThemePacks (
+    ThemePackId INT PRIMARY KEY IDENTITY(1,1),
+    PackName NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    Author NVARCHAR(100),
+    Version NVARCHAR(20),
+    PreviewImagePath NVARCHAR(500),
+    ImportedDate DATETIME2 DEFAULT GETDATE(),
+    Tags NVARCHAR(500), -- Comma-separated tags for searching
+    CONSTRAINT UQ_ThemePack_Name UNIQUE (PackName)
+);
+
+-- Junction table for pack-theme relationship
+CREATE TABLE ThemePackThemes (
+    ThemePackThemeId INT PRIMARY KEY IDENTITY(1,1),
+    ThemePackId INT NOT NULL,
+    ThemeId INT NOT NULL,
+    SortOrder INT DEFAULT 0,
+    FOREIGN KEY (ThemePackId) REFERENCES ThemePacks(ThemePackId) ON DELETE CASCADE,
+    FOREIGN KEY (ThemeId) REFERENCES Themes(ThemeId) ON DELETE CASCADE,
+    CONSTRAINT UQ_PackTheme UNIQUE (ThemePackId, ThemeId)
+);
+```
+
 ## UI/UX Design
 
 ### Theme Tab Location
@@ -210,7 +237,7 @@ CREATE TABLE ThemePresets (
 │ Theme Selector   │                                          │
 │ ┌──────────────┐ │  Selected Theme: "Classic Gold"          │
 │ │▼ Preset      │ │                                          │
-│ ├──────────────┤ │  [Apply Theme] [Save As...] [Export]    │
+│ ├──────────────┤ │  [Apply] [Save As...] [Export Theme]    │
 │ │ Classic Gold │ │                                          │
 │ │ Modern Blue  │ │  ┌────────────────────────────────────┐ │
 │ │ Elegant Red  │ │  │ Theme Preview                      │ │
@@ -222,6 +249,12 @@ CREATE TABLE ThemePresets (
 │ │ Profile 1    │ │                                          │
 │ │ Profile 2    │ │                                          │
 │ └──────────────┘ │                                          │
+│                  │  ┌────────────────────────────────────┐ │
+│                  │  │ Theme Pack Management              │ │
+│                  │  ├────────────────────────────────────┤ │
+│                  │  │ [Import Pack] [Export Pack]        │ │
+│                  │  │ [Manage Packs...]                  │ │
+│                  │  └────────────────────────────────────┘ │
 └──────────────────┴──────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -398,6 +431,40 @@ CREATE TABLE ThemePresets (
 4. Profile is saved with all settings
 5. Can be recalled, edited, or exported later
 
+### Theme Pack Management
+
+**Purpose:** Bundle multiple related themes for easy distribution and sharing
+
+**Export Pack Workflow:**
+1. Click "Export Pack" button
+2. Select multiple themes to include (checkbox list)
+3. Enter pack metadata:
+   - Pack Name
+   - Description
+   - Author Name
+   - Tags (comma-separated)
+4. Choose export location
+5. Pack saved as `.mtpack` file (JSON format)
+
+**Import Pack Workflow:**
+1. Click "Import Pack" button
+2. Browse to `.mtpack` file
+3. Preview pack contents:
+   - List of included themes
+   - Pack metadata
+   - Preview images
+4. Select which themes to import (or all)
+5. Confirm import
+6. Themes added to theme library
+7. Pack metadata tracked in database
+
+**Pack Management Dialog:**
+- View all imported packs
+- See which themes belong to each pack
+- Delete entire packs
+- Re-export modified pack
+- Update pack metadata
+
 ## Implementation Plan
 
 ### Phase 1: Database & Repository Layer (Week 1)
@@ -422,6 +489,18 @@ CREATE TABLE ThemePresets (
 - [ ] Implement `ThemeStrapRepository`
 - [ ] Implement `ThemeMoneyTreeRepository`
 - [ ] Implement `ThemePresetRepository`
+- [ ] Implement `ThemePackRepository`
+  ```csharp
+  public interface IThemePackRepository
+  {
+      Task<IEnumerable<ThemePack>> GetAllPacksAsync();
+      Task<ThemePack> GetPackByIdAsync(int packId);
+      Task<IEnumerable<Theme>> GetPackThemesAsync(int packId);
+      Task<int> CreatePackAsync(ThemePack pack, List<int> themeIds);
+      Task<bool> DeletePackAsync(int packId);
+      Task<bool> UpdatePackAsync(ThemePack pack);
+  }
+  ```
 - [ ] Create seed data for built-in preset themes
 - [ ] Unit tests for all repositories
 
@@ -453,6 +532,12 @@ CREATE TABLE ThemePresets (
       Task<byte[]> ExportThemeAsJsonAsync(int themeId);
       Task<int> ImportThemeFromJsonAsync(byte[] data);
       Task<IEnumerable<ThemePreset>> GetPresetsAsync();
+      
+      // Theme Pack methods
+      Task<byte[]> ExportThemePackAsync(List<int> themeIds, ThemePackMetadata metadata);
+      Task<ThemePackImportResult> ImportThemePackAsync(byte[] data);
+      Task<IEnumerable<ThemePack>> GetThemePacksAsync();
+      Task<bool> DeleteThemePackAsync(int packId);
   }
   ```
 - [ ] Implement SVG strap renderer
@@ -530,9 +615,24 @@ CREATE TABLE ThemePresets (
   - Profile naming
   - Profile management (rename, delete)
 - [ ] Export/Import UI
-  - Export theme as JSON file
-  - Import theme from file
+  - Export single theme as JSON file
+  - Import single theme from file
   - Validation and error handling
+- [ ] Theme Pack UI
+  - Export Pack dialog
+    - Multi-select theme list
+    - Pack metadata form (name, description, author, tags)
+    - Preview generation
+  - Import Pack dialog
+    - File browser for `.mtpack` files
+    - Preview pack contents
+    - Selective theme import (checkboxes)
+    - Progress indication
+  - Manage Packs dialog
+    - List all imported packs
+    - View pack details
+    - Delete pack functionality
+    - Re-export functionality
 - [ ] Apply/Save/Cancel action buttons
 - [ ] Real-time preview updates (debounced)
 
@@ -572,15 +672,21 @@ CREATE TABLE ThemePresets (
   - Theme switching responsiveness
   - Preview accuracy
   - Save/Load reliability
+  - Pack import/export functionality
 - [ ] Performance testing
   - SVG rendering speed
   - Memory usage with multiple themes
   - Theme switching latency
+  - Large pack import performance
 - [ ] Edge case testing
   - Invalid colors
   - Missing assets
   - Corrupt theme files
+  - Corrupt pack files
   - Large SVG complexity
+  - Pack version mismatches
+  - Duplicate theme names in packs
+  - Pack size limits
 - [ ] Cross-component consistency testing
 - [ ] User acceptance testing
 - [ ] Bug fixes and refinements
@@ -661,7 +767,8 @@ public static class ColorConverter
 
 ### Theme Export/Import Format
 
-**Format:** JSON with metadata
+#### Single Theme Format
+**Format:** JSON with metadata (`.mtheme` file)
 
 ```json
 {
@@ -684,6 +791,57 @@ public static class ColorConverter
   "moneyTree": { /* money tree settings */ }
 }
 ```
+
+#### Theme Pack Format
+**Format:** JSON with multiple themes (`.mtpack` file)
+
+```json
+{
+  "packVersion": "1.0",
+  "packName": "Elegant Collection",
+  "description": "A collection of elegant professional themes",
+  "author": "Theme Designer",
+  "version": "1.0.0",
+  "exportDate": "2026-01-12T10:30:00Z",
+  "tags": ["elegant", "professional", "formal"],
+  "previewImage": "base64-encoded-image-data",
+  "themes": [
+    {
+      "themeVersion": "1.0",
+      "themeName": "Elegant Gold",
+      "author": "Theme Designer",
+      /* full theme data */
+    },
+    {
+      "themeVersion": "1.0",
+      "themeName": "Elegant Silver",
+      "author": "Theme Designer",
+      /* full theme data */
+    },
+    {
+      "themeVersion": "1.0",
+      "themeName": "Elegant Bronze",
+      "author": "Theme Designer",
+      /* full theme data */
+    }
+  ],
+  "metadata": {
+    "themeCount": 3,
+    "totalSize": 245678,
+    "createdWith": "MillionaireGame v1.0.7"
+  }
+}
+```
+
+**File Extensions:**
+- `.mtheme` - Single theme file
+- `.mtpack` - Theme pack file (multiple themes)
+
+**Size Considerations:**
+- Pack files may include base64-encoded preview images
+- Limit preview images to 200KB each
+- Maximum pack size: 10MB (reasonable for distribution)
+- Compression option for large packs (gzip)
 
 ## Migration Strategy
 
@@ -723,7 +881,12 @@ public async Task MigrateExistingBackgroundsAsync()
 - [ ] SVG strap customization guide
 - [ ] Effect reference (what each effect does)
 - [ ] Export/Import instructions
+  - [ ] Single theme export/import
+  - [ ] Theme pack creation guide
+  - [ ] Pack import guide
+  - [ ] Pack sharing best practices
 - [ ] Best practices for theme design
+- [ ] Theme pack creation guidelines
 - [ ] Troubleshooting common issues
 
 ## Success Criteria
@@ -766,22 +929,28 @@ public async Task MigrateExistingBackgroundsAsync()
 ## Future Enhancements (Post-v1.0.7)
 
 - [ ] Additional preset themes (community contributions)
+- [ ] Online theme pack repository/marketplace
+- [ ] Theme pack ratings and reviews
+- [ ] Automated pack updates
+- [ ] Pack dependencies (required base packs)
 - [ ] Animated strap transitions
-- [ ] Theme marketplace/sharing platform
 - [ ] Advanced SVG shape editor
 - [ ] Video background support for straps
 - [ ] Theme templates (partially configured themes)
 - [ ] Color palette suggestions (AI-driven)
 - [ ] Theme preview in full-screen mode
 - [ ] Per-question theme switching
-- [ ] Season/holiday themed presets
+- [ ] Season/holiday themed packs
+- [ ] Theme pack statistics (download counts, popularity)
+- [ ] Pack creation wizard
 
 ## Dependencies
 
 ### Required Libraries
 - System.Drawing (Windows Forms graphics)
 - System.Xml.Linq (SVG manipulation)
-- Newtonsoft.Json or System.Text.Json (theme export/import)
+- System.Text.Json (theme/pack export/import)
+- System.IO.Compression (optional: pack compression)
 - Microsoft.Data.SqlClient (database)
 
 ### External Assets
