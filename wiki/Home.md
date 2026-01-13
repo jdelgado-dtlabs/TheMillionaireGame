@@ -63,7 +63,10 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 - **Performance Metrics** - Analyze question difficulty and win rates
 
 ### 🛡️ Reliability
-- **Crash Recovery** - Automatic watchdog monitoring
+- **First-Run Wizard** - Guided database setup on first launch
+- **Crash Recovery** - Automatic watchdog with GitHub issue creation
+- **GitHub Integration** - OAuth-authenticated crash reporting with duplicate detection
+- **Data Privacy** - Automatic sanitization of sensitive information
 - **Error Logging** - Comprehensive diagnostic logs
 - **Graceful Degradation** - Handles errors without disrupting gameplay
 
@@ -71,21 +74,19 @@ Welcome to The Millionaire Game documentation! This is a feature-rich Windows ap
 
 ## 🚀 Latest Release
 
-**Version**: 1.0.5  
-**Release Date**: January 9, 2026  
+**Version**: 1.0.6  
+**Release Date**: January 12, 2026  
 **Status**: Stable Release  
 **Download**: [Releases Page](https://github.com/jdelgado-dtlabs/TheMillionaireGame/releases)
 
-### What's New in v1.0.5
-- Mobile/tablet optimization with enhanced device detection
-- FFF online system fixes (rankings display, all-play participation)
-- ATA online system fixes (offline mode detection, vote timeout)
-- Multi-monitor support restored with safe async detection
-- Web state synchronization for mid-game joiners
-- mDNS hostname resolution (wwtbam.local)
-- Answer letter wrapping fixes
-- Stream Deck images embedded as resources
-- 7 automatic database migrations
+### What's New in v1.0.6
+- **First-Run Wizard** - Automated database setup with LocalDB/SQL Server choice
+- **GitHub Crash Reporting** - OAuth authentication with automated issue submission
+- **Data Sanitization** - Automatic removal of sensitive data from crash reports
+- **Enhanced Watchdog** - Improved freeze detection and process recovery
+- **Bundled LocalDB** - SqlLocalDB.msi included in installer (no internet required)
+- **24 Test Cases** - Complete wizard validation across 5 pages
+- **Settings Migration** - Database-backed configuration (XML removed)
 
 ---
 
@@ -146,21 +147,24 @@ The application features multiple display interfaces for different roles:
 
 ## 📋 Project Status
 
-### Current Version: v1.0.5 (Stable)
+### Current Version: v1.0.6 (Stable)
 - ✅ Core game mechanics
 - ✅ Graphics engine
 - ✅ Sound system
 - ✅ Web integration with mobile optimization
-- ✅ Crash monitoring
+- ✅ First-run setup wizard
+- ✅ GitHub crash reporting
+- ✅ Crash monitoring with automated issue creation
 - ✅ Telemetry system
 - ✅ Stream Deck integration
 - ✅ Multi-monitor support
 - ✅ Complete documentation
 
 ### Roadmap
-- v1.1: Additional mobile/tablet enhancements
-- v1.2: Full theme system implementation
-- v1.5: Yamaha TF and QLabs Lighting integration
+- v1.1: ETC Ion lighting console integration
+- v1.2: Yamaha TF audio console plugin
+- v1.3: Unified plugin manager architecture
+- v1.5: Full theme system implementation
 
 ---
 
