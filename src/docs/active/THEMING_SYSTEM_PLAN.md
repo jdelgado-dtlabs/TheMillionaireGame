@@ -34,11 +34,11 @@ Implement a comprehensive theming system that allows users to customize the visu
 6. **Database Storage:** All theme configurations stored in SQL Server database
 
 ### Secondary Goals
-- Export/import individual theme configurations
-- **Export/import theme packs** (multiple themes bundled together)
+- Export/import individual theme configurations (database only)
+- **Export/import theme packs** (ZIP files with XML config + assets: backgrounds, icons, fonts)
 - Theme preview system
 - Real-time theme switching during game
-- Community theme sharing via theme packs
+- Community theme sharing via theme packs (similar to soundpack distribution)
 
 ## Architecture
 
@@ -84,12 +84,14 @@ CREATE TABLE Themes (
     ThemeId INT PRIMARY KEY IDENTITY(1,1),
     ThemeName NVARCHAR(100) NOT NULL,
     ThemeType NVARCHAR(20) NOT NULL, -- 'Preset', 'UserProfile1', 'UserProfile2', 'Custom'
+    ThemePackId INT NULL, -- Reference to pack if theme is part of imported pack
     IsActive BIT DEFAULT 0,
     Description NVARCHAR(500),
     Author NVARCHAR(100),
     Version NVARCHAR(20),
     CreatedDate DATETIME2 DEFAULT GETDATE(),
     ModifiedDate DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (ThemePackId) REFERENCES ThemePacks(ThemePackId) ON DELETE SET NULL,
     CONSTRAINT CK_ThemeType CHECK (ThemeType IN ('Preset', 'UserProfile1', 'UserProfile2', 'Custom'))
 );
 
@@ -202,25 +204,18 @@ CREATE TABLE ThemePresets (
 CREATE TABLE ThemePacks (
     ThemePackId INT PRIMARY KEY IDENTITY(1,1),
     PackName NVARCHAR(100) NOT NULL,
+    PackPath NVARCHAR(500) NOT NULL, -- Path to extracted pack folder
     Description NVARCHAR(500),
     Author NVARCHAR(100),
     Version NVARCHAR(20),
-    PreviewImagePath NVARCHAR(500),
     ImportedDate DATETIME2 DEFAULT GETDATE(),
-    Tags NVARCHAR(500), -- Comma-separated tags for searching
+    IsBuiltIn BIT DEFAULT 0,
     CONSTRAINT UQ_ThemePack_Name UNIQUE (PackName)
 );
 
--- Junction table for pack-theme relationship
-CREATE TABLE ThemePackThemes (
-    ThemePackThemeId INT PRIMARY KEY IDENTITY(1,1),
-    ThemePackId INT NOT NULL,
-    ThemeId INT NOT NULL,
-    SortOrder INT DEFAULT 0,
-    FOREIGN KEY (ThemePackId) REFERENCES ThemePacks(ThemePackId) ON DELETE CASCADE,
-    FOREIGN KEY (ThemeId) REFERENCES Themes(ThemeId) ON DELETE CASCADE,
-    CONSTRAINT UQ_PackTheme UNIQUE (ThemePackId, ThemeId)
-);
+-- Note: Theme packs contain asset files and XML config
+-- Themes reference pack assets via file paths
+-- No junction table needed - themes belong to packs via PackId reference
 ```
 
 ## UI/UX Design
@@ -433,37 +428,53 @@ CREATE TABLE ThemePackThemes (
 
 ### Theme Pack Management
 
-**Purpose:** Bundle multiple related themes for easy distribution and sharing
+**Purpose:** Bundle themes with all required assets (backgrounds, icons, fonts) for easy distribution
+
+**Pack Structure (Similar to Soundpacks):**
+```
+MyThemePack.zip
+├── pack.xml              # Pack metadata and theme configurations
+├── backgrounds/          # Background images
+│   ├── main_bg.png
+│   ├── money_tree_bg.png
+│   └── ...
+├── icons/                # Custom lifeline icons, etc.
+│   ├── 50_50.png
+│   ├── phone_friend.png
+│   ├── ask_audience.png
+│   └── ...
+├── fonts/                # Optional custom fonts
+│   └── CustomFont.ttf
+└── preview.png           # Pack preview image
+```
 
 **Export Pack Workflow:**
 1. Click "Export Pack" button
-2. Select multiple themes to include (checkbox list)
-3. Enter pack metadata:
-   - Pack Name
-   - Description
-   - Author Name
-   - Tags (comma-separated)
-4. Choose export location
-5. Pack saved as `.mtpack` file (JSON format)
+2. Select theme(s) to include
+3. Select assets to bundle:
+   - Backgrounds used by theme(s)
+   - Custom icons
+   - Custom fonts
+4. Enter pack metadata (name, description, author, version)
+5. Choose export location
+6. System creates ZIP with XML config + assets
 
 **Import Pack Workflow:**
 1. Click "Import Pack" button
-2. Browse to `.mtpack` file
-3. Preview pack contents:
-   - List of included themes
-   - Pack metadata
-   - Preview images
-4. Select which themes to import (or all)
-5. Confirm import
-6. Themes added to theme library
-7. Pack metadata tracked in database
+2. Browse to `.zip` pack file
+3. System extracts to `lib/themepacks/[PackName]/`
+4. Parse `pack.xml` to load theme definitions
+5. Preview pack contents (themes, assets)
+6. Confirm import
+7. Themes added to database with references to pack assets
+8. Pack tracked in `ThemePacks` table
 
 **Pack Management Dialog:**
-- View all imported packs
-- See which themes belong to each pack
-- Delete entire packs
-- Re-export modified pack
-- Update pack metadata
+- View all installed packs
+- See themes and assets in each pack
+- Delete entire pack (removes themes + assets)
+- Reload/refresh pack
+- View pack metadata
 
 ## Implementation Plan
 
@@ -495,10 +506,12 @@ CREATE TABLE ThemePackThemes (
   {
       Task<IEnumerable<ThemePack>> GetAllPacksAsync();
       Task<ThemePack> GetPackByIdAsync(int packId);
+      Task<ThemePack> GetPackByNameAsync(string packName);
       Task<IEnumerable<Theme>> GetPackThemesAsync(int packId);
-      Task<int> CreatePackAsync(ThemePack pack, List<int> themeIds);
+      Task<int> RegisterPackAsync(ThemePack pack); // Register imported pack
       Task<bool> DeletePackAsync(int packId);
-      Task<bool> UpdatePackAsync(ThemePack pack);
+      Task<bool> UpdatePackMetadataAsync(ThemePack pack);
+      Task<string> GetPackPathAsync(int packId);
   }
   ```
 - [ ] Create seed data for built-in preset themes
@@ -533,11 +546,12 @@ CREATE TABLE ThemePackThemes (
       Task<int> ImportThemeFromJsonAsync(byte[] data);
       Task<IEnumerable<ThemePreset>> GetPresetsAsync();
       
-      // Theme Pack methods
-      Task<byte[]> ExportThemePackAsync(List<int> themeIds, ThemePackMetadata metadata);
-      Task<ThemePackImportResult> ImportThemePackAsync(byte[] data);
+      // Theme Pack methods (ZIP files with XML + assets)
+      Task<string> ExportThemePackAsync(List<int> themeIds, ThemePackMetadata metadata, string outputPath);
+      Task<ThemePackImportResult> ImportThemePackAsync(string zipFilePath);
       Task<IEnumerable<ThemePack>> GetThemePacksAsync();
-      Task<bool> DeleteThemePackAsync(int packId);
+      Task<bool> DeleteThemePackAsync(int packId); // Removes pack folder and database entry
+      Task<bool> ReloadThemePackAsync(int packId);
   }
   ```
 - [ ] Implement SVG strap renderer
@@ -550,6 +564,24 @@ CREATE TABLE ThemePackThemes (
   ```
 - [ ] Create effect processors (sheen, glow, metallic, silk, etc.)
 - [ ] Implement theme validation logic
+- [ ] Implement `ThemePackParser` for XML parsing
+  ```csharp
+  public interface IThemePackParser
+  {
+      ThemePackManifest ParsePackXml(string xmlPath);
+      string GeneratePackXml(ThemePack pack, List<Theme> themes);
+      bool ValidatePackStructure(string packPath);
+  }
+  ```
+- [ ] Implement `ThemePackHandler` for ZIP operations
+  ```csharp
+  public interface IThemePackHandler
+  {
+      Task<string> ExtractPackAsync(string zipPath, string destPath);
+      Task<string> CreatePackAsync(string sourcePath, string outputPath);
+      Task<bool> DeletePackAsync(string packPath);
+  }
+  ```
 - [ ] Unit tests for services
 
 ### Phase 3: SVG Strap System (Week 3)
@@ -767,8 +799,71 @@ public static class ColorConverter
 
 ### Theme Export/Import Format
 
-#### Single Theme Format
-**Format:** JSON with metadata (`.mtheme` file)
+#### Single Theme Export
+**Format:** Database export only (no file format needed)
+- Themes exported as database records
+- Can be saved to user profiles
+- No asset files included
+
+#### Theme Pack Format
+**Format:** ZIP file with XML configuration + assets (`.zip` file)
+
+**pack.xml Structure (Similar to Soundpack XML):**
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<ThemePack>
+  <Metadata>
+    <Name>Elegant Professional Pack</Name>
+    <Description>A collection of elegant themes with custom icons</Description>
+    <Author>Theme Designer</Author>
+    <Version>1.0.0</Version>
+    <CreatedDate>2026-01-12</CreatedDate>
+  </Metadata>
+  
+  <Assets>
+    <Backgrounds>
+      <Background id="main_bg" path="backgrounds/elegant_main.png" />
+      <Background id="money_tree_bg" path="backgrounds/money_tree.png" />
+    </Backgrounds>
+    <Icons>
+      <Icon id="lifeline_5050" path="icons/50_50_custom.png" />
+      <Icon id="lifeline_phone" path="icons/phone_friend_custom.png" />
+      <Icon id="lifeline_audience" path="icons/ask_audience_custom.png" />
+    </Icons>
+    <Fonts>
+      <Font id="custom_font" path="fonts/ElegantFont.ttf" name="Elegant Display" />
+    </Fonts>
+  </Assets>
+  
+  <Themes>
+    <Theme name="Elegant Gold">
+      <Description>Gold and brown elegant theme</Description>
+      <Background>
+        <TVScreen backgroundId="main_bg" chromaKey="false" />
+        <MoneyTree backgroundId="money_tree_bg" />
+      </Background>
+      <Straps>
+        <Strap type="Question" shape="Classic" primaryColor="#8B4513" secondaryColor="#D4AF37" 
+               gradient="true" gradientAngle="90" effect="SilkSheen" effectIntensity="60" />
+        <Strap type="Answer" shape="Classic" primaryColor="#8B4513" secondaryColor="#D4AF37" 
+               gradient="true" gradientAngle="90" effect="SilkSheen" effectIntensity="60" />
+      </Straps>
+      <MoneyTree>
+        <Colors inactive="#808080" active="#FFD700" completed="#00FF00" safeHaven="#0080FF" />
+        <Highlight enabled="true" type="PulsingGlow" color="#FFFF00" intensity="80" />
+      </MoneyTree>
+      <Lifelines>
+        <Icon type="FiftyFifty" assetId="lifeline_5050" />
+        <Icon type="PhoneFriend" assetId="lifeline_phone" />
+        <Icon type="AskAudience" assetId="lifeline_audience" />
+      </Lifelines>
+    </Theme>
+  </Themes>
+</ThemePack>
+```
+
+**Legacy Single Theme Format (For Backward Compatibility):**
+**Format:** JSON with metadata (`.mtheme` file) - NO ASSETS
 
 ```json
 {
@@ -776,72 +871,49 @@ public static class ColorConverter
   "themeName": "My Custom Theme",
   "author": "User",
   "exportDate": "2026-01-12T10:30:00Z",
-  "background": {
-    "tvScreen": { /* settings */ },
-    "moneyTree": { /* settings */ }
-  },
-  "straps": [
-    {
-      "type": "Question",
-      "svgShape": "Classic",
-      "primaryColor": "#8B4513",
-      "effects": { /* effect settings */ }
-    }
-  ],
+  "background": { /* settings - references existing assets only */ },
+  "straps": [ /* strap configurations */ ],
   "moneyTree": { /* money tree settings */ }
 }
 ```
+**Note:** Single themes reference existing assets, do not include files
 
-#### Theme Pack Format
-**Format:** JSON with multiple themes (`.mtpack` file)
+---
 
-```json
-{
-  "packVersion": "1.0",
-  "packName": "Elegant Collection",
-  "description": "A collection of elegant professional themes",
-  "author": "Theme Designer",
-  "version": "1.0.0",
-  "exportDate": "2026-01-12T10:30:00Z",
-  "tags": ["elegant", "professional", "formal"],
-  "previewImage": "base64-encoded-image-data",
-  "themes": [
-    {
-      "themeVersion": "1.0",
-      "themeName": "Elegant Gold",
-      "author": "Theme Designer",
-      /* full theme data */
-    },
-    {
-      "themeVersion": "1.0",
-      "themeName": "Elegant Silver",
-      "author": "Theme Designer",
-      /* full theme data */
-    },
-    {
-      "themeVersion": "1.0",
-      "themeName": "Elegant Bronze",
-      "author": "Theme Designer",
-      /* full theme data */
-    }
-  ],
-  "metadata": {
-    "themeCount": 3,
-    "totalSize": 245678,
-    "createdWith": "MillionaireGame v1.0.7"
-  }
-}
+#### Theme Pack ZIP Structure
+
+**Installed Location:**
+```
+lib/themepacks/
+├── ElegantPack/
+│   ├── pack.xml
+│   ├── backgrounds/
+│   ├── icons/
+│   ├── fonts/
+│   └── preview.png
+├── ModernPack/
+│   ├── pack.xml
+│   ├── backgrounds/
+│   └── ...
 ```
 
 **File Extensions:**
-- `.mtheme` - Single theme file
-- `.mtpack` - Theme pack file (multiple themes)
+- `.zip` - Theme pack file (exported/distributed)
+- No extension needed for single themes (database only)
 
 **Size Considerations:**
-- Pack files may include base64-encoded preview images
-- Limit preview images to 200KB each
-- Maximum pack size: 10MB (reasonable for distribution)
-- Compression option for large packs (gzip)
+- Pack files include actual image/font files
+- Recommended background images: ≤2MB each
+- Icon images: ≤100KB each
+- Preview image: ≤500KB
+- Maximum pack size: 50MB (includes all assets)
+- ZIP compression reduces distribution size
+
+**Asset Guidelines:**
+- Backgrounds: PNG/JPG, 1920x1080 recommended
+- Icons: PNG with transparency, 256x256 or 512x512
+- Fonts: TTF/OTF format
+- Preview: PNG/JPG, 800x600 recommended
 
 ## Migration Strategy
 
@@ -881,12 +953,17 @@ public async Task MigrateExistingBackgroundsAsync()
 - [ ] SVG strap customization guide
 - [ ] Effect reference (what each effect does)
 - [ ] Export/Import instructions
-  - [ ] Single theme export/import
-  - [ ] Theme pack creation guide
+  - [ ] Theme pack creation guide (ZIP structure)
+  - [ ] pack.xml specification
   - [ ] Pack import guide
-  - [ ] Pack sharing best practices
+  - [ ] Asset preparation guidelines
+  - [ ] Pack distribution best practices
 - [ ] Best practices for theme design
 - [ ] Theme pack creation guidelines
+  - [ ] Asset format requirements
+  - [ ] File size recommendations
+  - [ ] XML structure documentation
+  - [ ] Example pack walkthrough
 - [ ] Troubleshooting common issues
 
 ## Success Criteria
@@ -948,16 +1025,24 @@ public async Task MigrateExistingBackgroundsAsync()
 
 ### Required Libraries
 - System.Drawing (Windows Forms graphics)
-- System.Xml.Linq (SVG manipulation)
-- System.Text.Json (theme/pack export/import)
-- System.IO.Compression (optional: pack compression)
+- System.Xml.Linq (SVG manipulation + pack.xml parsing)
+- System.IO.Compression (ZIP pack extraction/creation)
+- System.IO.Compression.ZipFile (ZIP file operations)
 - Microsoft.Data.SqlClient (database)
+- System.Text.Json (optional: for legacy .mtheme format)
 
 ### External Assets
 - Default background images (must be created)
-- Preview thumbnails for presets
-- Font files (if custom fonts required)
+- Default lifeline icons (existing in application)
+- Preview thumbnails for built-in presets
 - SVG shape templates
+- Sample theme pack for testing
+
+**Theme Pack Assets (User-Provided):**
+- Custom background images
+- Custom lifeline icons
+- Custom fonts (optional)
+- Preview images for pack
 
 ## Risk Assessment
 
@@ -972,7 +1057,9 @@ public async Task MigrateExistingBackgroundsAsync()
 
 ## Notes
 
-- **NO XML FILES:** All theme data stored in SQL Server database
+- **Theme Storage:** Theme configurations stored in SQL Server database
+- **Pack Format:** Theme PACKS use XML (like soundpacks) + ZIP for asset bundling
+- **Consistency:** Theme pack structure mirrors soundpack structure for user familiarity
 - **Database-First:** Use repository pattern for all data access
 - **NO MessageBox:** Use GameConsole for logging, non-blocking UI notifications for user feedback
 - **Async Operations:** All theme loading/saving must be async
