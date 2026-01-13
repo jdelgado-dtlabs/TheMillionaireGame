@@ -66,7 +66,7 @@ public class SqlSettingsManager
     private const string FileName = "sql.xml";
     private readonly string _filePath;
 
-    public SqlConnectionSettings Settings { get; private set; }
+    public SqlConnectionSettings Settings { get; set; }
 
     public SqlSettingsManager(string? basePath = null)
     {

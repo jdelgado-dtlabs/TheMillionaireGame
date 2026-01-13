@@ -20,13 +20,23 @@ Before installing The Millionaire Game, ensure your system meets the following r
   - Select "Desktop Runtime" for Windows x64
 
 ### Database
-- **SQL Server Express** - **REQUIRED**
+- **LocalDB** (Bundled with installer) - **RECOMMENDED**
+  - Lightweight SQL Server edition
+  - Automatically installed with MillionaireGame
+  - Zero configuration required
+  - Perfect for single-user installations
+  
+- **SQL Server Express** (Optional)
   - Free edition from Microsoft
   - Approximately 200 MB download
   - **Download**: [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)
-  - Or use full SQL Server if available
+  - Recommended for network/multi-user scenarios
   
-> 💡 **Note**: SQL Server LocalDB (included with .NET SDK) is NOT sufficient for runtime. SQL Server Express or full SQL Server is required.
+- **SQL Server Full Edition** (Optional)
+  - Any SQL Server edition (Standard, Enterprise, Developer)
+  - Best for production/enterprise deployments
+  
+> 💡 **Note**: The installer includes LocalDB by default. The First-Run Wizard guides you through database setup automatically.
 
 ### Hardware
 - **Processor**: Dual-core CPU (2 GHz or faster)
@@ -66,29 +76,44 @@ Before installing The Millionaire Game, ensure your system meets the following r
 - **Display**: Dual monitors (1920x1080 each)
 - **Network**: Ethernet or WiFi for audience participation
 - **Audio**: External speakers or sound system
-- **Database**: SQL Server Express or full SQL Server
+- **Database**: LocalDB (bundled) or SQL Server Express/Full
 
 ---
 
 ## Database Requirements
 
-The application **requires** SQL Server Express (minimum) or SQL Server (full version).
+The application includes **LocalDB** by default, with optional SQL Server support for advanced scenarios.
 
-### SQL Server Express (Minimum Required)
+### LocalDB (Bundled - Recommended)
+- **Included**: Automatically installed with MillionaireGame
+- Lightweight SQL Server edition
+- Zero configuration required
+- Perfect for single-user installations
+- No network configuration needed
+
+### SQL Server Express (Optional - Advanced)
 - **Download**: [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)
 - Free edition from Microsoft
-- Sufficient for single-machine setups
+- Recommended for multi-machine setups
+- Supports network connections
 - 10 GB database size limit (more than enough)
 
-### SQL Server (Recommended for Advanced Use)
+### SQL Server Full Edition (Optional - Enterprise)
 - Full-featured version
-- Required for multi-machine setups
+- Required for production deployments
 - Centralized question database
-- Multi-user access
+- Multi-user access with concurrent connections
 - Remote database hosting
-- Advanced backup and recovery
+- Advanced backup, replication, and high availability
 
-> ⚠️ **Important**: SQL Server LocalDB is NOT sufficient. You must install SQL Server Express or full SQL Server.
+### First-Run Wizard
+The application includes a **First-Run Wizard** that:
+- Auto-detects existing SQL Server installations
+- Guides you through database configuration
+- Creates the database automatically
+- Tests connection before finalizing setup
+
+> 💡 **Note**: Most users should use LocalDB (default). SQL Server is only needed for network-based or multi-operator scenarios.
 
 ### Network Requirements
 **For Web Audience Participation:**

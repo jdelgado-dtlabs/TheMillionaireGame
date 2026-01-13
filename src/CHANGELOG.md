@@ -7,6 +7,25 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ### Added
 - Future features will be listed here
 
+## [v1.0.6] - 2026-01-11
+
+### Added
+- **First-Run Database Setup Wizard** ✅
+  * Automatic detection when sql.xml is missing
+  * User-friendly database configuration interface
+  * LocalDB and SQL Server instance support
+  * Optional sample data loading (80 + 44 questions)
+  * Integrated with watchdog heartbeat system
+- **Installer Database Choice** ✅
+  * Radio buttons to choose LocalDB or SQL Server Express during installation
+  * Automatic download and installation of selected database engine
+  * Command-line flag support to preselect database type in wizard
+
+### Fixed
+- SQL batch execution compatibility (consolidated from 20+ batches to 3)
+- Settings path consistency (LocalApplicationData)
+- Watchdog timeout during modal dialogs
+
 ## [v1.1.0] - 2026-01-10
 
 ### Added

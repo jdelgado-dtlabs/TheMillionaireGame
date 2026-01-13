@@ -15,6 +15,7 @@ public class ProcessMonitor
     private Process? _process;
     private DateTime _processStartTime;
     private bool _shutdownRequested;
+    private bool _crashHandlerInProgress;
 
     public ProcessMonitor(string applicationPath, string[] applicationArgs)
     {
@@ -84,7 +85,7 @@ public class ProcessMonitor
 
     private void OnProcessExited(object? sender, EventArgs e)
     {
-        if (_process == null)
+        if (_process == null || _crashHandlerInProgress)
             return;
 
         var exitCode = _process.ExitCode;
@@ -151,7 +152,7 @@ public class ProcessMonitor
 
     private void OnHeartbeatTimeout(object? sender, EventArgs e)
     {
-        if (_shutdownRequested)
+        if (_shutdownRequested || _crashHandlerInProgress)
             return;
 
         WatchdogConsole.Warn("[Watchdog] APPLICATION FREEZE DETECTED - No heartbeat received");
@@ -192,6 +193,14 @@ public class ProcessMonitor
 
     private void HandleCrash(CrashInfo crashInfo)
     {
+        // Prevent duplicate crash dialogs
+        if (_crashHandlerInProgress)
+        {
+            WatchdogConsole.Warn("[Watchdog] Crash handler already in progress, skipping duplicate");
+            return;
+        }
+        _crashHandlerInProgress = true;
+        
         // Log crash detection
         WatchdogConsole.LogSeparator();
         WatchdogConsole.Error("APPLICATION CRASH DETECTED");
@@ -338,13 +347,25 @@ public class ProcessMonitor
             {
                 WatchdogConsole.Info($"[Watchdog] Duplicate crash detected: Issue #{result.ExistingIssueNumber}");
                 
-                var duplicateMessage = $"A similar crash has already been reported.\n\n" +
+                var duplicateMessage = $"This crash has already been reported!\n\n" +
                                       $"Existing Issue: #{result.ExistingIssueNumber}\n" +
                                       $"{result.IssueUrl}\n\n" +
-                                      $"Your crash details have been logged locally.";
+                                      $"✅ Your crash details have been added as a comment to help track this issue.\n\n" +
+                                      $"This helps us understand how many users are affected!";
                 
-                MessageBox.Show(duplicateMessage, "Duplicate Crash",
+                MessageBox.Show(duplicateMessage, "Duplicate Crash Logged",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+                
+                // Offer to view the issue
+                if (MessageBox.Show("Would you like to view the existing issue in your browser?",
+                    "View Issue", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = result.IssueUrl,
+                        UseShellExecute = true
+                    });
+                }
             }
             else
             {

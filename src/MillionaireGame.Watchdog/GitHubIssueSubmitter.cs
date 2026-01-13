@@ -61,6 +61,19 @@ namespace MillionaireGame.Watchdog
                 if (duplicate.IsDuplicate)
                 {
                     WatchdogConsole.Info($"[GitHubIssue] Duplicate crash detected: Issue #{duplicate.ExistingIssueNumber}");
+                    
+                    // Add a comment to the existing issue instead of creating a new one
+                    bool commentAdded = await AddDuplicateCommentAsync(
+                        duplicate.ExistingIssueNumber!.Value,
+                        crashInfo,
+                        userContext,
+                        token);
+                    
+                    if (commentAdded)
+                    {
+                        WatchdogConsole.Info($"[GitHubIssue] Added duplicate occurrence comment to issue #{duplicate.ExistingIssueNumber}");
+                    }
+                    
                     return duplicate;
                 }
 
@@ -180,6 +193,93 @@ namespace MillionaireGame.Watchdog
                 WatchdogConsole.Warn($"[GitHubIssue] Error checking duplicates: {ex.Message}");
                 // Don't fail submission if duplicate check fails
                 return new SubmissionResult { IsDuplicate = false };
+            }
+        }
+
+        /// <summary>
+        /// Adds a comment to an existing issue when a duplicate crash is detected
+        /// </summary>
+        private async Task<bool> AddDuplicateCommentAsync(
+            int issueNumber,
+            CrashInfo crashInfo,
+            UserCrashContext userContext,
+            string token)
+        {
+            try
+            {
+                var comment = new StringBuilder();
+                
+                comment.AppendLine("## 🔄 Duplicate Crash Occurrence");
+                comment.AppendLine();
+                comment.AppendLine("Another user has experienced the same crash:");
+                comment.AppendLine();
+                
+                // Crash details
+                comment.AppendLine("| Property | Value |");
+                comment.AppendLine("|----------|-------|");
+                comment.AppendLine($"| **Exit Code** | `{crashInfo.ExitCode}` (`0x{crashInfo.ExitCode:X8}`) |");
+                comment.AppendLine($"| **Last Activity** | {crashInfo.LastActivity ?? "Unknown"} |");
+                comment.AppendLine($"| **Running Time** | {FormatTimeSpan(crashInfo.RunningTime)} |");
+                comment.AppendLine($"| **Was Responsive** | {(crashInfo.WasResponsive ? "✅ Yes" : "❌ No (frozen/hung)")} |");
+                comment.AppendLine($"| **Occurred At** | {crashInfo.CrashTime:yyyy-MM-dd HH:mm:ss UTC} |");
+                comment.AppendLine();
+                
+                // User description if provided
+                if (!string.IsNullOrWhiteSpace(userContext.Description))
+                {
+                    comment.AppendLine("### User Report");
+                    comment.AppendLine();
+                    comment.AppendLine($"> {userContext.Description}");
+                    comment.AppendLine();
+                }
+                
+                // Reproduction steps if provided
+                if (!string.IsNullOrWhiteSpace(userContext.ReproductionSteps))
+                {
+                    comment.AppendLine("### Steps to Reproduce");
+                    comment.AppendLine();
+                    comment.AppendLine(userContext.ReproductionSteps);
+                    comment.AppendLine();
+                }
+                
+                // System info if enabled
+                if (userContext.IncludeSystemInfo)
+                {
+                    comment.AppendLine("### System Information");
+                    comment.AppendLine();
+                    var systemInfo = DataSanitizer.GetSanitizedSystemInfo();
+                    foreach (var kvp in systemInfo)
+                    {
+                        comment.AppendLine($"- **{kvp.Key}:** {kvp.Value}");
+                    }
+                    comment.AppendLine();
+                }
+                
+                comment.AppendLine("---");
+                comment.AppendLine("*This is an automated duplicate detection. Multiple users are affected by this issue.*");
+                
+                var commentRequest = new { body = comment.ToString() };
+                
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                
+                var response = await _httpClient.PostAsJsonAsync(
+                    $"{ApiUrl}/repos/{RepoOwner}/{RepoName}/issues/{issueNumber}/comments",
+                    commentRequest);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    WatchdogConsole.Warn($"[GitHubIssue] Failed to add comment: {response.StatusCode} - {error}");
+                    return false;
+                }
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                WatchdogConsole.Warn($"[GitHubIssue] Error adding duplicate comment: {ex.Message}");
+                return false;
             }
         }
 

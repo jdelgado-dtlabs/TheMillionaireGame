@@ -54,9 +54,10 @@ namespace MillionaireGame.Watchdog
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Size = new Size(650, 650);
+            this.Size = new Size(650, 700);
             this.BackColor = Color.White;
             this.Font = new Font("Segoe UI", 9F);
+            this.AutoScaleMode = AutoScaleMode.Font;
         }
 
         private void InitializeControls()
@@ -193,15 +194,24 @@ namespace MillionaireGame.Watchdog
             this.Controls.Add(btnReview);
             y += 45;
 
-            // Button panel at bottom
+            // Button panel at bottom - ensure proper spacing
             int buttonY = y;
+            const int buttonSpacing = 10;
+            const int submitWidth = 150;
+            const int saveWidth = 120;
+            const int closeWidth = 110;
+            
+            // Calculate button positions to fit within client width
+            int availableWidth = this.ClientSize.Width - (leftMargin * 2);
+            int totalButtonWidth = submitWidth + saveWidth + closeWidth + (buttonSpacing * 2);
+            int startX = leftMargin + ((availableWidth - totalButtonWidth) / 2);
             
             // Submit button
             btnSubmit = new Button
             {
                 Text = "Submit to GitHub",
-                Size = new Size(150, 40),
-                Location = new Point(leftMargin + 280, buttonY),
+                Size = new Size(submitWidth, 40),
+                Location = new Point(startX, buttonY),
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 BackColor = Color.FromArgb(0, 120, 212),
                 ForeColor = Color.White,
@@ -216,8 +226,8 @@ namespace MillionaireGame.Watchdog
             btnSave = new Button
             {
                 Text = "Save Locally",
-                Size = new Size(110, 40),
-                Location = new Point(leftMargin + 440, buttonY),
+                Size = new Size(saveWidth, 40),
+                Location = new Point(startX + submitWidth + buttonSpacing, buttonY),
                 Font = new Font("Segoe UI", 9F),
                 FlatStyle = FlatStyle.System
             };
@@ -228,8 +238,8 @@ namespace MillionaireGame.Watchdog
             btnClose = new Button
             {
                 Text = "Don't Send",
-                Size = new Size(100, 40),
-                Location = new Point(leftMargin + 560, buttonY),
+                Size = new Size(closeWidth, 40),
+                Location = new Point(startX + submitWidth + saveWidth + (buttonSpacing * 2), buttonY),
                 Font = new Font("Segoe UI", 9F),
                 FlatStyle = FlatStyle.System
             };

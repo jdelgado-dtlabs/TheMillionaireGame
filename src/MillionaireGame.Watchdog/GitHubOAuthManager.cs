@@ -118,6 +118,9 @@ public class GitHubOAuthManager
     {
         try
         {
+            WatchdogConsole.Info($"[GitHubOAuth] Requesting device code from {DeviceCodeUrl}");
+            WatchdogConsole.Info($"[GitHubOAuth] Client ID: {ClientId}");
+            
             var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("client_id", ClientId),
@@ -125,14 +128,31 @@ public class GitHubOAuthManager
             });
             
             var response = await _httpClient.PostAsync(DeviceCodeUrl, content, cancellationToken);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                WatchdogConsole.Error($"[GitHubOAuth] HTTP {response.StatusCode}: {errorContent}");
+            }
+            
             response.EnsureSuccessStatusCode();
             
-            _currentDeviceCodeResponse = await response.Content.ReadFromJsonAsync<DeviceCodeResponse>(cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            WatchdogConsole.Debug($"[GitHubOAuth] Response: {responseContent}");
+            
+            _currentDeviceCodeResponse = JsonSerializer.Deserialize<DeviceCodeResponse>(responseContent);
             return _currentDeviceCodeResponse;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            WatchdogConsole.Error($"[GitHubOAuth] Network error requesting device code: {httpEx.Message}");
+            WatchdogConsole.Error($"[GitHubOAuth] Check your internet connection and firewall settings");
+            return null;
         }
         catch (Exception ex)
         {
-            WatchdogConsole.Error($"[GitHubOAuth] Failed to request device code: {ex.Message}");
+            WatchdogConsole.Error($"[GitHubOAuth] Failed to request device code: {ex.GetType().Name} - {ex.Message}");
+            WatchdogConsole.Error($"[GitHubOAuth] Stack trace: {ex.StackTrace}");
             return null;
         }
     }

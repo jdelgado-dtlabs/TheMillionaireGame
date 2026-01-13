@@ -1,24 +1,26 @@
 # Unified Plugin Manager Architecture
 
-**Status**: 📋 Planning  
-**Priority**: MEDIUM - Optional optimization for shared plugin infrastructure  
-**Target Release**: v1.2.0  
+**Status**: 📋 Planning (Ready for v1.1.0)  
+**Priority**: HIGH - Core plugin infrastructure for v1.1.0  
+**Target Release**: v1.1.0  
 **Created**: January 10, 2026  
-**Last Updated**: January 10, 2026
+**Last Updated**: January 12, 2026
 
 ---
 
 ## Executive Summary
 
-This document outlines an **optional unified plugin manager** that consolidates common plugin management functionality shared between `LightingManager` and `SoundManager`. This is an architectural enhancement to reduce code duplication while maintaining separation of concerns for domain-specific logic.
+This document outlines the **unified plugin manager** that will consolidate common plugin management functionality shared between `LightingManager` and `SoundManager`. This is a core architectural component to reduce code duplication while maintaining separation of concerns for domain-specific logic.
 
-**Key Decision**: This is **NOT required for v1.1.0**. Start with separate managers (`LightingManager` and `SoundManager`) and consider this refactoring for v1.2.0 if duplication becomes problematic.
+**Key Decision**: Implementing this from the start in v1.1.0 (after v1.0.6 release) ensures a solid, maintainable foundation for the plugin architecture rather than refactoring later.
+
+**Status Note**: This plan is finalized and ready for implementation once v1.0.6 is released and v1.1.0 development begins.
 
 ---
 
-## Current Architecture (v1.1.0)
+## Baseline Architecture (Separate Managers)
 
-### Separate Managers Approach
+### Initial Approach (NOT RECOMMENDED)
 
 ```
 MillionaireGame.Core/
@@ -45,7 +47,7 @@ MillionaireGame.Core/
 
 ---
 
-## Proposed Unified Architecture (v1.2.0)
+## Unified Architecture (v1.1.0 Implementation)
 
 ### Shared Base Manager
 
@@ -688,9 +690,9 @@ namespace MillionaireGame.Core.Sound
 
 ---
 
-## Migration Strategy
+## Implementation Strategy
 
-### Phase 1: Create Base Infrastructure (v1.2.0)
+### Phase 1: Create Base Infrastructure (v1.1.0)
 
 **Week 1-2: Base Classes**
 1. Create `IPlugin` interface
@@ -698,29 +700,29 @@ namespace MillionaireGame.Core.Sound
 3. Create `PluginDiscovery` service
 4. Create `PluginManager<T>` abstract class
 
-### Phase 2: Refactor Lighting (v1.2.0)
+### Phase 2: Implement Lighting with Unified Manager (v1.1.0)
 
-**Week 3: Lighting Migration**
-1. Update `ILightingPlugin` to extend `IPlugin`
-2. Refactor `LightingManager` to extend `PluginManager<ILightingPlugin>`
-3. Update existing lighting plugins (ETC Ion)
+**Week 3: Lighting Implementation**
+1. Create `ILightingPlugin` extending `IPlugin`
+2. Implement `LightingManager` extending `PluginManager<ILightingPlugin>`
+3. Develop ETC Ion plugin
 4. Test lighting functionality
 
-### Phase 3: Refactor Sound (v1.2.0)
+### Phase 3: Implement Sound with Unified Manager (v1.1.0)
 
-**Week 4: Sound Migration**
-1. Update `ISoundPlugin` to extend `IPlugin`
-2. Refactor `SoundManager` to extend `PluginManager<ISoundPlugin>`
-3. Update Yamaha plugin
+**Week 4: Sound Implementation**
+1. Create `ISoundPlugin` extending `IPlugin`
+2. Implement `SoundManager` extending `PluginManager<ISoundPlugin>`
+3. Develop Yamaha TF plugin
 4. Test sound functionality
 
-### Phase 4: Cleanup & Testing (v1.2.0)
+### Phase 4: Integration & Testing (v1.1.0)
 
-**Week 5: Final Migration**
-1. Remove duplicated code
-2. Update documentation
-3. Integration testing
-4. Performance testing
+**Week 5: Final Integration**
+1. Integration testing (lighting + sound together)
+2. Performance testing
+3. Update documentation
+4. Plugin developer guidelines
 
 ---
 
@@ -778,24 +780,26 @@ namespace MillionaireGame.Core.Sound
 
 ---
 
-## Recommendation
+## Implementation Decision
 
-**For v1.1.0**: Use **Separate Managers** approach
-- Faster initial implementation
-- Simpler to understand and maintain
-- Allows learning from real-world usage
-
-**For v1.2.0**: Consider **Unified Manager** refactoring IF:
-- Code duplication becomes problematic
-- Adding 3+ additional plugin types
+**For v1.1.0**: Use **Unified Manager** approach from the start
+- Prevents code duplication before it starts
+- Establishes solid architectural foundation
+- Easier to add future plugin types (Video, DMX, Broadcast)
+- "Do it right the first time" - avoids costly refactoring later
 - Team comfortable with generics and abstraction
-- Performance testing shows no significant overhead
+
+**Rationale**: While the separate managers approach is faster initially, the unified architecture provides:
+- Long-term maintainability
+- Consistent plugin development experience
+- Reduced technical debt
+- Better foundation for future expansion
 
 ---
 
-## Alternative: Hybrid Approach
+## Alternative Approach: Hybrid (Not Chosen)
 
-Keep separate managers but extract common utilities:
+We considered keeping separate managers but extracting common utilities:
 
 ```
 MillionaireGame.Core/
@@ -813,10 +817,10 @@ MillionaireGame.Core/
     └── [sound models...]
 ```
 
-**Benefits:**
-- ✅ Reduces duplication without heavy abstraction
-- ✅ Easier migration path
-- ✅ Lower risk
+**Why Not Chosen:**
+- ⚠️ Still allows duplication in manager patterns
+- ⚠️ Inconsistent abstraction levels
+- ⚠️ Might still need refactoring later for new plugin types
 
 ---
 
@@ -843,6 +847,6 @@ MillionaireGame.Core/
 
 ## Summary
 
-A unified plugin manager provides long-term maintainability benefits but adds initial complexity. **Recommend starting with separate managers for v1.1.0** to get the plugin architecture working, then **evaluate refactoring to unified manager for v1.2.0** based on real-world usage and team feedback.
+The unified plugin manager provides long-term maintainability benefits and establishes a solid architectural foundation. **Implementing this from the start in v1.1.0** ensures we build it right the first time, avoiding costly refactoring later and providing a consistent development experience for all plugin types.
 
-The hybrid approach (shared utilities without full unification) may provide the best balance of reduced duplication without excessive abstraction.
+This approach sets up the project for success as we expand to additional plugin types (Video Control, DMX, Broadcast Integration) in future releases.
