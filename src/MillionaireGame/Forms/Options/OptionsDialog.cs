@@ -4,6 +4,7 @@ using MillionaireGame.Core.Services;
 using MillionaireGame.Utilities;
 using MillionaireGame.Hosting;
 using MillionaireGame.Services;
+using MillionaireGame.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using System.Management;
 using System.Data;
@@ -21,6 +22,7 @@ public partial class OptionsDialog : Form
     private readonly DataView _soundPackDataView;
     private bool _screensTabInitialized = false;
     private List<MonitorInfo>? _cachedMonitors = null;
+    private ThemeSettingsPanel? _themeSettingsPanel;
     
     /// <summary>
     /// Event fired when settings are applied (via Apply button or OK button)
@@ -39,6 +41,9 @@ public partial class OptionsDialog : Form
         
         InitializeComponent();
         IconHelper.ApplyToForm(this);
+        
+        // Initialize Theme Settings Panel
+        InitializeThemeSettingsPanel();
         
         // Initialize Money Tree tab dynamically
         InitializeMoneyTreeTab();
@@ -184,6 +189,9 @@ public partial class OptionsDialog : Form
         
         // Load Stream Deck settings
         chkEnableStreamDeck.Checked = _settings.StreamDeckEnabled;
+        
+        // Load theme settings
+        LoadThemeSettings();
         
         // Update dropdown enabled states based on full-screen checkboxes
         UpdateDropdownEnabledStates();
@@ -684,6 +692,26 @@ public partial class OptionsDialog : Form
         
         // Save Stream Deck settings
         _settings.StreamDeckEnabled = chkEnableStreamDeck.Checked;
+    }
+    
+    /// <summary>
+    /// Load theme settings into the Theme Settings Panel
+    /// </summary>
+    private void LoadThemeSettings()
+    {
+        if (_themeSettingsPanel != null)
+        {
+            try
+            {
+                // Load themes asynchronously (fire and forget - panel handles its own loading)
+                _ = _themeSettingsPanel.LoadSettingsAsync();
+                GameConsole.Debug("[OptionsDialog] Theme settings loaded");
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[OptionsDialog] Failed to load theme settings: {ex.Message}");
+            }
+        }
     }
 
     private void PopulateIPAddresses()
@@ -1989,6 +2017,44 @@ public partial class OptionsDialog : Form
         }
     }
 
+    /// <summary>
+    /// Initialize Theme Settings Panel
+    /// </summary>
+    private void InitializeThemeSettingsPanel()
+    {
+        try
+        {
+            var connectionString = _settingsManager.ConnectionString;
+            _themeSettingsPanel = new ThemeSettingsPanel(connectionString)
+            {
+                Dock = DockStyle.Fill
+            };
+            
+            // Wire up events
+            _themeSettingsPanel.ThemeChanged += ThemeSettingsPanel_ThemeChanged;
+            _themeSettingsPanel.SettingsChanged += (s, e) => { _hasChanges = true; };
+            
+            // Add to Themes tab
+            tabThemes.Controls.Add(_themeSettingsPanel);
+            
+            GameConsole.Debug("[OptionsDialog] Theme Settings Panel initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[OptionsDialog] Failed to initialize Theme Settings Panel: {ex.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Handle theme changed event
+    /// </summary>
+    private void ThemeSettingsPanel_ThemeChanged(object? sender, EventArgs e)
+    {
+        GameConsole.Info("[OptionsDialog] Theme changed, refreshing UI");
+        _hasChanges = true;
+        // In the future, this could trigger preview updates
+    }
+    
     private void InitializeMoneyTreeTab()
     {
         // Create currency groups

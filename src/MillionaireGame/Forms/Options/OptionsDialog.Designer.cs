@@ -19,6 +19,7 @@ namespace MillionaireGame.Forms.Options
         {
             tabControl = new TabControl();
             tabScreens = new TabPage();
+            tabThemes = new TabPage();
             grpPreviews = new GroupBox();
             chkEnablePreviewAutomatically = new CheckBox();
             cmbPreviewOrientation = new ComboBox();
@@ -222,6 +223,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Controls.Add(tabMoneyTree);
             tabControl.Controls.Add(tabSounds);
             tabControl.Controls.Add(tabStreamDeck);
+            tabControl.Controls.Add(tabThemes);
             tabControl.Controls.Add(tabAudience);
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
@@ -1451,6 +1453,16 @@ namespace MillionaireGame.Forms.Options
             lblAnswerD.Text = "Answer D";
             lblAnswerD.TextAlign = ContentAlignment.TopCenter;
             // 
+            // tabThemes
+            // 
+            tabThemes.Location = new Point(4, 24);
+            tabThemes.Name = "tabThemes";
+            tabThemes.Padding = new Padding(3);
+            tabThemes.Size = new Size(652, 518);
+            tabThemes.TabIndex = 9;
+            tabThemes.Text = "Themes";
+            tabThemes.UseVisualStyleBackColor = true;
+            // 
             // tabAudience
             // 
             tabAudience.AutoScroll = true;
@@ -1824,6 +1836,7 @@ namespace MillionaireGame.Forms.Options
         private Label lblServerStatus;
         private Label lblAudienceInfo;
         private TabPage tabStreamDeck;
+        private TabPage tabThemes;
         private GroupBox grpStreamDeckConfig;
         private CheckBox chkEnableStreamDeck;
         private Label lblStreamDeckInfo;
