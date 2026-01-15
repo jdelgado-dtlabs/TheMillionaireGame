@@ -1,0 +1,429 @@
+using MillionaireGame.Core.Models;
+using MillionaireGame.Core.Services;
+using MillionaireGame.Core.Graphics;
+using MillionaireGame.Utilities;
+
+namespace MillionaireGame.Controls;
+
+/// <summary>
+/// Theme settings panel for OptionsDialog - manages theme selection, preview, and pack operations
+/// </summary>
+public partial class ThemeSettingsPanel : UserControl
+{
+    private readonly ThemeService _themeService;
+    private readonly SvgStrapRenderer _renderer;
+    private List<Theme> _allThemes = new();
+    private Theme? _selectedTheme;
+    private bool _isLoading;
+
+    public event EventHandler? ThemeChanged;
+    public event EventHandler? SettingsChanged;
+
+    public ThemeSettingsPanel(string connectionString)
+    {
+        _themeService = new ThemeService(connectionString);
+        _renderer = new SvgStrapRenderer();
+        
+        InitializeComponent();
+        InitializeControls();
+    }
+
+    private void InitializeControls()
+    {
+        // Initialize theme list columns
+        lstThemes.View = View.Details;
+        lstThemes.FullRowSelect = true;
+        lstThemes.MultiSelect = false;
+        lstThemes.Columns.Add("Theme Name", 250);
+        lstThemes.Columns.Add("Type", 100);
+        lstThemes.Columns.Add("Author", 150);
+
+        // Event handlers
+        lstThemes.SelectedIndexChanged += LstThemes_SelectedIndexChanged;
+        btnApplyTheme.Click += BtnApplyTheme_Click;
+        btnDuplicateTheme.Click += BtnDuplicateTheme_Click;
+        btnDeleteTheme.Click += BtnDeleteTheme_Click;
+        btnImportPack.Click += BtnImportPack_Click;
+        btnExportTheme.Click += BtnExportTheme_Click;
+        btnRefresh.Click += (s, e) => LoadThemesAsync();
+    }
+
+    /// <summary>
+    /// Load settings into the panel
+    /// </summary>
+    public async Task LoadSettingsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            await _themeService.LoadActiveThemeAsync();
+            await LoadThemesAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Load all themes from database
+    /// </summary>
+    private async Task LoadThemesAsync()
+    {
+        try
+        {
+            _allThemes = await _themeService.GetAllThemesAsync();
+            
+            lstThemes.Items.Clear();
+            
+            foreach (var theme in _allThemes.OrderBy(t => t.ThemeType).ThenBy(t => t.ThemeName))
+            {
+                var item = new ListViewItem(theme.ThemeName);
+                item.SubItems.Add(theme.ThemeType);
+                item.SubItems.Add(theme.Author ?? "Unknown");
+                item.Tag = theme;
+                
+                // Mark active theme
+                if (theme.IsActive)
+                {
+                    item.Font = new Font(item.Font, FontStyle.Bold);
+                    item.BackColor = Color.LightGreen;
+                }
+                
+                lstThemes.Items.Add(item);
+            }
+
+            // Select active theme
+            var activeTheme = _allThemes.FirstOrDefault(t => t.IsActive);
+            if (activeTheme != null)
+            {
+                var activeItem = lstThemes.Items.Cast<ListViewItem>()
+                    .FirstOrDefault(i => ((Theme)i.Tag).ThemeId == activeTheme.ThemeId);
+                if (activeItem != null)
+                {
+                    activeItem.Selected = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to load themes: {ex.Message}");
+            MessageBox.Show($"Failed to load themes: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handle theme selection changed
+    /// </summary>
+    private async void LstThemes_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (lstThemes.SelectedItems.Count == 0)
+        {
+            _selectedTheme = null;
+            UpdatePreview(null);
+            UpdateButtons();
+            return;
+        }
+
+        _selectedTheme = (Theme)lstThemes.SelectedItems[0].Tag;
+        await LoadThemePreviewAsync(_selectedTheme.ThemeId);
+        UpdateButtons();
+    }
+
+    /// <summary>
+    /// Load and display theme preview
+    /// </summary>
+    private async Task LoadThemePreviewAsync(int themeId)
+    {
+        try
+        {
+            var completeTheme = await _themeService.GetCompleteThemeAsync(themeId);
+            if (completeTheme == null)
+                return;
+
+            UpdatePreview(completeTheme);
+            DisplayThemeDetails(completeTheme);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to load theme preview: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Update preview image
+    /// </summary>
+    private void UpdatePreview(CompleteTheme? theme)
+    {
+        if (picPreview.Image != null)
+        {
+            picPreview.Image.Dispose();
+            picPreview.Image = null;
+        }
+
+        if (theme == null)
+            return;
+
+        try
+        {
+            // Get question and answer straps
+            var questionStrap = theme.Straps.FirstOrDefault(s => s.StrapType == "Question");
+            var answerStrap = theme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+
+            if (questionStrap != null && answerStrap != null)
+            {
+                picPreview.Image = _renderer.RenderStrapPreview(
+                    questionStrap,
+                    answerStrap,
+                    picPreview.Width,
+                    picPreview.Height);
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Warn($"[ThemeSettingsPanel] Failed to render preview: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Display theme details in text box
+    /// </summary>
+    private void DisplayThemeDetails(CompleteTheme theme)
+    {
+        var details = new System.Text.StringBuilder();
+        details.AppendLine($"Theme: {theme.Theme.ThemeName}");
+        details.AppendLine($"Type: {theme.Theme.ThemeType}");
+        details.AppendLine($"Author: {theme.Theme.Author ?? "Unknown"}");
+        details.AppendLine($"Version: {theme.Theme.Version ?? "1.0.0"}");
+        details.AppendLine($"Description: {theme.Theme.Description ?? "No description"}");
+        details.AppendLine();
+        details.AppendLine($"Backgrounds: {theme.Backgrounds.Count}");
+        details.AppendLine($"Straps: {theme.Straps.Count}");
+        details.AppendLine($"Money Tree: {(theme.MoneyTree != null ? "Configured" : "Not configured")}");
+        
+        txtThemeDetails.Text = details.ToString();
+    }
+
+    /// <summary>
+    /// Update button states based on selection
+    /// </summary>
+    private void UpdateButtons()
+    {
+        bool hasSelection = _selectedTheme != null;
+        bool isActive = _selectedTheme?.IsActive == true;
+        bool isPreset = _selectedTheme?.ThemeType == "Preset";
+
+        btnApplyTheme.Enabled = hasSelection && !isActive;
+        btnDuplicateTheme.Enabled = hasSelection;
+        btnDeleteTheme.Enabled = hasSelection && !isActive && !isPreset;
+        btnExportTheme.Enabled = hasSelection;
+    }
+
+    /// <summary>
+    /// Apply selected theme
+    /// </summary>
+    private async void BtnApplyTheme_Click(object? sender, EventArgs e)
+    {
+        if (_selectedTheme == null)
+            return;
+
+        try
+        {
+            await _themeService.ApplyThemeAsync(_selectedTheme.ThemeId);
+            
+            GameConsole.Info($"[ThemeSettingsPanel] Applied theme: {_selectedTheme.ThemeName}");
+            MessageBox.Show($"Theme '{_selectedTheme.ThemeName}' has been applied.", "Theme Applied", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            await LoadThemesAsync(); // Refresh list
+            ThemeChanged?.Invoke(this, EventArgs.Empty);
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to apply theme: {ex.Message}");
+            MessageBox.Show($"Failed to apply theme: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Duplicate selected theme
+    /// </summary>
+    private async void BtnDuplicateTheme_Click(object? sender, EventArgs e)
+    {
+        if (_selectedTheme == null)
+            return;
+
+        var newName = Microsoft.VisualBasic.Interaction.InputBox(
+            "Enter name for the duplicated theme:",
+            "Duplicate Theme",
+            $"{_selectedTheme.ThemeName} (Copy)");
+
+        if (string.IsNullOrWhiteSpace(newName))
+            return;
+
+        try
+        {
+            var duplicatedTheme = await _themeService.DuplicateThemeAsync(
+                _selectedTheme.ThemeId,
+                newName,
+                "Custom");
+
+            GameConsole.Info($"[ThemeSettingsPanel] Duplicated theme: {newName}");
+            MessageBox.Show($"Theme '{newName}' has been created.", "Theme Duplicated", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            await LoadThemesAsync();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to duplicate theme: {ex.Message}");
+            MessageBox.Show($"Failed to duplicate theme: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Delete selected theme
+    /// </summary>
+    private async void BtnDeleteTheme_Click(object? sender, EventArgs e)
+    {
+        if (_selectedTheme == null)
+            return;
+
+        var result = MessageBox.Show(
+            $"Are you sure you want to delete the theme '{_selectedTheme.ThemeName}'?\n\nThis action cannot be undone.",
+            "Confirm Delete",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+
+        if (result != DialogResult.Yes)
+            return;
+
+        try
+        {
+            await _themeService.DeleteThemeAsync(_selectedTheme.ThemeId);
+            
+            GameConsole.Info($"[ThemeSettingsPanel] Deleted theme: {_selectedTheme.ThemeName}");
+            MessageBox.Show($"Theme '{_selectedTheme.ThemeName}' has been deleted.", "Theme Deleted", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            await LoadThemesAsync();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to delete theme: {ex.Message}");
+            MessageBox.Show($"Failed to delete theme: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Import theme pack
+    /// </summary>
+    private async void BtnImportPack_Click(object? sender, EventArgs e)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Import Theme Pack",
+            Filter = "Theme Pack Files (*.zip)|*.zip|All Files (*.*)|*.*",
+            FilterIndex = 1
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK)
+            return;
+
+        try
+        {
+            var installPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MillionaireGame",
+                "ThemePacks");
+
+            using var handler = new ThemePackHandler(GetConnectionString());
+            var pack = await handler.ImportThemePackAsync(dialog.FileName, installPath);
+
+            GameConsole.Info($"[ThemeSettingsPanel] Imported theme pack: {pack.PackName}");
+            MessageBox.Show($"Theme pack '{pack.PackName}' has been imported successfully.", 
+                "Import Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            await LoadThemesAsync();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to import theme pack: {ex.Message}");
+            MessageBox.Show($"Failed to import theme pack: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Export selected theme
+    /// </summary>
+    private async void BtnExportTheme_Click(object? sender, EventArgs e)
+    {
+        if (_selectedTheme == null)
+            return;
+
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export Theme",
+            Filter = "Theme Pack Files (*.zip)|*.zip",
+            FileName = $"{_selectedTheme.ThemeName}.zip"
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK)
+            return;
+
+        try
+        {
+            var outputDir = Path.GetDirectoryName(dialog.FileName);
+            if (string.IsNullOrEmpty(outputDir))
+                return;
+
+            using var handler = new ThemePackHandler(GetConnectionString());
+            var zipPath = await handler.ExportThemePackAsync(
+                new List<int> { _selectedTheme.ThemeId },
+                _selectedTheme.ThemeName,
+                outputDir,
+                _selectedTheme.Author,
+                _selectedTheme.Description);
+
+            GameConsole.Info($"[ThemeSettingsPanel] Exported theme: {zipPath}");
+            MessageBox.Show($"Theme has been exported to:\n{zipPath}", "Export Complete", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to export theme: {ex.Message}");
+            MessageBox.Show($"Failed to export theme: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Get connection string from app settings
+    /// </summary>
+    private string GetConnectionString()
+    {
+        // This will be injected properly when integrated with OptionsDialog
+        return _themeService.GetType()
+            .GetField("_connectionString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            ?.GetValue(_themeService) as string ?? throw new InvalidOperationException("Connection string not available");
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _themeService?.Dispose();
+            _renderer?.Dispose();
+            picPreview.Image?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
