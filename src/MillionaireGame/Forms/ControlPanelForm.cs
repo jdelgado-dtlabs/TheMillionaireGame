@@ -4477,6 +4477,10 @@ public partial class ControlPanelForm : Form
             // Reload money tree settings and update risk mode button
             _gameService.MoneyTree.ReloadSettings();
             UpdateRiskModeButton();
+            
+            // Refresh theme backgrounds on all screens
+            _screenService.RefreshThemes();
+            GameConsole.Info("[ControlPanel] Theme backgrounds refreshed on all screens");
         };
         
         optionsDialog.ShowDialog(this);

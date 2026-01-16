@@ -877,18 +877,35 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     {
         _moneyTreeService = moneyTreeService;
         
-        // Initialize background renderer with current settings
-        // Try to get settings from Program.ServiceProvider
+        // Initialize background renderer with current settings and theme service
+        // Try to get settings and theme service from Program.ServiceProvider
         try
         {
             var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
             if (settingsManager?.Settings != null)
             {
-                _backgroundRenderer = new BackgroundRenderer(settingsManager.Settings);
+                // Try to get ThemeService - it may not be registered yet (Phase 5)
+                ThemeService? themeService = null;
+                try
+                {
+                    themeService = new ThemeService(settingsManager.ConnectionString);
+                    // Load active theme asynchronously
+                    _ = Task.Run(async () => await themeService.LoadActiveThemeAsync());
+                    GameConsole.Debug("[TVScreenForm] ThemeService initialized for background rendering");
+                }
+                catch (Exception ex)
+                {
+                    GameConsole.Warn($"[TVScreenForm] ThemeService not available: {ex.Message}");
+                    // Continue without theme service - will fall back to legacy backgrounds
+                }
+                
+                _backgroundRenderer = new BackgroundRenderer(settingsManager.Settings, themeService);
+                GameConsole.Debug("[TVScreenForm] BackgroundRenderer initialized");
             }
         }
-        catch
+        catch (Exception ex)
         {
+            GameConsole.Error($"[TVScreenForm] Error initializing background renderer: {ex.Message}");
             // If DI not available, background renderer will remain null and fall back to black background
         }
     }
@@ -1516,6 +1533,27 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
         _confettiTimer = null;
         _confettiParticles.Clear();
         
+        Invalidate();
+    }
+    
+    /// <summary>
+    /// Refresh background when theme changes
+    /// Clears background cache and reloads from active theme
+    /// </summary>
+    public void RefreshTheme()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(RefreshTheme));
+            return;
+        }
+        
+        GameConsole.Info("[TVScreenForm] Refreshing theme backgrounds");
+        
+        // Clear background cache to force reload
+        _backgroundRenderer?.ClearCache();
+        
+        // Redraw screen with new theme
         Invalidate();
     }
     

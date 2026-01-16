@@ -458,6 +458,26 @@ public class ScreenUpdateService
         }
     }
     
+    /// <summary>
+    /// Refresh theme backgrounds on all screens when theme changes
+    /// </summary>
+    public void RefreshThemes()
+    {
+        foreach (var screen in _registeredScreens)
+        {
+            // Check if screen has RefreshTheme method (TVScreenForm, HostScreenForm)
+            if (screen is TVScreenForm tvScreen)
+            {
+                tvScreen.RefreshTheme();
+            }
+            else if (screen is HostScreenForm hostScreen)
+            {
+                // HostScreenForm will get RefreshTheme in future if needed
+                // For now, only TVScreenForm has theme backgrounds
+            }
+        }
+    }
+    
     #endregion
 }
 
