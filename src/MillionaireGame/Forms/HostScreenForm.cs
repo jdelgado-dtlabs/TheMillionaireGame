@@ -5,6 +5,9 @@ using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
 using MillionaireGame.Utilities;
+using MillionaireGame.Core.Settings;
+using Microsoft.Extensions.DependencyInjection;
+using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -22,6 +25,8 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    private CompleteTheme? _activeTheme; // Active theme for strap rendering
+    private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
@@ -100,6 +105,34 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
+        
+        // Load active theme for strap rendering
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+                if (settingsManager != null)
+                {
+                    var themeService = new ThemeService(settingsManager.ConnectionString);
+                    await themeService.LoadActiveThemeAsync();
+                    var activeTheme = themeService.CurrentTheme;
+                    
+                    if (activeTheme != null)
+                    {
+                        _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                        _svgStrapRenderer = new SvgStrapRenderer();
+                        GameConsole.Info($"[HostScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap rendering");
+                        Invalidate(); // Redraw with themed straps
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Warn($"[HostScreenForm] ThemeService not available: {ex.Message}");
+                // Continue without theme service - will fall back to PNG straps
+            }
+        });
     }
 
     public void UpdateMoneyTreeLevel(int level, GameMode mode = GameMode.Normal)
@@ -196,6 +229,26 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawQuestionStrap(System.Drawing.Graphics g)
     {
+        // Check if theme is active and has question strap
+        if (_activeTheme != null && _svgStrapRenderer != null)
+        {
+            var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
+            if (questionStrap != null)
+            {
+                // Render with SVG
+                var bounds = new Rectangle(
+                    (int)_questionStrapBounds.X, 
+                    (int)_questionStrapBounds.Y,
+                    (int)_questionStrapBounds.Width,
+                    (int)_questionStrapBounds.Height);
+                
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, 
+                    _currentQuestion?.QuestionText ?? "", bounds);
+                return; // Skip legacy rendering
+            }
+        }
+        
+        // Fallback to legacy PNG textures
         var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
         
         if (texture != null)
@@ -205,7 +258,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 _questionStrapBounds.Width, _questionStrapBounds.Height);
         }
 
-        // Draw question text with wrapping and auto-scaling
+        // Draw question text with wrapping and auto-scaling (legacy method)
         // Substantial padding to keep text within visible bounds (180px each side)
         var textBounds = new RectangleF(
             _questionStrapBounds.X + 180, 
@@ -221,6 +274,72 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeftSide, bool isVisible)
     {
+        // Check if theme is active and has answer strap
+        if (_activeTheme != null && _svgStrapRenderer != null && isVisible)
+        {
+            var answerStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            if (answerStrap != null)
+            {
+                // Clone the strap to modify colors based on state
+                var strapToRender = new ThemeStrap
+                {
+                    StrapType = answerStrap.StrapType,
+                    SvgShape = answerStrap.SvgShape,
+                    PrimaryColor = answerStrap.PrimaryColor,
+                    SecondaryColor = answerStrap.SecondaryColor,
+                    GradientEnabled = answerStrap.GradientEnabled,
+                    GradientAngle = answerStrap.GradientAngle,
+                    EffectType = answerStrap.EffectType,
+                    EffectIntensity = answerStrap.EffectIntensity,
+                    EffectColor = answerStrap.EffectColor,
+                    BorderEnabled = answerStrap.BorderEnabled,
+                    BorderColor = answerStrap.BorderColor,
+                    BorderWidth = answerStrap.BorderWidth,
+                    BorderStyle = answerStrap.BorderStyle,
+                    FontFamily = answerStrap.FontFamily,
+                    FontSize = answerStrap.FontSize,
+                    FontColor = answerStrap.FontColor,
+                    FontBold = answerStrap.FontBold,
+                    FontItalic = answerStrap.FontItalic,
+                    AnimationEnabled = answerStrap.AnimationEnabled,
+                    AnimationType = answerStrap.AnimationType,
+                    AnimationDuration = answerStrap.AnimationDuration
+                };
+                
+                // Modify colors based on answer state
+                if (_isRevealing && letter == _correctAnswer)
+                {
+                    // Correct answer - green
+                    strapToRender.PrimaryColor = "#228B22"; // Forest green
+                    strapToRender.SecondaryColor = "#90EE90"; // Light green
+                }
+                else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
+                {
+                    // Wrong answer - red
+                    strapToRender.PrimaryColor = "#8B0000"; // Dark red
+                    strapToRender.SecondaryColor = "#FF6347"; // Tomato red
+                }
+                else if (_selectedAnswer == letter && !_isRevealing)
+                {
+                    // Selected answer (before reveal) - orange/gold
+                    strapToRender.PrimaryColor = "#FF8C00"; // Dark orange
+                    strapToRender.SecondaryColor = "#FFD700"; // Gold
+                }
+                
+                // Render with SVG
+                var renderBounds = new Rectangle(
+                    (int)bounds.X, 
+                    (int)bounds.Y,
+                    (int)bounds.Width,
+                    (int)bounds.Height);
+                
+                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, 
+                    $"{letter}: {text}", renderBounds);
+                return; // Skip legacy rendering
+            }
+        }
+        
+        // Fallback to legacy PNG textures
         // Use isLeftSide parameter for both texture selection AND padding
         // This keeps everything position-based, not letter-based
         
@@ -251,7 +370,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             DrawScaledImage(g, texture, bounds.X, bounds.Y, bounds.Width, bounds.Height);
         }
 
-        // Only draw text if answer is visible
+        // Only draw text if answer is visible (legacy method)
         if (isVisible)
         {
             // Left positions (A, C) have more padding, right positions (B, D) have less

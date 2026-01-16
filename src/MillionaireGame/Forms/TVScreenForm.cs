@@ -31,6 +31,8 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
     private BackgroundRenderer? _backgroundRenderer; // Broadcast background renderer
+    private CompleteTheme? _activeTheme; // Active theme for strap rendering
+    private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
     
     /// <summary>
     /// Gets or sets whether this screen is a preview instance.
@@ -228,6 +230,26 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawQuestionStrap(System.Drawing.Graphics g)
     {
+        // Check if theme is active and has question strap
+        if (_activeTheme != null && _svgStrapRenderer != null)
+        {
+            var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
+            if (questionStrap != null)
+            {
+                // Render with SVG
+                var bounds = new Rectangle(
+                    (int)_questionStrapBounds.X, 
+                    (int)_questionStrapBounds.Y,
+                    (int)_questionStrapBounds.Width,
+                    (int)_questionStrapBounds.Height);
+                
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, 
+                    _currentQuestion?.QuestionText ?? "", bounds);
+                return; // Skip legacy rendering
+            }
+        }
+        
+        // Fallback to legacy PNG textures
         var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
         
         if (texture != null)
@@ -237,7 +259,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                 _questionStrapBounds.Width, _questionStrapBounds.Height);
         }
 
-        // Draw question text with wrapping and auto-scaling
+        // Draw question text with wrapping and auto-scaling (legacy method)
         // Substantial padding to keep text within visible bounds (180px each side)
         var textBounds = new RectangleF(
             _questionStrapBounds.X + 180, 
@@ -251,6 +273,72 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeft, bool showText)
     {
+        // Check if theme is active and has answer strap
+        if (_activeTheme != null && _svgStrapRenderer != null && showText)
+        {
+            var answerStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            if (answerStrap != null)
+            {
+                // Clone the strap to modify colors based on state
+                var strapToRender = new ThemeStrap
+                {
+                    StrapType = answerStrap.StrapType,
+                    SvgShape = answerStrap.SvgShape,
+                    PrimaryColor = answerStrap.PrimaryColor,
+                    SecondaryColor = answerStrap.SecondaryColor,
+                    GradientEnabled = answerStrap.GradientEnabled,
+                    GradientAngle = answerStrap.GradientAngle,
+                    EffectType = answerStrap.EffectType,
+                    EffectIntensity = answerStrap.EffectIntensity,
+                    EffectColor = answerStrap.EffectColor,
+                    BorderEnabled = answerStrap.BorderEnabled,
+                    BorderColor = answerStrap.BorderColor,
+                    BorderWidth = answerStrap.BorderWidth,
+                    BorderStyle = answerStrap.BorderStyle,
+                    FontFamily = answerStrap.FontFamily,
+                    FontSize = answerStrap.FontSize,
+                    FontColor = answerStrap.FontColor,
+                    FontBold = answerStrap.FontBold,
+                    FontItalic = answerStrap.FontItalic,
+                    AnimationEnabled = answerStrap.AnimationEnabled,
+                    AnimationType = answerStrap.AnimationType,
+                    AnimationDuration = answerStrap.AnimationDuration
+                };
+                
+                // Modify colors based on answer state
+                if (_isRevealing && _correctAnswer == letter)
+                {
+                    // Correct answer - green
+                    strapToRender.PrimaryColor = "#228B22"; // Forest green
+                    strapToRender.SecondaryColor = "#90EE90"; // Light green
+                }
+                else if (_isRevealing && _selectedAnswer == letter && _selectedAnswer != _correctAnswer)
+                {
+                    // Wrong answer - red
+                    strapToRender.PrimaryColor = "#8B0000"; // Dark red
+                    strapToRender.SecondaryColor = "#FF6347"; // Tomato red
+                }
+                else if (_selectedAnswer == letter)
+                {
+                    // Selected answer (before reveal) - orange/gold
+                    strapToRender.PrimaryColor = "#FF8C00"; // Dark orange
+                    strapToRender.SecondaryColor = "#FFD700"; // Gold
+                }
+                
+                // Render with SVG
+                var renderBounds = new Rectangle(
+                    (int)bounds.X, 
+                    (int)bounds.Y,
+                    (int)bounds.Width,
+                    (int)bounds.Height);
+                
+                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, 
+                    $"{letter}: {text}", renderBounds);
+                return; // Skip legacy rendering
+            }
+        }
+        
+        // Fallback to legacy PNG textures
         // Determine which texture to use
         var elementType = TextureManager.ElementType.AnswerLeftNormal;
         
@@ -281,7 +369,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             DrawScaledImage(g, texture, bounds.X, bounds.Y, bounds.Width, bounds.Height);
         }
 
-        // Only draw text if answer is visible
+        // Only draw text if answer is visible (legacy method)
         if (showText)
         {
             // Left answers (A, C) have more padding, right answers (B, D) have less
@@ -889,14 +977,25 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                 try
                 {
                     themeService = new ThemeService(settingsManager.ConnectionString);
-                    // Load active theme asynchronously
-                    _ = Task.Run(async () => await themeService.LoadActiveThemeAsync());
-                    GameConsole.Debug("[TVScreenForm] ThemeService initialized for background rendering");
+                    // Load active theme asynchronously for both backgrounds and straps
+                    _ = Task.Run(async () =>
+                    {
+                        await themeService.LoadActiveThemeAsync();
+                        var activeTheme = themeService.CurrentTheme;
+                        if (activeTheme != null)
+                        {
+                            _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                            _svgStrapRenderer = new SvgStrapRenderer();
+                            GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap rendering");
+                            Invalidate(); // Redraw with themed straps
+                        }
+                    });
+                    GameConsole.Debug("[TVScreenForm] ThemeService initialized for background and strap rendering");
                 }
                 catch (Exception ex)
                 {
                     GameConsole.Warn($"[TVScreenForm] ThemeService not available: {ex.Message}");
-                    // Continue without theme service - will fall back to legacy backgrounds
+                    // Continue without theme service - will fall back to legacy backgrounds and PNG straps
                 }
                 
                 _backgroundRenderer = new BackgroundRenderer(settingsManager.Settings, themeService);
@@ -1537,7 +1636,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     }
     
     /// <summary>
-    /// Refresh background when theme changes
+    /// Refresh background and straps when theme changes
     /// Clears background cache and reloads from active theme
     /// </summary>
     public void RefreshTheme()
@@ -1548,13 +1647,42 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             return;
         }
         
-        GameConsole.Info("[TVScreenForm] Refreshing theme backgrounds");
+        GameConsole.Info("[TVScreenForm] Refreshing theme backgrounds and straps");
         
         // Clear background cache to force reload
         _backgroundRenderer?.ClearCache();
         
-        // Redraw screen with new theme
-        Invalidate();
+        // Reload theme data for straps
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+                if (settingsManager != null)
+                {
+                    var themeService = new ThemeService(settingsManager.ConnectionString);
+                    await themeService.LoadActiveThemeAsync();
+                    var activeTheme = themeService.CurrentTheme;
+                    
+                    if (activeTheme != null)
+                    {
+                        _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                        _svgStrapRenderer ??= new SvgStrapRenderer();
+                        GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme.Theme.ThemeName}' reloaded");
+                    }
+                    else
+                    {
+                        GameConsole.Info("[TVScreenForm] No active theme, using legacy straps");
+                    }
+                    
+                    Invalidate(); // Redraw screen with new theme
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[TVScreenForm] Error refreshing theme: {ex.Message}");
+            }
+        });
     }
     
     #endregion
