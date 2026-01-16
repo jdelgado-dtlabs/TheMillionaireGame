@@ -228,7 +228,7 @@ namespace MillionaireGame.Forms.Options
             tabControl.Location = new Point(12, 12);
             tabControl.Name = "tabControl";
             tabControl.SelectedIndex = 0;
-            tabControl.Size = new Size(660, 546);
+            tabControl.Size = new Size(1024, 580);
             tabControl.TabIndex = 0;
             // 
             // tabScreens
@@ -239,7 +239,7 @@ namespace MillionaireGame.Forms.Options
             tabScreens.Location = new Point(4, 24);
             tabScreens.Name = "tabScreens";
             tabScreens.Padding = new Padding(3);
-            tabScreens.Size = new Size(652, 438);
+            tabScreens.Size = new Size(1016, 552);
             tabScreens.TabIndex = 0;
             tabScreens.Text = "Screens";
             tabScreens.UseVisualStyleBackColor = true;
@@ -457,7 +457,7 @@ namespace MillionaireGame.Forms.Options
             tabBroadcast.Location = new Point(4, 24);
             tabBroadcast.Name = "tabBroadcast";
             tabBroadcast.Padding = new Padding(3);
-            tabBroadcast.Size = new Size(652, 438);
+            tabBroadcast.Size = new Size(1016, 552);
             tabBroadcast.TabIndex = 1;
             tabBroadcast.Text = "Broadcast";
             tabBroadcast.UseVisualStyleBackColor = true;
@@ -611,7 +611,7 @@ namespace MillionaireGame.Forms.Options
             tabLifelines.Location = new Point(4, 24);
             tabLifelines.Name = "tabLifelines";
             tabLifelines.Padding = new Padding(3);
-            tabLifelines.Size = new Size(652, 518);
+            tabLifelines.Size = new Size(1016, 552);
             tabLifelines.TabIndex = 1;
             tabLifelines.Text = "Lifelines";
             tabLifelines.UseVisualStyleBackColor = true;
@@ -752,7 +752,7 @@ namespace MillionaireGame.Forms.Options
             tabMoneyTree.Location = new Point(4, 24);
             tabMoneyTree.Name = "tabMoneyTree";
             tabMoneyTree.Padding = new Padding(3);
-            tabMoneyTree.Size = new Size(652, 520);
+            tabMoneyTree.Size = new Size(1016, 552);
             tabMoneyTree.TabIndex = 3;
             tabMoneyTree.Text = "Money Tree";
             tabMoneyTree.UseVisualStyleBackColor = true;
@@ -783,7 +783,7 @@ namespace MillionaireGame.Forms.Options
             tabSounds.Location = new Point(4, 24);
             tabSounds.Name = "tabSounds";
             tabSounds.Padding = new Padding(3);
-            tabSounds.Size = new Size(652, 459);
+            tabSounds.Size = new Size(1016, 552);
             tabSounds.TabIndex = 2;
             tabSounds.Text = "Sounds";
             tabSounds.UseVisualStyleBackColor = true;
@@ -1281,7 +1281,7 @@ namespace MillionaireGame.Forms.Options
             tabStreamDeck.Location = new Point(4, 24);
             tabStreamDeck.Name = "tabStreamDeck";
             tabStreamDeck.Padding = new Padding(3);
-            tabStreamDeck.Size = new Size(652, 438);
+            tabStreamDeck.Size = new Size(1016, 552);
             tabStreamDeck.TabIndex = 8;
             tabStreamDeck.Text = "Stream Deck";
             tabStreamDeck.UseVisualStyleBackColor = true;
@@ -1458,7 +1458,7 @@ namespace MillionaireGame.Forms.Options
             tabThemes.Location = new Point(4, 24);
             tabThemes.Name = "tabThemes";
             tabThemes.Padding = new Padding(3);
-            tabThemes.Size = new Size(652, 518);
+            tabThemes.Size = new Size(1016, 552);
             tabThemes.TabIndex = 9;
             tabThemes.Text = "Themes";
             tabThemes.UseVisualStyleBackColor = true;
@@ -1471,7 +1471,7 @@ namespace MillionaireGame.Forms.Options
             tabAudience.Location = new Point(4, 24);
             tabAudience.Name = "tabAudience";
             tabAudience.Padding = new Padding(3);
-            tabAudience.Size = new Size(652, 438);
+            tabAudience.Size = new Size(1016, 552);
             tabAudience.TabIndex = 5;
             tabAudience.Text = "Audience";
             tabAudience.UseVisualStyleBackColor = true;
@@ -1634,7 +1634,7 @@ namespace MillionaireGame.Forms.Options
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(684, 620);
+            ClientSize = new Size(1048, 654);
             Controls.Add(btnCancel);
             Controls.Add(btnOK);
             Controls.Add(tabControl);

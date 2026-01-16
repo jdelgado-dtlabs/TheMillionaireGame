@@ -42,40 +42,8 @@ public class BackgroundRenderer
 
     private void RenderPrerenderedBackground(System.Drawing.Graphics g, int width, int height)
     {
-        // Try to get background from active theme first
-        string? backgroundPath = null;
-        
-        if (_themeService != null && _themeService.CurrentTheme != null)
-        {
-            try
-            {
-                // Load complete theme asynchronously if not already loaded
-                var completeTheme = Task.Run(async () => 
-                    await _themeService.GetCompleteThemeAsync(_themeService.CurrentTheme.ThemeId)).Result;
-                
-                // Find TV screen background
-                if (completeTheme != null)
-                {
-                    var tvBackground = completeTheme.Backgrounds.FirstOrDefault(b => b.ComponentType == "TVScreen");
-                    if (tvBackground != null && !string.IsNullOrWhiteSpace(tvBackground.ImagePath))
-                    {
-                        backgroundPath = tvBackground.ImagePath;
-                        GameConsole.Debug($"[BackgroundRenderer] Using theme background: {backgroundPath}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                GameConsole.Error($"[BackgroundRenderer] Error loading theme background: {ex.Message}");
-            }
-        }
-        
-        // Fall back to legacy background path from broadcast settings
-        if (string.IsNullOrWhiteSpace(backgroundPath))
-        {
-            backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
-            GameConsole.Debug($"[BackgroundRenderer] Using legacy background path: {backgroundPath}");
-        }
+        // Get background path from broadcast settings
+        string? backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
         
         // If no background selected or empty path, fall back to black
         if (string.IsNullOrWhiteSpace(backgroundPath))

@@ -236,47 +236,45 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
             if (questionStrap != null)
             {
-                // Render with SVG
-                var bounds = new Rectangle(
-                    (int)_questionStrapBounds.X, 
-                    (int)_questionStrapBounds.Y,
-                    (int)_questionStrapBounds.Width,
-                    (int)_questionStrapBounds.Height);
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    _questionStrapBounds.X, 
+                    _questionStrapBounds.Y,
+                    _questionStrapBounds.Width,
+                    _questionStrapBounds.Height);
                 
-                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, 
-                    _currentQuestion?.QuestionText ?? "", bounds);
-                return; // Skip legacy rendering
+                var bounds = new Rectangle(
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+                
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, "", bounds);
+                
+                // Draw question text using theme font settings
+                var textBounds = new RectangleF(
+                    _questionStrapBounds.X + 180, 
+                    _questionStrapBounds.Y + 15,
+                    _questionStrapBounds.Width - 360, 
+                    _questionStrapBounds.Height - 30);
+                
+                var fontStyle = questionStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                var fontColor = ColorTranslator.FromHtml(questionStrap.FontColor);
+                    
+                DrawScaledTextWithWrapAndOutline(g, _currentQuestion?.QuestionText ?? "", 
+                    questionStrap.FontFamily, questionStrap.FontSize, fontStyle, fontColor, textBounds, 2);
             }
         }
-        
-        // Fallback to legacy PNG textures
-        var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
-        
-        if (texture != null)
-        {
-            DrawScaledImage(g, texture, 
-                _questionStrapBounds.X, _questionStrapBounds.Y, 
-                _questionStrapBounds.Width, _questionStrapBounds.Height);
-        }
-
-        // Draw question text with wrapping and auto-scaling (legacy method)
-        // Substantial padding to keep text within visible bounds (180px each side)
-        var textBounds = new RectangleF(
-            _questionStrapBounds.X + 180, 
-            _questionStrapBounds.Y + 15,
-            _questionStrapBounds.Width - 360, 
-            _questionStrapBounds.Height - 30);
-            
-        DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
-            "Copperplate Gothic Bold", 32, FontStyle.Bold, Color.White, textBounds, 2);
     }
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeft, bool showText)
     {
-        // Check if theme is active and has answer strap
-        if (_activeTheme != null && _svgStrapRenderer != null && showText)
+        // Render answer strap with theme if available
+        if (_activeTheme != null && _svgStrapRenderer != null)
         {
             var answerStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            var answerLabelStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "AnswerLabel");
             if (answerStrap != null)
             {
                 // Clone the strap to modify colors based on state
@@ -325,84 +323,108 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                     strapToRender.SecondaryColor = "#FFD700"; // Gold
                 }
                 
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    bounds.X, 
+                    bounds.Y,
+                    bounds.Width,
+                    bounds.Height);
+                
                 // Render with SVG
                 var renderBounds = new Rectangle(
-                    (int)bounds.X, 
-                    (int)bounds.Y,
-                    (int)bounds.Width,
-                    (int)bounds.Height);
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
                 
-                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, 
-                    $"{letter}: {text}", renderBounds);
-                return; // Skip legacy rendering
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, "", renderBounds);
+                
+                // Draw text with original positioning if answer is revealed
+                if (showText)
+                {
+                    // Balanced padding for all answers
+                    float letterLeftPadding = 60;
+                    float textLeftPadding = 150;
+                    float textRightPadding = 80;
+                    
+                    // Get font settings from theme
+                    var fontStyle = answerStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var fontColor = ColorTranslator.FromHtml(answerStrap.FontColor);
+                    
+                    // Get label font settings from AnswerLabel strap (or fallback to Answer strap)
+                    var labelStrap = answerLabelStrap ?? answerStrap;
+                    var labelFontStyle = labelStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var labelFontColor = ColorTranslator.FromHtml(labelStrap.FontColor);
+                    
+                    // Draw answer letter using AnswerLabel strap font with outline
+                    using var letterFont = new Font(labelStrap.FontFamily, labelStrap.FontSize, labelFontStyle);
+                    using var letterFormat = CreateCenteredFormat();
+                    
+                    DrawScaledTextWithOutline(g, letter + ":", letterFont, labelFontColor,
+                        bounds.X + letterLeftPadding, bounds.Y + 15,
+                        80, bounds.Height - 30,
+                        letterFormat);
+
+                    // Draw answer text with wrapping, auto-scaling, and outline using theme font
+                    var textBounds = new RectangleF(
+                        bounds.X + textLeftPadding, 
+                        bounds.Y + 15,
+                        bounds.Width - textLeftPadding - textRightPadding, 
+                        bounds.Height - 30);
+                        
+                    DrawScaledTextWithWrapAndOutline(g, text, 
+                        answerStrap.FontFamily, answerStrap.FontSize, fontStyle, fontColor, textBounds, 2, 
+                        StringAlignment.Near);
+                }
+                
+                return;
             }
-        }
-        
-        // Fallback to legacy PNG textures
-        // Determine which texture to use
-        var elementType = TextureManager.ElementType.AnswerLeftNormal;
-        
-        if (_isRevealing && _correctAnswer == letter)
-        {
-            // Always show correct answer in green
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
-        }
-        else if (_isRevealing && _selectedAnswer == letter && _selectedAnswer != _correctAnswer)
-        {
-            // Show wrong answer in red (final answer that was incorrect)
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else if (_selectedAnswer == letter)
-        {
-            // Show selected answer (before reveal)
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else
-        {
-            elementType = isLeft ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
-        }
-
-        var texture = TextureManager.GetTexture(elementType, CurrentTextureSet);
-        
-        if (texture != null)
-        {
-            DrawScaledImage(g, texture, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
-
-        // Only draw text if answer is visible (legacy method)
-        if (showText)
-        {
-            // Left answers (A, C) have more padding, right answers (B, D) have less
-            float letterLeftPadding = isLeft ? 150 : 40;
-            float textLeftPadding = isLeft ? 240 : 130;
-            float textRightPadding = 80;
-            
-            // Draw answer letter
-            using var letterFont = new Font("Arial", 28, FontStyle.Bold);
-            using var letterBrush = new SolidBrush(Color.White);
-            using var letterFormat = CreateCenteredFormat();
-            
-            DrawScaledText(g, letter + ":", letterFont, letterBrush,
-                bounds.X + letterLeftPadding, bounds.Y + 15,
-                80, bounds.Height - 30,
-                letterFormat);
-
-            // Draw answer text with wrapping and auto-scaling
-            var textBounds = new RectangleF(
-                bounds.X + textLeftPadding, 
-                bounds.Y + 15,
-                bounds.Width - textLeftPadding - textRightPadding, 
-                bounds.Height - 30);
-                
-            DrawScaledTextWithWrap(g, text, 
-                "Copperplate Gothic Bold", 24, FontStyle.Regular, Color.White, textBounds, 2, 
-                StringAlignment.Near);
+            else
+            {
+                GameConsole.Warn($"[TVScreenForm] Theme '{_activeTheme?.Theme.ThemeName}' has no Answer strap configured");
+            }
         }
     }
 
     private void DrawWinningsDisplay(System.Drawing.Graphics g)
     {
-        // Draw question strap as background for winnings
+        // Render winnings strap with theme if available (uses Question strap styling)
+        if (_activeTheme != null && _svgStrapRenderer != null)
+        {
+            var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
+            if (questionStrap != null)
+            {
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    _winningsStrapBounds.X,
+                    _winningsStrapBounds.Y,
+                    _winningsStrapBounds.Width,
+                    _winningsStrapBounds.Height);
+
+                var renderBounds = new Rectangle(
+                    (int)scaledBounds.X,
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+
+                // Render strap shape without text
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, "", renderBounds);
+
+                // Draw winnings amount in center with gold color and outline
+                using var font = new Font(questionStrap.FontFamily, 48, FontStyle.Bold);
+                using var format = CreateCenteredFormat();
+
+                DrawScaledTextWithOutline(g, _currentAmount!, font, Color.Gold,
+                    _winningsStrapBounds.X, _winningsStrapBounds.Y,
+                    _winningsStrapBounds.Width, _winningsStrapBounds.Height,
+                    format);
+                
+                return;
+            }
+        }
+
+        // Fallback: Draw question strap as background for winnings
         var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
         
         if (texture != null)
@@ -413,14 +435,14 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
         }
 
         // Draw winnings amount in center
-        using var font = new Font("Copperplate Gothic Bold", 48, FontStyle.Bold);
+        using var fontFallback = new Font("Copperplate Gothic Bold", 48, FontStyle.Bold);
         using var brush = new SolidBrush(Color.Gold);
-        using var format = CreateCenteredFormat();
+        using var formatFallback = CreateCenteredFormat();
         
-        DrawScaledText(g, _currentAmount!, font, brush,
+        DrawScaledText(g, _currentAmount!, fontFallback, brush,
             _winningsStrapBounds.X, _winningsStrapBounds.Y,
             _winningsStrapBounds.Width, _winningsStrapBounds.Height,
-            format);
+            formatFallback);
     }
 
     private void DrawMoneyTreeGraphical(System.Drawing.Graphics g)
@@ -827,6 +849,9 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             float totalHeight = (_fffContestants.Count * strapHeight) + ((_fffContestants.Count - 1) * (spacing - strapHeight));
             float currentY = (1080 - totalHeight) / 2; // Center vertically
             
+            // Get theme strap settings
+            var themeStrap = _activeTheme?.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            
             for (int i = 0; i < _fffContestants.Count; i++)
             {
                 var name = _fffContestants[i];
@@ -834,28 +859,54 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                 
                 // Full-width strap bounds
                 var designBounds = new RectangleF(0, currentY, strapWidth, strapHeight);
-                
-                // Determine strap image based on state
-                Image? strapImage;
-                if (isHighlighted)
-                {
-                    strapImage = FFFGraphics.GetFastestStrap(); // Yellow/gold highlight strap
-                }
-                else
-                {
-                    strapImage = FFFGraphics.GetIdleStrap(); // Normal blue strap
-                }
-                
-                // Draw strap image
                 var scaledBounds = ScaleRect(designBounds.X, designBounds.Y, designBounds.Width, designBounds.Height);
-                if (strapImage != null)
+                
+                var bounds = new Rectangle(
+                    (int)scaledBounds.X,
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+                
+                // Determine strap colors based on state
+                ThemeStrap? strapToRender = null;
+                if (themeStrap != null)
                 {
-                    g.DrawImage(strapImage, scaledBounds);
+                    if (isHighlighted)
+                    {
+                        // Use gold/yellow highlight colors for fastest contestant
+                        strapToRender = new ThemeStrap
+                        {
+                            StrapType = themeStrap.StrapType,
+                            SvgShape = themeStrap.SvgShape,
+                            PrimaryColor = "#FFD700",      // Gold
+                            SecondaryColor = "#FFA500",    // Orange
+                            GradientEnabled = themeStrap.GradientEnabled,
+                            GradientAngle = themeStrap.GradientAngle,
+                            EffectType = themeStrap.EffectType,
+                            EffectIntensity = themeStrap.EffectIntensity,
+                            BorderEnabled = themeStrap.BorderEnabled,
+                            FontFamily = themeStrap.FontFamily,
+                            FontSize = themeStrap.FontSize,
+                            FontColor = themeStrap.FontColor,
+                            FontBold = themeStrap.FontBold
+                        };
+                    }
+                    else
+                    {
+                        // Use theme colors for normal state
+                        strapToRender = themeStrap;
+                    }
+                }
+                
+                // Render SVG strap shape without text
+                if (strapToRender != null && _svgStrapRenderer != null)
+                {
+                    _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, "", bounds);
                 }
                 else
                 {
-                    // Fallback: colored rectangle if image not found
-                    Color bgColor = isHighlighted ? Color.Yellow : Color.FromArgb(0, 0, 102);
+                    // Fallback: colored rectangle if theme not available
+                    Color bgColor = isHighlighted ? Color.Gold : Color.FromArgb(0, 0, 102);
                     using var bgBrush = new SolidBrush(bgColor);
                     g.FillRectangle(bgBrush, scaledBounds);
                     
@@ -959,6 +1010,83 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
         g.DrawString(text, fallbackFont, brush, scaledBounds, format);
     }
 
+    private void DrawScaledTextWithWrapAndOutline(System.Drawing.Graphics g, string text, 
+        string fontFamily, float baseFontSize, FontStyle fontStyle, Color color, 
+        RectangleF bounds, int maxLines, StringAlignment alignment = StringAlignment.Center, int outlineWidth = 2)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        var scaledBounds = ScaleRect(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        float fontSize = baseFontSize * ScaleX;
+
+        var format = new StringFormat
+        {
+            Alignment = alignment,
+            LineAlignment = StringAlignment.Center,
+            Trimming = StringTrimming.Word
+        };
+
+        // Try progressively smaller font sizes until text fits within maxLines
+        for (float testSize = fontSize; testSize >= fontSize * 0.5f; testSize -= fontSize * 0.05f)
+        {
+            using var testFont = new Font(fontFamily, testSize, fontStyle);
+            var measuredSize = g.MeasureString(text, testFont, (int)scaledBounds.Width, format);
+            var lineHeight = testFont.GetHeight(g);
+            var estimatedLines = Math.Ceiling(measuredSize.Height / lineHeight);
+
+            if (estimatedLines <= maxLines)
+            {
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                
+                // Draw black outline
+                using var outlineBrush = new SolidBrush(Color.Black);
+                for (int x = -outlineWidth; x <= outlineWidth; x++)
+                {
+                    for (int y = -outlineWidth; y <= outlineWidth; y++)
+                    {
+                        if (x == 0 && y == 0) continue;
+                        
+                        var outlineRect = new RectangleF(
+                            scaledBounds.X + x,
+                            scaledBounds.Y + y,
+                            scaledBounds.Width,
+                            scaledBounds.Height);
+                        g.DrawString(text, testFont, outlineBrush, outlineRect, format);
+                    }
+                }
+                
+                // Draw main text
+                using var brush = new SolidBrush(color);
+                g.DrawString(text, testFont, brush, scaledBounds, format);
+                return;
+            }
+        }
+
+        // Fallback: draw with smallest tested size
+        using var fallbackFont = new Font(fontFamily, fontSize * 0.5f, fontStyle);
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+        
+        // Draw outline for fallback
+        using var outlineBrushFallback = new SolidBrush(Color.Black);
+        for (int x = -outlineWidth; x <= outlineWidth; x++)
+        {
+            for (int y = -outlineWidth; y <= outlineWidth; y++)
+            {
+                if (x == 0 && y == 0) continue;
+                
+                var outlineRect = new RectangleF(
+                    scaledBounds.X + x,
+                    scaledBounds.Y + y,
+                    scaledBounds.Width,
+                    scaledBounds.Height);
+                g.DrawString(text, fallbackFont, outlineBrushFallback, outlineRect, format);
+            }
+        }
+        
+        using var brushFallback = new SolidBrush(color);
+        g.DrawString(text, fallbackFont, brushFallback, scaledBounds, format);
+    }
+
     #region IGameScreen Implementation
     
     public void Initialize(MoneyTreeService moneyTreeService)
@@ -986,7 +1114,10 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                         {
                             _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                             _svgStrapRenderer = new SvgStrapRenderer();
-                            GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap rendering");
+                            var strapCount = _activeTheme?.Straps?.Count ?? 0;
+                            var questionStraps = _activeTheme?.Straps?.Count(s => s.StrapType == "Question") ?? 0;
+                            var answerStraps = _activeTheme?.Straps?.Count(s => s.StrapType == "Answer") ?? 0;
+                            GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme?.Theme.ThemeName}' loaded: {strapCount} straps ({questionStraps} Question, {answerStraps} Answer)");
                             Invalidate(); // Redraw with themed straps
                         }
                     });

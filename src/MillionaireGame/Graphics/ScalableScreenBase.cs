@@ -170,6 +170,41 @@ public abstract class ScalableScreenBase : Form
     }
 
     /// <summary>
+    /// Draw text with black outline for better readability
+    /// </summary>
+    protected void DrawScaledTextWithOutline(System.Drawing.Graphics g, string text, Font baseFont, Color textColor, float designX, float designY, float designWidth, float designHeight, StringFormat? format = null, int outlineWidth = 2)
+    {
+        var destRect = ScaleRect(designX, designY, designWidth, designHeight);
+        
+        // Scale font size
+        float scaledFontSize = baseFont.Size * Math.Min(ScaleX, ScaleY);
+        using var scaledFont = new Font(baseFont.FontFamily, scaledFontSize, baseFont.Style, baseFont.Unit);
+        
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+        // Draw black outline by drawing text at offsets
+        using var outlineBrush = new SolidBrush(Color.Black);
+        for (int x = -outlineWidth; x <= outlineWidth; x++)
+        {
+            for (int y = -outlineWidth; y <= outlineWidth; y++)
+            {
+                if (x == 0 && y == 0) continue; // Skip center (we'll draw that last)
+                
+                var outlineRect = new RectangleF(
+                    destRect.X + x,
+                    destRect.Y + y,
+                    destRect.Width,
+                    destRect.Height);
+                g.DrawString(text, scaledFont, outlineBrush, outlineRect, format);
+            }
+        }
+
+        // Draw main text on top
+        using var textBrush = new SolidBrush(textColor);
+        g.DrawString(text, scaledFont, textBrush, destRect, format);
+    }
+
+    /// <summary>
     /// Create a centered string format
     /// </summary>
     protected StringFormat CreateCenteredFormat()

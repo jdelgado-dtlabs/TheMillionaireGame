@@ -235,49 +235,47 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
             if (questionStrap != null)
             {
-                // Render with SVG
-                var bounds = new Rectangle(
-                    (int)_questionStrapBounds.X, 
-                    (int)_questionStrapBounds.Y,
-                    (int)_questionStrapBounds.Width,
-                    (int)_questionStrapBounds.Height);
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    _questionStrapBounds.X, 
+                    _questionStrapBounds.Y,
+                    _questionStrapBounds.Width,
+                    _questionStrapBounds.Height);
                 
-                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, 
-                    _currentQuestion?.QuestionText ?? "", bounds);
-                return; // Skip legacy rendering
+                var bounds = new Rectangle(
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+                
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, "", bounds);
+                
+                // Draw question text using theme font settings
+                var textBounds = new RectangleF(
+                    _questionStrapBounds.X + 180, 
+                    _questionStrapBounds.Y + 15,
+                    _questionStrapBounds.Width - 360, 
+                    _questionStrapBounds.Height - 30);
+                
+                var fontStyle = questionStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                var fontColor = ColorTranslator.FromHtml(questionStrap.FontColor);
+                    
+                DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
+                    questionStrap.FontFamily, questionStrap.FontSize, fontStyle, fontColor, textBounds, 2);
             }
         }
-        
-        // Fallback to legacy PNG textures
-        var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
-        
-        if (texture != null)
-        {
-            DrawScaledImage(g, texture, 
-                _questionStrapBounds.X, _questionStrapBounds.Y, 
-                _questionStrapBounds.Width, _questionStrapBounds.Height);
-        }
-
-        // Draw question text with wrapping and auto-scaling (legacy method)
-        // Substantial padding to keep text within visible bounds (180px each side)
-        var textBounds = new RectangleF(
-            _questionStrapBounds.X + 180, 
-            _questionStrapBounds.Y + 15,
-            _questionStrapBounds.Width - 360, 
-            _questionStrapBounds.Height - 30);
-            
-        DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
-            "Copperplate Gothic Bold", 32, FontStyle.Bold, Color.White, textBounds, 2);
     }
 
 
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeftSide, bool isVisible)
     {
-        // Check if theme is active and has answer strap
-        if (_activeTheme != null && _svgStrapRenderer != null && isVisible)
+        // Render answer strap with theme if available
+        if (_activeTheme != null && _svgStrapRenderer != null)
         {
             var answerStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            var answerLabelStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "AnswerLabel");
             if (answerStrap != null)
             {
                 // Clone the strap to modify colors based on state
@@ -326,78 +324,62 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                     strapToRender.SecondaryColor = "#FFD700"; // Gold
                 }
                 
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    bounds.X, 
+                    bounds.Y,
+                    bounds.Width,
+                    bounds.Height);
+                
                 // Render with SVG
                 var renderBounds = new Rectangle(
-                    (int)bounds.X, 
-                    (int)bounds.Y,
-                    (int)bounds.Width,
-                    (int)bounds.Height);
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
                 
-                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, 
-                    $"{letter}: {text}", renderBounds);
-                return; // Skip legacy rendering
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, "", renderBounds);
+                
+                // Draw text with original positioning if answer is revealed
+                if (isVisible)
+                {
+                    // Balanced padding for all answers
+                    float letterLeftPadding = 60;
+                    float textLeftPadding = 150;
+                    float textRightPadding = 80;
+                    
+                    // Get font settings from theme
+                    var fontStyle = answerStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var fontColor = ColorTranslator.FromHtml(answerStrap.FontColor);
+                    
+                    // Get label font settings from AnswerLabel strap (or fallback to Answer strap)
+                    var labelStrap = answerLabelStrap ?? answerStrap;
+                    var labelFontStyle = labelStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var labelFontColor = ColorTranslator.FromHtml(labelStrap.FontColor);
+                    
+                    // Draw answer letter using AnswerLabel strap font
+                    using var letterFont = new Font(labelStrap.FontFamily, labelStrap.FontSize, labelFontStyle);
+                    using var letterBrush = new SolidBrush(labelFontColor);
+                    using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    
+                    DrawScaledText(g, letter + ":", letterFont, letterBrush,
+                        bounds.X + letterLeftPadding, bounds.Y + 15,
+                        80, bounds.Height - 30,
+                        letterFormat);
+
+                    // Draw answer text with wrapping and auto-scaling using theme font
+                    var textBounds = new RectangleF(
+                        bounds.X + textLeftPadding, 
+                        bounds.Y + 15,
+                        bounds.Width - textLeftPadding - textRightPadding, 
+                        bounds.Height - 30);
+                        
+                    DrawScaledTextWithWrap(g, text, 
+                        answerStrap.FontFamily, answerStrap.FontSize, fontStyle, fontColor, textBounds, 2, 
+                        StringAlignment.Near);
+                }
             }
-        }
-        
-        // Fallback to legacy PNG textures
-        // Use isLeftSide parameter for both texture selection AND padding
-        // This keeps everything position-based, not letter-based
-        
-        // Determine texture based on state - use isLeftSide (position) not letter
-        TextureManager.ElementType elementType;
-        
-        if (_isRevealing && letter == _correctAnswer)
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
-        }
-        else if (_selectedAnswer == letter && !_isRevealing)
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
-        }
-
-        var texture = TextureManager.GetTexture(elementType, CurrentTextureSet);
-        
-        if (texture != null)
-        {
-            DrawScaledImage(g, texture, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
-
-        // Only draw text if answer is visible (legacy method)
-        if (isVisible)
-        {
-            // Left positions (A, C) have more padding, right positions (B, D) have less
-            float letterLeftPadding = isLeftSide ? 150 : 40;
-            float textLeftPadding = isLeftSide ? 240 : 130;
-            float textRightPadding = 80;
-            
-            // Draw answer letter
-            using var letterFont = new Font("Arial", 28, FontStyle.Bold);
-            using var letterBrush = new SolidBrush(Color.White);
-            using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            
-            DrawScaledText(g, letter + ":", letterFont, letterBrush,
-                bounds.X + letterLeftPadding, bounds.Y + 15,
-                80, bounds.Height - 30,
-                letterFormat);
-
-            // Draw answer text with wrapping and auto-scaling
-            var textBounds = new RectangleF(
-                bounds.X + textLeftPadding, 
-                bounds.Y + 15,
-                bounds.Width - textLeftPadding - textRightPadding, 
-                bounds.Height - 30);
-                
-            DrawScaledTextWithWrap(g, text, 
-                "Copperplate Gothic Bold", 24, FontStyle.Regular, Color.White, textBounds, 2, 
-                StringAlignment.Near);
         }
     }
 
