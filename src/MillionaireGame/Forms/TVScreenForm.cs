@@ -33,6 +33,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     private BackgroundRenderer? _backgroundRenderer; // Broadcast background renderer
     private CompleteTheme? _activeTheme; // Active theme for strap rendering
     private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
+    private SvgMoneyTreeRenderer? _svgMoneyTreeRenderer; // SVG money tree renderer
     
     /// <summary>
     /// Gets or sets whether this screen is a preview instance.
@@ -447,83 +448,125 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawMoneyTreeGraphical(System.Drawing.Graphics g)
     {
-        // Get base money tree image for current texture set
-        var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
-        
-        // Get position overlay - use alternate lock-in graphic if in safety net animation
-        var treePosition = _useSafetyNetAltGraphic 
-            ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
-            : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
-
-        if (treeBase == null) return;
-
-        // TV screen - scale from original 720p to 1080p
-        // Original VB.NET (720p): 630x720 canvas after crop, 399x599 overlay at (165, 100)
-        // New assets (1080p): 745x1080 background, 571x868 overlay
-        // Scale factors: width 745/630=1.182, height 1080/720=1.5
-        
-        float screenHeight = 1080f;
-        float padding = screenHeight * 0.005f; // 0.5% padding = ~5px (reduced from 1%)
-        
-        // New overlay dimensions (from assets)
-        float overlayWidth = 571f;
-        float overlayHeight = 868f;
-        
-        // Available height for drawing
-        float availableHeight = screenHeight - (2 * padding);
-        
-        // Scale to fit screen (if needed)
-        float screenScale = availableHeight / screenHeight; // ~0.98
-        
-        // Background dimensions
-        float backgroundHeight = screenHeight; // Full height
-        float backgroundWidth = 745f * screenScale;
-        
-        // Position background on right edge, sliding in from right
-        float rightMargin = 0f; // No margin, flush to right edge
-        float targetX = 1920 - backgroundWidth - rightMargin;
-        float targetY = 0f; // Top of screen, no padding
-        
-        float currentX = targetX;
-        if (_moneyTreeAnimating)
+        // Render money tree with SVG if theme is available
+        if (_activeTheme?.MoneyTree != null && _svgMoneyTreeRenderer != null && _moneyTreeService != null)
         {
-            // Slide in from right
-            float offscreenX = 1920; // Start position (off-screen right)
-            currentX = offscreenX - (_moneyTreeAnimationProgress * (offscreenX - targetX));
-        }
+            var moneyTree = _activeTheme.MoneyTree;
+            var settings = _moneyTreeService.Settings;
 
-        // Draw base tree image (background) - full height
-        DrawScaledImage(g, treeBase, currentX, targetY, backgroundWidth, backgroundHeight);
+            // TV screen dimensions - money tree appears on right side
+            float screenHeight = 1080f;
+            float padding = screenHeight * 0.005f; // 0.5% padding
 
-        // Calculate overlay position with margin from right edge
-        // Background: 745px, Overlay: 571px, use 65px right margin
-        float rightMarginOverlay = 65f * screenScale;
-        float overlayXOffset = (745f - 571f - 65f) * screenScale; // 109px from left
-        
-        // Draw position highlight overlay if level is set
-        if (treePosition != null && _currentMoneyTreeLevel > 0)
-        {
-            // Position overlay with right margin
-            float overlayX = currentX + overlayXOffset;
-            float overlayY = 106f * screenScale; // Vertically centered: (1080 - 868) / 2 = 106px
+            // Money tree ladder dimensions (narrower than old PNG)
+            float ladderWidth = 571f; // Same as old overlay width
+            float ladderHeight = 868f; // Same as old overlay height
+
+            // Position on right edge
+            float rightMargin = 65f;
+            float targetX = 1920 - ladderWidth - rightMargin;
+            float targetY = (screenHeight - ladderHeight) / 2f; // Vertically centered
+
+            float currentX = targetX;
+            if (_moneyTreeAnimating)
+            {
+                // Slide in from right
+                float offscreenX = 1920; // Start position (off-screen right)
+                currentX = offscreenX - (_moneyTreeAnimationProgress * (offscreenX - targetX));
+            }
+
+            // Scale bounds to actual screen size
+            var designBounds = new Rectangle(
+                (int)currentX,
+                (int)targetY,
+                (int)ladderWidth,
+                (int)ladderHeight);
             
-            // Overlay dimensions scaled to screen
-            float scaledOverlayWidth = overlayWidth * screenScale;
-            float scaledOverlayHeight = overlayHeight * screenScale;
-            
-            DrawScaledImage(g, treePosition, overlayX, overlayY, scaledOverlayWidth, scaledOverlayHeight);
-        }
+            var scaledBounds = new Rectangle(
+                (int)(designBounds.X * ScaleX),
+                (int)(designBounds.Y * ScaleY),
+                (int)(designBounds.Width * ScaleX),
+                (int)(designBounds.Height * ScaleY));
 
-        // Draw money values and question numbers
-        if (_moneyTreeService != null)
+            // Render SVG money tree ladder
+            _svgMoneyTreeRenderer.RenderMoneyTreeToGraphics(
+                g,
+                moneyTree,
+                scaledBounds,
+                _currentMoneyTreeLevel,
+                settings.SafetyNet1,
+                settings.SafetyNet2,
+                _currentGameMode == GameMode.Risk,
+                _useSafetyNetAltGraphic);
+
+            // Draw money values and question numbers
+            DrawMoneyTreeText(g, currentX, padding, 1f, 0f);
+        }
+        else
         {
-            DrawMoneyTreeText(g, currentX, padding, screenScale, overlayXOffset);
+            // Fallback: Use PNG textures if theme not available
+            var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
+            
+            var treePosition = _useSafetyNetAltGraphic 
+                ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
+                : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
+
+            if (treeBase == null) return;
+
+            // TV screen - scale from original 720p to 1080p
+            float screenHeight = 1080f;
+            float padding = screenHeight * 0.005f;
+            
+            float overlayWidth = 571f;
+            float overlayHeight = 868f;
+            
+            float availableHeight = screenHeight - (2 * padding);
+            float screenScale = availableHeight / screenHeight;
+            
+            float backgroundHeight = screenHeight;
+            float backgroundWidth = 745f * screenScale;
+            
+            float rightMargin = 0f;
+            float targetX = 1920 - backgroundWidth - rightMargin;
+            float targetY = 0f;
+            
+            float currentX = targetX;
+            if (_moneyTreeAnimating)
+            {
+                float offscreenX = 1920;
+                currentX = offscreenX - (_moneyTreeAnimationProgress * (offscreenX - targetX));
+            }
+
+            // Draw base tree image (background)
+            DrawScaledImage(g, treeBase, currentX, targetY, backgroundWidth, backgroundHeight);
+
+            float rightMarginOverlay = 65f * screenScale;
+            float overlayXOffset = (745f - 571f - 65f) * screenScale;
+            
+            // Draw position highlight overlay if level is set
+            if (treePosition != null && _currentMoneyTreeLevel > 0)
+            {
+                float overlayX = currentX + overlayXOffset;
+                float overlayY = 106f * screenScale;
+                
+                float scaledOverlayWidth = overlayWidth * screenScale;
+                float scaledOverlayHeight = overlayHeight * screenScale;
+                
+                DrawScaledImage(g, treePosition, overlayX, overlayY, scaledOverlayWidth, scaledOverlayHeight);
+            }
+
+            // Draw money values and question numbers
+            if (_moneyTreeService != null)
+            {
+                DrawMoneyTreeText(g, currentX, padding, screenScale, overlayXOffset);
+            }
         }
     }
 
     private void DrawMoneyTreeText(System.Drawing.Graphics g, float baseX, float padding, float screenScale, float overlayXOffset)
     {
         var settings = _moneyTreeService!.Settings;
+        var moneyTree = _activeTheme?.MoneyTree;
         
         // Text positions are now absolute from background left edge (not relative to overlay)
         // This allows overlay to move independently without affecting text
@@ -541,8 +584,10 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
         float textHeight = 868f * screenScale;
         float rowHeight = textHeight / 15f; // 15 levels, each gets 868/15 = 57.87px row height
         
-        // Font size: reduced from 24pt to 22pt to prevent text drift
-        float baseFontSize = 22f * heightScale * screenScale;
+        // Font: Use theme font if available, otherwise fallback to Copperplate Gothic Bold
+        string fontFamily = moneyTree?.FontFamily ?? "Copperplate Gothic Bold";
+        float baseFontSize = (moneyTree?.FontSize ?? 22) * heightScale * screenScale;
+        FontStyle fontStyle = (moneyTree?.FontBold ?? true) ? FontStyle.Bold : FontStyle.Regular;
         
         for (int level = 15; level >= 1; level--)
         {
@@ -556,8 +601,16 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                // Current level - use white text if showing alternate lock-in graphic, black otherwise
-                textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                // Current level - use theme ActiveColor if available
+                if (moneyTree != null)
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.ActiveColor);
+                }
+                else
+                {
+                    // Fallback: use white text if showing alternate lock-in graphic, black otherwise
+                    textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                }
             }
             else if (level == 15)
             {
@@ -578,24 +631,33 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
-                // Custom safety nets (not Q5/Q10) - white only if not in Risk Mode
-                textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                // Custom safety nets (not Q5/Q10) - use theme SafeHavenColor or fallback
+                if (moneyTree != null && !(_currentGameMode == GameMode.Risk))
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.SafeHavenColor);
+                }
+                else
+                {
+                    textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                }
             }
             else
             {
-                textColor = Color.Gold; // Regular levels
+                // Regular levels - use theme InactiveColor or Gold fallback
+                textColor = moneyTree != null ? ColorTranslator.FromHtml(moneyTree.InactiveColor) : Color.Gold;
             }
             
-            using var font = new Font("Copperplate Gothic Bold", baseFontSize, FontStyle.Bold);
-            using var brush = new SolidBrush(textColor);
+            using var font = new Font(fontFamily, baseFontSize, fontStyle);
             using var format = new StringFormat { Alignment = StringAlignment.Near };
             
-            // Draw question number - width scaled for double digits
-            DrawScaledText(g, level.ToString(), font, brush, qnoX, y, 80 * screenScale, 40 * heightScale * screenScale, format);
+            // Draw question number with outline - width scaled for double digits
+            DrawScaledTextWithOutline(g, level.ToString(), font, textColor, 
+                qnoX, y, 80 * screenScale, 40 * heightScale * screenScale, format, 2);
             
-            // Draw money amount
+            // Draw money amount with outline
             string formattedMoney = _moneyTreeService.GetFormattedValue(level);
-            DrawScaledText(g, formattedMoney, font, brush, moneyBaseX, y, 350 * screenScale, 40 * heightScale * screenScale, format);
+            DrawScaledTextWithOutline(g, formattedMoney, font, textColor, 
+                moneyBaseX, y, 350 * screenScale, 40 * heightScale * screenScale, format, 2);
         }
     }
 
@@ -1114,10 +1176,12 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                         {
                             _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                             _svgStrapRenderer = new SvgStrapRenderer();
+                            _svgMoneyTreeRenderer = new SvgMoneyTreeRenderer();
                             var strapCount = _activeTheme?.Straps?.Count ?? 0;
                             var questionStraps = _activeTheme?.Straps?.Count(s => s.StrapType == "Question") ?? 0;
                             var answerStraps = _activeTheme?.Straps?.Count(s => s.StrapType == "Answer") ?? 0;
-                            GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme?.Theme.ThemeName}' loaded: {strapCount} straps ({questionStraps} Question, {answerStraps} Answer)");
+                            var hasMoneyTree = _activeTheme?.MoneyTree != null;
+                            GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme?.Theme.ThemeName}' loaded: {strapCount} straps ({questionStraps} Question, {answerStraps} Answer), MoneyTree: {hasMoneyTree}");
                             Invalidate(); // Redraw with themed straps
                         }
                     });
@@ -1799,6 +1863,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                     {
                         _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                         _svgStrapRenderer ??= new SvgStrapRenderer();
+                        _svgMoneyTreeRenderer ??= new SvgMoneyTreeRenderer();
                         GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme.Theme.ThemeName}' reloaded");
                     }
                     else

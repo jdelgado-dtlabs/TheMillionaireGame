@@ -27,6 +27,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private MoneyTreeService? _moneyTreeService;
     private CompleteTheme? _activeTheme; // Active theme for strap rendering
     private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
+    private SvgMoneyTreeRenderer? _svgMoneyTreeRenderer; // SVG money tree renderer
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
@@ -122,7 +123,8 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                     {
                         _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                         _svgStrapRenderer = new SvgStrapRenderer();
-                        GameConsole.Info($"[HostScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap rendering");
+                        _svgMoneyTreeRenderer = new SvgMoneyTreeRenderer();
+                        GameConsole.Info($"[HostScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap and money tree rendering");
                         Invalidate(); // Redraw with themed straps
                     }
                 }
@@ -427,48 +429,75 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         if (_moneyTreeService == null) return;
 
         // Money tree occupies right portion of screen
-        // Cropped tree image is 630x720 (aspect ratio 0.875)
-        // Display at 650px height to avoid question strap blocking bottom
         float treeHeight = 650;
         float treeWidth = treeHeight * (630f / 720f); // Maintain aspect ratio: ~569px
         float treeX = 1920 - treeWidth; // Right edge
         float treeY = 0; // Top of screen
 
-        // Get base money tree image
-        var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
-        
-        // Get position overlay - use alternate lock-in graphic if in safety net animation
-        var treePosition = _useSafetyNetAltGraphic 
-            ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
-            : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
-
-        if (treeBase == null) return;
-
-        // Draw base tree
-        DrawScaledImage(g, treeBase, treeX, treeY, treeWidth, treeHeight);
-
-        // Draw position highlight overlay at proper position
-        if (treePosition != null && _currentMoneyTreeLevel > 0)
+        // Render with SVG if theme is available
+        if (_activeTheme?.MoneyTree != null && _svgMoneyTreeRenderer != null)
         {
-            // Overlay positioned relative to cropped tree
-            // Original overlay was at (815, 100) in 1280x720, which is (165, 100) in cropped 630x720
-            // Scale proportionally based on tree height
-            float scale = treeHeight / 720f;
-            float overlayX = treeX + (165 * scale);
-            float overlayY = treeY + (100 * scale);
-            float overlayWidth = 399 * scale;
-            float overlayHeight = 599 * scale;
-            
-            DrawScaledImage(g, treePosition, overlayX, overlayY, overlayWidth, overlayHeight);
-        }
+            var moneyTree = _activeTheme.MoneyTree;
+            var settings = _moneyTreeService.Settings;
 
-        // Draw money values and question numbers
-        DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+            // Scale bounds to actual screen size
+            var designBounds = new Rectangle(
+                (int)treeX,
+                (int)treeY,
+                (int)treeWidth,
+                (int)treeHeight);
+            
+            var scaledBounds = new Rectangle(
+                (int)(designBounds.X * ScaleX),
+                (int)(designBounds.Y * ScaleY),
+                (int)(designBounds.Width * ScaleX),
+                (int)(designBounds.Height * ScaleY));
+
+            // Render SVG money tree ladder
+            _svgMoneyTreeRenderer.RenderMoneyTreeToGraphics(
+                g,
+                moneyTree,
+                scaledBounds,
+                _currentMoneyTreeLevel,
+                settings.SafetyNet1,
+                settings.SafetyNet2,
+                _currentGameMode == GameMode.Risk,
+                _useSafetyNetAltGraphic);
+
+            // Draw money values and question numbers
+            DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+        }
+        else
+        {
+            // Fallback: PNG textures
+            var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
+            var treePosition = _useSafetyNetAltGraphic 
+                ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
+                : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
+
+            if (treeBase == null) return;
+
+            DrawScaledImage(g, treeBase, treeX, treeY, treeWidth, treeHeight);
+
+            if (treePosition != null && _currentMoneyTreeLevel > 0)
+            {
+                float scale = treeHeight / 720f;
+                float overlayX = treeX + (165 * scale);
+                float overlayY = treeY + (100 * scale);
+                float overlayWidth = 399 * scale;
+                float overlayHeight = 599 * scale;
+                
+                DrawScaledImage(g, treePosition, overlayX, overlayY, overlayWidth, overlayHeight);
+            }
+
+            DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+        }
     }
 
     private void DrawMoneyTreeText(System.Drawing.Graphics g, float baseX, float baseY, float width, float height)
     {
         var settings = _moneyTreeService!.Settings;
+        var moneyTree = _activeTheme?.MoneyTree;
         
         // VB.NET Y positions for text (in original 720px height)
         int[] originalYPositions = new int[]
@@ -491,12 +520,13 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             102  // Level 15
         };
         
-        // VB.NET X positions in original 1280x720 canvas
-        // money_pos_X = 910, qno_pos_X = 855 (levels 1-9) or 832 (levels 10-15)
-        // After cropping 650px from left: money_pos_X = 260, qno_pos_X = 205 or 182
-        
         // Scale factor for current tree size vs original cropped 630x720
         float scale = height / 720f;
+        
+        // Font: Use theme font if available, otherwise fallback
+        string fontFamily = moneyTree?.FontFamily ?? "Copperplate Gothic Bold";
+        float baseFontSize = (moneyTree?.FontSize ?? 24) * scale;
+        FontStyle fontStyle = (moneyTree?.FontBold ?? true) ? FontStyle.Bold : FontStyle.Regular;
         
         for (int level = 15; level >= 1; level--) // Draw from top (15) to bottom (1)
         {
@@ -507,12 +537,19 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             // X position for money value (adjusted for crop)
             float moneyX = baseX + (260 * scale);
             
-            // Determine text color
+            // Determine text color based on level state
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                // Current level - use white text if showing alternate lock-in graphic, black otherwise
-                textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                // Current level - use theme ActiveColor if available
+                if (moneyTree != null)
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.ActiveColor);
+                }
+                else
+                {
+                    textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                }
             }
             else if (level == 15)
             {
@@ -520,12 +557,10 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             }
             else if (level == 5 || level == 10)
             {
-                // Q5 and Q10 are white only if they're enabled as safety nets
                 bool isQ5Enabled = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
                 bool isQ10Enabled = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
                 bool isRiskMode = _currentGameMode == GameMode.Risk;
                 
-                // White only if safety net is enabled AND not in Risk Mode
                 if (level == 5)
                     textColor = (isQ5Enabled && !isRiskMode) ? Color.White : Color.Gold;
                 else // level == 10
@@ -533,23 +568,31 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
-                // Custom safety nets (not Q5/Q10) - white only if not in Risk Mode
-                textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                // Custom safety nets - use theme SafeHavenColor or fallback
+                if (moneyTree != null && !(_currentGameMode == GameMode.Risk))
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.SafeHavenColor);
+                }
+                else
+                {
+                    textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                }
             }
             else
             {
-                textColor = Color.Gold; // Regular levels
+                // Regular levels - use theme InactiveColor or Gold fallback
+                textColor = moneyTree != null ? ColorTranslator.FromHtml(moneyTree.InactiveColor) : Color.Gold;
             }
             
-            using var font = new Font("Copperplate Gothic Bold", 24 * scale, FontStyle.Bold);
-            using var brush = new SolidBrush(textColor);
+            using var font = new Font(fontFamily, baseFontSize, fontStyle);
+            using var format = new StringFormat { Alignment = StringAlignment.Near };
             
-            // Draw question number
-            DrawScaledText(g, level.ToString(), font, brush, qnoX, y, 100, 100, null);
+            // Draw question number with outline
+            DrawScaledTextWithOutline(g, level.ToString(), font, textColor, qnoX, y, 100, 100, format, 2);
             
-            // Draw money amount
+            // Draw money amount with outline
             string formattedMoney = _moneyTreeService.GetFormattedValue(level);
-            DrawScaledText(g, formattedMoney, font, brush, moneyX, y, 350, 100, null);
+            DrawScaledTextWithOutline(g, formattedMoney, font, textColor, moneyX, y, 350, 100, format, 2);
         }
     }
 
