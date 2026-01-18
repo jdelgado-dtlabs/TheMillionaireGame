@@ -33,3 +33,21 @@ Notes:
 - If you want a different TV strap font scale, adjust `TvFontScale` in `src/MillionaireGame/Forms/TVScreenForm.cs` (currently `1.6f`).
 
 End of session.
+
+---
+
+Final updates (2026-01-17):
+
+- Added migration `00023_update_purple_midnight_strap_shapes.sql` to set `SvgShape='Rounded'` for `Professional Purple` and `Midnight Black` to ensure symmetrical Q/A straps.
+- Committed all workspace changes (migrations, TV font scaling, and session docs). Build verified locally.
+
+Remaining checklist summary:
+
+- Per-theme visual QA: capture screenshots for TV/Host/Guest across all presets (priority: Classic Black, Professional Purple, Midnight Black).
+- Accessibility/contrast checks for dark themes (Classic Black) and ensure money-tree and strap text meet legibility targets.
+- Make `TvFontScale` configurable via settings or theme metadata (optional enhancement).
+- Remove any temporary programmatic UI helpers used during testing (if still present) — e.g., "Create Classic Black" button in `ThemeSettingsPanel`.
+- Add automated screenshot harness for Theme QA (saves standardized images for regressions).
+- Monitor runtime migration logs in staging to confirm all migration files applied cleanly.
+
+If you'd like, I can run the app and capture the screenshots now, or start the automated Theme QA harness. Which do you prefer?
