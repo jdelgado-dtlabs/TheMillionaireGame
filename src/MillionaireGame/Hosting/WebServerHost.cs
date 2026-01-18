@@ -11,7 +11,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MillionaireGame.Web.Data;
-using MillionaireGame.Web.Database;
+using MillionaireGame.Core.Database;
 using MillionaireGame.Web.Hubs;
 using MillionaireGame.Web.Models;
 using MillionaireGame.Web.Services;

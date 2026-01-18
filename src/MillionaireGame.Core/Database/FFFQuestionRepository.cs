@@ -41,6 +41,28 @@ public class FFFQuestionRepository
     }
 
     /// <summary>
+    /// Get specific FFF question by ID
+    /// </summary>
+    public async Task<FFFQuestion?> GetQuestionByIdAsync(int questionId)
+    {
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        var query = "SELECT * FROM fff_questions WHERE Id = @Id";
+        using var command = new SqlCommand(query, connection);
+        command.Parameters.AddWithValue("@Id", questionId);
+        
+        using var reader = await command.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            return MapQuestion(reader);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Marks a question as used
     /// </summary>
     public async Task MarkQuestionAsUsedAsync(int questionId)

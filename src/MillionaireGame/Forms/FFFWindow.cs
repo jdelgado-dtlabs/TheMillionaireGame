@@ -12,15 +12,24 @@ public partial class FFFWindow : Form
     private bool _isWebServerRunning;
     private readonly ScreenUpdateService? _screenService;
     private readonly SoundService? _soundService;
+    private readonly string _connectionString;
     
     public FFFWindow(string serverUrl = "http://localhost:5278", bool isWebServerRunning = false, 
-                     ScreenUpdateService? screenService = null, SoundService? soundService = null)
+                     ScreenUpdateService? screenService = null, SoundService? soundService = null,
+                     string? connectionString = null)
     {
         InitializeComponent();
         _serverUrl = serverUrl;
         _isWebServerRunning = isWebServerRunning;
         _screenService = screenService;
         _soundService = soundService;
+        _connectionString = connectionString ?? string.Empty;
+        
+        // Initialize repository if connection string provided
+        if (!string.IsNullOrEmpty(_connectionString))
+        {
+            fffOnlinePanel.SetConnectionString(_connectionString);
+        }
     }
     
     /// <summary>

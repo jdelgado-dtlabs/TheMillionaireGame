@@ -1,5 +1,4 @@
-using MillionaireGame.Web.Models;
-using MillionaireGame.Web.Database;
+using MillionaireGame.Core.Models;
 using MillionaireGame.Services;
 using MillionaireGame.Core.Database;
 using MillionaireGame.Core.Settings;
@@ -40,7 +39,7 @@ public partial class FFFOnlinePanel : UserControl
     private List<AnswerSubmission> _submissions = new();
     private List<RankingResult> _rankings = new();
     private FFFClientService? _fffClient;
-    private readonly MillionaireGame.Web.Database.FFFQuestionRepository? _fffRepository;
+    private MillionaireGame.Core.Database.FFFQuestionRepository? _fffRepository;
     private const string _sessionId = "LIVE"; // Fixed session ID for live game
     private string _serverUrl = string.Empty; // Store server URL for API calls
     
@@ -57,17 +56,8 @@ public partial class FFFOnlinePanel : UserControl
         _fffTimer = new System.Timers.Timer(100); // Update every 100ms
         _fffTimer.Elapsed += FFFTimer_Elapsed;
         
-        // Initialize repository
-        try
-        {
-            var sqlSettings = new SqlSettingsManager();
-            var connectionString = sqlSettings.Settings.GetConnectionString("dbMillionaire");
-            _fffRepository = new MillionaireGame.Web.Database.FFFQuestionRepository(connectionString);
-        }
-        catch (Exception ex)
-        {
-            GameConsole.Error($"Error initializing FFF repository: {ex.Message}");
-        }
+        // Repository will be initialized via SetConnectionString() method
+        // This is called after construction to avoid database access during designer initialization
         
         // Stop audio on control disposal
         this.Disposed += FFFOnlinePanel_Disposed;
@@ -125,6 +115,22 @@ public partial class FFFOnlinePanel : UserControl
     /// <summary>
     /// Load available FFF questions into memory
     /// </summary>
+    /// <summary>
+    /// Initialize the repository with connection string (called after construction)
+    /// </summary>
+    public void SetConnectionString(string connectionString)
+    {
+        try
+        {
+            _fffRepository = new MillionaireGame.Core.Database.FFFQuestionRepository(connectionString);
+            GameConsole.Debug("[FFF] Repository initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[FFF] Error initializing FFF repository: {ex.Message}");
+        }
+    }
+    
     public async Task LoadQuestionsAsync()
     {
         try
@@ -136,7 +142,7 @@ public partial class FFFOnlinePanel : UserControl
             }
             else
             {
-                GameConsole.Log("[FFF] ERROR: FFF Repository is not initialized.");
+                GameConsole.Error("[FFF] ERROR: FFF Repository is not initialized. Call SetConnectionString() first.");
             }
             
             UpdateUIState();
