@@ -1,4 +1,5 @@
 using MillionaireGame.Core.Settings;
+using MillionaireGame.Core.Services;
 using MillionaireGame.Utilities;
 using System.Drawing.Drawing2D;
 
@@ -7,16 +8,19 @@ namespace MillionaireGame.Graphics;
 /// <summary>
 /// Handles background rendering for TV screen based on broadcast settings
 /// Supports both prerendered theme backgrounds and solid chroma key colors
+/// Integrates with theming system for dynamic background loading
 /// </summary>
 public class BackgroundRenderer
 {
     private readonly ApplicationSettings _settings;
+    private readonly ThemeService? _themeService;
     private Image? _cachedBackground;
     private string? _cachedBackgroundPath;
 
-    public BackgroundRenderer(ApplicationSettings settings)
+    public BackgroundRenderer(ApplicationSettings settings, ThemeService? themeService = null)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _themeService = themeService;
     }
 
     /// <summary>
@@ -38,7 +42,8 @@ public class BackgroundRenderer
 
     private void RenderPrerenderedBackground(System.Drawing.Graphics g, int width, int height)
     {
-        var backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
+        // Get background path from broadcast settings
+        string? backgroundPath = _settings.Broadcast.SelectedBackgroundPath;
         
         // If no background selected or empty path, fall back to black
         if (string.IsNullOrWhiteSpace(backgroundPath))

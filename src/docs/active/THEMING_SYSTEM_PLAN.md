@@ -1,9 +1,18 @@
 # Theming System Implementation Plan - v1.0.7
 
-**Status:** Planning  
+**Status:** Planning → In Development  
 **Target Release:** v1.0.7  
 **Created:** January 12, 2026  
+**Updated:** January 14, 2026 (Codebase review completed)  
 **Owner:** Development Team
+
+**⚠️ CRITICAL NOTES FROM CODEBASE REVIEW:**
+1. **NO XML STORAGE:** All settings are stored in SQL Server database via `ApplicationSettingsRepository`
+2. **Settings are stored as key-value pairs** in the `ApplicationSettings` table, NOT as separate tables
+3. **Repository Location:** All repositories go in `MillionaireGame.Core/Database/`
+4. **UI Integration:** Theme settings go in `OptionsDialog` (Game → Settings), not in ControlPanelForm
+5. **Existing Background System:** `BroadcastSettings` already handles TV screen backgrounds - extend, don't replace
+6. **Migration Pattern:** Use numbered SQL files in `src/MillionaireGame/Database/Migrations/` (e.g., `00008_create_theme_tables.sql`)
 
 ## Overview
 
@@ -221,7 +230,9 @@ CREATE TABLE ThemePacks (
 ## UI/UX Design
 
 ### Theme Tab Location
-**Path:** Control Panel → Broadcast Tab → Theme (new tab)
+**Path:** Game Menu → Settings (OptionsDialog) → Themes Tab (new tab)
+
+**Note:** The OptionsDialog already has a tab-based interface with tabs for Broadcast, Screens, Lifelines, Money Tree, Sounds, Stream Deck, and Audience. We'll add a new "Themes" tab to this existing TabControl.
 
 ### Layout Structure
 
@@ -387,6 +398,25 @@ CREATE TABLE ThemePacks (
 
 2. **Modern Blue**
    - Blue and silver gradient
+
+**Checklist — Current Status (updated 2026-01-17)**
+
+- **Completed:**
+  - SVG-based strap rendering integrated across TV/Host/Guest (money-tree uses SVG renderer).
+  - Centralized glyph-based text centering implemented in `ScalableScreenBase.DrawScaledTextWithOutline()`.
+  - Theme-change propagation wired: `ScreenUpdateService.RefreshThemes()` and `IGameScreen.RefreshTheme()` implementations added.
+  - Seeded `Classic Black` preset and adjustments via migrations `00019`, `00021`, `00022`.
+  - TV strap font scale increased (`TvFontScale = 1.6f`) to improve legibility on large displays.
+  - Professional Purple and Midnight Black strap shapes set to `Rounded` via migration `00023`.
+
+- **Remaining / Recommended:**
+  - Run automated Theme QA: capture and review TV/Host/Guest screenshots for all built-in presets.
+  - Expose `TvFontScale` as a user setting in the Themes UI (OptionsDialog) to allow venue-specific tuning.
+  - Implement accessibility/contrast checks for presets (WCAG guidance).
+  - Add unit/integration tests for `SvgStrapRenderer` and `SvgMoneyTreeRenderer`.
+  - Expand ThemePack import/export UI and documentation for community themes.
+
+Add this checklist to `src/docs/active/THEMING_SYSTEM_CHECKLIST.md` for tracking.
    - Sleek angular straps with metallic finish
    - Sans-serif typography
    - Sharp, clean lines
@@ -621,9 +651,12 @@ MyThemePack.zip
 ### Phase 4: UI Components (Week 4-5)
 
 #### Tasks
-- [ ] Create `ThemeTabControl` (new tab under Broadcast)
+- [ ] Add new "Themes" TabPage to `OptionsDialog.Designer.cs` TabControl
+  - Follow existing pattern from other tabs (tabBroadcast, tabScreens, etc.)
+  - Add to `tabControl.Controls.Add()` collection
+- [ ] Create `ThemeSettingsPanel` user control for the Themes tab content
 - [ ] Implement theme selector ComboBox with preview
-- [ ] Create two-panel layout (component list + settings)
+- [ ] Create two-panel layout within ThemeSettingsPanel (component list + settings)
 - [ ] Implement `BackgroundSettingsPanel`
   - Reuse existing background/chroma key controls
   - Add component type selector
@@ -673,13 +706,17 @@ MyThemePack.zip
 #### Tasks
 - [ ] Integrate theme system with game engine
 - [ ] Apply theme backgrounds to TV screen
+  - **IMPORTANT:** Work with existing `BackgroundRenderer.cs` and `BroadcastSettings`
+  - Theme backgrounds should extend current prerendered background functionality
+  - Preserve existing chroma key mode support
 - [ ] Apply theme straps to questions/answers
 - [ ] Apply theme to money tree display
 - [ ] Integrate with broadcast overlay system
 - [ ] Theme switching during game (if safe)
-- [ ] Handle theme changes in control panel
-- [ ] Update existing background settings to use theme system
-- [ ] Migration path for existing background configurations
+- [ ] Handle theme changes in OptionsDialog (not ControlPanelForm)
+- [ ] Migration path: Convert existing `BroadcastSettings.SelectedBackgroundPath` to theme system
+  - Create default "Legacy" theme for users with existing custom backgrounds
+  - Map old background paths to new theme structure
 - [ ] Performance testing under load
 - [ ] Memory leak checks (SVG rendering)
 
@@ -1085,9 +1122,178 @@ public async Task MigrateExistingBackgroundsAsync()
 5. **Q:** Theme versioning for future compatibility?  
    **A:** Yes - Include version in theme metadata
 
+---
+
+## Implementation Notes from Codebase Review
+
+### Key Findings
+
+1. **Settings Architecture**
+   - Settings stored in `ApplicationSettings` table as key-value pairs
+   - `ApplicationSettingsRepository` handles CRUD operations
+   - `ApplicationSettingsManager` manages settings lifecycle
+   - Settings classes use `[XmlElement]` attributes but these are for serialization to database, NOT XML files
+   - Nested settings objects (like `BroadcastSettings`) are stored as flattened key-value pairs
+
+2. **Database Migration System**
+   - Migrations in `src/MillionaireGame/Database/Migrations/`
+   - Numbered format: `NNNNN_descriptive_name.sql`
+   - Latest migration: `00007_add_telemetry_tables.sql`
+   - Next migration: `00008_create_theme_tables.sql`
+   - Migrations are **embedded resources** and run automatically on startup
+   - Use idempotent SQL with `IF NOT EXISTS` checks
+
+3. **UI Architecture**
+   - `OptionsDialog` is the main settings interface (not ControlPanelForm)
+   - Uses `TabControl` with multiple `TabPage` objects
+   - Existing tabs: Broadcast, Screens, Lifelines, Money Tree, Sounds, Stream Deck, Audience
+   - Lazy initialization pattern used (see `_screensTabInitialized`)
+   - Event handlers for change tracking (`MarkChanged()` pattern)
+   - Settings applied via `SettingsApplied` event when Apply/OK clicked
+
+4. **Service Layer Pattern**
+   - Services in `MillionaireGame/Services/` (main project) or `MillionaireGame.Core/Services/`
+   - Many implement `IDisposable` for cleanup
+   - Registered with DI container in `Program.cs`
+   - Services accessed via `Program.ServiceProvider.GetRequiredService<T>()`
+   - Example: `MoneyTreeService` in Core, `SoundService` in main project
+
+5. **Existing Background System**
+   - `BroadcastSettings` class already exists in `MillionaireGame.Core/Settings/`
+   - Supports two modes: `Prerendered` and `ChromaKey`
+   - `BackgroundRenderer.cs` in `MillionaireGame/Graphics/` handles rendering
+   - Background selection UI already exists in `OptionsDialog` Broadcast tab
+   - Stored in database via `ApplicationSettingsRepository`
+
+### Critical Integration Points
+
+1. **Theme Storage Decision**
+   - **Option A:** Store theme definitions in separate tables (as planned)
+     - Pros: Structured, relational, easier to query
+     - Cons: More complex schema, harder to export/import
+   - **Option B:** Store themes as JSON in ApplicationSettings table
+     - Pros: Consistent with existing settings, easier export/import
+     - Cons: Less queryable, no referential integrity
+   - **RECOMMENDATION:** Use Option A (separate tables) for better data integrity and future extensibility
+
+2. **Background System Integration**
+   - Extend `BroadcastSettings` to include theme reference
+   - Add `ThemeId` field to link to active theme
+   - Preserve existing `SelectedBackgroundPath` for backward compatibility
+   - Migration: Convert existing backgrounds to "Legacy" theme entries
+
+3. **Settings Manager Integration**
+   - Create `ThemeSettingsManager` similar to `ApplicationSettingsManager`
+   - Or extend `ApplicationSettingsManager` with theme management methods
+   - Ensure theme changes trigger `SettingsApplied` event
+
+4. **OptionsDialog Integration**
+   - Add `tabThemes` to Designer.cs
+   - Create event handlers following existing patterns
+   - Use `MarkChanged()` for unsaved changes tracking
+   - Load theme settings in constructor or lazy-load when tab selected
+   - Save via `SaveSettings()` method when Apply/OK clicked
+
 ## References
 
 - SVG Specification: https://www.w3.org/TR/SVG2/
 - Windows Forms Graphics: https://docs.microsoft.com/en-us/dotnet/desktop/winforms/advanced/graphics
 - Color Theory for UI: (Reference design resources)
-- Current background implementation: [ControlPanelForm.cs, Background section]
+- Current background implementation: [OptionsDialog.cs, Broadcast tab section]
+- ApplicationSettings pattern: [ApplicationSettingsRepository.cs](../../MillionaireGame.Core/Database/ApplicationSettingsRepository.cs)
+- Database migrations: [Migration README](../../MillionaireGame/Database/Migrations/README.md)
+
+---
+
+## Appendix: Key Code References
+
+### Existing Patterns to Follow
+
+**1. Repository Pattern** (`ApplicationSettingsRepository.cs`):
+```csharp
+public class ThemeRepository
+{
+    private readonly string _connectionString;
+    
+    public ThemeRepository(string connectionString)
+    {
+        _connectionString = connectionString;
+    }
+    
+    public async Task<Theme?> GetActiveThemeAsync()
+    {
+        const string query = "SELECT * FROM Themes WHERE IsActive = 1";
+        using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync();
+        // ... implementation
+    }
+}
+```
+
+**2. Settings Manager Pattern** (`ApplicationSettingsManager.cs`):
+```csharp
+public class ThemeSettingsManager
+{
+    private readonly ThemeRepository _repository;
+    public Theme? CurrentTheme { get; private set; }
+    
+    public ThemeSettingsManager(string connectionString)
+    {
+        _repository = new ThemeRepository(connectionString);
+    }
+    
+    public async Task LoadThemeAsync()
+    {
+        CurrentTheme = await _repository.GetActiveThemeAsync();
+    }
+}
+```
+
+**3. OptionsDialog Tab Pattern** (from existing tabs):
+```csharp
+// In OptionsDialog.Designer.cs
+tabThemes = new TabPage();
+tabControl.Controls.Add(tabThemes);
+
+tabThemes.Location = new Point(4, 29);
+tabThemes.Name = "tabThemes";
+tabThemes.Padding = new Padding(3);
+tabThemes.Size = new Size(976, 503);
+tabThemes.TabIndex = 7;
+tabThemes.Text = "Themes";
+tabThemes.UseVisualStyleBackColor = true;
+
+// In OptionsDialog.cs
+private void LoadThemeSettings()
+{
+    // Load theme data
+    MarkChanged(); // If modified
+}
+
+private void SaveThemeSettings()
+{
+    // Save theme data
+}
+```
+
+**4. Migration Script Pattern** (`00007_add_telemetry_tables.sql`):
+```sql
+-- ============================================================================
+-- Migration: 00008_create_theme_tables
+-- Description: Creates theme system tables for visual customization
+-- Author: Development Team
+-- Date: 2026-01-14
+-- ============================================================================
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Themes')
+BEGIN
+    CREATE TABLE Themes (
+        ThemeId INT PRIMARY KEY IDENTITY(1,1),
+        ThemeName NVARCHAR(100) NOT NULL,
+        -- ... columns
+    );
+    
+    PRINT 'Created table: Themes';
+END
+GO
+```

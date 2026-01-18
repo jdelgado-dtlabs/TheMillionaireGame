@@ -4,6 +4,9 @@ using MillionaireGame.Core.Helpers;
 using MillionaireGame.Graphics;
 using MillionaireGame.Core.Services;
 using MillionaireGame.Core.Graphics;
+using MillionaireGame.Utilities;
+using MillionaireGame.Core.Settings;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MillionaireGame.Forms;
 
@@ -21,7 +24,11 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     private HashSet<string> _visibleAnswers = new();
     private int _currentMoneyTreeLevel = 0;
     private MoneyTreeService? _moneyTreeService;
+    private CompleteTheme? _activeTheme; // Active theme for strap rendering
+    private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
+    private SvgMoneyTreeRenderer? _svgMoneyTreeRenderer; // SVG money tree renderer
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
+    private bool _isSafetyNetFlashing = false; // True while safety net flash animation is active
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
     /// <summary>
@@ -92,6 +99,35 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     public void Initialize(MoneyTreeService moneyTreeService)
     {
         _moneyTreeService = moneyTreeService;
+        
+        // Load active theme for strap rendering
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+                if (settingsManager != null)
+                {
+                    var themeService = new ThemeService(settingsManager.ConnectionString);
+                    await themeService.LoadActiveThemeAsync();
+                    var activeTheme = themeService.CurrentTheme;
+                    
+                    if (activeTheme != null)
+                    {
+                        _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                        _svgStrapRenderer = new SvgStrapRenderer();
+                        _svgMoneyTreeRenderer = new SvgMoneyTreeRenderer();
+                        GameConsole.Info($"[GuestScreenForm] Theme '{_activeTheme?.Theme?.ThemeName ?? "Unknown"}' loaded for strap and money tree rendering");
+                        Invalidate(); // Redraw with themed straps
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Warn($"[GuestScreenForm] ThemeService not available: {ex.Message}");
+                // Continue without theme service - will fall back to PNG straps
+            }
+        });
     }
 
     public void UpdateMoneyTreeLevel(int level, GameMode mode = GameMode.Normal)
@@ -105,6 +141,7 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         _currentMoneyTreeLevel = level;
         _currentGameMode = mode; // Store game mode for rendering
         _useSafetyNetAltGraphic = false; // Reset to normal graphic
+        _isSafetyNetFlashing = false; // Not flashing anymore
         Refresh(); // Force immediate redraw to update money tree
     }
     
@@ -115,7 +152,51 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
     {
         _currentMoneyTreeLevel = safetyNetLevel;
         _useSafetyNetAltGraphic = flashState; // true = use alternate graphic, false = use regular
+        _isSafetyNetFlashing = true; // We're in flashing mode while this method is called repeatedly
         Invalidate(); // Redraw to show flash state
+    }
+
+    /// <summary>
+    /// Refresh theme resources (straps, money tree) when active theme changes
+    /// </summary>
+    public void RefreshTheme()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(RefreshTheme));
+            return;
+        }
+
+        GameConsole.Info("[GuestScreenForm] Refreshing theme for guest screen");
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+                if (settingsManager != null)
+                {
+                    var themeService = new ThemeService(settingsManager.ConnectionString);
+                    await themeService.LoadActiveThemeAsync();
+                    var activeTheme = themeService.CurrentTheme;
+
+                    if (activeTheme != null)
+                    {
+                        _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                        _svgStrapRenderer ??= new SvgStrapRenderer();
+                        _svgMoneyTreeRenderer ??= new SvgMoneyTreeRenderer();
+                        GameConsole.Info($"[GuestScreenForm] Theme '{_activeTheme?.Theme?.ThemeName ?? "Unknown"}' reloaded for guest");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Warn($"[GuestScreenForm] Error refreshing theme: {ex.Message}");
+            }
+
+            // Redraw once resources reloaded
+            try { Invalidate(); } catch { }
+        });
     }
 
     protected override void RenderScreen(System.Drawing.Graphics g)
@@ -176,89 +257,157 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
 
     private void DrawQuestionStrap(System.Drawing.Graphics g)
     {
-        var texture = TextureManager.GetTexture(TextureManager.ElementType.QuestionStrap, CurrentTextureSet);
-        
-        if (texture != null)
+        // Check if theme is active and has question strap
+        if (_activeTheme != null && _svgStrapRenderer != null)
         {
-            DrawScaledImage(g, texture, 
-                _questionStrapBounds.X, _questionStrapBounds.Y, 
-                _questionStrapBounds.Width, _questionStrapBounds.Height);
+            var questionStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Question");
+            if (questionStrap != null)
+            {
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    _questionStrapBounds.X, 
+                    _questionStrapBounds.Y,
+                    _questionStrapBounds.Width,
+                    _questionStrapBounds.Height);
+                
+                var bounds = new Rectangle(
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+                
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, questionStrap, "", bounds);
+                
+                // Draw question text using theme font settings
+                var textBounds = new RectangleF(
+                    _questionStrapBounds.X + 180, 
+                    _questionStrapBounds.Y + 15,
+                    _questionStrapBounds.Width - 360, 
+                    _questionStrapBounds.Height - 30);
+                
+                var fontStyle = questionStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                var fontColor = ColorTranslator.FromHtml(questionStrap.FontColor);
+                    
+                DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
+                    questionStrap.FontFamily, questionStrap.FontSize, fontStyle, fontColor, textBounds, 2);
+            }
         }
-
-        // Draw question text with wrapping and auto-scaling
-        // Substantial padding to keep text within visible bounds (180px each side)
-        var textBounds = new RectangleF(
-            _questionStrapBounds.X + 180, 
-            _questionStrapBounds.Y + 15,
-            _questionStrapBounds.Width - 360, 
-            _questionStrapBounds.Height - 30);
-            
-        DrawScaledTextWithWrap(g, _currentQuestion?.QuestionText ?? "", 
-            "Copperplate Gothic Bold", 32, FontStyle.Bold, Color.White, textBounds, 2);
     }
 
 
 
     private void DrawAnswerBox(System.Drawing.Graphics g, string letter, string text, RectangleF bounds, bool isLeftSide, bool isVisible)
     {
-        // Use isLeftSide parameter for both texture selection AND padding
-        // This keeps everything position-based, not letter-based
-        
-        // Determine texture based on state - use isLeftSide (position) not letter
-        TextureManager.ElementType elementType;
-        
-        if (_isRevealing && letter == _correctAnswer)
+        // Render answer strap with theme if available
+        if (_activeTheme != null && _svgStrapRenderer != null)
         {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftCorrect : TextureManager.ElementType.AnswerRightCorrect;
-        }
-        else if (_selectedAnswer == letter && !_isRevealing)
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftFinal : TextureManager.ElementType.AnswerRightFinal;
-        }
-        else
-        {
-            elementType = isLeftSide ? TextureManager.ElementType.AnswerLeftNormal : TextureManager.ElementType.AnswerRightNormal;
-        }
-
-        var texture = TextureManager.GetTexture(elementType, CurrentTextureSet);
-        
-        if (texture != null)
-        {
-            DrawScaledImage(g, texture, bounds.X, bounds.Y, bounds.Width, bounds.Height);
-        }
-
-        // Only draw text if answer is visible
-        if (isVisible)
-        {
-            // Left positions (A, C) have more padding, right positions (B, D) have less
-            float letterLeftPadding = isLeftSide ? 150 : 40;
-            float textLeftPadding = isLeftSide ? 240 : 130;
-            float textRightPadding = 80;
-            
-            // Draw answer letter
-            using var letterFont = new Font("Arial", 28, FontStyle.Bold);
-            using var letterBrush = new SolidBrush(Color.White);
-            using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            
-            DrawScaledText(g, letter + ":", letterFont, letterBrush,
-                bounds.X + letterLeftPadding, bounds.Y + 15,
-                80, bounds.Height - 30,
-                letterFormat);
-
-            // Draw answer text with wrapping and auto-scaling
-            var textBounds = new RectangleF(
-                bounds.X + textLeftPadding, 
-                bounds.Y + 15,
-                bounds.Width - textLeftPadding - textRightPadding, 
-                bounds.Height - 30);
+            var answerStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "Answer");
+            var answerLabelStrap = _activeTheme.Straps.FirstOrDefault(s => s.StrapType == "AnswerLabel");
+            if (answerStrap != null)
+            {
+                // Clone the strap to modify colors based on state
+                var strapToRender = new ThemeStrap
+                {
+                    StrapType = answerStrap.StrapType,
+                    SvgShape = answerStrap.SvgShape,
+                    PrimaryColor = answerStrap.PrimaryColor,
+                    SecondaryColor = answerStrap.SecondaryColor,
+                    GradientEnabled = answerStrap.GradientEnabled,
+                    GradientAngle = answerStrap.GradientAngle,
+                    EffectType = answerStrap.EffectType,
+                    EffectIntensity = answerStrap.EffectIntensity,
+                    EffectColor = answerStrap.EffectColor,
+                    BorderEnabled = answerStrap.BorderEnabled,
+                    BorderColor = answerStrap.BorderColor,
+                    BorderWidth = answerStrap.BorderWidth,
+                    BorderStyle = answerStrap.BorderStyle,
+                    FontFamily = answerStrap.FontFamily,
+                    FontSize = answerStrap.FontSize,
+                    FontColor = answerStrap.FontColor,
+                    FontBold = answerStrap.FontBold,
+                    FontItalic = answerStrap.FontItalic,
+                    AnimationEnabled = answerStrap.AnimationEnabled,
+                    AnimationType = answerStrap.AnimationType,
+                    AnimationDuration = answerStrap.AnimationDuration
+                };
                 
-            DrawScaledTextWithWrap(g, text, 
-                "Copperplate Gothic Bold", 24, FontStyle.Regular, Color.White, textBounds, 2, 
-                StringAlignment.Near);
+                // Modify colors based on answer state
+                if (_isRevealing && letter == _correctAnswer)
+                {
+                    // Correct answer - green
+                    strapToRender.PrimaryColor = "#228B22"; // Forest green
+                    strapToRender.SecondaryColor = "#90EE90"; // Light green
+                }
+                else if (_isRevealing && _selectedAnswer == letter && letter != _correctAnswer)
+                {
+                    // Wrong answer - red
+                    strapToRender.PrimaryColor = "#8B0000"; // Dark red
+                    strapToRender.SecondaryColor = "#FF6347"; // Tomato red
+                }
+                else if (_selectedAnswer == letter && !_isRevealing)
+                {
+                    // Selected answer (before reveal) - orange/gold
+                    strapToRender.PrimaryColor = "#FF8C00"; // Dark orange
+                    strapToRender.SecondaryColor = "#FFD700"; // Gold
+                }
+                
+                // Scale bounds from design resolution to actual screen size
+                var scaledBounds = ScaleRect(
+                    bounds.X, 
+                    bounds.Y,
+                    bounds.Width,
+                    bounds.Height);
+                
+                // Render with SVG
+                var renderBounds = new Rectangle(
+                    (int)scaledBounds.X, 
+                    (int)scaledBounds.Y,
+                    (int)scaledBounds.Width,
+                    (int)scaledBounds.Height);
+                
+                // Render strap shape without text (we'll draw text separately for better control)
+                _svgStrapRenderer.RenderStrapToGraphics(g, strapToRender, "", renderBounds);
+                
+                // Draw text with original positioning if answer is revealed
+                if (isVisible)
+                {
+                    // Balanced padding for all answers
+                    float letterLeftPadding = 60;
+                    float textLeftPadding = 150;
+                    float textRightPadding = 80;
+                    
+                    // Get font settings from theme
+                    var fontStyle = answerStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var fontColor = ColorTranslator.FromHtml(answerStrap.FontColor);
+                    
+                    // Get label font settings from AnswerLabel strap (or fallback to Answer strap)
+                    var labelStrap = answerLabelStrap ?? answerStrap;
+                    var labelFontStyle = labelStrap.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                    var labelFontColor = ColorTranslator.FromHtml(labelStrap.FontColor);
+                    
+                    // Draw answer letter using AnswerLabel strap font
+                    using var letterFont = new Font(labelStrap.FontFamily, labelStrap.FontSize, labelFontStyle);
+                    using var letterBrush = new SolidBrush(labelFontColor);
+                    using var letterFormat = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                    
+                    DrawScaledText(g, letter + ":", letterFont, letterBrush,
+                        bounds.X + letterLeftPadding, bounds.Y + 15,
+                        80, bounds.Height - 30,
+                        letterFormat);
+
+                    // Draw answer text with wrapping and auto-scaling using theme font
+                    var textBounds = new RectangleF(
+                        bounds.X + textLeftPadding, 
+                        bounds.Y + 15,
+                        bounds.Width - textLeftPadding - textRightPadding, 
+                        bounds.Height - 30);
+                        
+                    DrawScaledTextWithWrap(g, text, 
+                        answerStrap.FontFamily, answerStrap.FontSize, fontStyle, fontColor, textBounds, 2, 
+                        StringAlignment.Near);
+                }
+            }
         }
     }
 
@@ -306,92 +455,118 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         if (_moneyTreeService == null) return;
 
         // Money tree occupies right portion of screen
-        // Cropped tree image is 630x720 (aspect ratio 0.875)
-        // Display at 650px height to avoid question strap blocking bottom
         float treeHeight = 650;
         float treeWidth = treeHeight * (630f / 720f); // Maintain aspect ratio: ~569px
         float treeX = 1920 - treeWidth; // Right edge
         float treeY = 0; // Top of screen
 
-        // Get base money tree image
-        var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
-        
-        // Get position overlay - use alternate lock-in graphic if in safety net animation
-        var treePosition = _useSafetyNetAltGraphic 
-            ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
-            : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
-
-        if (treeBase == null) return;
-
-        // Draw base tree
-        DrawScaledImage(g, treeBase, treeX, treeY, treeWidth, treeHeight);
-
-        // Draw position highlight overlay at proper position
-        if (treePosition != null && _currentMoneyTreeLevel > 0)
+        // Render with SVG if theme is available
+        if (_activeTheme?.MoneyTree != null && _svgMoneyTreeRenderer != null)
         {
-            // Overlay positioned relative to cropped tree
-            // Original overlay was at (815, 100) in 1280x720, which is (165, 100) in cropped 630x720
-            // Scale proportionally based on tree height
-            float scale = treeHeight / 720f;
-            float overlayX = treeX + (165 * scale);
-            float overlayY = treeY + (100 * scale);
-            float overlayWidth = 399 * scale;
-            float overlayHeight = 599 * scale;
-            
-            DrawScaledImage(g, treePosition, overlayX, overlayY, overlayWidth, overlayHeight);
-        }
+            var moneyTree = _activeTheme.MoneyTree;
+            var settings = _moneyTreeService.Settings;
 
-        // Draw money values and question numbers
-        DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+            // Scale bounds to actual screen size
+            var designBounds = new Rectangle(
+                (int)treeX,
+                (int)treeY,
+                (int)treeWidth,
+                (int)treeHeight);
+            
+            var scaledBounds = new Rectangle(
+                (int)(designBounds.X * ScaleX),
+                (int)(designBounds.Y * ScaleY),
+                (int)(designBounds.Width * ScaleX),
+                (int)(designBounds.Height * ScaleY));
+
+            // Get shape type from Question strap (or default to Classic)
+            string shapeType = _activeTheme.Straps
+                ?.FirstOrDefault(s => s.StrapType == "Question")
+                ?.SvgShape ?? "Classic";
+
+            // Render SVG money tree ladder
+            _svgMoneyTreeRenderer.RenderMoneyTreeToGraphics(
+                g,
+                moneyTree,
+                scaledBounds,
+                _currentMoneyTreeLevel,
+                settings.SafetyNet1,
+                settings.SafetyNet2,
+                _currentGameMode == GameMode.Risk,
+                _useSafetyNetAltGraphic,
+                shapeType,
+                _isSafetyNetFlashing);
+
+            // Draw money values and question numbers
+            DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+        }
+        else
+        {
+            // Fallback: PNG textures
+            var treeBase = TextureManager.GetTexture(TextureManager.ElementType.MoneyTreeBase, CurrentTextureSet);
+            var treePosition = _useSafetyNetAltGraphic 
+                ? TextureManager.Instance.GetMoneyTreePositionLockAlt(_currentMoneyTreeLevel)
+                : TextureManager.Instance.GetMoneyTreePosition(_currentMoneyTreeLevel);
+
+            if (treeBase == null) return;
+
+            DrawScaledImage(g, treeBase, treeX, treeY, treeWidth, treeHeight);
+
+            if (treePosition != null && _currentMoneyTreeLevel > 0)
+            {
+                float scale = treeHeight / 720f;
+                float overlayX = treeX + (165 * scale);
+                float overlayY = treeY + (100 * scale);
+                float overlayWidth = 399 * scale;
+                float overlayHeight = 599 * scale;
+                
+                DrawScaledImage(g, treePosition, overlayX, overlayY, overlayWidth, overlayHeight);
+            }
+
+            DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
+        }
     }
 
     private void DrawMoneyTreeText(System.Drawing.Graphics g, float baseX, float baseY, float width, float height)
     {
         var settings = _moneyTreeService!.Settings;
+        var moneyTree = _activeTheme?.MoneyTree;
         
-        // VB.NET Y positions for text (in original 720px height)
-        int[] originalYPositions = new int[]
-        {
-            0,   // Placeholder for index 0 (not used)
-            662, // Level 1
-            622, // Level 2
-            582, // Level 3
-            542, // Level 4
-            502, // Level 5
-            462, // Level 6
-            422, // Level 7
-            382, // Level 8
-            342, // Level 9
-            302, // Level 10
-            262, // Level 11
-            222, // Level 12
-            182, // Level 13
-            142, // Level 14
-            102  // Level 15
-        };
+        // Calculate level dimensions to match renderer
+        const int levelCount = 15;
+        float levelHeight = height / (float)levelCount;
         
-        // VB.NET X positions in original 1280x720 canvas
-        // money_pos_X = 910, qno_pos_X = 855 (levels 1-9) or 832 (levels 10-15)
-        // After cropping 650px from left: money_pos_X = 260, qno_pos_X = 205 or 182
-        
-        // Scale factor for current tree size vs original cropped 630x720
-        float scale = height / 720f;
+        // Font: Use theme font if available, otherwise fallback
+        string fontFamily = moneyTree?.FontFamily ?? "Copperplate Gothic Bold";
+        float baseFontSize = (moneyTree?.FontSize ?? 18);
+        // Use non-bold font for money tree text for improved readability
+        FontStyle fontStyle = FontStyle.Regular;
         
         for (int level = 15; level >= 1; level--) // Draw from top (15) to bottom (1)
         {
-            float y = baseY + (originalYPositions[level] * scale);
+            // Calculate Y position to match renderer (level 1 at bottom)
+            float levelY = baseY + height - (level * levelHeight);
+            float yCenter = levelY + (levelHeight / 2f);
             
-            // X position for question number (adjusted for crop)
-            float qnoX = baseX + ((level >= 10 ? 182 : 205) * scale);
-            // X position for money value (adjusted for crop)
-            float moneyX = baseX + (260 * scale);
+            // X positions - use proportions of available width to match TV layout
+            float qnoX = baseX + (width * 0.2786f);
+            if (level >= 10) qnoX = baseX + (width * 0.252f);
+            // X position for money value
+            float moneyX = baseX + (width * 0.4275f);
             
-            // Determine text color
+            // Determine text color based on level state
             Color textColor;
             if (level == _currentMoneyTreeLevel)
             {
-                // Current level - use white text if showing alternate lock-in graphic, black otherwise
-                textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                // Current level - use theme ActiveColor if available
+                if (moneyTree != null)
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.ActiveColor);
+                }
+                else
+                {
+                    textColor = _useSafetyNetAltGraphic ? Color.White : Color.Black;
+                }
             }
             else if (level == 15)
             {
@@ -399,12 +574,10 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
             }
             else if (level == 5 || level == 10)
             {
-                // Q5 and Q10 are white only if they're enabled as safety nets
                 bool isQ5Enabled = (settings.SafetyNet1 == 5 || settings.SafetyNet2 == 5);
                 bool isQ10Enabled = (settings.SafetyNet1 == 10 || settings.SafetyNet2 == 10);
                 bool isRiskMode = _currentGameMode == GameMode.Risk;
                 
-                // White only if safety net is enabled AND not in Risk Mode
                 if (level == 5)
                     textColor = (isQ5Enabled && !isRiskMode) ? Color.White : Color.Gold;
                 else // level == 10
@@ -412,23 +585,37 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
             }
             else if (level == settings.SafetyNet1 || level == settings.SafetyNet2)
             {
-                // Custom safety nets (not Q5/Q10) - white only if not in Risk Mode
-                textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                // Custom safety nets - use theme SafeHavenColor or fallback
+                if (moneyTree != null && !(_currentGameMode == GameMode.Risk))
+                {
+                    textColor = ColorTranslator.FromHtml(moneyTree.SafeHavenColor);
+                }
+                else
+                {
+                    textColor = (_currentGameMode == GameMode.Risk) ? Color.Gold : Color.White;
+                }
             }
             else
             {
-                textColor = Color.Gold; // Regular levels
+                // Regular levels - use theme InactiveColor or Gold fallback
+                textColor = moneyTree != null ? ColorTranslator.FromHtml(moneyTree.InactiveColor) : Color.Gold;
             }
             
-            using var font = new Font("Copperplate Gothic Bold", 24 * scale, FontStyle.Bold);
-            using var brush = new SolidBrush(textColor);
+            using var font = new Font(fontFamily, baseFontSize, fontStyle);
+            using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
             
-            // Draw question number
-            DrawScaledText(g, level.ToString(), font, brush, qnoX, y, 100, 100, null);
-            
-            // Draw money amount
+            // Compute design Y and height to center text on rung using row center
+            float designY = yCenter - (levelHeight / 2f);
+            float designHeight = levelHeight;
+
+            // No per-form inset: centering is handled by DrawScaledTextWithOutline using typographic measurement
+
+            // Draw question number with outline (centered vertically on rung)
+            DrawScaledTextWithOutline(g, level.ToString(), font, textColor, qnoX, designY, 100, designHeight, format, 2);
+
+            // Draw money amount with outline (centered vertically on rung)
             string formattedMoney = _moneyTreeService.GetFormattedValue(level);
-            DrawScaledText(g, formattedMoney, font, brush, moneyX, y, 350, 100, null);
+            DrawScaledTextWithOutline(g, formattedMoney, font, textColor, moneyX, designY, 350, designHeight, format, 2);
         }
     }
 

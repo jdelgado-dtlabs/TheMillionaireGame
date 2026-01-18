@@ -90,14 +90,21 @@ public class ApplicationSettings
 public class ApplicationSettingsManager
 {
     private readonly ApplicationSettingsRepository _repository;
+    private readonly string _connectionString;
 
     public ApplicationSettings Settings { get; private set; }
+    
+    /// <summary>
+    /// Gets the database connection string
+    /// </summary>
+    public string ConnectionString => _connectionString;
 
     public ApplicationSettingsManager(string connectionString)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Connection string cannot be null or empty", nameof(connectionString));
-            
+        
+        _connectionString = connectionString;
         _repository = new ApplicationSettingsRepository(connectionString);
         Settings = new ApplicationSettings();
     }

@@ -416,9 +416,18 @@ public class PreviewPanel : Panel
         else
         {
             // Schedule a delayed update if not already scheduled
-            if (!_throttleTimer!.Enabled)
+            if (_throttleTimer == null)
             {
-                _throttleTimer.Start();
+                // No throttle timer available (panel disposed or not initialized) — update immediately
+                _lastCacheUpdate = now;
+                Invalidate();
+            }
+            else
+            {
+                if (!_throttleTimer.Enabled)
+                {
+                    _throttleTimer.Start();
+                }
             }
         }
     }

@@ -72,17 +72,22 @@ public partial class FFFOnlinePanel : UserControl
         // Stop audio on control disposal
         this.Disposed += FFFOnlinePanel_Disposed;
         
-        // Auto-refresh participants when control becomes visible
+        // Auto-refresh participants and load questions when control becomes visible
         this.VisibleChanged += async (s, e) =>
         {
             if (this.Visible)
             {
+                await LoadQuestionsAsync();
                 await RefreshParticipantsAsync();
             }
         };
         
         // Initialize UI state when control is fully loaded
-        this.Load += (s, e) => UpdateUIState();
+        this.Load += async (s, e) =>
+        {
+            await LoadQuestionsAsync();
+            UpdateUIState();
+        };
         
         // Also try immediately after InitializeComponent
         UpdateUIState();
