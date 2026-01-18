@@ -7,7 +7,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for telemetry data persistence in SQL Server
 /// </summary>
-public class TelemetryRepository : BaseRepository
+public class TelemetryRepository : BaseRepository, ITelemetryRepository
 {
     public TelemetryRepository(string connectionString) : base(connectionString)
     {

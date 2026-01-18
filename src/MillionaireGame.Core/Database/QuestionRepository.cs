@@ -7,7 +7,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing questions in the database
 /// </summary>
-public class QuestionRepository : BaseRepository
+public class QuestionRepository : BaseRepository, IQuestionRepository
 {
     public QuestionRepository(string connectionString) : base(connectionString)
     {

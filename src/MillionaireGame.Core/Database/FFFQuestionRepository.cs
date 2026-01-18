@@ -7,7 +7,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing Fastest Finger First questions in the database
 /// </summary>
-public class FFFQuestionRepository : BaseRepository
+public class FFFQuestionRepository : BaseRepository, IFFFQuestionRepository
 {
     public FFFQuestionRepository(string connectionString) : base(connectionString)
     {

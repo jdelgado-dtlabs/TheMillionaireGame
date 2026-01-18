@@ -6,7 +6,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemePack data in the database
 /// </summary>
-public class ThemePackRepository : BaseRepository
+public class ThemePackRepository : BaseRepository, IThemePackRepository
 {
     public ThemePackRepository(string connectionString) : base(connectionString)
     {

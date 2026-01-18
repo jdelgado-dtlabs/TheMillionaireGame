@@ -6,7 +6,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemeBackground data in the database
 /// </summary>
-public class ThemeBackgroundRepository : BaseRepository
+public class ThemeBackgroundRepository : BaseRepository, IThemeBackgroundRepository
 {
     public ThemeBackgroundRepository(string connectionString) : base(connectionString)
     {

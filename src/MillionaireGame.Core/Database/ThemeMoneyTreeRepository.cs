@@ -6,7 +6,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemeMoneyTree data in the database
 /// </summary>
-public class ThemeMoneyTreeRepository : BaseRepository
+public class ThemeMoneyTreeRepository : BaseRepository, IThemeMoneyTreeRepository
 {
     public ThemeMoneyTreeRepository(string connectionString) : base(connectionString)
     {
