@@ -29,6 +29,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
     private SvgMoneyTreeRenderer? _svgMoneyTreeRenderer; // SVG money tree renderer
     private bool _useSafetyNetAltGraphic = false; // Track if we should use alternate lock-in graphic
+    private bool _isSafetyNetFlashing = false; // True while safety net flash animation is active
     private GameMode _currentGameMode = GameMode.Normal; // Track current game mode for money tree rendering
     
     /// <summary>
@@ -148,6 +149,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         _currentMoneyTreeLevel = level;
         _currentGameMode = mode; // Store game mode for rendering
         _useSafetyNetAltGraphic = false; // Reset to normal graphic
+        _isSafetyNetFlashing = false; // Not flashing anymore
         Refresh(); // Force immediate redraw to update money tree
     }
     
@@ -158,6 +160,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
     {
         _currentMoneyTreeLevel = safetyNetLevel;
         _useSafetyNetAltGraphic = flashState; // true = use alternate graphic, false = use regular
+        _isSafetyNetFlashing = true; // We're in flashing mode while this method is called repeatedly
         Invalidate(); // Redraw to show flash state
     }
 
@@ -453,6 +456,11 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 (int)(designBounds.Width * ScaleX),
                 (int)(designBounds.Height * ScaleY));
 
+            // Get shape type from Question strap (or default to Classic)
+            string shapeType = _activeTheme.Straps
+                ?.FirstOrDefault(s => s.StrapType == "Question")
+                ?.SvgShape ?? "Classic";
+
             // Render SVG money tree ladder
             _svgMoneyTreeRenderer.RenderMoneyTreeToGraphics(
                 g,
@@ -462,7 +470,9 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                 settings.SafetyNet1,
                 settings.SafetyNet2,
                 _currentGameMode == GameMode.Risk,
-                _useSafetyNetAltGraphic);
+                _useSafetyNetAltGraphic,
+                shapeType,
+                _isSafetyNetFlashing);
 
             // Draw money values and question numbers
             DrawMoneyTreeText(g, treeX, treeY, treeWidth, treeHeight);
@@ -499,43 +509,28 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         var settings = _moneyTreeService!.Settings;
         var moneyTree = _activeTheme?.MoneyTree;
         
-        // VB.NET Y positions for text (in original 720px height)
-        int[] originalYPositions = new int[]
-        {
-            0,   // Placeholder for index 0 (not used)
-            662, // Level 1
-            622, // Level 2
-            582, // Level 3
-            542, // Level 4
-            502, // Level 5
-            462, // Level 6
-            422, // Level 7
-            382, // Level 8
-            342, // Level 9
-            302, // Level 10
-            262, // Level 11
-            222, // Level 12
-            182, // Level 13
-            142, // Level 14
-            102  // Level 15
-        };
-        
-        // Scale factor for current tree size vs original cropped 630x720
-        float scale = height / 720f;
+        // Calculate level dimensions to match renderer
+        const int levelCount = 15;
+        float levelHeight = height / (float)levelCount;
+        float leftMargin = 20;
         
         // Font: Use theme font if available, otherwise fallback
         string fontFamily = moneyTree?.FontFamily ?? "Copperplate Gothic Bold";
-        float baseFontSize = (moneyTree?.FontSize ?? 24) * scale;
-        FontStyle fontStyle = (moneyTree?.FontBold ?? true) ? FontStyle.Bold : FontStyle.Regular;
+        float baseFontSize = (moneyTree?.FontSize ?? 18);
+        // Use non-bold font for money tree text for improved readability
+        FontStyle fontStyle = FontStyle.Regular;
         
         for (int level = 15; level >= 1; level--) // Draw from top (15) to bottom (1)
         {
-            float y = baseY + (originalYPositions[level] * scale);
+            // Calculate Y position to match renderer (level 1 at bottom)
+            float levelY = baseY + height - (level * levelHeight);
+            float yCenter = levelY + (levelHeight / 2f);
             
-            // X position for question number (adjusted for crop)
-            float qnoX = baseX + ((level >= 10 ? 182 : 205) * scale);
-            // X position for money value (adjusted for crop)
-            float moneyX = baseX + (260 * scale);
+            // X positions - use proportions of available width to match TV layout
+            float qnoX = baseX + (width * 0.2786f);
+            if (level >= 10) qnoX = baseX + (width * 0.252f);
+            // X position for money value
+            float moneyX = baseX + (width * 0.4275f);
             
             // Determine text color based on level state
             Color textColor;
@@ -585,14 +580,20 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
             }
             
             using var font = new Font(fontFamily, baseFontSize, fontStyle);
-            using var format = new StringFormat { Alignment = StringAlignment.Near };
+            using var format = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
             
-            // Draw question number with outline
-            DrawScaledTextWithOutline(g, level.ToString(), font, textColor, qnoX, y, 100, 100, format, 2);
-            
-            // Draw money amount with outline
+            // Compute design Y and height to center text on rung using row center
+            float designY = yCenter - (levelHeight / 2f);
+            float designHeight = levelHeight;
+
+            // No per-form inset: centering is handled by DrawScaledTextWithOutline using typographic measurement
+
+            // Draw question number with outline (centered vertically on rung)
+            DrawScaledTextWithOutline(g, level.ToString(), font, textColor, qnoX, designY, 100, designHeight, format, 2);
+
+            // Draw money amount with outline (centered vertically on rung)
             string formattedMoney = _moneyTreeService.GetFormattedValue(level);
-            DrawScaledTextWithOutline(g, formattedMoney, font, textColor, moneyX, y, 350, 100, format, 2);
+            DrawScaledTextWithOutline(g, formattedMoney, font, textColor, moneyX, designY, 350, designHeight, format, 2);
         }
     }
 

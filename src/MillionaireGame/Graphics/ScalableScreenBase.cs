@@ -181,27 +181,59 @@ public abstract class ScalableScreenBase : Form
         using var scaledFont = new Font(baseFont.FontFamily, scaledFontSize, baseFont.Style, baseFont.Unit);
         
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-
-        // Draw black outline by drawing text at offsets
-        using var outlineBrush = new SolidBrush(Color.Black);
-        for (int x = -outlineWidth; x <= outlineWidth; x++)
+        // Measure actual text bounds to compute a pixel-accurate vertical center
+        RectangleF shiftedRect = destRect;
+        // Use the drawing format if provided, otherwise use typographic for measurement/drawing
+        var drawFormat = (StringFormat)(format != null ? (StringFormat)format.Clone() : (StringFormat)StringFormat.GenericTypographic.Clone());
+        try
         {
-            for (int y = -outlineWidth; y <= outlineWidth; y++)
+            // Ensure we can measure character ranges and include trailing spaces
+            drawFormat.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
+
+            var ranges = new CharacterRange[] { new CharacterRange(0, Math.Max(1, text.Length)) };
+            drawFormat.SetMeasurableCharacterRanges(ranges);
+
+            var regions = g.MeasureCharacterRanges(text, scaledFont, destRect, drawFormat);
+            if (regions != null && regions.Length > 0)
             {
-                if (x == 0 && y == 0) continue; // Skip center (we'll draw that last)
-                
+                var textBounds = regions[0].GetBounds(g);
+                // Compute center offsets
+                float destCenterY = destRect.Y + (destRect.Height / 2f);
+                float textCenterY = textBounds.Y + (textBounds.Height / 2f);
+                float centerOffset = destCenterY - textCenterY;
+
+                // Apply offset to the drawing rect
+                shiftedRect = new RectangleF(destRect.X, destRect.Y + centerOffset, destRect.Width, destRect.Height);
+            }
+        }
+        catch
+        {
+            // Fall back to using destRect if measurement fails
+            shiftedRect = destRect;
+        }
+
+        // Draw black outline by drawing text at offsets around the measured center
+        using var outlineBrush = new SolidBrush(Color.Black);
+        for (int ox = -outlineWidth; ox <= outlineWidth; ox++)
+        {
+            for (int oy = -outlineWidth; oy <= outlineWidth; oy++)
+            {
+                if (ox == 0 && oy == 0) continue; // Skip center (we'll draw that last)
+
                 var outlineRect = new RectangleF(
-                    destRect.X + x,
-                    destRect.Y + y,
-                    destRect.Width,
-                    destRect.Height);
-                g.DrawString(text, scaledFont, outlineBrush, outlineRect, format);
+                    shiftedRect.X + ox,
+                    shiftedRect.Y + oy,
+                    shiftedRect.Width,
+                    shiftedRect.Height);
+                g.DrawString(text, scaledFont, outlineBrush, outlineRect, drawFormat);
             }
         }
 
         // Draw main text on top
         using var textBrush = new SolidBrush(textColor);
-        g.DrawString(text, scaledFont, textBrush, destRect, format);
+        g.DrawString(text, scaledFont, textBrush, shiftedRect, drawFormat);
+
+        drawFormat.Dispose();
     }
 
     /// <summary>
