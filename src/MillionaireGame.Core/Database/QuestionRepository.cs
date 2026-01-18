@@ -7,13 +7,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing questions in the database
 /// </summary>
-public class QuestionRepository
+public class QuestionRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public QuestionRepository(string connectionString)
+    public QuestionRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString;
     }
 
     /// <summary>
@@ -22,8 +19,7 @@ public class QuestionRepository
     /// </summary>
     public async Task<Question?> GetRandomQuestionAsync(int questionNumber)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         // Map game question number (1-15) to database level (1-4)
         int dbLevel = questionNumber switch
@@ -58,8 +54,7 @@ public class QuestionRepository
     /// </summary>
     public async Task MarkQuestionAsUsedAsync(int questionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "UPDATE questions SET Used = 1 WHERE Id = @Id";
         using var command = new SqlCommand(query, connection);
@@ -75,8 +70,7 @@ public class QuestionRepository
     {
         var questions = new List<Question>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "SELECT * FROM questions ORDER BY Level, Id";
         using var command = new SqlCommand(query, connection);
@@ -95,8 +89,7 @@ public class QuestionRepository
     /// </summary>
     public async Task<int> AddQuestionAsync(Question question)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = @"
             INSERT INTO questions 
@@ -124,8 +117,7 @@ public class QuestionRepository
     /// </summary>
     public async Task UpdateQuestionAsync(Question question)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = @"
             UPDATE questions SET
@@ -158,8 +150,7 @@ public class QuestionRepository
     /// </summary>
     public async Task DeleteQuestionAsync(int questionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "DELETE FROM questions WHERE Id = @Id";
         using var command = new SqlCommand(query, connection);
@@ -173,8 +164,7 @@ public class QuestionRepository
     /// </summary>
     public async Task ResetAllQuestionsAsync()
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "UPDATE questions SET Used = 0";
         using var command = new SqlCommand(query, connection);
@@ -187,8 +177,7 @@ public class QuestionRepository
     /// </summary>
     public async Task<(int total, int unused)> GetQuestionCountAsync(int questionNumber)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         // Map game question number (1-15) to database level (1-4)
         int dbLevel = questionNumber switch

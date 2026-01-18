@@ -6,13 +6,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemeMoneyTree data in the database
 /// </summary>
-public class ThemeMoneyTreeRepository
+public class ThemeMoneyTreeRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ThemeMoneyTreeRepository(string connectionString)
+    public ThemeMoneyTreeRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
@@ -22,8 +19,7 @@ public class ThemeMoneyTreeRepository
     {
         const string query = "SELECT * FROM ThemeMoneyTree WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         using var reader = await command.ExecuteReaderAsync();
@@ -63,8 +59,7 @@ public class ThemeMoneyTreeRepository
     {
         const string query = "DELETE FROM ThemeMoneyTree WHERE ThemeMoneyTreeId = @MoneyTreeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@MoneyTreeId", moneyTreeId);
         await command.ExecuteNonQueryAsync();
@@ -77,8 +72,7 @@ public class ThemeMoneyTreeRepository
     {
         const string query = "DELETE FROM ThemeMoneyTree WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         await command.ExecuteNonQueryAsync();
@@ -101,8 +95,7 @@ public class ThemeMoneyTreeRepository
             );
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         AddMoneyTreeParameters(command, moneyTree);
@@ -129,8 +122,7 @@ public class ThemeMoneyTreeRepository
                 FontBold = @FontBold
             WHERE ThemeMoneyTreeId = @MoneyTreeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@MoneyTreeId", moneyTree.ThemeMoneyTreeId);

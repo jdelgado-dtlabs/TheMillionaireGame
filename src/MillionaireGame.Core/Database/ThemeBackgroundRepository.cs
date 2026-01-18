@@ -6,13 +6,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemeBackground data in the database
 /// </summary>
-public class ThemeBackgroundRepository
+public class ThemeBackgroundRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ThemeBackgroundRepository(string connectionString)
+    public ThemeBackgroundRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
@@ -23,8 +20,7 @@ public class ThemeBackgroundRepository
         const string query = "SELECT * FROM ThemeBackgrounds WHERE ThemeId = @ThemeId ORDER BY ComponentType";
         var backgrounds = new List<ThemeBackground>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         using var reader = await command.ExecuteReaderAsync();
@@ -44,8 +40,7 @@ public class ThemeBackgroundRepository
     {
         const string query = "SELECT * FROM ThemeBackgrounds WHERE ThemeId = @ThemeId AND ComponentType = @ComponentType";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         command.Parameters.AddWithValue("@ComponentType", componentType);
@@ -82,8 +77,7 @@ public class ThemeBackgroundRepository
     {
         const string query = "DELETE FROM ThemeBackgrounds WHERE ThemeBackgroundId = @BackgroundId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@BackgroundId", backgroundId);
         await command.ExecuteNonQueryAsync();
@@ -96,8 +90,7 @@ public class ThemeBackgroundRepository
     {
         const string query = "DELETE FROM ThemeBackgrounds WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         await command.ExecuteNonQueryAsync();
@@ -112,8 +105,7 @@ public class ThemeBackgroundRepository
                     @ScaleMode, @PositionX, @PositionY, @Transparency);
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@ThemeId", background.ThemeId);
@@ -146,8 +138,7 @@ public class ThemeBackgroundRepository
                 Transparency = @Transparency
             WHERE ThemeBackgroundId = @BackgroundId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@BackgroundId", background.ThemeBackgroundId);

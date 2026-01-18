@@ -7,13 +7,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for telemetry data persistence in SQL Server
 /// </summary>
-public class TelemetryRepository
+public class TelemetryRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public TelemetryRepository(string connectionString)
+    public TelemetryRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     #region GameSessions
@@ -23,8 +20,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task SaveGameSessionAsync(GameTelemetry gameTelemetry)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             IF EXISTS (SELECT 1 FROM GameSessions WHERE SessionId = @SessionId)
@@ -57,8 +53,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task UpdateGameSessionEndTimeAsync(string sessionId, DateTime endTime)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             UPDATE GameSessions 
@@ -80,8 +75,7 @@ public class TelemetryRepository
     {
         var sessions = new List<GameSessionSummary>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT SessionId, GameStartTime, GameEndTime, Currency1Name, Currency2Name
@@ -113,8 +107,7 @@ public class TelemetryRepository
     {
         var sessions = new List<GameSessionSummary>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT SessionId, GameStartTime, GameEndTime, Currency1Name, Currency2Name
@@ -149,8 +142,7 @@ public class TelemetryRepository
     {
         var dates = new List<DateTime>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT DISTINCT CAST(GameStartTime AS DATE) AS SessionDate
@@ -175,8 +167,7 @@ public class TelemetryRepository
     {
         var sessionIds = new List<string>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT SessionId
@@ -199,8 +190,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task<GameTelemetry> GetGameSessionWithRoundsAsync(string sessionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         // Get session
         const string sessionSql = @"
@@ -322,8 +312,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task SaveGameRoundAsync(string sessionId, RoundTelemetry roundTelemetry)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             INSERT INTO GameRounds (SessionId, RoundNumber, StartTime, EndTime, Outcome, 
@@ -352,8 +341,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task UpdateGameRoundAsync(string sessionId, RoundTelemetry roundTelemetry)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             UPDATE GameRounds 
@@ -385,8 +373,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task SaveLifelineUsageAsync(string sessionId, int roundId, int lifelineType, int questionNumber, string? metadata = null)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             INSERT INTO LifelineUsages (GameSessionId, RoundId, LifelineType, QuestionNumber, Metadata)
@@ -409,8 +396,7 @@ public class TelemetryRepository
     {
         var usages = new List<LifelineUsageData>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT RoundId, LifelineType, QuestionNumber, Metadata
@@ -460,8 +446,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task<int> GetParticipantCountForSessionAsync(string sessionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         return await GetParticipantCountForSessionAsync(connection, sessionId);
     }
 
@@ -472,8 +457,7 @@ public class TelemetryRepository
     {
         var stats = new Dictionary<string, int>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT DeviceType, COUNT(*) as Count
@@ -501,8 +485,7 @@ public class TelemetryRepository
     {
         var stats = new Dictionary<string, int>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT BrowserType, COUNT(*) as Count
@@ -528,8 +511,7 @@ public class TelemetryRepository
     /// </summary>
     public async Task<FFFStatsData> GetFFFStatsForSessionAsync(string sessionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT 
@@ -564,8 +546,7 @@ public class TelemetryRepository
     {
         var stats = new Dictionary<string, int>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         const string sql = @"
             SELECT SelectedOption, COUNT(*) as Count
