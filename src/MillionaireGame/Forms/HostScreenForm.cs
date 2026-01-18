@@ -7,7 +7,6 @@ using MillionaireGame.Core.Graphics;
 using MillionaireGame.Utilities;
 using MillionaireGame.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
-using MillionaireGame.Utilities;
 
 namespace MillionaireGame.Forms;
 
@@ -125,7 +124,7 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
                         _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                         _svgStrapRenderer = new SvgStrapRenderer();
                         _svgMoneyTreeRenderer = new SvgMoneyTreeRenderer();
-                        GameConsole.Info($"[HostScreenForm] Theme '{_activeTheme.Theme.ThemeName}' loaded for strap and money tree rendering");
+                        GameConsole.Info($"[HostScreenForm] Theme '{_activeTheme?.Theme?.ThemeName ?? "Unknown"}' loaded for strap and money tree rendering");
                         Invalidate(); // Redraw with themed straps
                     }
                 }
@@ -512,7 +511,6 @@ public class HostScreenForm : ScalableScreenBase, IGameScreen
         // Calculate level dimensions to match renderer
         const int levelCount = 15;
         float levelHeight = height / (float)levelCount;
-        float leftMargin = 20;
         
         // Font: Use theme font if available, otherwise fallback
         string fontFamily = moneyTree?.FontFamily ?? "Copperplate Gothic Bold";

@@ -1851,7 +1851,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                         _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
                         _svgStrapRenderer ??= new SvgStrapRenderer();
                         _svgMoneyTreeRenderer ??= new SvgMoneyTreeRenderer();
-                        GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme.Theme.ThemeName}' reloaded");
+                        GameConsole.Info($"[TVScreenForm] Theme '{_activeTheme?.Theme?.ThemeName ?? "Unknown"}' reloaded");
                     }
                     else
                     {

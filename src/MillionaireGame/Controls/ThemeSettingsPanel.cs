@@ -14,7 +14,7 @@ public partial class ThemeSettingsPanel : UserControl
     private readonly SvgStrapRenderer _renderer;
     private List<Theme> _allThemes = new();
     private Theme? _selectedTheme;
-    private bool _isLoading;
+    
 
     public event EventHandler? ThemeChanged;
     public event EventHandler? SettingsChanged;
@@ -45,7 +45,7 @@ public partial class ThemeSettingsPanel : UserControl
         btnDeleteTheme.Click += BtnDeleteTheme_Click;
         btnImportPack.Click += BtnImportPack_Click;
         btnExportTheme.Click += BtnExportTheme_Click;
-        btnRefresh.Click += (s, e) => LoadThemesAsync();
+        btnRefresh.Click += async (s, e) => await LoadThemesAsync();
     }
 
     /// <summary>
@@ -53,7 +53,6 @@ public partial class ThemeSettingsPanel : UserControl
     /// </summary>
     public async Task LoadSettingsAsync()
     {
-        _isLoading = true;
         try
         {
             await _themeService.LoadActiveThemeAsync();
@@ -61,7 +60,6 @@ public partial class ThemeSettingsPanel : UserControl
         }
         finally
         {
-            _isLoading = false;
         }
     }
 
@@ -78,8 +76,8 @@ public partial class ThemeSettingsPanel : UserControl
             
             foreach (var theme in _allThemes.OrderBy(t => t.ThemeType).ThenBy(t => t.ThemeName))
             {
-                var item = new ListViewItem(theme.ThemeName);
-                item.SubItems.Add(theme.ThemeType);
+                var item = new ListViewItem(theme.ThemeName ?? "Unknown");
+                item.SubItems.Add(theme.ThemeType ?? "Unknown");
                 item.SubItems.Add(theme.Author ?? "Unknown");
                 item.Tag = theme;
                 
@@ -97,8 +95,8 @@ public partial class ThemeSettingsPanel : UserControl
             var activeTheme = _allThemes.FirstOrDefault(t => t.IsActive);
             if (activeTheme != null)
             {
-                var activeItem = lstThemes.Items.Cast<ListViewItem>()
-                    .FirstOrDefault(i => ((Theme)i.Tag).ThemeId == activeTheme.ThemeId);
+                    var activeItem = lstThemes.Items.Cast<ListViewItem>()
+                        .FirstOrDefault(i => (i.Tag as Theme)?.ThemeId == activeTheme.ThemeId);
                 if (activeItem != null)
                 {
                     activeItem.Selected = true;
@@ -124,9 +122,11 @@ public partial class ThemeSettingsPanel : UserControl
             UpdateButtons();
             return;
         }
-
-        _selectedTheme = (Theme)lstThemes.SelectedItems[0].Tag;
-        await LoadThemePreviewAsync(_selectedTheme.ThemeId);
+        _selectedTheme = lstThemes.SelectedItems[0].Tag as Theme;
+        if (_selectedTheme != null)
+        {
+            await LoadThemePreviewAsync(_selectedTheme.ThemeId);
+        }
         UpdateButtons();
     }
 
@@ -191,8 +191,8 @@ public partial class ThemeSettingsPanel : UserControl
     private void DisplayThemeDetails(CompleteTheme theme)
     {
         var details = new System.Text.StringBuilder();
-        details.AppendLine($"Theme: {theme.Theme.ThemeName}");
-        details.AppendLine($"Type: {theme.Theme.ThemeType}");
+        details.AppendLine($"Theme: {theme.Theme.ThemeName ?? "Unknown"}");
+        details.AppendLine($"Type: {theme.Theme.ThemeType ?? "Unknown"}");
         details.AppendLine($"Author: {theme.Theme.Author ?? "Unknown"}");
         details.AppendLine($"Version: {theme.Theme.Version ?? "1.0.0"}");
         details.AppendLine($"Description: {theme.Theme.Description ?? "No description"}");
@@ -423,6 +423,7 @@ public partial class ThemeSettingsPanel : UserControl
             _themeService?.Dispose();
             _renderer?.Dispose();
             picPreview.Image?.Dispose();
+            components?.Dispose();
         }
         base.Dispose(disposing);
     }

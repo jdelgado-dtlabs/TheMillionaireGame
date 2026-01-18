@@ -2052,7 +2052,16 @@ public partial class OptionsDialog : Form
     {
         GameConsole.Info("[OptionsDialog] Theme changed, refreshing UI");
         _hasChanges = true;
-        // In the future, this could trigger preview updates
+        // Trigger a global UI refresh so all screens (Host/Guest/TV) reload visuals immediately
+        try
+        {
+            var screenService = Program.ServiceProvider?.GetService<ScreenUpdateService>();
+            screenService?.TriggerGeneralUpdate();
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Warn($"[OptionsDialog] Failed to trigger screen refresh: {ex.Message}");
+        }
     }
     
     private void InitializeMoneyTreeTab()
