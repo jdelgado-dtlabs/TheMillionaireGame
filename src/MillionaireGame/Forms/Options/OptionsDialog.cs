@@ -2056,6 +2056,9 @@ public partial class OptionsDialog : Form
         try
         {
             var screenService = Program.ServiceProvider?.GetService<ScreenUpdateService>();
+            // Ensure theme backgrounds are refreshed on all screens (TV/Host/Guest)
+            screenService?.RefreshThemes();
+            // Then trigger a general update so registered screens redraw immediately
             screenService?.TriggerGeneralUpdate();
         }
         catch (Exception ex)

@@ -271,6 +271,67 @@ public class ThemeService : IDisposable
     }
 
     /// <summary>
+    /// Create a dark/black variant of an existing theme by name.
+    /// Duplicates the source theme and then adjusts strap and money-tree colors
+    /// to a grey/black palette similar to legacy PNG straps.
+    /// </summary>
+    public async Task<int> CreateClassicBlackVariantAsync(string sourceThemeName, string newThemeName)
+    {
+        if (string.IsNullOrWhiteSpace(sourceThemeName))
+            throw new ArgumentException("Source theme name required", nameof(sourceThemeName));
+
+        if (string.IsNullOrWhiteSpace(newThemeName))
+            throw new ArgumentException("New theme name required", nameof(newThemeName));
+
+        // Find source by name
+        var all = await GetAllThemesAsync();
+        var source = all.FirstOrDefault(t => string.Equals(t.ThemeName, sourceThemeName, StringComparison.OrdinalIgnoreCase));
+        if (source == null)
+            throw new InvalidOperationException($"Source theme not found: {sourceThemeName}");
+
+        // Ensure new theme doesn't already exist
+        if (await _themeRepository.ThemeExistsAsync(newThemeName))
+            throw new InvalidOperationException($"Theme already exists: {newThemeName}");
+
+        // Duplicate as a Preset so it appears with other presets
+        var newThemeId = await DuplicateThemeAsync(source.ThemeId, newThemeName, "Preset");
+
+        // Load the duplicated complete theme and modify colors
+        var complete = await GetCompleteThemeAsync(newThemeId);
+        if (complete == null)
+            throw new InvalidOperationException("Failed to load duplicated theme");
+
+        // Apply grey/black palette to straps
+        foreach (var strap in complete.Straps)
+        {
+            strap.PrimaryColor = "#1f1f1f"; // dark grey
+            strap.SecondaryColor = "#4b4b4b"; // lighter grey for gradient
+            strap.GradientEnabled = true;
+            strap.GradientAngle = 90;
+            strap.BorderEnabled = true;
+            strap.BorderColor = "#000000";
+            strap.BorderWidth = Math.Max(1, strap.BorderWidth);
+            // Preserve font settings but ensure font color is light for contrast
+            strap.FontColor = "#FFFFFF";
+        }
+
+        // Update money tree colors if present
+        if (complete.MoneyTree != null)
+        {
+            complete.MoneyTree.InactiveColor = "#2b2b2b";
+            complete.MoneyTree.ActiveColor = "#3f3f3f";
+            complete.MoneyTree.CompletedColor = "#ffffff";
+            complete.MoneyTree.SafeHavenColor = "#666666";
+            complete.MoneyTree.HighlightColor = "#FFD700"; // keep gold highlight for readability
+        }
+
+        // Save changes
+        await SaveCompleteThemeAsync(complete);
+
+        return newThemeId;
+    }
+
+    /// <summary>
     /// Validate theme data
     /// </summary>
     private void ValidateTheme(CompleteTheme theme)

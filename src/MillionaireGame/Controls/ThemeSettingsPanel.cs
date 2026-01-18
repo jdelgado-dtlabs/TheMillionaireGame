@@ -46,6 +46,16 @@ public partial class ThemeSettingsPanel : UserControl
         btnImportPack.Click += BtnImportPack_Click;
         btnExportTheme.Click += BtnExportTheme_Click;
         btnRefresh.Click += async (s, e) => await LoadThemesAsync();
+        
+        // Add Create Classic Black button (programmatic — avoids designer changes)
+        var btnCreateClassicBlack = new Button
+        {
+            Text = "Create Classic Black",
+            AutoSize = true,
+            Location = new Point(10, lstThemes.Bottom + 8)
+        };
+        btnCreateClassicBlack.Click += BtnCreateClassicBlack_Click;
+        Controls.Add(btnCreateClassicBlack);
     }
 
     /// <summary>
@@ -282,6 +292,31 @@ public partial class ThemeSettingsPanel : UserControl
             GameConsole.Error($"[ThemeSettingsPanel] Failed to duplicate theme: {ex.Message}");
             MessageBox.Show($"Failed to duplicate theme: {ex.Message}", "Error", 
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void BtnCreateClassicBlack_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            // Prevent duplicate creation
+            var existing = _allThemes.FirstOrDefault(t => string.Equals(t.ThemeName, "Classic Black", StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                MessageBox.Show("Classic Black already exists.", "Create Theme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var newId = await _themeService.CreateClassicBlackVariantAsync("Classic Gold", "Classic Black");
+            GameConsole.Info($"[ThemeSettingsPanel] Created Classic Black theme (ID: {newId})");
+            MessageBox.Show("Classic Black theme created.", "Create Theme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            await LoadThemesAsync();
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to create Classic Black: {ex.Message}");
+            MessageBox.Show($"Failed to create Classic Black: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

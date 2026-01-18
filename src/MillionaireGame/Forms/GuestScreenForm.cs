@@ -156,6 +156,49 @@ public class GuestScreenForm : ScalableScreenBase, IGameScreen
         Invalidate(); // Redraw to show flash state
     }
 
+    /// <summary>
+    /// Refresh theme resources (straps, money tree) when active theme changes
+    /// </summary>
+    public void RefreshTheme()
+    {
+        if (InvokeRequired)
+        {
+            BeginInvoke(new Action(RefreshTheme));
+            return;
+        }
+
+        GameConsole.Info("[GuestScreenForm] Refreshing theme for guest screen");
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settingsManager = Program.ServiceProvider?.GetRequiredService<ApplicationSettingsManager>();
+                if (settingsManager != null)
+                {
+                    var themeService = new ThemeService(settingsManager.ConnectionString);
+                    await themeService.LoadActiveThemeAsync();
+                    var activeTheme = themeService.CurrentTheme;
+
+                    if (activeTheme != null)
+                    {
+                        _activeTheme = await themeService.GetCompleteThemeAsync(activeTheme.ThemeId);
+                        _svgStrapRenderer ??= new SvgStrapRenderer();
+                        _svgMoneyTreeRenderer ??= new SvgMoneyTreeRenderer();
+                        GameConsole.Info($"[GuestScreenForm] Theme '{_activeTheme?.Theme?.ThemeName ?? "Unknown"}' reloaded for guest");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Warn($"[GuestScreenForm] Error refreshing theme: {ex.Message}");
+            }
+
+            // Redraw once resources reloaded
+            try { Invalidate(); } catch { }
+        });
+    }
+
     protected override void RenderScreen(System.Drawing.Graphics g)
     {
         // Draw graphical money tree in right 1/4 width and upper 2/3 height (always visible)

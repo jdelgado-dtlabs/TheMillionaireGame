@@ -34,6 +34,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     private CompleteTheme? _activeTheme; // Active theme for strap rendering
     private SvgStrapRenderer? _svgStrapRenderer; // SVG strap renderer
     private SvgMoneyTreeRenderer? _svgMoneyTreeRenderer; // SVG money tree renderer
+    private const float TvFontScale = 1.6f; // Multiplier to increase strap fonts for large TV displays
     
     /// <summary>
     /// Gets or sets whether this screen is a preview instance.
@@ -265,7 +266,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                 var fontColor = ColorTranslator.FromHtml(questionStrap.FontColor);
                     
                 DrawScaledTextWithWrapAndOutline(g, _currentQuestion?.QuestionText ?? "", 
-                    questionStrap.FontFamily, questionStrap.FontSize, fontStyle, fontColor, textBounds, 2);
+                    questionStrap.FontFamily, questionStrap.FontSize * TvFontScale, fontStyle, fontColor, textBounds, 2);
             }
         }
     }
@@ -360,7 +361,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                     var labelFontColor = ColorTranslator.FromHtml(labelStrap.FontColor);
                     
                     // Draw answer letter using AnswerLabel strap font with outline
-                    using var letterFont = new Font(labelStrap.FontFamily, labelStrap.FontSize, labelFontStyle);
+                    using var letterFont = new Font(labelStrap.FontFamily, labelStrap.FontSize * TvFontScale, labelFontStyle);
                     using var letterFormat = CreateCenteredFormat();
                     
                     DrawScaledTextWithOutline(g, letter + ":", letterFont, labelFontColor,
@@ -376,7 +377,7 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
                         bounds.Height - 30);
                         
                     DrawScaledTextWithWrapAndOutline(g, text, 
-                        answerStrap.FontFamily, answerStrap.FontSize, fontStyle, fontColor, textBounds, 2, 
+                        answerStrap.FontFamily, answerStrap.FontSize * TvFontScale, fontStyle, fontColor, textBounds, 2, 
                         StringAlignment.Near);
                 }
                 

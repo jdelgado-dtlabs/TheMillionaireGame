@@ -472,8 +472,11 @@ public class ScreenUpdateService
             }
             else if (screen is HostScreenForm hostScreen)
             {
-                // HostScreenForm will get RefreshTheme in future if needed
-                // For now, only TVScreenForm has theme backgrounds
+                hostScreen.RefreshTheme();
+            }
+            else if (screen is GuestScreenForm guestScreen)
+            {
+                guestScreen.RefreshTheme();
             }
         }
     }
