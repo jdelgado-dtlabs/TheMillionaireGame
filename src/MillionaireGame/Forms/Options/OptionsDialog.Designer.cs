@@ -1609,7 +1609,7 @@ namespace MillionaireGame.Forms.Options
             // // btnOK
             // 
             btnOK.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnOK.Location = new Point(416, 570);
+            btnOK.Location = new Point(416, 610);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(80, 30);
             btnOK.TabIndex = 1;
@@ -1620,7 +1620,7 @@ namespace MillionaireGame.Forms.Options
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCancel.Location = new Point(502, 570);
+            btnCancel.Location = new Point(502, 610);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(80, 30);
             btnCancel.TabIndex = 2;

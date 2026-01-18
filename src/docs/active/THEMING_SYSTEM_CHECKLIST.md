@@ -12,6 +12,15 @@ Purpose: Short actionable checklist for tracking remaining work on the theming s
 - [x] Copy Classic Gold fonts to Classic Black (migration `00022`)
 - [x] Fix Professional Purple / Midnight Black strap symmetry (migration `00023`)
 - [x] Increase TV strap font scale to improve legibility (`TvFontScale = 1.6f` in `TVScreenForm`)
+- [x] Implement ThemePack import/export system (modeled after SoundPack)
+  - [x] Create `ThemePackManager.cs` service
+  - [x] Export Example Template functionality
+  - [x] Export existing theme functionality
+  - [x] Import custom theme from ZIP functionality
+  - [x] Wire UI buttons in ThemeSettingsPanel
+  - [x] Fix modal dialog handling with STA thread pattern
+  - [x] Correct effect types in example template (None, Glow, Shadow, 3D, Outline, Emboss)
+  - [x] Adjust OK/Cancel button positioning in OptionsDialog
 
 Remaining / Recommended:
 
@@ -19,8 +28,9 @@ Remaining / Recommended:
 - [ ] Expose `TvFontScale` as a user-configurable setting in the Themes UI (OptionsDialog)
 - [ ] Add accessibility contrast validation tests for presets (WCAG-based checks)
 - [ ] Add unit/integration tests for `SvgStrapRenderer` and `SvgMoneyTreeRenderer`
-- [ ] Implement ThemePack import/export UI and documentation
 - [ ] Performance profiling on large-screen render paths (SVG rasterization and caching)
+
+**Status:** Theme system fully functional with import/export capabilities. Optional enhancements listed above.
 
 Owner: Theme subsystem team
 # Theming System - Quick Start Checklist

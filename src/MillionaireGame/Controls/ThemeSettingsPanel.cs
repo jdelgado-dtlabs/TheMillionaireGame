@@ -45,6 +45,7 @@ public partial class ThemeSettingsPanel : UserControl
         btnDeleteTheme.Click += BtnDeleteTheme_Click;
         btnImportPack.Click += BtnImportPack_Click;
         btnExportTheme.Click += BtnExportTheme_Click;
+        btnExportExample.Click += BtnExportExample_Click;
         btnRefresh.Click += async (s, e) => await LoadThemesAsync();
         
         // Add Create Classic Black button (programmatic — avoids designer changes)
@@ -222,11 +223,12 @@ public partial class ThemeSettingsPanel : UserControl
         bool hasSelection = _selectedTheme != null;
         bool isActive = _selectedTheme?.IsActive == true;
         bool isPreset = _selectedTheme?.ThemeType == "Preset";
+        bool isCustom = _selectedTheme?.ThemeType == "Custom";
 
         btnApplyTheme.Enabled = hasSelection && !isActive;
         btnDuplicateTheme.Enabled = hasSelection;
         btnDeleteTheme.Enabled = hasSelection && !isActive && !isPreset;
-        btnExportTheme.Enabled = hasSelection;
+        btnExportTheme.Enabled = hasSelection && isCustom; // Only custom themes can be exported
     }
 
     /// <summary>
@@ -357,36 +359,54 @@ public partial class ThemeSettingsPanel : UserControl
     }
 
     /// <summary>
-    /// Import theme pack
+    /// Import theme pack (modeled after soundpack import)
     /// </summary>
     private async void BtnImportPack_Click(object? sender, EventArgs e)
     {
-        using var dialog = new OpenFileDialog
-        {
-            Title = "Import Theme Pack",
-            Filter = "Theme Pack Files (*.zip)|*.zip|All Files (*.*)|*.*",
-            FilterIndex = 1
-        };
-
-        if (dialog.ShowDialog() != DialogResult.OK)
-            return;
-
         try
         {
-            var installPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "MillionaireGame",
-                "ThemePacks");
+            var dialog = new OpenFileDialog
+            {
+                Title = "Import Theme Pack",
+                Filter = "Theme Pack Files (*.zip)|*.zip|All Files (*.*)|*.*",
+                FilterIndex = 1,
+                RestoreDirectory = true
+            };
 
-            using var handler = new ThemePackHandler(GetConnectionString());
-            var pack = await handler.ImportThemePackAsync(dialog.FileName, installPath);
+            // Run on separate STA thread to avoid modal deadlock
+            DialogResult result = DialogResult.Cancel;
+            var thread = new System.Threading.Thread(() =>
+            {
+                result = dialog.ShowDialog();
+            });
+            thread.SetApartmentState(System.Threading.ApartmentState.STA);
+            thread.Start();
+            
+            // Keep UI responsive while waiting
+            while (thread.IsAlive)
+            {
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(10);
+            }
 
-            GameConsole.Info($"[ThemeSettingsPanel] Imported theme pack: {pack.PackName}");
-            MessageBox.Show($"Theme pack '{pack.PackName}' has been imported successfully.", 
-                "Import Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (result != DialogResult.OK)
+                return;
 
-            await LoadThemesAsync();
-            SettingsChanged?.Invoke(this, EventArgs.Empty);
+            var packManager = new ThemePackManager(_themeService);
+            var (success, message) = await packManager.ImportThemePackAsync(dialog.FileName);
+
+            if (success)
+            {
+                GameConsole.Info($"[ThemeSettingsPanel] {message}");
+                MessageBox.Show(message, "Import Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                await LoadThemesAsync(); // Refresh theme list
+                SettingsChanged?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                GameConsole.Error($"[ThemeSettingsPanel] Import failed: {message}");
+                MessageBox.Show(message, "Import Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         catch (Exception ex)
         {
@@ -397,45 +417,122 @@ public partial class ThemeSettingsPanel : UserControl
     }
 
     /// <summary>
-    /// Export selected theme
+    /// Export selected theme (modeled after soundpack export)
     /// </summary>
     private async void BtnExportTheme_Click(object? sender, EventArgs e)
     {
         if (_selectedTheme == null)
             return;
 
-        using var dialog = new SaveFileDialog
-        {
-            Title = "Export Theme",
-            Filter = "Theme Pack Files (*.zip)|*.zip",
-            FileName = $"{_selectedTheme.ThemeName}.zip"
-        };
-
-        if (dialog.ShowDialog() != DialogResult.OK)
-            return;
-
         try
         {
-            var outputDir = Path.GetDirectoryName(dialog.FileName);
-            if (string.IsNullOrEmpty(outputDir))
+            var dialog = new SaveFileDialog
+            {
+                Title = "Export Theme",
+                Filter = "Theme Pack Files (*.zip)|*.zip",
+                FileName = $"{_selectedTheme.ThemeName}.zip",
+                RestoreDirectory = true
+            };
+
+            // Run on separate STA thread to avoid modal deadlock
+            DialogResult result = DialogResult.Cancel;
+            var thread = new System.Threading.Thread(() =>
+            {
+                result = dialog.ShowDialog();
+            });
+            thread.SetApartmentState(System.Threading.ApartmentState.STA);
+            thread.Start();
+            
+            // Keep UI responsive while waiting
+            while (thread.IsAlive)
+            {
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(10);
+            }
+
+            if (result != DialogResult.OK)
                 return;
 
-            using var handler = new ThemePackHandler(GetConnectionString());
-            var zipPath = await handler.ExportThemePackAsync(
-                new List<int> { _selectedTheme.ThemeId },
-                _selectedTheme.ThemeName,
-                outputDir,
-                _selectedTheme.Author,
-                _selectedTheme.Description);
+            var packManager = new ThemePackManager(_themeService);
+            var (success, message) = await packManager.ExportThemePackAsync(_selectedTheme.ThemeId, dialog.FileName);
 
-            GameConsole.Info($"[ThemeSettingsPanel] Exported theme: {zipPath}");
-            MessageBox.Show($"Theme has been exported to:\n{zipPath}", "Export Complete", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (success)
+            {
+                GameConsole.Info($"[ThemeSettingsPanel] {message}");
+                MessageBox.Show($"{message}\n\nLocation: {dialog.FileName}", "Export Complete", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                GameConsole.Error($"[ThemeSettingsPanel] Export failed: {message}");
+                MessageBox.Show(message, "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         catch (Exception ex)
         {
             GameConsole.Error($"[ThemeSettingsPanel] Failed to export theme: {ex.Message}");
             MessageBox.Show($"Failed to export theme: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Export example theme pack template (modeled after soundpack export)
+    /// </summary>
+    private void BtnExportExample_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var dialog = new SaveFileDialog
+            {
+                Filter = "Theme Pack Files (*.zip)|*.zip",
+                Title = "Export Example Theme Pack",
+                FileName = "ExampleThemePack.zip",
+                RestoreDirectory = true
+            };
+            
+            // Run on separate STA thread to avoid modal deadlock
+            DialogResult result = DialogResult.Cancel;
+            var thread = new System.Threading.Thread(() =>
+            {
+                result = dialog.ShowDialog();
+            });
+            thread.SetApartmentState(System.Threading.ApartmentState.STA);
+            thread.Start();
+            
+            // Keep UI responsive while waiting
+            while (thread.IsAlive)
+            {
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(10);
+            }
+
+            if (result != DialogResult.OK)
+                return;
+
+            var packManager = new ThemePackManager(_themeService);
+            var success = packManager.ExportExamplePack(dialog.FileName);
+
+            if (success)
+            {
+                GameConsole.Info($"[ThemeSettingsPanel] Exported example theme pack to: {dialog.FileName}");
+                MessageBox.Show(
+                    $"Example theme pack exported successfully!\n\n" +
+                    $"Location: {dialog.FileName}\n\n" +
+                    $"Edit the themepack.xml file inside the ZIP to customize your theme, then import it back.",
+                    "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                GameConsole.Error($"[ThemeSettingsPanel] Failed to export example pack");
+                MessageBox.Show("Failed to export example pack.", "Export Failed", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            GameConsole.Error($"[ThemeSettingsPanel] Failed to export example: {ex.Message}");
+            MessageBox.Show($"Failed to export example: {ex.Message}", "Error", 
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }

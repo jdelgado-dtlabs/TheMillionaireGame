@@ -21,6 +21,7 @@ namespace MillionaireGame.Controls
             this.btnDeleteTheme = new Button();
             this.btnImportPack = new Button();
             this.btnExportTheme = new Button();
+            this.btnExportExample = new Button();
             this.grpThemeList.SuspendLayout();
             this.grpPreview.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picPreview)).BeginInit();
@@ -103,6 +104,7 @@ namespace MillionaireGame.Controls
             this.grpActions.Controls.Add(this.btnDeleteTheme);
             this.grpActions.Controls.Add(this.btnImportPack);
             this.grpActions.Controls.Add(this.btnExportTheme);
+            this.grpActions.Controls.Add(this.btnExportExample);
             this.grpActions.Location = new Point(570, 320);
             this.grpActions.Name = "grpActions";
             this.grpActions.Size = new Size(420, 180);
@@ -155,6 +157,15 @@ namespace MillionaireGame.Controls
             this.btnExportTheme.Text = "Export Theme...";
             this.btnExportTheme.UseVisualStyleBackColor = true;
             // 
+            // btnExportExample
+            // 
+            this.btnExportExample.Location = new Point(220, 70);
+            this.btnExportExample.Name = "btnExportExample";
+            this.btnExportExample.Size = new Size(180, 30);
+            this.btnExportExample.TabIndex = 5;
+            this.btnExportExample.Text = "Export Example Template...";
+            this.btnExportExample.UseVisualStyleBackColor = true;
+            // 
             // ThemeSettingsPanel
             // 
             this.AutoScaleDimensions = new SizeF(7F, 15F);
@@ -189,5 +200,6 @@ namespace MillionaireGame.Controls
         private Button btnDeleteTheme;
         private Button btnImportPack;
         private Button btnExportTheme;
+        private Button btnExportExample;
     }
 }
