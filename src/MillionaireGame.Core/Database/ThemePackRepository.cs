@@ -6,13 +6,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemePack data in the database
 /// </summary>
-public class ThemePackRepository
+public class ThemePackRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ThemePackRepository(string connectionString)
+    public ThemePackRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
@@ -23,8 +20,7 @@ public class ThemePackRepository
         const string query = "SELECT * FROM ThemePacks ORDER BY PackName";
         var packs = new List<ThemePack>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
@@ -43,8 +39,7 @@ public class ThemePackRepository
     {
         const string query = "SELECT * FROM ThemePacks WHERE ThemePackId = @PackId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@PackId", packId);
         using var reader = await command.ExecuteReaderAsync();
@@ -64,8 +59,7 @@ public class ThemePackRepository
     {
         const string query = "SELECT * FROM ThemePacks WHERE PackName = @PackName";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@PackName", packName);
         using var reader = await command.ExecuteReaderAsync();
@@ -101,8 +95,7 @@ public class ThemePackRepository
     {
         const string query = "DELETE FROM ThemePacks WHERE ThemePackId = @PackId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@PackId", packId);
         await command.ExecuteNonQueryAsync();
@@ -115,8 +108,7 @@ public class ThemePackRepository
     {
         const string query = "SELECT COUNT(*) FROM ThemePacks WHERE PackName = @PackName";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@PackName", packName);
         var count = (int)(await command.ExecuteScalarAsync() ?? 0);
@@ -130,8 +122,7 @@ public class ThemePackRepository
             VALUES (@PackName, @PackVersion, @Author, @Description, @InstallPath, GETDATE());
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@PackName", pack.PackName);
@@ -155,8 +146,7 @@ public class ThemePackRepository
                 InstallPath = @InstallPath
             WHERE ThemePackId = @PackId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@PackId", pack.ThemePackId);

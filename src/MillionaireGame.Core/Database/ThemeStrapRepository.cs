@@ -6,13 +6,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing ThemeStrap data in the database
 /// </summary>
-public class ThemeStrapRepository
+public class ThemeStrapRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ThemeStrapRepository(string connectionString)
+    public ThemeStrapRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
@@ -23,8 +20,7 @@ public class ThemeStrapRepository
         const string query = "SELECT * FROM ThemeStraps WHERE ThemeId = @ThemeId ORDER BY StrapType";
         var straps = new List<ThemeStrap>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         using var reader = await command.ExecuteReaderAsync();
@@ -44,8 +40,7 @@ public class ThemeStrapRepository
     {
         const string query = "SELECT * FROM ThemeStraps WHERE ThemeId = @ThemeId AND StrapType = @StrapType";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         command.Parameters.AddWithValue("@StrapType", strapType);
@@ -82,8 +77,7 @@ public class ThemeStrapRepository
     {
         const string query = "DELETE FROM ThemeStraps WHERE ThemeStrapId = @StrapId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@StrapId", strapId);
         await command.ExecuteNonQueryAsync();
@@ -96,8 +90,7 @@ public class ThemeStrapRepository
     {
         const string query = "DELETE FROM ThemeStraps WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         await command.ExecuteNonQueryAsync();
@@ -124,8 +117,7 @@ public class ThemeStrapRepository
             );
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         AddStrapParameters(command, strap);
@@ -161,8 +153,7 @@ public class ThemeStrapRepository
                 AnimationDuration = @AnimationDuration
             WHERE ThemeStrapId = @StrapId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@StrapId", strap.ThemeStrapId);

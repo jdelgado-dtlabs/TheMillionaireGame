@@ -5,13 +5,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Manages ApplicationSettings in the database
 /// </summary>
-public class ApplicationSettingsRepository
+public class ApplicationSettingsRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ApplicationSettingsRepository(string connectionString)
+    public ApplicationSettingsRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString;
     }
 
     /// <summary>
@@ -25,8 +22,7 @@ public class ApplicationSettingsRepository
                 WHERE TABLE_NAME = 'ApplicationSettings'
             ) THEN 1 ELSE 0 END";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         var result = await command.ExecuteScalarAsync();
         return Convert.ToBoolean(result);
@@ -49,8 +45,7 @@ public class ApplicationSettingsRepository
             CREATE INDEX IX_ApplicationSettings_Category ON ApplicationSettings(Category);
         ";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         await command.ExecuteNonQueryAsync();
     }
@@ -62,8 +57,7 @@ public class ApplicationSettingsRepository
     {
         const string query = "SELECT COUNT(*) FROM ApplicationSettings";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
 #pragma warning disable CS8605 // Unboxing a possibly null value - SQL COUNT always returns int
         var count = (int)await command.ExecuteScalarAsync();
@@ -89,8 +83,7 @@ public class ApplicationSettingsRepository
                 VALUES (@Key, @Value, @Category, @Description)
         ";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Key", key);
         command.Parameters.AddWithValue("@Value", (object?)value ?? DBNull.Value);
@@ -106,8 +99,7 @@ public class ApplicationSettingsRepository
     {
         const string query = "SELECT SettingValue FROM ApplicationSettings WHERE SettingKey = @Key";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Key", key);
         var result = await command.ExecuteScalarAsync();
@@ -122,8 +114,7 @@ public class ApplicationSettingsRepository
         const string query = "SELECT SettingKey, SettingValue FROM ApplicationSettings";
         var settings = new Dictionary<string, string>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
@@ -145,8 +136,7 @@ public class ApplicationSettingsRepository
         const string query = "SELECT SettingKey, SettingValue FROM ApplicationSettings WHERE Category = @Category";
         var settings = new Dictionary<string, string>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Category", category);
         using var reader = await command.ExecuteReaderAsync();
@@ -168,8 +158,7 @@ public class ApplicationSettingsRepository
     {
         const string query = "DELETE FROM ApplicationSettings";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         await command.ExecuteNonQueryAsync();
     }

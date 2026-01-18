@@ -6,13 +6,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing Theme data in the database
 /// </summary>
-public class ThemeRepository
+public class ThemeRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public ThemeRepository(string connectionString)
+    public ThemeRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
     }
 
     /// <summary>
@@ -22,8 +19,7 @@ public class ThemeRepository
     {
         const string query = "SELECT * FROM Themes WHERE IsActive = 1";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
@@ -42,8 +38,7 @@ public class ThemeRepository
     {
         const string query = "SELECT * FROM Themes WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         using var reader = await command.ExecuteReaderAsync();
@@ -64,8 +59,7 @@ public class ThemeRepository
         const string query = "SELECT * FROM Themes ORDER BY ThemeType, ThemeName";
         var themes = new List<Theme>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         using var reader = await command.ExecuteReaderAsync();
 
@@ -85,8 +79,7 @@ public class ThemeRepository
         const string query = "SELECT * FROM Themes WHERE ThemeType = @ThemeType ORDER BY ThemeName";
         var themes = new List<Theme>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeType", themeType);
         using var reader = await command.ExecuteReaderAsync();
@@ -120,8 +113,7 @@ public class ThemeRepository
     /// </summary>
     public async Task SetActiveThemeAsync(int themeId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var transaction = connection.BeginTransaction();
 
         try
@@ -157,8 +149,7 @@ public class ThemeRepository
     {
         const string query = "DELETE FROM Themes WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeId", themeId);
         await command.ExecuteNonQueryAsync();
@@ -171,8 +162,7 @@ public class ThemeRepository
     {
         const string query = "SELECT COUNT(*) FROM Themes WHERE ThemeName = @ThemeName";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@ThemeName", themeName);
         var count = (int)(await command.ExecuteScalarAsync() ?? 0);
@@ -186,8 +176,7 @@ public class ThemeRepository
             VALUES (@ThemeName, @ThemeType, @ThemePackId, @IsActive, @Description, @Author, @Version, GETDATE(), GETDATE());
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@ThemeName", theme.ThemeName);
@@ -216,8 +205,7 @@ public class ThemeRepository
                 ModifiedDate = GETDATE()
             WHERE ThemeId = @ThemeId";
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
         using var command = new SqlCommand(query, connection);
         
         command.Parameters.AddWithValue("@ThemeId", theme.ThemeId);

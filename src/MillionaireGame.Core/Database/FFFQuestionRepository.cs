@@ -7,13 +7,10 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Repository for managing Fastest Finger First questions in the database
 /// </summary>
-public class FFFQuestionRepository
+public class FFFQuestionRepository : BaseRepository
 {
-    private readonly string _connectionString;
-
-    public FFFQuestionRepository(string connectionString)
+    public FFFQuestionRepository(string connectionString) : base(connectionString)
     {
-        _connectionString = connectionString;
     }
 
     /// <summary>
@@ -21,8 +18,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task<FFFQuestion?> GetRandomQuestionAsync()
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = @"
             SELECT TOP 1 * FROM fff_questions 
@@ -45,8 +41,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task<FFFQuestion?> GetQuestionByIdAsync(int questionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "SELECT * FROM fff_questions WHERE Id = @Id";
         using var command = new SqlCommand(query, connection);
@@ -67,8 +62,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task MarkQuestionAsUsedAsync(int questionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "UPDATE fff_questions SET Used = 1 WHERE Id = @Id";
         using var command = new SqlCommand(query, connection);
@@ -84,8 +78,7 @@ public class FFFQuestionRepository
     {
         var questions = new List<FFFQuestion>();
 
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "SELECT * FROM fff_questions ORDER BY Id";
         using var command = new SqlCommand(query, connection);
@@ -104,8 +97,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task<int> AddQuestionAsync(FFFQuestion question)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = @"
             INSERT INTO fff_questions 
@@ -132,8 +124,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task UpdateQuestionAsync(FFFQuestion question)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = @"
             UPDATE fff_questions SET
@@ -164,8 +155,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task DeleteQuestionAsync(int questionId)
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "DELETE FROM fff_questions WHERE Id = @Id";
         using var command = new SqlCommand(query, connection);
@@ -179,8 +169,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task ResetAllQuestionsAsync()
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "UPDATE fff_questions SET Used = 0";
         using var command = new SqlCommand(query, connection);
@@ -193,8 +182,7 @@ public class FFFQuestionRepository
     /// </summary>
     public async Task<int> GetUnusedQuestionCountAsync()
     {
-        using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync();
+        using var connection = await OpenConnectionAsync();
 
         var query = "SELECT COUNT(*) FROM fff_questions WHERE Used = 0";
         using var command = new SqlCommand(query, connection);
