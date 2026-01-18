@@ -398,6 +398,25 @@ CREATE TABLE ThemePacks (
 
 2. **Modern Blue**
    - Blue and silver gradient
+
+**Checklist — Current Status (updated 2026-01-17)**
+
+- **Completed:**
+  - SVG-based strap rendering integrated across TV/Host/Guest (money-tree uses SVG renderer).
+  - Centralized glyph-based text centering implemented in `ScalableScreenBase.DrawScaledTextWithOutline()`.
+  - Theme-change propagation wired: `ScreenUpdateService.RefreshThemes()` and `IGameScreen.RefreshTheme()` implementations added.
+  - Seeded `Classic Black` preset and adjustments via migrations `00019`, `00021`, `00022`.
+  - TV strap font scale increased (`TvFontScale = 1.6f`) to improve legibility on large displays.
+  - Professional Purple and Midnight Black strap shapes set to `Rounded` via migration `00023`.
+
+- **Remaining / Recommended:**
+  - Run automated Theme QA: capture and review TV/Host/Guest screenshots for all built-in presets.
+  - Expose `TvFontScale` as a user setting in the Themes UI (OptionsDialog) to allow venue-specific tuning.
+  - Implement accessibility/contrast checks for presets (WCAG guidance).
+  - Add unit/integration tests for `SvgStrapRenderer` and `SvgMoneyTreeRenderer`.
+  - Expand ThemePack import/export UI and documentation for community themes.
+
+Add this checklist to `src/docs/active/THEMING_SYSTEM_CHECKLIST.md` for tracking.
    - Sleek angular straps with metallic finish
    - Sans-serif typography
    - Sharp, clean lines

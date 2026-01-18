@@ -1,3 +1,28 @@
+# Theming System Checklist (Active)
+
+Updated: 2026-01-17
+
+Purpose: Short actionable checklist for tracking remaining work on the theming system.
+
+- [x] Integrate SVG strap renderer across TV/Host/Guest
+- [x] Centralize glyph-based text centering (`ScalableScreenBase.DrawScaledTextWithOutline()`)
+- [x] Wire theme-change propagation (`ScreenUpdateService.RefreshThemes()` + `IGameScreen.RefreshTheme()`)
+- [x] Seed `Classic Black` preset (migration `00019`)
+- [x] Brighten Classic Black money-tree text (migration `00021`)
+- [x] Copy Classic Gold fonts to Classic Black (migration `00022`)
+- [x] Fix Professional Purple / Midnight Black strap symmetry (migration `00023`)
+- [x] Increase TV strap font scale to improve legibility (`TvFontScale = 1.6f` in `TVScreenForm`)
+
+Remaining / Recommended:
+
+- [ ] Run automated Theme QA: capture TV/Host/Guest screenshots for all built-in presets and review
+- [ ] Expose `TvFontScale` as a user-configurable setting in the Themes UI (OptionsDialog)
+- [ ] Add accessibility contrast validation tests for presets (WCAG-based checks)
+- [ ] Add unit/integration tests for `SvgStrapRenderer` and `SvgMoneyTreeRenderer`
+- [ ] Implement ThemePack import/export UI and documentation
+- [ ] Performance profiling on large-screen render paths (SVG rasterization and caching)
+
+Owner: Theme subsystem team
 # Theming System - Quick Start Checklist
 
 **Branch:** `feature/theming-system`  
