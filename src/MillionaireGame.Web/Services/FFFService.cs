@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MillionaireGame.Web.Data;
-using MillionaireGame.Web.Database;
+using MillionaireGame.Core.Database;
 using MillionaireGame.Web.Models;
+using FFFQuestion = MillionaireGame.Core.Models.FFFQuestion;
 
 namespace MillionaireGame.Web.Services;
 

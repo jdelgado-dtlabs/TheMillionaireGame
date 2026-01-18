@@ -2650,7 +2650,8 @@ public partial class ControlPanelForm : Form
         if (_fffWindow == null || _fffWindow.IsDisposed)
         {
             // Create new window with current server state
-            _fffWindow = new FFFWindow(serverUrl, isWebServerRunning, _screenService as ScreenUpdateService, _soundService);
+            var connectionString = _sqlSettings.Settings.GetConnectionString("dbMillionaire");
+            _fffWindow = new FFFWindow(serverUrl, isWebServerRunning, _screenService as ScreenUpdateService, _soundService, connectionString);
         }
         else
         {
