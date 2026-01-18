@@ -5,7 +5,7 @@ namespace MillionaireGame.Core.Database;
 /// <summary>
 /// Manages ApplicationSettings in the database
 /// </summary>
-public class ApplicationSettingsRepository : BaseRepository
+public class ApplicationSettingsRepository : BaseRepository, IApplicationSettingsRepository
 {
     public ApplicationSettingsRepository(string connectionString) : base(connectionString)
     {
