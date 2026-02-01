@@ -18,7 +18,7 @@
 #endif
 
 #define MyAppName "The Millionaire Game"
-#define MyAppVersion "1.0.6"
+#define MyAppVersion "1.0.7"
 #define MyAppPublisher "Jean Francois Delgado"
 #define MyAppURL "https://github.com/jdelgado-dtlabs/TheMillionaireGame"
 #define MyAppExeName "MillionaireGame.exe"
