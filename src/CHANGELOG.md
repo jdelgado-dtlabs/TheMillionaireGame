@@ -7,6 +7,33 @@ All notable changes to The Millionaire Game C# Edition will be documented in thi
 ### Added
 - Future features will be listed here
 
+## [v1.0.7] - 2026-02-01
+
+### Added
+- **Reset to Defaults Button** in Money Tree settings
+  * One-click restoration of standard US format ($100 to $1,000,000)
+  * Sets Q5 and Q10 as safety nets
+  * Resets currency to Dollar with comma thousands separator
+  * Changes only persist when user clicks OK/Apply (respects Cancel button)
+
+### Improved
+- **Money Tree Settings UI Layout**
+  * Expanded prize value inputs (120px → 140px width)
+  * Enlarged currency dropdown selectors (30px → 60px width)
+  * Increased row spacing for better readability (26px → 29px)
+  * Number Format group now extends full width to align with currency boxes
+  * Repositioned Reset button below Number Format group (centered)
+  * Currency groups moved to right side with larger dimensions
+  * Overall more spacious and professional appearance
+
+### Fixed
+- **Compiler Warnings Eliminated** (6 warnings → 0)
+  * Removed unnecessary `async` keywords from methods without `await`
+  * ThemePackHandler.cs: ValidateThemePackAsync, CopyThemeAssetsAsync
+  * FFFOnlinePanel.cs: btnShowQuestion_Click, btnRevealAnswers_Click
+  * LifelineManager.cs: CompleteDoubleDip, PlayLifelineSoundAsync
+  * Perfect build achieved: 0 errors, 0 warnings
+
 ## [v1.0.6] - 2026-01-12
 
 ### Added
