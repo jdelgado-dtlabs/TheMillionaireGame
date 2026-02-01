@@ -49,6 +49,14 @@ BEGIN
 END
 GO
 
+-- Clean up any invalid EffectType values before adding new constraint
+UPDATE ThemeStraps 
+SET EffectType = 'None' 
+WHERE EffectType NOT IN ('None', 'Glow', 'Shadow', '3D', 'Outline', 'Emboss');
+GO
+
+PRINT 'Cleaned up invalid EffectType values';
+
 -- Add new constraint with actually implemented effect types
 ALTER TABLE ThemeStraps 
 ADD CONSTRAINT CK_ThemeStraps_EffectType 
