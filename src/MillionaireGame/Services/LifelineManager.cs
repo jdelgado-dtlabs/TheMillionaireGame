@@ -1144,7 +1144,7 @@ public class LifelineManager
         return DoubleDipRevealResult.NotActive;
     }
     
-    private async Task CompleteDoubleDip()
+    private Task CompleteDoubleDip()
     {
         // DD sounds will stop naturally when next sound plays (IMMEDIATE priority)
         
@@ -1164,6 +1164,8 @@ public class LifelineManager
         _doubleDipStage = DoubleDipStage.Completed;
         
         LogMessage?.Invoke("[Lifeline] DD completed");
+        
+        return Task.CompletedTask;
     }
     
     /// <summary>
@@ -1201,7 +1203,7 @@ public class LifelineManager
     
     #region Helper Methods
     
-    private async Task PlayLifelineSoundAsync(SoundEffect effect, string? key = null, bool loop = false)
+    private Task PlayLifelineSoundAsync(SoundEffect effect, string? key = null, bool loop = false)
     {
         // For Q1-4, notify UI that bed music should restart after correct answer reveal
         // Not needed for Q5 (milestone) - bed music won't be playing anyway
@@ -1227,6 +1229,8 @@ public class LifelineManager
         {
             _soundService.PlaySound(effect);
         }
+        
+        return Task.CompletedTask;
     }
     
     /// <summary>

@@ -13,9 +13,12 @@ public class MoneyTreeService
 
     public MoneyTreeSettings Settings => _settings;
 
-    public MoneyTreeService(string? connectionString = null)
+    public MoneyTreeService(string connectionString)
     {
-        _repository = new ApplicationSettingsRepository(connectionString ?? GetDefaultConnectionString());
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new ArgumentException("Connection string is required", nameof(connectionString));
+            
+        _repository = new ApplicationSettingsRepository(connectionString);
         _settings = new MoneyTreeSettings(); // Initialize with defaults, will be loaded explicitly
     }
     
@@ -25,13 +28,6 @@ public class MoneyTreeService
     public void Initialize()
     {
         LoadSettings();
-    }
-    
-    private static string GetDefaultConnectionString()
-    {
-        var sqlSettings = new SqlSettingsManager();
-        sqlSettings.LoadSettings();
-        return sqlSettings.Settings.GetConnectionString("dbMillionaire");
     }
 
     /// <summary>
@@ -405,5 +401,13 @@ public class MoneyTreeService
         _settings.SafetyNet2 = safetyNet2;
         _settings.RiskModeSafetyNet = riskModeSafetyNet;
         _settings.FreeSafetyNetMode = freeMode;
+    }
+
+    /// <summary>
+    /// Resets money tree settings to default US millionaire values
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        SaveDefaultSettings();
     }
 }
