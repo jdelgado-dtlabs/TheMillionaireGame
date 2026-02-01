@@ -775,7 +775,7 @@ public partial class FFFOnlinePanel : UserControl
         GameConsole.Log("[FFF] Step 1: Intro/Explain started");
         
         // STEP 0: Select 8 players for FFF via API (sets SelectedForFFFAt timestamp)
-        Task.Run(async () =>
+        Task.Run(() =>
         {
             // All participants can play - no need to pre-select players
             // Rankings will be calculated after answers are submitted
@@ -892,7 +892,7 @@ public partial class FFFOnlinePanel : UserControl
         _soundService.QueueSound(SoundEffect.FFFReadQuestion, AudioPriority.Immediate);
     }
     
-    private async void btnRevealAnswers_Click(object? sender, EventArgs e)
+    private void btnRevealAnswers_Click(object? sender, EventArgs e)
     {
         if (_currentQuestion == null)
         {

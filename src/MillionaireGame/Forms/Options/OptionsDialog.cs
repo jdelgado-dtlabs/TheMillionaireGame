@@ -2069,78 +2069,81 @@ public partial class OptionsDialog : Form
     
     private void InitializeMoneyTreeTab()
     {
-        // Create currency groups
+        // Create currency groups - positioned on right side
         var grpCurrency1 = new GroupBox
         {
             Text = "Currency 1",
-            Location = new Point(400, 16),
-            Size = new Size(300, 205)
+            Location = new Point(470, 16),
+            Size = new Size(320, 210)
         };
         
         var grpCurrency2 = new GroupBox
         {
             Text = "Currency 2",
-            Location = new Point(400, 231),
-            Size = new Size(300, 210)
+            Location = new Point(470, 240),
+            Size = new Size(320, 220)
         };
         
-        // Create number format group
+        // Create number format group - below prize list, extends to match currency boxes
         var grpNumberFormat = new GroupBox
         {
             Text = "Number Format",
-            Location = new Point(10, 460),
-            Size = new Size(690, 75)
+            Location = new Point(15, 475),
+            Size = new Size(775, 70)
         };
         
-        // Create Reset to Defaults button
+        // Create Reset to Defaults button - centered below Number Format group
         var btnResetDefaults = new Button
         {
             Name = "btnResetMoneyTreeDefaults",
             Text = "Reset to Defaults",
-            Location = new Point(720, 16),
-            Size = new Size(140, 30),
-            UseVisualStyleBackColor = true
+            Location = new Point(320, 555),
+            Size = new Size(150, 32),
+            UseVisualStyleBackColor = true,
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular)
         };
         btnResetDefaults.Click += BtnResetMoneyTreeDefaults_Click;
         
         // Add header row labels directly to tab (not in group)
         var lblPrizeHeader = new Label
         {
-            Text = "Prize",
-            Location = new Point(66, 20),
-            Size = new Size(120, 15),
+            Text = "Prize Value",
+            Location = new Point(80, 18),
+            Size = new Size(140, 18),
             Font = new Font("Segoe UI", 9F, FontStyle.Bold)
         };
         
         var lblCurrencyHeader = new Label
         {
             Text = "Currency",
-            Location = new Point(265, 20), // Centered over currency column
-            Size = new Size(60, 15),
+            Location = new Point(315, 18),
+            Size = new Size(80, 18),
             Font = new Font("Segoe UI", 9F, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleCenter
         };
         
         // Initialize 15 prize value inputs (DESCENDING - Q15 to Q1)
-        int yPos = 45; // Starting Y position directly on tab
+        int yPos = 48; // Starting Y position directly on tab
         for (int i = 15; i >= 1; i--)
         {
             var lblQuestion = new Label
             {
                 Text = $"Q{i}:",
-                Location = new Point(10, yPos + 3),
-                Size = new Size(35, 15),
-                TextAlign = ContentAlignment.MiddleRight
+                Location = new Point(15, yPos + 4),
+                Size = new Size(40, 18),
+                TextAlign = ContentAlignment.MiddleRight,
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular)
             };
             
             var numValue = new NumericUpDown
             {
                 Name = $"numLevel{i:D2}",
-                Location = new Point(50, yPos),
-                Size = new Size(120, 23),
+                Location = new Point(62, yPos),
+                Size = new Size(140, 25),
                 Maximum = 10000000,
                 ThousandsSeparator = true,
-                Tag = i // Store level number in tag
+                Tag = i, // Store level number in tag
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular)
             };
 #pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
             numValue.ValueChanged += Control_Changed;
@@ -2153,9 +2156,10 @@ public partial class OptionsDialog : Form
                 {
                     Name = $"chkSafetyNet{i}",
                     Text = "Safety Net",
-                    Location = new Point(180, yPos + 2),
-                    Size = new Size(90, 20),
-                    Tag = i
+                    Location = new Point(212, yPos + 3),
+                    Size = new Size(95, 22),
+                    Tag = i,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Regular)
                 };
 #pragma warning disable CS8622 // Nullability of reference types in parameter doesn't match delegate
                 chkSafetyNet.CheckedChanged += Control_Changed;
@@ -2167,10 +2171,11 @@ public partial class OptionsDialog : Form
             var cmbCurrency = new ComboBox
             {
                 Name = $"cmbCurrency{i:D2}",
-                Location = new Point(280, yPos),
-                Size = new Size(30, 23),
+                Location = new Point(320, yPos),
+                Size = new Size(60, 25),
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Tag = i
+                Tag = i,
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular)
             };
             cmbCurrency.Items.AddRange(new object[] { "1", "2" });
             cmbCurrency.SelectedIndex = 0;
@@ -2181,7 +2186,7 @@ public partial class OptionsDialog : Form
             tabMoneyTree.Controls.Add(lblQuestion);
             tabMoneyTree.Controls.Add(numValue);
             tabMoneyTree.Controls.Add(cmbCurrency);
-            yPos += 28;
+            yPos += 29;
         }
         
         // Currency 1 selection radio buttons
@@ -2458,18 +2463,50 @@ public partial class OptionsDialog : Form
         {
             try
             {
-                // Reset to defaults in the service
-                _moneyTreeService.ResetToDefaults();
+                // Default prize values (US $100 to $1,000,000)
+                Dictionary<int, decimal> defaultPrizes = new()
+                {
+                    { 1, 100 }, { 2, 200 }, { 3, 300 }, { 4, 500 }, { 5, 1000 },
+                    { 6, 2000 }, { 7, 4000 }, { 8, 8000 }, { 9, 16000 }, { 10, 32000 },
+                    { 11, 64000 }, { 12, 125000 }, { 13, 250000 }, { 14, 500000 }, { 15, 1000000 }
+                };
                 
-                // Reload the settings to UI
-                LoadMoneyTreeSettings();
+                // Populate prize value controls
+                for (int i = 1; i <= 15; i++)
+                {
+                    var numControl = tabMoneyTree.Controls.Find($"numLevel{i:D2}", true).FirstOrDefault() as NumericUpDown;
+                    if (numControl != null)
+                    {
+                        numControl.Value = defaultPrizes[i];
+                    }
+                }
+                
+                // Set safety nets (Q5 and Q10)
+                var chkNet5 = tabMoneyTree.Controls.Find("chkSafetyNet5", true).FirstOrDefault() as CheckBox;
+                var chkNet10 = tabMoneyTree.Controls.Find("chkSafetyNet10", true).FirstOrDefault() as CheckBox;
+                if (chkNet5 != null) chkNet5.Checked = true;
+                if (chkNet10 != null) chkNet10.Checked = true;
+                
+                // Set Currency 1 to Dollar
+                var radDollar1 = tabMoneyTree.Controls.Find("radCurrency1Dollar", true).FirstOrDefault() as RadioButton;
+                var chkSuffix1 = tabMoneyTree.Controls.Find("chkCurrency1AtSuffix", true).FirstOrDefault() as CheckBox;
+                if (radDollar1 != null) radDollar1.Checked = true;
+                if (chkSuffix1 != null) chkSuffix1.Checked = false;
+                
+                // Disable Currency 2
+                var chkEnableCurrency2 = tabMoneyTree.Controls.Find("chkEnableSecondCurrency", true).FirstOrDefault() as CheckBox;
+                if (chkEnableCurrency2 != null) chkEnableCurrency2.Checked = false;
+                
+                // Set thousands separator to comma
+                var radComma = tabMoneyTree.Controls.Find("radThousandsSeparatorComma", true).FirstOrDefault() as RadioButton;
+                if (radComma != null) radComma.Checked = true;
                 
                 // Mark as changed so user knows to save
                 MarkChanged();
                 
                 MessageBox.Show(
                     "Money Tree settings have been reset to defaults.\n\n" +
-                    "Click OK or Apply to save these changes.",
+                    "Click OK or Apply to keep these changes, or Cancel to discard.",
                     "Reset Complete",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);

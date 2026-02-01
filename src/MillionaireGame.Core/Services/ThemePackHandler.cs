@@ -197,7 +197,7 @@ public class ThemePackHandler : IDisposable
     /// <summary>
     /// Validate a theme pack ZIP file without installing
     /// </summary>
-    public async Task<ThemePackValidationResult> ValidateThemePackAsync(string zipPath)
+    public Task<ThemePackValidationResult> ValidateThemePackAsync(string zipPath)
     {
         var result = new ThemePackValidationResult { IsValid = true };
 
@@ -205,7 +205,7 @@ public class ThemePackHandler : IDisposable
         {
             result.IsValid = false;
             result.Errors.Add($"File not found: {zipPath}");
-            return result;
+            return Task.FromResult(result);
         }
 
         var tempDir = Path.Combine(Path.GetTempPath(), $"ThemePackValidation_{Guid.NewGuid()}");
@@ -222,7 +222,7 @@ public class ThemePackHandler : IDisposable
             {
                 result.IsValid = false;
                 result.Errors.Add("Missing theme_pack.xml file");
-                return result;
+                return Task.FromResult(result);
             }
 
             // Parse XML
@@ -251,7 +251,7 @@ public class ThemePackHandler : IDisposable
             }
         }
 
-        return result;
+        return Task.FromResult(result);
     }
 
     private async Task ImportThemeFromPackAsync(
@@ -310,7 +310,7 @@ public class ThemePackHandler : IDisposable
         }
     }
 
-    private async Task CopyThemeAssetsAsync(CompleteTheme theme, string targetDir)
+    private Task CopyThemeAssetsAsync(CompleteTheme theme, string targetDir)
     {
         var assetsDir = Path.Combine(targetDir, "assets");
         Directory.CreateDirectory(assetsDir);
@@ -342,6 +342,8 @@ public class ThemePackHandler : IDisposable
                 theme.MoneyTree.BackgroundImagePath = Path.Combine("assets", fileName);
             }
         }
+        
+        return Task.CompletedTask;
     }
 
     private void ValidateThemeData(CompleteTheme theme, string packDir, ThemePackValidationResult result)
