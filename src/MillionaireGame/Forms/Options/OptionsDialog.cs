@@ -2073,24 +2073,35 @@ public partial class OptionsDialog : Form
         var grpCurrency1 = new GroupBox
         {
             Text = "Currency 1",
-            Location = new Point(356, 16),
-            Size = new Size(280, 200)
+            Location = new Point(400, 16),
+            Size = new Size(300, 205)
         };
         
         var grpCurrency2 = new GroupBox
         {
             Text = "Currency 2",
-            Location = new Point(356, 226),
-            Size = new Size(280, 200)
+            Location = new Point(400, 231),
+            Size = new Size(300, 210)
         };
         
         // Create number format group
         var grpNumberFormat = new GroupBox
         {
             Text = "Number Format",
-            Location = new Point(10, 431),
-            Size = new Size(626, 70)
+            Location = new Point(10, 460),
+            Size = new Size(690, 75)
         };
+        
+        // Create Reset to Defaults button
+        var btnResetDefaults = new Button
+        {
+            Name = "btnResetMoneyTreeDefaults",
+            Text = "Reset to Defaults",
+            Location = new Point(720, 16),
+            Size = new Size(140, 30),
+            UseVisualStyleBackColor = true
+        };
+        btnResetDefaults.Click += BtnResetMoneyTreeDefaults_Click;
         
         // Add header row labels directly to tab (not in group)
         var lblPrizeHeader = new Label
@@ -2170,7 +2181,7 @@ public partial class OptionsDialog : Form
             tabMoneyTree.Controls.Add(lblQuestion);
             tabMoneyTree.Controls.Add(numValue);
             tabMoneyTree.Controls.Add(cmbCurrency);
-            yPos += 26;
+            yPos += 28;
         }
         
         // Currency 1 selection radio buttons
@@ -2385,7 +2396,7 @@ public partial class OptionsDialog : Form
         grpNumberFormat.Controls.AddRange(new Control[] { lblThousandsSeparator, radSeparatorComma, radSeparatorPeriod, radSeparatorSpace, radSeparatorNone });
         
         // Add header labels and currency groups to tab (note: prize controls already added individually in loop above)
-        tabMoneyTree.Controls.AddRange(new Control[] { lblPrizeHeader, lblCurrencyHeader, grpCurrency1, grpCurrency2, grpNumberFormat });
+        tabMoneyTree.Controls.AddRange(new Control[] { lblPrizeHeader, lblCurrencyHeader, grpCurrency1, grpCurrency2, grpNumberFormat, btnResetDefaults });
     }
     
     private void EnableCurrency2_CheckedChanged(object? sender, EventArgs e)
@@ -2428,6 +2439,50 @@ public partial class OptionsDialog : Form
         if (sender is RadioButton radio && radio.Checked)
         {
             _hasChanges = true;
+        }
+    }
+    
+    /// <summary>
+    /// Reset Money Tree settings to default values
+    /// </summary>
+    private void BtnResetMoneyTreeDefaults_Click(object? sender, EventArgs e)
+    {
+        var result = MessageBox.Show(
+            "This will reset all Money Tree settings to default values (US $100 to $1,000,000 with standard safety nets).\n\n" +
+            "Are you sure you want to continue?",
+            "Reset to Defaults",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+        
+        if (result == DialogResult.Yes)
+        {
+            try
+            {
+                // Reset to defaults in the service
+                _moneyTreeService.ResetToDefaults();
+                
+                // Reload the settings to UI
+                LoadMoneyTreeSettings();
+                
+                // Mark as changed so user knows to save
+                MarkChanged();
+                
+                MessageBox.Show(
+                    "Money Tree settings have been reset to defaults.\n\n" +
+                    "Click OK or Apply to save these changes.",
+                    "Reset Complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                GameConsole.Error($"[OptionsDialog] Failed to reset Money Tree defaults: {ex.Message}");
+                MessageBox.Show(
+                    $"Failed to reset settings: {ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
     }
     

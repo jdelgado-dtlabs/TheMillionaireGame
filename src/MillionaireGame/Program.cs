@@ -172,8 +172,10 @@ internal static class Program
         Application.SetCompatibleTextRenderingDefault(false);
 
         // Initialize services
-        var gameService = new GameService();
-        gameService.MoneyTree.Initialize(); // Load settings from database
+        var moneyTreeService = new MoneyTreeService(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
+        moneyTreeService.Initialize(); // Load settings from database
+        
+        var gameService = new GameService(moneyTreeService);
         var questionRepository = new QuestionRepository(sqlSettings.Settings.GetConnectionString("dbMillionaire"));
         var screenService = new ScreenUpdateService();
         

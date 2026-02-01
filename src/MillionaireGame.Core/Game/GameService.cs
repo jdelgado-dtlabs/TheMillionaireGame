@@ -20,11 +20,11 @@ public class GameService
     public event EventHandler<GameModeChangedEventArgs>? ModeChanged;
     public event EventHandler<LifelineUsedEventArgs>? LifelineUsed;
 
-    public GameService(MoneyTreeService? moneyTreeService = null)
+    public GameService(MoneyTreeService moneyTreeService)
     {
         _gameState = new GameState();
         _lifelines = new List<Lifeline>();
-        _moneyTreeService = moneyTreeService ?? new MoneyTreeService();
+        _moneyTreeService = moneyTreeService ?? throw new ArgumentNullException(nameof(moneyTreeService));
         InitializeLifelines();
     }
 
