@@ -655,30 +655,58 @@ namespace MillionaireGame.Services
                     _silenceSampleCount = 0;
                     _currentCueSamplesProcessed = 0;
 
-                    // If next cue is waiting, start it
-                    if (_nextCue != null)
+                    // STACK OVERFLOW FIX: Use loop instead of recursion to handle consecutive empty cues
+                    // This prevents infinite recursion if multiple cues are empty/corrupted
+                    int retryCount = 0;
+                    const int maxRetries = 100; // Safety limit to prevent infinite loop
+                    
+                    while (retryCount < maxRetries)
                     {
-                        _currentCue = _nextCue;
-                        _nextCue = null;
-                        return Read(buffer, offset, count); // Recursive read from new cue
-                    }
-                    // If queue has items, start next
-                    else if (_normalQueue.Count > 0)
-                    {
-                        _currentCue = _normalQueue.Dequeue();
-                        // Don't log from audio thread - causes freezes
-                        return Read(buffer, offset, count); // Recursive read from new cue
-                    }
-                    // Nothing queued - return silence to stay active in mixer
-                    else
-                    {
-                        // Raise QueueCompleted event only once when transitioning to empty state
-                        if (!_completionEventFired)
+                        // If next cue is waiting, start it
+                        if (_nextCue != null)
                         {
-                            _completionEventFired = true;
-                            QueueCompleted?.Invoke(this, EventArgs.Empty);
+                            _currentCue = _nextCue;
+                            _nextCue = null;
+                        }
+                        // If queue has items, start next
+                        else if (_normalQueue.Count > 0)
+                        {
+                            _currentCue = _normalQueue.Dequeue();
+                        }
+                        // Nothing queued - return silence to stay active in mixer
+                        else
+                        {
+                            // Raise QueueCompleted event only once when transitioning to empty state
+                            if (!_completionEventFired)
+                            {
+                                _completionEventFired = true;
+                                QueueCompleted?.Invoke(this, EventArgs.Empty);
+                            }
+                            
+                            Array.Clear(buffer, offset, count);
+                            return count;
                         }
                         
+                        // Try to read from the new cue
+                        read = _currentCue.Source.Read(buffer, offset, count);
+                        
+                        if (read > 0)
+                        {
+                            // Successfully read from new cue - break out and continue processing
+                            break;
+                        }
+                        
+                        // Cue returned 0 samples (empty/corrupted) - clean it up and try next
+                        GameConsole.Warn($"[AudioCueQueue] Cue returned 0 samples (possibly empty/corrupted): {System.IO.Path.GetFileName(_currentCue.FilePath)}");
+                        _cueThresholdOverrides.Remove(_currentCue);
+                        _currentCue.Dispose();
+                        _currentCue = null;
+                        retryCount++;
+                    }
+                    
+                    if (retryCount >= maxRetries)
+                    {
+                        GameConsole.Error($"[AudioCueQueue] Max retry limit reached - too many consecutive empty cues. Returning silence.");
                         Array.Clear(buffer, offset, count);
                         return count;
                     }

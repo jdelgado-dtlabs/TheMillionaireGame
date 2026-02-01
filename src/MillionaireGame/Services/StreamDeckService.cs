@@ -197,28 +197,64 @@ namespace MillionaireGame.Services
 
             try
             {
-                string imagePath = Path.Combine(_imageBasePath, filename);
-                
-                GameConsole.Info($"[StreamDeck] 🔍 Looking for: {imagePath}");
-                
-                if (!File.Exists(imagePath))
-                {
-                    GameConsole.Error($"[StreamDeck] ❌ IMAGE NOT FOUND: {imagePath}");
-                    GameConsole.Info($"[StreamDeck] Base path: {_imageBasePath}");
-                    SetButtonBlank(row, col);
-                    return;
-                }
-
-                // Convert row/col to Stream Deck key index
+                // Convert row/col to Stream Deck key index EARLY to avoid scope issues
                 // Module 6 uses ROW-MAJOR ordering: index = (row * columns) + col
                 // Physical layout: [0 1 2]
                 //                  [3 4 5]
                 int keyIndex = (row * 3) + col;
+                
+                SixLabors.ImageSharp.Image<Rgb24>? image = null;
+                
+                // Try loading from file system first (for development)
+                string imagePath = Path.Combine(_imageBasePath, filename);
+                if (File.Exists(imagePath))
+                {
+                    GameConsole.Debug($"[StreamDeck] Loading from file: {imagePath}");
+                    image = SixLabors.ImageSharp.Image.Load<Rgb24>(imagePath);
+                }
+                else
+                {
+                    // STACK OVERFLOW FIX: Load from embedded resources instead of recursing
+                    GameConsole.Debug($"[StreamDeck] File not found, loading from embedded resource: {filename}");
+                    var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                    var resourceName = $"MillionaireGame.lib.image.streamdeck.{filename}";
+                    
+                    using var stream = assembly.GetManifestResourceStream(resourceName);
+                    if (stream != null)
+                    {
+                        image = SixLabors.ImageSharp.Image.Load<Rgb24>(stream);
+                        GameConsole.Debug($"[StreamDeck] ✓ Loaded from embedded resource");
+                    }
+                    else
+                    {
+                        // Resource not found either - use fallback
+                        GameConsole.Warn($"[StreamDeck] Neither file nor embedded resource found for: {filename}");
+                        
+                        if (filename != "blank.png")
+                        {
+                            // Try blank.png as fallback for other images
+                            SetButtonBlank(row, col);
+                            return;
+                        }
+                        else
+                        {
+                            // blank.png itself is missing - create a black square programmatically
+                            image = new SixLabors.ImageSharp.Image<Rgb24>(80, 80, new Rgb24(0, 0, 0));
+                            GameConsole.Warn($"[StreamDeck] Using programmatic black image for missing {filename}");
+                        }
+                    }
+                }
+
+                if (image == null)
+                {
+                    GameConsole.Error($"[StreamDeck] Failed to load image: {filename}");
+                    return;
+                }
 
                 GameConsole.Info($"[StreamDeck] 🔍 MAPPING: {filename} → Physical(row{row},col{col}) → KeyIndex[{keyIndex}]");
 
                 // Load image and resize to 80x80 for Module 6 (per official specs)
-                using (var image = SixLabors.ImageSharp.Image.Load<Rgb24>(imagePath))
+                using (image)
                 {
                     GameConsole.Debug($"[StreamDeck] Image loaded: {image.Width}x{image.Height}px, resizing to 80x80");
                     
