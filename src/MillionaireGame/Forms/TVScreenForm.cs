@@ -989,11 +989,11 @@ public class TVScreenForm : ScalableScreenBase, IGameScreen
     {
         // Design-time coordinates (1920x1080)
         // Position: Right edge, stacked vertically (1770, 36), spacing 82px vertical
-        float baseX = 1770;
+        float baseX = 1700;
         float baseY = 36;
-        float spacingY = 82;  // Vertical spacing for stacking
-        float iconWidth = 72;  // Slightly smaller for TV screen
-        float iconHeight = 44;
+        float spacingY = 100;  // Vertical spacing for stacking
+        float iconWidth = 150;  // Slightly smaller for TV screen
+        float iconHeight = 90;  // Slightly smaller for TV screen
         
         // Draw up to 4 lifeline icons (stacked vertically on right edge)
         for (int i = 1; i <= 4; i++)
